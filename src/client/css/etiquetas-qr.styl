@@ -1,0 +1,84 @@
+altoEtiqueta = 148px
+mitadAltoEtiqueta = 75px
+anchoEtiqueta = 390px
+altoQr = 128px
+altoLogoEstadistica = 73px
+altoTexto = 41px
+altoDmEncu = 73px
+altoBA = 55px
+
+.etiqueta
+  display flex
+  background-color #ffffff
+  width anchoEtiqueta
+  height altoEtiqueta
+  .columna
+    padding 11px 0px
+    .codigo-qr
+      height altoQr
+      width altoQr
+      img
+        height altoQr
+    .logo-estadistica
+      height altoLogoEstadistica
+      img
+        height altoLogoEstadistica
+    .texto-codigo
+      height altoTexto
+      padding 6px 0px
+      x-background-color yellow
+      text-align center
+      vertical-align middle
+      font-size 30px
+    .logo-dmencu
+      height altoDmEncu
+      img
+        height altoDmEncu
+    .logo-ba
+      height altoBA
+      img
+        height altoBA
+  .columna-derecha
+    padding 0px 0px
+
+.not_print
+  @media print
+    display none
+
+.pre-plancha
+  display flex
+  color #399947
+  margin-left 25px
+  padding-top 22px
+  min-height 32px
+  height 32px
+  vertical-align bottom
+  align-items bottom 
+  font-size 130%
+.plancha
+  margin-left 10px
+  display grid
+  grid-template-columns repeat(3, 1fr)
+  page-break-after always
+
+
+.table-param-screen, .result-progress
+  @media print
+    display none
+
+.etiqueta
+  @media screen
+    border 1px dashed orange
+
+.result-div
+  @media print
+    zoom 0.65
+
+.result-div[resultado-cargar=ok], .result-div[resultado-rectificar=ok]
+  background-color #5F5
+.result-div[resultado-cargar='tenia']
+  background-color orange
+.result-div[resultado-cargar]
+  .ficha-persona
+    label
+      font-weight 600

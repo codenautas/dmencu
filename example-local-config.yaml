@@ -1,0 +1,18 @@
+db:
+  port: 5435
+  password: 39ddkan3a__xfhfheu..33!!
+log:
+  req: false
+login:
+  plus:
+    secret: 39djjfnvvjas..33.3.33
+    allowHttpLogin: true
+devel:
+  forceShowAsEditable: false
+client-setup:
+  skin: ""
+  lang: es
+server:
+  skins:
+    confort:
+      local-path: ../backend-skins/dist/

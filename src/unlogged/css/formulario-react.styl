@@ -1,0 +1,656 @@
+colorFondoEncabezadoBloque = #888
+margenPregunta = 16px
+colorFondoIdBloque = #DDD
+
+anchoNormal(ancho)
+  @media print
+    width ancho
+  @media (min-width 600px)
+    width ancho
+
+.formulario, .hoja-de-ruta
+  max-width 768px
+  margin-top 75px //ajustado para /CAMPO
+
+.hoja-de-ruta
+  .MuiButton-root
+    &[resumen-vivienda="ok"]
+      background-color  #5CB85C
+      color  #FFFFFF
+    &[resumen-vivienda="cita pactada"]
+      background-color  #3f51b5
+      color  #FFFFFF
+    &[resumen-vivienda="vacio"]
+      background-color  FFFFFF
+      color  #000000
+    &[resumen-vivienda="con problemas"]
+      background-color  red
+      color  #FFFFFF
+    &[resumen-vivienda="incompleto"]
+      background-color  yellow
+      color  #000000
+    &[resumen-vivienda="no rea"]
+      background-color  gray
+      color  #FFFFFF
+  .carga
+    margin-bottom 12px;
+    .informacion-carga
+      padding 15px
+
+.encabezado
+  display flex
+  .id
+    align-self flex-start
+    justify-self flex-start
+    text-align center
+    flex-shrink 0
+  .nombre-div
+    flex-grow 2
+    align-self flex-start
+    justify-self baseline
+    .aclaracion
+      font-size 90%
+      color #666 !important
+
+[nuestro-bloque="LN"]
+  > .casilleros
+    .pregunta
+      > .encabezado
+        display none
+  > .casilleros:nth-child(2)
+    .pregunta
+      > .encabezado
+        display block
+
+.tareas-notas, .cita-pactada
+  margin-top 10px
+
+.visitas
+  .MuiTableCell-root
+    padding 8px
+  .campo
+    display flex
+    flex-direction row
+    margin-bottom margenPregunta
+    .MuiButton-root
+      margin-left 5px
+    .input-campo
+      max-width calc(100% - 40px)
+    &[nuestra-longitud=full]
+      .input-campo
+        width 88%
+      .boton-confirmar-campo
+        width 20%
+    &[nuestra-longitud=medium]
+      .input-campo
+        width 60%
+      .boton-confirmar-campo
+        width 40%
+    &[nuestra-longitud=small]
+      .input-campo
+        width 30%
+      .boton-confirmar-campo
+        width 70%
+    &[nuestra-longitud="3"]
+      .input-campo
+        width 40px
+    &[nuestra-longitud="2"]
+      .input-campo
+        width 28px
+
+@media (min-width 600px)
+  .dialogo-notas
+    .MuiDialog-paper
+      min-width 600px
+
+@media (max-width 599px)
+  .dialogo-notas
+    .MuiDialog-paper
+      min-width 100%
+
+@media screen and (min-width 600px)
+  [nuestro-seleccion="1"][nuestro-relevamiento="1"]
+    .bloque[es-multiple=SI]
+      > .casilleros
+        > div:nth-child(1)
+          width 45%
+        > div:nth-child(4)
+          display none
+        > div:nth-child(5)
+          display none
+        > div:nth-child(6)
+          display none
+  [nuestro-seleccion="2"][nuestro-relevamiento="1"]
+    .bloque[es-multiple=SI]
+      > .casilleros
+        > div:nth-child(5)
+          display none
+        > div:nth-child(6)
+          display none
+  [nuestro-seleccion="1"][nuestro-relevamiento="2"]
+    .bloque[es-multiple=SI]
+      > .casilleros
+        > div:nth-child(4)
+          display none
+        > div:nth-child(5)
+          display none
+  [nuestro-seleccion="2"][nuestro-relevamiento="2"]
+    .bloque[es-multiple=SI]
+      > .casilleros
+        > div:nth-child(4)
+          display none
+        > div:nth-child(6)
+          display none
+  .bloque[es-multiple=SI]
+    > .casilleros
+      flex-direction row
+      > div
+        width 24%
+      > div:nth-child(2)
+        min-width 180px
+      > div:nth-child(4)
+        min-width 155px
+      > div:nth-child(3)
+        flex-shrink 1
+        min-width 90px
+        x-width calc(24%-(25%-180px))
+        max-width 24%
+      .pregunta
+        flex-direction column
+        justify-content space-between
+        height 100%
+        > .encabezado
+          display none
+          width 100%
+          > .id-div
+            width 24px
+          > *
+            display inline
+            margin 2px
+            padding 0px
+        > .casilleros
+          width 100%
+    > .casilleros:nth-child(2)
+      .pregunta
+        > .encabezado
+          border-right 1px solid #888
+          border-left 1px solid #888
+          padding-right 4px
+          padding-left 2px
+          display block
+
+.casilleros
+  display flex
+  flex-direction column
+
+.multiple
+  border-top 0.5px solid colorFondoIdBloque
+  font-size 120%
+  margin-left 8px
+  @media print
+    margin-left 48px
+    justify-content space-between
+  @media (min-width 600px)
+    margin-left 48px
+    justify-content space-between
+  display flex
+  @media screen and (max-width 599px)
+    flex-direction column
+  > .encabezado
+    .id
+      margin-right 8px
+      color colorFondoEncabezadoBloque
+      background-color colorFondoIdBloque
+      flex-shrink 0
+      flex-grow 0
+      text-align center
+      min-width 24px
+      width auto
+      height 24px
+      padding-top 2px
+      vertical-align middle
+      border-bottom-right-radius 7px
+    min-width 50%
+    flex-shrink 1
+    @media print
+      min-width 55%
+    @media (min-width 600px)
+      min-width 70%
+  > .casilleros
+    justify-self right
+    align-self flex-end
+    min-width 33%
+
+.pregunta
+  @media screen and (max-width 599px)
+    flex-direction column
+  display flex
+  justify-content space-between
+  border-top 1px solid colorFondoEncabezadoBloque
+  &[nuestro-tipovar="opciones"]
+    > .casilleros
+      .MuiButton-root
+        x-color blue
+  &[nuestro-tipovar="si_no"]
+    > .encabezado
+      anchoNormal 70%
+    > .casilleros
+      anchoNormal 30%
+  &[nuestro-tipovar="multiple"]
+    display block
+    > .encabezado
+      width 100%
+    > .casilleros
+      width 100%
+  > .encabezado
+    anchoNormal 50%
+    font-size 120%
+    min-height 24px
+    .id
+      color colorFondoEncabezadoBloque
+      background-color colorFondoIdBloque
+      min-width 24px
+      width auto
+      min-height 24px
+      padding-top 2px
+      vertical-align middle
+      border-bottom-right-radius 7px
+    .nombre-div
+      padding margenPregunta
+  > .casilleros
+    > .campo
+      display flex
+      flex-direction row
+      margin-bottom margenPregunta
+      .MuiButton-root
+        margin-left 5px
+      .input-campo
+        max-width calc(100% - 40px)
+      &[nuestra-longitud=full]
+        .input-campo
+          width 88%
+        .boton-confirmar-campo
+          width 20%
+      &[nuestra-longitud=medium]
+        .input-campo
+          width 60%
+        .boton-confirmar-campo
+          width 40%
+      &[nuestra-longitud=small]
+        .input-campo
+          width 30%
+        .boton-confirmar-campo
+          width 70%
+      &[nuestra-longitud="3"]
+        .input-campo
+          width 40px
+      &[nuestra-longitud="2"]
+        .input-campo
+          width 28px
+  > .casilleros, > div .casilleros
+    align-self flex-end
+    anchoNormal 50%
+    > .variable
+      margin-bottom margenPregunta
+
+.bloque
+  > .encabezado
+    background colorFondoEncabezadoBloque
+    font-size 100%
+    min-height 24px
+    .id
+      color colorFondoEncabezadoBloque
+      background-color colorFondoIdBloque
+      min-width 24px
+      min-height 24px
+      padding-top 2px
+      vertical-align middle
+      border-bottom-right-radius 7px
+    .nombre-div
+      margin 8px
+      text-align center
+      color colorFondoIdBloque
+      .aclaracion
+        color colorFondoIdBloque !important
+
+.seccion-boton-formulario
+  display flex
+  justify-content space-between
+
+.consistencia
+  .id
+    color #AAA
+    padding-right 16px
+  padding 16px
+  font-weight bold
+  background-color #FFA
+
+[los-metadatos]
+  display none
+
+@media print
+  header
+    display none !important
+
+.id-div
+  height 36px
+  min-width 36px
+  margin-right 8px
+
+boton-id-div-invalido()
+  .id-div
+    .id
+      opacity 70%
+    height 36px
+    min-width 36px
+    outline  1px solid blue
+    background-image url("../img/borrar-valor.png")
+    background-position bottom
+    background-size 36px
+    border-radius 4px
+    flex-shrink 0
+    flex-grow 0
+
+[tiene-valor=invalido]
+  boton-id-div-invalido()
+
+[modo-despliegue=estricto], [modo-despliegue=relevamiento]
+  [nuestro-validator=optativa_sd]
+    background-color #FfFff8
+    color #050
+  [nuestro-validator=valida]
+    background-color #EEE
+    color #050
+  [nuestro-validator=actual]
+    background-color #FFF
+    > .encabezado
+      .MuiButton-outlined
+        border-color blue
+      .MuiInput-underline:after
+        border-bottom-color blue
+      .MuiInput-underline:before
+        border-bottom-color blue
+      &[debe-leer=SI]
+        color blue
+      [debe-leer=SI]
+        color blue
+  [nuestro-validator=omitida]
+    background repeating-linear-gradient(45deg, #fff, #fff 10px, #ff9 10px, #ff9 12px)
+    .MuiButton-outlined
+      border-color blue
+    .MuiInput-underline:after
+      border-bottom-color blue
+    .MuiInput-underline:before
+      border-bottom-color blue
+    &[debe-leer=SI]
+      color blue
+    [debe-leer=SI]
+      color blue
+  [nuestro-validator=fuera_de_flujo_por_salto]
+    boton-id-div()
+    background-image url("../img/fondo-salteado-error.png")
+    background-size 32px
+    background-repeat repeat
+  [nuestro-validator=invalida]
+    boton-id-div()
+    background repeating-linear-gradient(45deg, #eee, #eee 10px, #f99 10px, #f99 12px)
+  [esta-inhabilitada=SI]
+    &[ocultar-salteada=INHABILITAR]
+      &[tiene-valor=NO]
+        display none
+      &[nuestro-validator=calculada]
+        display none
+  [nuestro-validator=todavia_no]
+    &[ocultar-salteada=SI]
+      &[tiene-valor=NO]
+        display none
+    background-color #EEE
+    color #888
+  [nuestro-validator=calculada]
+    background-color #EEE
+    input
+      background-color #DDE
+      color black
+      font-weight bold
+  [nuestro-validator=salteada]
+    &[ocultar-salteada=SI]
+      &[tiene-valor=NO]
+        display none
+    background-image url("../img/fondo-salteado.png")
+    background-size 32px
+    background-repeat repeat
+  [nuestro-validator=fuera_de_flujo_por_omitida]
+    background repeating-linear-gradient(45deg, #eee, #eee 10px, #fcc 10px, #fcc 12px)
+    &[tiene-valor=SI]
+      boton-id-div()
+
+[modo-despliegue=estricto]
+  [nuestro-validator=salteada]
+    display none
+  [nuestro-validator=todavia_no]
+    display none
+
+[modo-despliegue=PDF]
+  background-color #fffff
+  [debe-leer=SI]
+    color blue
+
+[modo-despliegue=metadatos]
+  background-color #f8f8f8
+  [debe-leer=SI]
+    color blue
+  [los-metadatos]
+    display flex
+    font-size 80%
+    color #A0F
+    [el-metadato]
+      flex-shrink 1
+      margin 3px
+    [el-metadato=variable]
+      padding-left 4px
+      padding-right 4px
+      min-width 16px
+      border 1px solid gray
+
+.confirma-borrado
+  padding 8px
+  .confirma-botones
+    display flex
+    > *
+      margin 8px
+
+.formulario
+  > .casilleros
+    background-color #EEE
+
+.tem-domicilio
+  font-size 110%
+  color #000
+.atributo-par
+  margin-right 2px
+  .atributo-nombre
+    color #555
+  *
+    margin-right 2px
+.observaciones
+  font-size 95%
+
+.opcion
+  padding 6px
+  .id
+    font-weight bold
+    margin 4px
+
+[modo-despliegue=relevamiento]
+  .opcion
+    padding 6px
+    .id
+      border-radius 5px
+      color transparent
+      border 1px solid #555
+      font-weight bold
+      margin 4px
+      margin-top 12px
+      height 10px
+    [opcion-seleccionada="SI"]
+      .id
+        background-color #555
+
+.boton-confirmar-campo
+  .MuiButton-root
+    min-width 28px
+  .MuiButton-label
+    width 26px
+  button.MuiButton-outlinedSizeSmall
+    padding 3px
+  button.MuiButton-containedSizeSmall
+    padding 3px
+
+.bienvenida
+  padding 12px
+  max-width 760px
+
+[nuestro-bloque="LN"]
+  @media print
+    display none
+  @media (min-width 600px)
+    display none
+
+.informacion-carga
+  display flex
+  justify-content: space-between
+  font-size 120%
+  .fecha
+    font-weight bold
+
+.espacio-final-formulario
+  min-height 250px
+  background-color transparent
+
+.barra-navegacion
+  max-width 90%
+  .abr
+    @media (min-width 600px)
+      display none
+  .label
+    @media (max-width 599px)
+      display none
+  &[solo-lectura=si]
+    button.MuiButton-outlined.Mui-disabled
+      background-color #e87a8d
+      color #ffffff
+
+/*ESTILOS CACHE*/
+#cache-layout, #cache-log
+  clear both
+  position relative
+  z-index 9999999
+
+#cache-status
+  padding 0px 10px
+  margin 0px
+
+app-cache-version, #app-dm-version
+  padding 0px 8px
+
+#app-versions
+  padding 8px 0px
+  background-color transparent
+  color #f4f4f4
+  letter-spacing 1px
+  font-weight bold
+  position absolute
+  right 175px
+
+.danger
+  padding 0 5px
+  background-color #cb3837
+  color #ffffff
+
+.warning
+  padding 0 5px
+  background-color #FFD700
+  color #000000
+.all-ok
+  padding 0 5px
+  background-color #00AA15
+  color #ffffff
+/* FIN ESTILOS CACHE*/
+
+.MuiToolbar-root
+  button.MuiButton-outlined.Mui-disabled
+    border-color #FFF
+    color black
+    x-background-color rgba(63, 81, 181, 1);
+    background-color #7A8DE8
+
+.nuestro-dialogo
+  padding 8px
+
+.seccion-boton-formulario
+  svg
+    margin-left 8px
+
+.my-grid
+  .menu-item
+    padding 0px
+    padding-left 2px
+    padding-right 2px
+    border-radius 3px
+
+.nombre-version
+  display flex
+  justify-content space-between
+  font-size 80%
+
+.download-dm-button
+  font-size 120%
+  font-weight bold
+.download-dm-button-cont
+  font-size 120%
+  background-color #48F
+  border-radius 5px
+  color white
+  font-weight bold
+
+.tab-counter  
+  display inline-block
+  position fixed
+  top 0
+  left 0
+  z-index 9000
+
+.tab-error
+  font-weight: bold
+  background-color: #FB8
+
+[nuestro-g1="6"]
+  [nuestro-casillero=DV5]
+    display none
+  [nuestro-casillero=CP]
+    display none
+  [nuestro-casillero=P1]
+    display none
+  [nuestro-casillero=P2]
+    display none
+  [nuestro-casillero=P3]
+    display none
+  [nuestro-casillero=P4]
+    display none
+  [nuestro-bloque=LP]
+    display none
+  [nuestro-casillero=P9]
+    display none
+
+.formulario-consulta-resultados
+  padding 15px
+  max-width 800px
+  margin-top 75px //ajustado para /VER
+  .fields-container
+    margin 15px 0 15px
+    max-width 600px
+
+[nuestro-casillero=TF]
+  display none
+[nuestro-casillero=G1]
+  display none

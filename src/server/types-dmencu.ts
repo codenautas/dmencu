@@ -1,0 +1,53 @@
+
+export * from "backend-plus";
+import * as BackendPlus from "backend-plus";
+
+export type ProcedureDef = BackendPlus.ProcedureDef & {
+    definedIn?:string
+}
+
+export type MenuInfoBase = BackendPlus.MenuInfoBase;
+
+export interface Puedes{
+    puede:{
+        encuestas:{
+            relevar:boolean
+        },
+        lab_resultado:{
+            editar:boolean
+            ver:boolean
+        },
+        campo:{
+            editar:boolean
+            administrar:boolean
+        }
+        citas:{
+            programar:boolean
+        }
+    }
+    superuser?:true
+}
+
+export interface Context extends BackendPlus.Context, Puedes{}
+
+
+// export interface TableContext extends BackendPlus.TableContext, Puedes{}
+
+namespace BackendPlus{
+    interface TableContext2 extends Puedes{}
+    interface TableContext{
+        puede:{
+            encuestas:{
+                relevar:boolean
+            },
+            lab_resultado:{
+                editar:boolean
+                ver:boolean
+            },
+            campo:{
+                administrar:boolean
+            }
+        }
+        superuser?:true
+    }
+}

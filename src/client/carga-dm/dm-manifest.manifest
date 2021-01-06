@@ -1,0 +1,70 @@
+CACHE MANIFEST
+#0813b
+
+CACHE:
+#--------------------------- JS ------------------------------------
+../lib/react.production.min.js
+../lib/react-dom.production.min.js
+../lib/material-ui.production.min.js
+../lib/clsx.min.js
+../lib/redux.min.js
+../lib/react-redux.min.js
+../lib/require-bro.js
+../lib/like-ar.js
+../lib/best-globals.js
+../lib/json4all.js
+../lib/js-to-html.js
+../lib/redux-typed-reducer.js
+../lib/memoize-one.js
+../adapt.js
+../tipos.js
+../digitov.js
+../redux-formulario.js
+../render-general.js
+../render-formulario.js
+../client_modules/row-validator.js
+../unlogged.js
+../lib/js-yaml.js
+../lib/xlsx.core.min.js
+../lib/lazy-some.js
+../lib/sql-tools.js
+../dialog-promise/dialog-promise.js
+../moment/min/moment.js
+../pikaday/pikaday.js
+../lib/polyfills-bro.js
+../lib/big.js
+../lib/type-store.js
+../lib/typed-controls.js
+../lib/ajax-best-promise.js
+../my-ajax.js
+../my-start.js
+../lib/my-localdb.js
+../lib/my-websqldb.js
+../lib/my-localdb.js.map
+../lib/my-websqldb.js.map
+# NO VA ../lib/my-things.js
+# NO VA ../lib/my-tables.js
+../lib/my-inform-net-status.js
+# NO VA ../lib/my-menu.js
+../lib/my-skin.js
+../lib/cliente-en-castellano.js
+../client/client.js
+../client/menu.js
+
+#------------------------------ CSS ---------------------------------
+../dialog-promise/dialog-promise.css
+../pikaday/pikaday.css
+# NO VA ../css/my-things.css
+# NO VA ../css/my-tables.css
+# NO VA ../css/my-menu.css
+../css/offline-mode.css
+../css/formulario-react.css
+
+#------------------------------ IMAGES ---------------------------------
+../img/main-loading.gif
+
+FALLBACK:
+../menu* ../campo
+
+NETWORK:
+*

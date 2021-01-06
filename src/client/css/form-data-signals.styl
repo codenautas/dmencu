@@ -1,0 +1,68 @@
+[typed-controls-signal-no-data="1"]
+  input
+    background-color #F8F !important
+[typed-controls-signal-unknown-data="1"]
+  input
+    background-color #F8F !important
+
+.my-grid
+  .menu-item
+    padding 0px
+    padding-left 2px
+    padding-right 2px
+    border-radius 3px
+
+.my-grid    
+  [column-m_codificados]
+    background-color #44E
+  [column-m_codificados="0"]
+    background-color #FEE
+  [column-m_pendientes="0"]
+    background-color #6E6
+
+input
+  &[longitud-var="largo"]
+    min-width 400px
+    width 90%
+  &[longitud-var="medio"]
+    width 200px
+  &[longitud-var="8"]
+    width 130px
+  &[tipo-var="fecha"]
+    width 150px
+  &[tipo-var="hora"]
+    width 150px
+
+#CFSP
+  #P4[state-var="calculada"]
+    [display-is-active="0"]
+      display none
+#no_cod_comp > .hijos > .salto
+  display none
+    
+#no_cod_comp .salto
+  display none
+
+[row-validator-state="con problemas"]
+  .rel_button.devolver
+    background-color red
+    &:after
+      content " con problemas"
+[row-validator-state="incompleto"]
+  .rel_button.devolver
+    background-color orange
+    &:after
+      content " incompleto"
+[row-validator-state="ok"]
+  .rel_button.devolver
+    background-color lightgreen
+    &:after
+      content " ok"
+[row-validator-state="vacio"]
+  .rel_button.devolver
+    &:after
+      content " vacío"
+
+[my-colname="comp"] > [menu-type="proc"] .ya_no
+  border 2px solid black
+

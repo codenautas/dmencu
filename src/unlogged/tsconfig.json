@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "outDir": "../../dist/unlogged",
+        "moduleResolution": "node",
+        "inlineSourceMap": true,
+        "inlineSources": true,
+        "typeRoots" : ["node_modules/@types", "../../node_modules/types.d.ts/modules"],
+        "lib": ["es5", "dom"],
+        "jsx": "react"
+    },
+    "include":[
+        "."
+    ],
+    "extends": "../../tsconfig-common.json"
+}
