@@ -73,6 +73,8 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
         parentProc = parentProc.filter((procedure:any) => !procedimientoAReemplazar.includes(procedure.action));
         return parentProc.concat(ProceduresDmEncu);
     }
+    async checkDatabaseStructure(_client:Client){
+    }
     addSchrödingerServices(mainApp:procesamiento.Express, baseUrl:string){
         let be=this;
         super.addSchrödingerServices(mainApp, baseUrl);

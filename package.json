@@ -8,9 +8,7 @@
   "main": "dist/server/server-dmencu.js",
   "types": "dist/server/app-dmencu.d.ts",
   "files": [
-    "dist",
-    "install",
-    "unlogged"
+    "dist"
   ],
   "dependencies": {
     "@material-ui/core": "~4.11.0",

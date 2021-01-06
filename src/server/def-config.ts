@@ -49,7 +49,12 @@ install:
       - upd_operacion_area_tem_trg.sql
       - sincronizacion_tem.sql
 login:
-  infoFieldList: [usuario, idper, rol]
+  infoFieldList: [usu_usu, usu_rol, usu_rol_secundario]
+  table: usuarios
+  userFieldName: usu_usu
+  passFieldName: usu_clave
+  rolFieldName: usu_rol
+  activeClausule: usu_activo
   plus:
     maxAge-5-sec: 5000    
     maxAge: 864000000
