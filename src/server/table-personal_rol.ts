@@ -3,7 +3,7 @@
 import {TableDefinition, TableContext} from "./types-dmencu";
 
 export function personal_rol(context:TableContext):TableDefinition {
-    var esEditable = context.user.rol==='admin' || context.puede.configurar.editar; 
+    var esEditable = context.user.rol==='admin' || context.puede?.configurar.editar; 
     return {
         name: 'personal_rol',
         elementName: 'rol de la persona',

@@ -287,7 +287,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
     }
     getMenu(context:Context){
         let menu:MenuInfoBase[] = [];
-        if(context.puede.encuestas.relevar && this.config['client-setup'].para_dm){
+        if(context.puede?.encuestas.relevar && this.config['client-setup'].para_dm){
             if(this.config['client-setup'].ambiente=='demo' || this.config['client-setup'].ambiente=='test' || this.config['client-setup'].ambiente=='capa'){
                 menu.push({menuType:'demo', name:'demo', selectedByDefault:true})
             }else{
@@ -476,13 +476,13 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                 {name:'id_caso', typeName:'text'   , label:'caso'   , editable: false},
                // {name:'p0'     , typeName:'integer', label:'persona', editable: false}
             );
-            tableDef.editable=tableDef.editable || context.puede.encuestas.justificar;
+            tableDef.editable=tableDef.editable || context.puede?.encuestas.justificar;
             tableDef.fields.forEach(function(field){
                 if(field.name=='pk_integrada'){
                     field.visible=false;
                 }
                 if(field.name=='justificacion'){
-                    field.editable=context.forDump || context.puede.encuestas.justificar;
+                    field.editable=context.forDump || context.puede?.encuestas.justificar;
                 }
             })
         })

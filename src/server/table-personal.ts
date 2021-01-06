@@ -5,7 +5,7 @@ import { FieldDefinition } from "rel-enc";
 import * as likeAr from "like-ar";
 
 export function personal(context:TableContext, opts:{rol:string, name:string}|null):TableDefinition {
-    var esEditable = context.user.rol === 'admin'||context.puede.configurar.editar;
+    var esEditable = context.user.rol === 'admin'||context.puede?.configurar.editar;
     var fields:FieldDefinition[]=[
         { name: "persona"       , typeName: "text" , originalName:"idper"},
         { name: "nombre"        , typeName: "text"    ,isName:true},
