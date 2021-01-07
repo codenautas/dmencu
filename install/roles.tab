@@ -1,0 +1,14 @@
+rol           |superuser|nombre
+admin         |true     |Administrador
+direccion     |false    |Dirección
+coor_campo    |false    |Coordinador de Campo
+jefe_equipo   |false    |Jefe de Equipo
+relevador     |false    |Relevador
+dis_conceptual|false    |Diseño Conceptual
+recepcionista |false    |Recepcionista
+procesamiento |false    |Procesamiento
+jefe_lab      |false    |Jefe de laboratorio
+lab           |false    |Laboratorio
+comunicacion  |false    |Comunicacion
+auxiliar      |false    |Auxiliar de campo
+sensibilizador|false    |Sensibilizador

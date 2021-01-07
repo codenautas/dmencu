@@ -4,7 +4,7 @@ import {TableDefinition, TableContext} from "./types-dmencu";
 
 export function etiquetas(context:TableContext):TableDefinition {
     var admin = context.user.rol==='admin';
-    var esCoor = context.forDump || context.puede.campo.administrar;
+    var esCoor = context.forDump || context.puede?.campo?.administrar;
     return {
         name:'etiquetas',
         elementName:'etiqueta',

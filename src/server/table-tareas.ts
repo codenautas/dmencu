@@ -6,7 +6,7 @@ export function tareas(context:TableContext, opts:any):TableDefinition {
     var opts=opts||{};
     var mis=opts.mis?'mis_':'';
     var be=context.be;
-    var puedeEditar = context.forDump || context.puede.campo.administrar||context.user.rol==='recepcionista';
+    var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';
     return {
         name:`${mis}tareas`,
         tableName:`tareas`,

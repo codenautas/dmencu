@@ -3,7 +3,7 @@
 import {TableDefinition, TableContext} from "./types-dmencu";
 
 export function no_rea(context:TableContext):TableDefinition {
-    var puedeEditar = context.forDump || context.puede.campo.administrar||context.user.rol==='recepcionista';
+    var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';
     return {
         name:'no_rea',
         elementName:'no_rea',

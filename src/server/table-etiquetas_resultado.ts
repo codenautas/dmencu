@@ -6,7 +6,7 @@ import { FieldDefinition } from "rel-enc";
 export function etiquetas_resultado(context:TableContext, opts:null|{all:boolean, name:string}):TableDefinition {
     var be=context.be;
     var admin = context.user.rol==='admin';
-    var puedeAvisar = context.forDump || context.puede.lab_resultado.avisar && !admin;
+    var puedeAvisar = context.forDump || context.puede?.lab_resultado?.avisar && !admin;
     return {
         name:opts && opts.name || 'etiquetas_resultado',
         elementName:'etiqueta',

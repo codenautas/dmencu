@@ -6,7 +6,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
     var opts=opts||{};
     var recepcion=opts.recepcion?'_recepcion':'';
     var be=context.be;
-    var puedeEditar = context.forDump || context.puede.campo.administrar||context.user.rol==='recepcionista';
+    var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';
 
     var columnasAreasParaLaTem=['obs_recepcionista','verificado_rec','recepcionista'];
 
@@ -145,7 +145,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
     };
     const q=context.be.db.quoteIdent;
     def.sql= {
-            //isTable:!opts.recepcion, //TODO: resolver como sacarlo del dump
+            isTable:!opts.recepcion, //TODO: resolver como sacarlo del dump
             isReferable:true,
             from:`
                 (select

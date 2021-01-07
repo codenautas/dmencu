@@ -5,7 +5,7 @@ import {TableDefinition, TableContext} from "./types-dmencu";
 export function resultados_test(context:TableContext, opts:null|{all:boolean, name:string}):TableDefinition {
     var be=context.be;
     var admin = context.user.rol==='admin';
-    var puedeAvisar = context.forDump || context.puede.lab_resultado.avisar && !admin;
+    var puedeAvisar = context.forDump || context.puede?.lab_resultado?.avisar && !admin;
     return {
         name: 'resultados_test',
         elementName:'resultado_test',

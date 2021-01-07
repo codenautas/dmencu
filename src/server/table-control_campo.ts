@@ -17,7 +17,7 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
     opts.agrupado = opts.agrupado ?? false
     var be=context.be;
     var db=be.db;
-    var puedeEditar = context.forDump || context.puede.campo.administrar||context.user.rol==='recepcionista';
+    var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';
     var camposCorte:FieldDefinition[]=[{name:'cluster'       , typeName:'integer'},...(
         opts.camposCorte ||[
             {name:'tipo_domicilio', typeName:'bigint'}

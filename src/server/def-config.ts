@@ -7,9 +7,10 @@ db:
   motor: postgresql
   host: localhost
   database: dmencu_db
-  schema: encu
+  schema: base
   user: dmencu_user
   search_path: 
+  - base
   - encu
   - comun
 install:
@@ -55,6 +56,8 @@ login:
   passFieldName: usu_clave
   rolFieldName: usu_rol
   activeClausule: usu_activo
+  lockedClausule: not usu_activo
+  schema: encu
   plus:
     maxAge-5-sec: 5000    
     maxAge: 864000000

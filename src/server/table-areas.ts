@@ -4,7 +4,7 @@ import {TableDefinition, TableContext} from "./types-dmencu";
 
 export function areas(context:TableContext):TableDefinition {
     var be=context.be;
-    var puedeEditar = context.forDump || context.puede.campo.administrar||context.user.rol==='recepcionista';
+    var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';
     return {
         name:'areas',
         elementName:'area',

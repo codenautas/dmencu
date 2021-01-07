@@ -3,7 +3,7 @@
 import {TableDefinition, TableContext} from "./types-dmencu";
 
 export function mis_relevadores(context:TableContext):TableDefinition {
-    var puedeEditar = context.forDump || context.puede.campo.administrar||context.user.rol==='recepcionista';
+    var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';
     return {
         name:'mis_relevadores',
         elementName:'relevador',

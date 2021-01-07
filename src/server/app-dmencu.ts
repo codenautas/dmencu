@@ -267,10 +267,10 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
         var be = this;
         var fatherContext = super.getContext(req);
         if(fatherContext.user){
-            if(be.permisosRol[req.user.rol].superuser){
+            if(be.permisosRol[req.user.rol]?.superuser){
                 return {superuser:true, puede: be.permisosSuperuser, ...fatherContext}
             }else{
-                return {puede: be.permisosRol[req.user.rol].puede, ...fatherContext}
+                return {puede: be.permisosRol[req.user.rol]?.puede, ...fatherContext}
             }
         }
         return {puede:be.permisosParaNadie, ...fatherContext};
@@ -297,9 +297,9 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                 {menuType:'sincronizar_dm', name:'sincronizar'},
             );
         }
-        if(context.puede.lab_resultado.editar || context.puede.lab_resultado.ver){
+        if(context.puede?.lab_resultado?.editar || context.puede?.lab_resultado?.ver){
             let menuContent=[];
-            if(context.puede.lab_resultado.editar && !context.superuser){
+            if(context.puede?.lab_resultado?.editar && !context.superuser){
                 menuContent.push(
                     {menuType:'proc', name:'laboratorio_ingresar' , label:'recepción muestra'}
                 )
@@ -307,12 +307,12 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                     {menuType:'proc', name:'resultado_cargar'    , label:'carga resultado'}
                 )
             }
-            if(context.puede.lab_resultado.ver){
+            if(context.puede?.lab_resultado?.ver){
                 menuContent.push(
                     {menuType:'resultados_ver', name:'resultados_ver',  label:'ver resultados'},
                 )
             }
-            if(context.puede.lab_resultado.editar){
+            if(context.puede?.lab_resultado?.editar){
                 if(!context.superuser){
                     menuContent.push(
                         {menuType:'proc', name:'resultado_rectificar', label:'rectificar resultado'},
@@ -326,7 +326,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                 {menuType:'menu', name:'laboratorio', menuContent}
             ]
         }
-        if(context.puede.campo.editar){
+        if(context.puede?.campo?.editar){
             menu.push(
                 {menuType:'menu', name:'recepcion', label:'recepción' ,menuContent:[
                     //{menuType:'carga_recepcionista', name:'cargar'},
@@ -359,7 +359,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                 ]},            
             )
         }
-        if(context.puede.citas?.programar){
+        if(context.puede?.citas?.programar){
             //menu.push(
             //    {menuType:'menu', name:'citas' ,menuContent:[
             //        //{menuType:'carga_recepcionista', name:'cargar'},

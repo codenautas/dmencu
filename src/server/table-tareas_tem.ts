@@ -8,7 +8,7 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
     var mis=opt.mis?'mis_':'';
     var be=context.be;
     var db=be.db;
-    var puedeEditar = context.forDump || context.puede.campo.administrar||context.user.rol==='recepcionista';
+    var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';
     var fields:FieldDefinition[]=[
         {name:'tarea'    , typeName:'text', isPk:1},
         {name:'operativo', typeName:'text', isPk:2},
