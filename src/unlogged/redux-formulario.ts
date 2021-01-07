@@ -821,7 +821,7 @@ export async function traerEstructura(params:{operativo: string}){
     var casillerosOriginales:{} = await my.ajax.operativo_estructura(params);
     //TODO: GENERALIZAR
     //@ts-ignore
-    casillerosOriginales['F:F2_personas']=casillerosOriginales['F:F2'].childs.find(casillero=>casillero.data.casillero=='LP');
+    // casillerosOriginales['F:F2_personas']=casillerosOriginales['F:F2'].childs.find(casillero=>casillero.data.casillero=='LP');
     //@ts-ignore
     var casillerosTodosFormularios:{[f in IdFormulario]:{casilleros:Formulario, estructuraRowValidator:EstructuraRowValidator}}=
         likeAr(casillerosOriginales).map(
