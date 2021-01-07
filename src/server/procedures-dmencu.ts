@@ -61,34 +61,33 @@ type AnyObject = {[k:string]:any}
 var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
     return `
         with viviendas as 
-            (select enc, t.json_encuesta as respuestas, t.resumen_estado as "resumenEstado", 
+            (select pla_enc as enc, '{}'::jsonb as respuestas, null as "resumenEstado", 
                 jsonb_build_object(
-                    'nomcalle'      , nomcalle      ,
-                    'sector'        , sector        ,
-                    'edificio'      , edificio      ,
-                    'entrada'       , entrada       ,
-                    'nrocatastral'  , nrocatastral  ,
-                    'piso'          , piso          ,
-                    'departamento'  , departamento  ,
-                    'habitacion'    , habitacion    ,
-                    'casa'          , casa          ,
-                    'prioridad'     , reserva+1     ,
-                    'observaciones' , tt.carga_observaciones ,
-                    'cita'          , cita ,
-                    'carga'         , t.area         
+                    'nomcalle'      , null      ,
+                    'sector'        , null        ,
+                    'edificio'      , null      ,
+                    'entrada'       , null       ,
+                    'nrocatastral'  , null  ,
+                    'piso'          , null          ,
+                    'departamento'  , null  ,
+                    'habitacion'    , null    ,
+                    'casa'          , null          ,
+                    'prioridad'     , 1     ,
+                    'observaciones' , null ,
+                    'cita'          , null ,
+                    'carga'         , null
                 ) as tem, t.area,
                 tt.visitas,
                 --TODO: GENERALIZAR
                 jsonb_object_agg(coalesce(tarea,'rel'),jsonb_build_object(
-					'tarea', tarea,
-					'notas', notas,
-					'fecha_asignacion', fecha_asignacion,
-					'asignado', asignado
+					'tarea', null,
+					'notas', null,
+					'fecha_asignacion', null,
+					'asignado', null
 				)) as tareas,
                 min(fecha_asignacion) as fecha_asignacion
-                from tem t join tareas_tem tt using (operativo, enc)
-                where ${quotedCondViv}
-                group by t.enc, t.json_encuesta, t.resumen_estado, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area, tt.visitas
+                from plana_tem
+                where  -- ${quotedCondViv}                
             )
             select ${jsono(`select enc, respuestas, "resumenEstado", tem, tareas, coalesce(visitas,'[]') as visitas from viviendas`, 'enc')} as hdr,
                 ${json(`
