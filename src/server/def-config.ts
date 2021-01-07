@@ -8,7 +8,7 @@ db:
   host: localhost
   database: dmencu_db
   schema: base
-  user: dmencu_user
+  user: tedede_php
   search_path: 
   - base
   - encu
@@ -16,7 +16,7 @@ db:
 install:
   dump:
     db:
-      owner: dmencu_owner
+      owner: tedede_owner
       apply-generic-user-replaces: true
     admin-can-create-tables: true
     enances: inline
@@ -50,7 +50,7 @@ install:
       - upd_operacion_area_tem_trg.sql
       - sincronizacion_tem.sql
 login:
-  infoFieldList: [usu_usu, usu_rol, usu_rol_secundario]
+  infoFieldList: [usu_usu, usu_rol, usu_rol as rol, usu_rol_secundario]
   table: usuarios
   userFieldName: usu_usu
   passFieldName: usu_clave
@@ -92,4 +92,5 @@ client-setup:
   deviceWidthForMobile: device-width
   user-scalable: no
   grid-buffer: wsql
+  para_dm: true
 `

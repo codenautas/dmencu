@@ -287,7 +287,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
     }
     getMenu(context:Context){
         let menu:MenuInfoBase[] = [];
-        if(context.puede?.encuestas.relevar && this.config['client-setup'].para_dm){
+        if((context.puede?.encuestas.relevar || "TODO: CORREGIR, POR AHORA TODOS PUEDEN") && this.config['client-setup'].para_dm){
             if(this.config['client-setup'].ambiente=='demo' || this.config['client-setup'].ambiente=='test' || this.config['client-setup'].ambiente=='capa'){
                 menu.push({menuType:'demo', name:'demo', selectedByDefault:true})
             }else{

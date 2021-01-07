@@ -1032,13 +1032,6 @@ export function DesplegarCitaPactada(props:{respuestas:Respuestas}){
 export function DesplegarCitaPactadaYSeleccionadoAnteriorTem(props:{tem:TEM}){
     const {tem} = props;
     return <div>
-        {tem.seleccionado_anterior?
-            <div className="tem-seleccionado-anterior">
-                <span className="atributo-nombre">Seleccionado: {tem.seleccionado_anterior.nombre} {tem.seleccionado_anterior.apellido} {tem.seleccionado_anterior.celular} {tem.seleccionado_anterior.numero_linea_vivienda} {tem.seleccionado_anterior.tel_alternativo} {tem.seleccionado_anterior.email} {tem.seleccionado_anterior.sexo} {tem.seleccionado_anterior.edad} </span>
-            </div>
-        :
-            null
-        }
         <div className="tem-cita">
             <Atributo nombre="Cita:" valor={tem.cita}/>
         </div>

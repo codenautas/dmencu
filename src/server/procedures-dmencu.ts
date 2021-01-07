@@ -74,7 +74,6 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
                     'casa'          , casa          ,
                     'prioridad'     , reserva+1     ,
                     'observaciones' , tt.carga_observaciones ,
-                    'seleccionado_anterior', seleccionado_anterior,
                     'cita'          , cita ,
                     'carga'         , t.area         
                 ) as tem, t.area,
@@ -89,7 +88,7 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
                 min(fecha_asignacion) as fecha_asignacion
                 from tem t join tareas_tem tt using (operativo, enc)
                 where ${quotedCondViv}
-                group by t.enc, t.json_encuesta, t.resumen_estado, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, seleccionado_anterior, cita, t.area, tt.visitas
+                group by t.enc, t.json_encuesta, t.resumen_estado, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area, tt.visitas
             )
             select ${jsono(`select enc, respuestas, "resumenEstado", tem, tareas, coalesce(visitas,'[]') as visitas from viviendas`, 'enc')} as hdr,
                 ${json(`

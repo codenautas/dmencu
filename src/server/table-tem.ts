@@ -50,7 +50,6 @@ export function tem(context:TableContext, opts:any):TableDefinition {
             {name:'sp5_hora'             , typeName:'text'    , editable: false , inTable: false},
             {name:'sp6'                  , typeName:'bigint'  , editable: false , inTable: false},
             {name:'seleccionado'         , typeName:'bigint'  , editable: false  },
-            {name:'seleccionado_anterior_resumen', typeName:'text'   , editable: false, inTable:false  },
             {name:'cita'                 , typeName:'text'    , editable: puedeEditar },
             {name:'sexo_sel'             , typeName:'bigint'  , editable: false  },
             {name:'edad_sel'             , typeName:'bigint'  , editable: false  },
@@ -160,15 +159,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
                     ,json_encuesta->>'sp4' sp4_fecha 
                     ,json_encuesta->>'sp5' sp5_hora 
                     ,(json_encuesta->>'sp6')::bigint  sp6
-                    ,nullif(coalesce(seleccionado_anterior->>'nombre'|| ' ','') || 
-                    coalesce(seleccionado_anterior->>'apellido'|| ' ','') || 
-                    coalesce(seleccionado_anterior->>'celular'|| ' ','') || 
-                    coalesce(seleccionado_anterior->>'numero_linea_vivienda'|| ' ','') || 
-                    coalesce(seleccionado_anterior->>'tel_alternativo'|| ' ','') || 
-                    coalesce(seleccionado_anterior->>'email'|| ' ','') || 
-                    coalesce(seleccionado_anterior->>'sexo'|| ' ','') || 
-                    coalesce(seleccionado_anterior->>'edad'|| ' ',''),'') as seleccionado_anterior_resumen,
-                    tt.notas
+                    , tt.notas
                     ${opts.recepcion? columnasNoRea.map(v=>'\n     , '+ v.expr +' as '+ v.name).join('') :''}
                     from tem t left join tareas_tem tt on t.operativo=tt.operativo and t.enc=tt.enc and tt.tarea='rel'
                 )
