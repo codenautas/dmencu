@@ -270,6 +270,8 @@ function calcularFeedback(state: CasoState, forPk?:ForPk|null):CasoState{
     var tipo_relevamiento = 'tipo_relevamiento' as IdVariable;
     var vivienda = forPk.vivienda;
     var respuestas = state.datos.hdr[vivienda].respuestas;
+    // TODO: RESTAURAR LAS RESPUESTAS
+    respuestas = null;
     if(respuestas){
         var nuevosRows = likeAr([
             {forPk:{vivienda, formulario:'F:F1' as IdFormulario}, formulario:'F:F1' as IdFormulario, post:null},

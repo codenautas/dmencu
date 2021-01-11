@@ -63,36 +63,38 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
         with viviendas as 
             (select pla_enc as enc, '{}'::jsonb as respuestas, null as "resumenEstado", 
                 jsonb_build_object(
-                    'nomcalle'      , null      ,
-                    'sector'        , null        ,
-                    'edificio'      , null      ,
-                    'entrada'       , null       ,
-                    'nrocatastral'  , null  ,
-                    'piso'          , null          ,
-                    'departamento'  , null  ,
-                    'habitacion'    , null    ,
-                    'casa'          , null          ,
-                    'prioridad'     , 1     ,
-                    'observaciones' , null ,
-                    'cita'          , null ,
-                    'carga'         , null
-                ) as tem, t.area,
-                tt.visitas,
+                    'nomcalle'      , pla_cnombre ,
+                    'sector'        , pla_sector  ,
+                    'edificio'      , pla_edificio ,
+                    'entrada'       , pla_entrada  ,
+                    'nrocatastral'  , pla_hn       ,
+                    'piso'          , pla_hp       ,
+                    'departamento'  , pla_hd       ,
+                    'habitacion'    , pla_hab      ,
+                    'casa'          , pla_casa     ,
+                    'prioridad'     , 1            ,
+                    'observaciones' , pla_obs      ,
+                    'cita'          , null         ,
+                    'carga'         , pla_area
+                ) as tem, t.pla_area as area,
+                pla_obs as observaciones_hdr,
+                '[]'::jsonb as visitas,
                 --TODO: GENERALIZAR
-                jsonb_object_agg(coalesce(tarea,'rel'),jsonb_build_object(
-					'tarea', null,
+                -- jsonb_object_agg(coalesce(tarea,'rel'),jsonb_build_object(
+                jsonb_build_object('rel',jsonb_build_object(
+					'tarea', 'rel',
 					'notas', null,
 					'fecha_asignacion', null,
 					'asignado', null
 				)) as tareas,
-                min(fecha_asignacion) as fecha_asignacion
-                from plana_tem
-                where  -- ${quotedCondViv}                
+                /*min(fecha_asignacion)*/ null::date as fecha_asignacion
+                from plana_tem_ t
+                where pla_area=1300 /* ${quotedCondViv} */
             )
             select ${jsono(`select enc, respuestas, "resumenEstado", tem, tareas, coalesce(visitas,'[]') as visitas from viviendas`, 'enc')} as hdr,
                 ${json(`
                     select area as carga, observaciones_hdr as observaciones, min(fecha_asignacion) as fecha
-                        from viviendas inner join areas using (area) 
+                        from viviendas -- inner join areas using (area) 
                         group by area, observaciones_hdr`, 
                     'fecha')} as cargas
     `
@@ -448,7 +450,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
                     }
                 }).array());
             }
-            var {row} = await context.client.query(getHdrQuery(condviv),[OPERATIVO,context.user.idper]).fetchUniqueRow();
+            var {row} = await context.client.query(getHdrQuery(condviv),[/*OPERATIVO,context.user.idper*/]).fetchUniqueRow();
             await context.client.query(
                 `update tareas_tem tt
                     set  cargado_dm=$3
