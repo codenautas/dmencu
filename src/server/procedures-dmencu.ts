@@ -17,8 +17,8 @@ var discrepances = require('discrepances');
 //NO SE USA MAS, ahora en tabla resultados_test
 //const  ResultadosLaboratorio = ['Positivo', 'Negativo', 'Indeterminado','Escasa muestra']; 
 
-const OPERATIVO = 'DMENCU';
-const OPERATIVO_ETIQUETAS = 'DMENCU203';
+const OPERATIVO = 'etoi211';
+const OPERATIVO_ETIQUETAS = 'etoi211';
 const formPrincipal = 'F:F1';
 const MAIN_TABLENAME ='viviendas';
 
@@ -542,7 +542,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
         ],
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             const DGEyC = "DGEyC";
-            const OPERATIVO = "DMENCU203";
+            const OPERATIVO = "etoi211";
             var {rows:etiquetas} = await context.client.query(
                 `SELECT 'DGEyC' as dgeyc, * FROM etiquetas WHERE plancha BETWEEN $1 AND $2 ORDER BY plancha, etiqueta`,
                 [parameters.desde, parameters.hasta||parameters.desde]

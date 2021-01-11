@@ -83,11 +83,11 @@ login:
     lockedFail: el usuario se encuentra bloqueado
     inactiveFail: es usuario está marcado como inactivo
 client-setup:
-  title: DMENCU
+  title: etoi211
   cursors: true
   lang: es
   menu: true
-  operativo: DMENCU
+  operativo: etoi211
   background-img: ../img/background-test.png
   deviceWidthForMobile: device-width
   user-scalable: no

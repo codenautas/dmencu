@@ -3,6 +3,7 @@ import { CasilleroBase, CasillerosImplementados, CasoState,
     DatosVivienda, EstadoCarga, EstructuraRowValidator, 
     FeedbackVariable, Formulario, ForPk, 
     IdCarga, IdCasillero, IdCaso, IdDestino, IdFin, IdFormulario, IdTarea, IdVariable, 
+    InfoFormulario, 
     ModoDespliegue, 
     Opcion, PlainForPk, Respuestas, ResumenEstado,
     Tareas, TareasEstructura, TEM, Visita
@@ -19,7 +20,7 @@ var my=myOwn;
 
 export const MAXCP=20;
 // TODO: Generalizar
-const OPERATIVO='DMENCU';
+const OPERATIVO='etoi211';
 var dv1 = 'dv1' as IdVariable;
 var dv4 = 'dv4' as IdVariable;
 var dv5 = 'dv5' as IdVariable;
@@ -270,9 +271,14 @@ function calcularFeedback(state: CasoState, forPk?:ForPk|null):CasoState{
     var tipo_relevamiento = 'tipo_relevamiento' as IdVariable;
     var vivienda = forPk.vivienda;
     var respuestas = state.datos.hdr[vivienda].respuestas;
-    // TODO: RESTAURAR LAS RESPUESTAS
-    respuestas = null;
     if(respuestas){
+        var nuevosRows = likeAr([
+            ...likeAr(state.estructura.formularios).map((_, id)=>({
+                forPk:{vivienda, formulario:id},
+                formulario:id,
+                post:null
+            })).array()
+        /*
         var nuevosRows = likeAr([
             {forPk:{vivienda, formulario:'F:F1' as IdFormulario}, formulario:'F:F1' as IdFormulario, post:null},
             {forPk:{vivienda, formulario:'F:F2' as IdFormulario}, formulario:'F:F2' as IdFormulario, post:null},
@@ -284,11 +290,12 @@ function calcularFeedback(state: CasoState, forPk?:ForPk|null):CasoState{
             }).map(persona=>({forPk:{vivienda, formulario:'F:F2' as IdFormulario, persona}, formulario:'F:F2_personas' as IdFormulario, 
                 post:true
             }))
+        */
         ]).build(({forPk, formulario, post})=>{
             var respuestasUnidadAnalisis;
             var respuestasVivienda=state.datos.hdr[forPk.vivienda].respuestas;
             // TODO: GENERALIZAR:
-            if('persona' in forPk && forPk.persona!=null){
+            /*if('persona' in forPk && forPk.persona!=null){
                 // @ts-ignore exite
                 respuestasUnidadAnalisis={...respuestasVivienda.personas[forPk.persona-1]};
                 try{
@@ -297,7 +304,7 @@ function calcularFeedback(state: CasoState, forPk?:ForPk|null):CasoState{
                         tipo_relevamiento:{ get:function(){ return respuestasVivienda[tipo_relevamiento]}, enumerable:false},
                     });
                 }finally{}
-            }else{
+            }else*/{
                 respuestasUnidadAnalisis=respuestasVivienda;
             }
             var estructura=state.estructura.formularios[formulario].estructuraRowValidator;
@@ -824,20 +831,27 @@ export async function traerEstructura(params:{operativo: string}){
     //TODO: GENERALIZAR
     //@ts-ignore
     // casillerosOriginales['F:F2_personas']=casillerosOriginales['F:F2'].childs.find(casillero=>casillero.data.casillero=='LP');
+    var mainForm:IdFormulario|undefined;
     //@ts-ignore
     var casillerosTodosFormularios:{[f in IdFormulario]:{casilleros:Formulario, estructuraRowValidator:EstructuraRowValidator}}=
         likeAr(casillerosOriginales).map(
-            (casillerosJerarquizados:any)=>{
+            (casillerosJerarquizados:any, id)=>{
                 var casillerosAplanados:CasillerosImplementados = aplanarLaCurva(casillerosJerarquizados);
+                if(casillerosAplanados.tipoc=='F' && casillerosAplanados.formulario_principal){
+                    mainForm=id;
+                }
                 return {
                     casilleros: casillerosAplanados,
                     estructuraRowValidator: generarEstructuraRowValidator(casillerosAplanados)
                 }
             }
         ).plain();
+    if(mainForm==null){
+        throw new Error('falta definir el formulario principal');
+    }
     var estructura={
         formularios:casillerosTodosFormularios,
-        mainForm:MAIN_FORM,
+        mainForm,
         tareas:{} as TareasEstructura
     };
     return estructura;
@@ -850,134 +864,10 @@ export async function dmTraerDatosFormulario(opts:{modoDemo:boolean, vivienda?: 
         var initialState:CasoState={
             estructura,
             datos:{
-                cargas:{
-                    // @ts-expect-error tengo que agregar toDmy en los tipos
-                    "2020-07-07":{fecha:bestGlobals.date.iso("2020-07-07").toDmy(), observaciones:'lugar de entrega: Hospital San Martín. Ascasubi 333'},
-                    // @ts-expect-error tengo que agregar toDmy en los tipos
-                    "2020-07-08":{fecha:bestGlobals.date.iso("2020-07-08").toDmy(), observaciones:'lugar de entrega: Hospital San Martín. Ascasubi 333'}
-                },
-                hdr:{
-                    '10901':{
-                        tareas:{
-                            'rel':{
-                                tarea:'rel',
-                                notas: 'una nota'
-                            },
-                            'sup':{
-                                tarea:'sup',
-                                notas: 'otra nota'
-                            },
-                        },
-                        tem:{
-                            observaciones:'Ejemplo de relevamiento vacío', carga:"2020-07-07",
-                            nomcalle:'Bolivar', nrocatastral:'541', piso:'6', departamento:'C'
-                        } as TEM,
-                        // @ts-ignore
-                        respuestas:{personas:[]}
-                    },
-                    '10902':{
-                        tareas:{
-                            'rel':{
-                                tarea:'rel',
-                                notas: 'una nota'
-                            },
-                        } as Tareas,
-                        tem:{
-                            observaciones:'Otro ejemplo vacío', carga:"2020-07-07",
-                            nomcalle:'Bolivar', nrocatastral:'541', piso:'3', departamento:'B'
-                        } as TEM,
-                        // @ts-ignore
-                        respuestas:{personas:[]}
-                    },
-                    '10904':{
-                        tareas:{
-                            'sen':{
-                                tarea:'sen',
-                                notas: 'una nota'
-                            },
-                            'sup':{
-                                tarea:'sup',
-                                notas: 'otra nota'
-                            },
-                        },
-                        respuestas:{
-                            "dv1":"1","dv2":"1/7/2020","dv4":"2"
-                            ,personas:[{}],
-                        } as unknown as Respuestas,
-                        tem:{observaciones:'Ejemplo incompleto listo para cargar personas',carga:"2020-07-08", nomcalle:'Bolivar', nrocatastral:'531' } as TEM
-                    },
-                    '13303':{
-                        tareas:{
-                            'rel':{
-                                tarea:'rel',
-                                notas: 'una nota'
-                            },
-                        },
-                        tem:{
-                            observaciones:'Ejemplo incompleto con 3 miembros cargados',carga:"2020-07-08",
-                            nomcalle:'Bolivar', nrocatastral:'593', piso:'3', departamento:'B',
-                            edificio:'SUR', sector:'2'
-                        } as TEM,
-                        respuestas:{
-                            // @ts-ignore
-                            "personas":[{"p1":"Carolina","p2":"2","p3":"33","p4":"1"},{"p1":"Alfonso","p2":"1","p3":"72","p4":"1"},{"p1":"Berta","p3":"68","p2":"2","p4":"1"}],"dv1":"1","dv2":"1/7/2020","dv4":"2","cp":"3","_personas_incompletas":0
-                        }
-                    },
-                    '13308':{
-                        tareas:{
-                            'sen':{
-                                tarea:'sen',
-                                notas: 'otra nota'
-                            },
-                        },
-                        tem:{
-                            observaciones:'Ejemplo de relevamiento terminado',carga:"2020-07-07",
-                            nomcalle:'Bolivar', nrocatastral:'541', piso:'PB', departamento:'A',
-                        } as TEM,
-                        respuestas:{
-                            // @ts-ignore
-                            "personas":[{"p1":"Carolina","p2":"2","p3":"33","p4":"1"},{"p1":"Alfonso","p2":"1","p3":"72","p4":"1"},{"p1":"Berta","p3":"68","p2":"2","p4":"1"},{"p1":"Lucas","p4":null,"p2":"1","p3":"12"}],"p11":1,"p12":"Carolina","dv1":"1","dv2":"1/7/2020","dv4":"2","cp":4,"_personas_incompletas":0,"p9":"1","s1":"1","s2":"1","s3":"1","d1":"1","d2":"1","d4":"2","d5c":null,"d6_1":"2","d6_2":"2","d6_3":"2","d6_4":"1","d6_5":"2","d6_6":"2","d6_7":"2","d6_8":"2","d6_9":"2","a1_1":"2","a1_2":"2","a1_3":"2","a1_4":"2","a1_5":"2","a2":"2","a3":"2","a4":"159","a5":"59","cv1":"2","cv3":"1","cv4_1":2,"cv4_2":2,"cv4_3":2,"cv4_4":2,"cv4_5":2,"cv4_6":1,"t1":"1","t2_1":"2","t2_2":"2","t2_3":"2","t2_4":"2","t2_5":"2","t2_6":"1","t2_7":"2","t2_8":"2","t3":"2","e1":"Carolina Martinez","e2":"1","e6":"34567890","c1":"15-16171819","c2":"preuba@prueba.com","fin":null,"_edad_maxima":72,"_edad_minima":12,"c5":"1234-56","c4":null,"d5":"9","d12":"1"
-                        }
-                    },
-                    '13309':{
-                        tareas:{
-                            'rel':{
-                                tarea:'rel',
-                                notas: 'una nota'
-                            },
-                            'sup':{
-                                tarea:'sup',
-                                notas: 'otra nota'
-                            },
-                        },
-                        tem:{
-                            observaciones:'Ejemplo incompleto y avanzado',carga:"2020-07-07",
-                            nomcalle:'Bolivar', nrocatastral:'609',
-                        } as TEM,
-                        respuestas:{
-                            // para ver cómo las opciones con ocultar se ocultan
-                            // @ts-ignore
-                            "personas":[{"p1":"Úrsula","p2":"2","p3":"42","p4":"1"},{"p1":"José Arcadio","p2":"1","p3":"45","p4":"1"},{"p1":"José Aradio","p2":"1","p3":"27","p4":"1"},{"p1":"Aureliano","p2":"1","p3":"25","p4":"2"},{"p1":"Amaranta","p2":"2","p3":"22","p4":"2"},{"p1":"Rebeca","p2":"2","p3":"21","p4":"2"}],"dv1":"1","dv2":"1/7/2020","dv4":"2","cp":6,"s1":"1","_personas_incompletas":0,"s2":"1","s3":"1","d1":"1","d2":"1","d3":null,"d4":"2","d5":"2","d6_1":"2","d6_2":"2","d6_3":"2","d6_4":"2","d6_6":"2","d6_7":"2","d6_5":"2","d6_8":"2","d6_9":"2","a1_1":"2","a1_2":"2","a1_3":"2","a1_4":"2","a1_5":"2","a2":"2","a3":"2","a4":"161","a5":"59","cv1":"2","cv3":"1","t1":null,"e1":null,"e2":null,"e6":null,"c3":null,"e4":null,"cv2_1":null,"p9":"1","d5c":null,"_edad_maxima":45,"_edad_minima":21,"p11":2,"p12":"José Arcadio"
-                        }
-                    },
-                    '13399':{
-                        tareas:{
-                            'rel':{
-                                tarea:'rel',
-                                notas: 'una nota'
-                            },
-                        },
-                        tem:{
-                            observaciones:'Ejemplo con error',carga:"2020-07-07",
-                            nomcalle:'Bolivar', nrocatastral:'633',
-                        } as TEM,
-                        respuestas:{
-                            // para ver cómo las opciones con ocultar se ocultan
-                            // @ts-ignore
-                            "personas":[{"p1":"Carolina","p2":"2","p3":"33","p4":"1"},{"p1":"Alfonso","p2":"1","p3":"72","p4":"1"},{"p1":"Berta","p3":"68","p2":"2","p4":"1"},{"p1":"Lucas","p4":null,"p2":"1","p3":"12"}],"p11":1,"p12":"Carolina","dv1":"1","dv2":"1/7/2020","dv4":"2","cp":4,"_personas_incompletas":0,"p9":"1","s1":"1","s2":"1","s3":"1","d1":"1","d2":"1","d4":"2","d5c":null,"d6_1":"2","d6_2":"2","d6_3":"2","d6_4":"2","d6_5":"2","d6_6":"2","d6_7":"2","d6_8":"2","d6_9":"2","a1_1":"2","a1_2":"2","a1_3":"2","a1_4":"2","a1_5":"2","a2":"2","a3":"2","a4":"159","a5":"59","cv1":"2","cv3":"1","cv4_1":2,"cv4_2":2,"cv4_3":2,"cv4_4":2,"cv4_5":2,"cv4_6":2,"t1":"1","t2_1":"2","t2_2":"2","t2_3":"2","t2_4":"2","t2_5":"2","t2_6":"1","t2_7":"2","t2_8":"2","t3":"2","e1":"Carolina Martinez","e2":"1","e6":"34567890","c1":"15-16171819","c2":"preuba@prueba.com","fin":null,"_edad_maxima":72,"_edad_minima":12,"c5":"1234-56","c4":null,"d5":"9","d12":"1"
-                        }
-                    }
-                }
+                // @ts-ignore
+                cargas:{},
+                // @ts-ignore
+                hdr:{}
             },
             opciones:{
                 modoDespliegue:'relevamiento',

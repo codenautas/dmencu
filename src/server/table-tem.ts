@@ -28,7 +28,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
             , 'cargado_dm'
         ],
         "fields": [
-            {name:'operativo'     , typeName:'text'           , editable: false , nullable: false, defaultValue: 'DMENCU'},
+            {name:'operativo'     , typeName:'text'           , editable: false , nullable: false, defaultValue: 'etoi211'},
             {name:'enc'           , typeName:'text'           , editable: false , nullable: false                       },
             {name: "abrir"        , typeName:'text'           , editable: false, inTable:false, clientSide:'abrir'},
             {name: "cluster"      , typeName:'integer'        , editable: false, isName:true},

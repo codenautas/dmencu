@@ -10,7 +10,7 @@ export function etiquetas(context:TableContext):TableDefinition {
         elementName:'etiqueta',
         editable:esCoor,
         fields:[
-            {name:'operativo'               , typeName:'text'      ,editable:false , nullable:false, defaultValue:'DMENCU203'  },
+            {name:'operativo'               , typeName:'text'      ,editable:false , nullable:false, defaultValue:'etoi211'  },
             {name:'etiqueta'                , typeName:'text'      ,editable:false , nullable:false  },
             {name:'plancha'                 , typeName:'text'      ,editable:esCoor },
             {name:'resultado'               , typeName:'text'      ,editable:false },

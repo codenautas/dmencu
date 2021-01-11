@@ -176,6 +176,13 @@ export type Respuestas={
         [pregunta in IdVariable]:Valor
     }
 
+/*
+    aclaración:
+    {v1:'x', v2:'x', personas:[{p1:1, p2:'x},{p1:2, p2:x}], mascotas:[] }
+    está anidado por unidad de análisis
+*/
+
+
 export type IdCaso='10202'|'10902'|'10909'|'etc...' // el caso es una vivienda
 
 export type TEM = {
@@ -219,7 +226,14 @@ export type DatosVivienda= {
     respuestas: Respuestas
     tareas: Tareas
     tem: TEM
-    resumenEstado: ResumenEstado
+    
+/*
+    aclaración:
+    {v1:'x', v2:'x', personas:[{p1:1, p2:'x},{p1:2, p2:x}], mascotas:[] }
+    está anidado por unidad de análisis
+*/resumenEstado:
+    
+    ResumenEstado
     visitas: Visita[]
     dirty?:boolean,
 }

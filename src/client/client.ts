@@ -6,8 +6,8 @@ import { crearEtiqueta } from "../unlogged/generador-qr";
 import * as TypedControls from "typed-controls";
 import * as likeAr from "like-ar";
 
-const OPERATIVO = 'DMENCU';
-const OPERATIVO_ACTUAL = 'DMENCU 203';
+const OPERATIVO = 'etoi211';
+const OPERATIVO_ACTUAL = 'etoi211';
 
 async function traerHdr(opts:{modoDemo:boolean, vivienda?:IdCaso}){
     await dmTraerDatosFormulario(opts);

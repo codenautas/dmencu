@@ -16,7 +16,7 @@ export function areas(context:TableContext):TableDefinition {
                 "editable": false,
                 "typeName": "text",
                 "nullable": false,
-                "defaultValue": 'DMENCU'
+                "defaultValue": 'etoi211'
             },
             */    
             { 

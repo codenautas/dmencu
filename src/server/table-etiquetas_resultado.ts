@@ -17,7 +17,7 @@ export function etiquetas_resultado(context:TableContext, opts:null|{all:boolean
             update:puedeAvisar,
         },     
         fields:[
-            {name:'operativo'               , typeName:'text'      ,editable:false , nullable:false, defaultValue:'DMENCU203'  },
+            {name:'operativo'               , typeName:'text'      ,editable:false , nullable:false, defaultValue:'etoi211'  },
             {name:'etiqueta'                , typeName:'text'      ,editable:false , nullable:false  },
             {name: 'cluster'                , typeName:'integer'   ,editable:false },
             {name:'resultado'               , typeName:'text'      ,editable:false },
