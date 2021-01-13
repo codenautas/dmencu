@@ -487,7 +487,7 @@ function ConsistenciaDespliegue(props:{casillero:Consistencia, forPk:ForPk}){
     </div>:null
 }
 
-function BotonFormularioDespliegue(props:{casillero:BotonFormulario, forPk:ForPk}){
+function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:Formulario, forPk:ForPk}){
     var {casillero, forPk} = props;
     var habilitador = casillero.expresion_habilitar?getFuncionHabilitar(casillero.expresion_habilitar):()=>true;
     var {respuestas, opciones} = useSelectorVivienda(forPk);
@@ -506,6 +506,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, forPk:ForPk
         }
         if(confirmarForzarIr){setConfirmarForzarIr(false)}
     };
+    var datosUa=[{p1:'jose'},{p1:'maria'}];
     return <div 
         className="seccion-boton-formulario" 
         nuestro-validator={habilitado?'actual':'todavia_no'}
@@ -514,14 +515,25 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, forPk:ForPk
         tiene-valor="NO"
     >
         <div className="aclaracion">{casillero.aclaracion}</div>
-        <Button
-            variant="contained"
-            color={habilitado?"primary":"default"}
-            onClick={()=>{
-                if(habilitado) ir(); 
-                else setConfirmarForzarIr(true);
-            }}
-        >{casillero.nombre}{casillero.salto?<ICON.Send/>:<ICON.ExitToApp/>}</Button>
+        {casillero.unidad_analisis != props.formulario.unidad_analisis?datosUa.map((row, i)=>(
+            <Button
+                variant="contained"
+                color={habilitado?"primary":"default"}
+                onClick={()=>{
+                    if(habilitado) ir(); 
+                    else setConfirmarForzarIr(true);
+                }}
+            >{casillero.nombre + ' ' + (i+1)}{casillero.salto?<ICON.Send/>:<ICON.ExitToApp/>}</Button>
+        )):
+            <Button
+                variant="contained"
+                color={habilitado?"primary":"default"}
+                onClick={()=>{
+                    if(habilitado) ir(); 
+                    else setConfirmarForzarIr(true);
+                }}
+            >{casillero.nombre}{casillero.salto?<ICON.Send/>:<ICON.ExitToApp/>}</Button>
+        }
         <Dialog 
             className="nuestro-dialogo"
             open={confirmarForzarIr}
@@ -575,7 +587,7 @@ function useSelectorVivienda(forPk:ForPk){
     })
 }
 
-function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Bloque|Formulario, forPk:ForPk, multiple:boolean}){
+function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Bloque|Formulario, formulario:Formulario, forPk:ForPk, multiple:boolean}){
     var {respuestas, feedbackRow} = useSelectorVivienda(props.forPk);
     return <div className="casilleros">{
         props.bloqueOFormulario.casilleros.map((casillero)=>
@@ -590,9 +602,9 @@ function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Blo
                             feedback={casillero.var_name && feedbackRow[casillero.var_name] || null}
                             feedbackRow={!casillero.var_name && feedbackRow || null}
                         />:
-                    casillero.tipoc == "B"?<BloqueDespliegue bloque={casillero} forPk={props.forPk}/>:
+                    casillero.tipoc == "B"?<BloqueDespliegue bloque={casillero} formulario={props.formulario} forPk={props.forPk}/>:
                     casillero.tipoc == "FILTRO"?<FiltroDespliegue filtro={casillero} forPk={props.forPk}/>:
-                    casillero.tipoc == "BF"?<BotonFormularioDespliegue casillero={casillero} forPk={props.forPk}/>:
+                    casillero.tipoc == "BF"?<BotonFormularioDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
                     casillero.tipoc == "CONS"?<ConsistenciaDespliegue casillero={casillero} forPk={props.forPk}/>:
                     <CasilleroDesconocido casillero={casillero}/>
                 }
@@ -601,7 +613,7 @@ function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Blo
     }</div>
 }
 
-function BloqueDespliegue(props:{bloque:Bloque, forPk:ForPk}){
+function BloqueDespliegue(props:{bloque:Bloque, formulario:Formulario, forPk:ForPk}){
     var {bloque, forPk} = props;
     var key=bloque.ver_id!='-' && bloque.ver_id || bloque.casillero;
     var activeStep=0;
@@ -620,7 +632,7 @@ function BloqueDespliegue(props:{bloque:Bloque, forPk:ForPk}){
     return habilitado || modoDespliegue=='metadatos'?<div className="bloque" nuestro-bloque={bloque.casillero} es-multiple={multiple?'SI':'NO'}>
         <EncabezadoDespliegue casillero={bloque} forPk={forPk}/>
         {lista.map(({key, forPk, multiple})=>
-            <DesplegarContenidoInternoBloqueOFormulario key={key} bloqueOFormulario={bloque} forPk={forPk} multiple={multiple}/>
+            <DesplegarContenidoInternoBloqueOFormulario key={key} bloqueOFormulario={bloque} formulario={props.formulario} forPk={forPk} multiple={multiple}/>
         )}
     </div>:null;
 }
@@ -823,7 +835,7 @@ function FormularioDespliegue(props:{forPk:ForPk}){
                         </ButtonGroup>
                     </div>:null}
                     <FormularioEncabezado casillero={formulario}/>
-                    <DesplegarContenidoInternoBloqueOFormulario bloqueOFormulario={formulario} forPk={forPk} multiple={false}/>
+                    <DesplegarContenidoInternoBloqueOFormulario bloqueOFormulario={formulario} formulario={formulario} forPk={forPk} multiple={false}/>
                 </Paper>
                 <div className='espacio-final-formulario'></div>
             </main>
