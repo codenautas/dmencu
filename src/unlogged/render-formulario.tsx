@@ -491,7 +491,11 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     var {casillero, forPk} = props;
     var habilitador = casillero.expresion_habilitar?getFuncionHabilitar(casillero.expresion_habilitar):()=>true;
     var {respuestas, opciones} = useSelectorVivienda(forPk);
-    var {soloLectura} = useSelector((state:CasoState)=>({soloLectura:state.datos.soloLectura}));
+    var idFormularioDestino = 'F:'+casillero.salto! as IdFormulario;
+    var {soloLectura, formularioAAbrir} = useSelector((state:CasoState)=>({
+        soloLectura:state.datos.soloLectura, 
+        formularioAAbrir:state.estructura.formularios[idFormularioDestino].casilleros
+    }));
     var habilitado = habilitador(respuestas);
     var dispatch = useDispatch();
     var [confirmarForzarIr, setConfirmarForzarIr] = useState(false);
@@ -502,7 +506,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
             :
                 dispatch(dispatchers.VOLVER_HDR({}));
         }else{
-            dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:{...forPk, formulario:'F:'+casillero.salto! as IdFormulario}}));
+            dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:{...forPk, formulario:idFormularioDestino}}));
         }
         if(confirmarForzarIr){setConfirmarForzarIr(false)}
     };
@@ -515,7 +519,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
         tiene-valor="NO"
     >
         <div className="aclaracion">{casillero.aclaracion}</div>
-        {casillero.unidad_analisis != props.formulario.unidad_analisis?datosUa.map((row, i)=>(
+        {formularioAAbrir.unidad_analisis != props.formulario.unidad_analisis?datosUa.map((row, i)=>(
             <Button
                 variant="contained"
                 color={habilitado?"primary":"default"}

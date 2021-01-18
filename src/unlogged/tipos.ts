@@ -44,7 +44,6 @@ export type CasilleroBase = {
     tipovar?:TipoVariables|'opciones'|'si_no'|null
     casilleros?:CasillerosImplementados[]|null
     expresion_habilitar?:string
-    unidad_analisis?:string|null
 }
 
 export type Opcion=CasilleroBase & {
@@ -165,6 +164,7 @@ export type Formulario = CasilleroBase & {
     casilleros:ContenidoFormulario[]
     var_name?:null
     tipovar?:null
+    unidad_analisis:string
 }
 
 export type CasillerosImplementados=Formulario|Bloque|Filtro|ConjuntoPreguntas|Pregunta|OpcionMultiple|Opcion|BotonFormulario|Consistencia
@@ -231,9 +231,8 @@ export type DatosVivienda= {
     aclaración:
     {v1:'x', v2:'x', personas:[{p1:1, p2:'x},{p1:2, p2:x}], mascotas:[] }
     está anidado por unidad de análisis
-*/resumenEstado:
-    
-    ResumenEstado
+*/
+    resumenEstado:ResumenEstado
     visitas: Visita[]
     dirty?:boolean,
 }
@@ -299,7 +298,7 @@ export type CasoState={
         modoDespliegue:ModoDespliegue
         bienvenido:boolean
         modoDirecto:boolean
-    },
+    }, 
     modo:{ // no se persiste
         demo:boolean
     }
