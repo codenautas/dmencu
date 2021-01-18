@@ -122,6 +122,13 @@ export function getFuncionHabilitar(nombreFuncionComoExpresion:string):FuncionHa
 
 var rowValidator = getRowValidator({getFuncionHabilitar})
 
+////// TODOS LOS NOMBRES DE variables o formularios o casilleros deben estar en el objeto operativo
+var operativo = {
+    esVacio:(respuestas:Respuestas)=>JSON.stringify(respuestas)=='{}',
+    esNorea:(respuestas:Respuestas)=>respuestas['entrea' as IdVariable]!=1,
+}
+///// ABAJO de esta línea no puede haber otros nombres de variables o formularios o casilleros en general
+
 // TODO: GENERALIZAR
 type Persona={p1:string, p2:number, p3:number, p4:number|null, p5:1|null, p6:1|null}
 
@@ -169,6 +176,7 @@ function encolarBackup(token:string|undefined, idCaso:IdCaso, vivienda:DatosVivi
 }
 
 function variablesCalculadas(datosVivienda: DatosVivienda):DatosVivienda{
+    return datosVivienda;
     // TODO: GENERALIZAR
     var cp='cp' as IdVariable;
     var _personas_incompletas = '_personas_incompletas' as IdVariable
@@ -370,23 +378,10 @@ function calcularResumenVivienda(
     feedbackRowValidator:{[formulario in PlainForPk]:FormStructureState<IdVariable,IdFin>}, 
     respuestas:Respuestas
 ){
-    // TODO: GENERALIZAR
-    if(respuestas && (
-        respuestas[dv1]==2 ||
-        respuestas[dv4]==1 ||  
-        respuestas[dv5]==2 ||  
-        respuestas[s1]==2 ||  
-        respuestas[s2]==2 ||  
-        respuestas[s3]==2 ||  
-        respuestas[d4]==1 && respuestas[d5c]==1 ||
-        respuestas[sp6]>1 
-    )){
+    if(operativo.esNorea(respuestas)){
        return "no rea";
     }
-    // TODO: GENERALIZAR
-    // @ts-ignore
-    var {cp, g1, p11, p12, personas, ...resto} = respuestas;
-    if(g1==6 && JSON.stringify(resto)=='{}'){
+    if(operativo.esVacio(respuestas)){
         return "vacio";
     }
     //TODO GENERALIZAR
