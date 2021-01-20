@@ -22,7 +22,7 @@ export type Valor = string|number|Date|null;
 export type TipocDestinos = 'P'|'CP'|'B'|'FILTRO'|'BF'
 export type Tipoc = TipocDestinos | 'F'|'O'|'OM'|'CONS'
 
-export type IdTarea = 'rel'|'sen'|'sup';
+export type IdTarea = 'encu'|'recu'|'supe';
 
 export type FeedbackVariable = Feedback<IdVariable, IdFin>
 

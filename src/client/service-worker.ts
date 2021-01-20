@@ -3,10 +3,15 @@ const CACHE_NAME = '#20-11-05';
 const FALLBACK = 'campo';
 var urlsToCache = [
     "campo",
+    /*
     "lib/react.production.min.js",
     "lib/react-dom.production.min.js",
     "lib/material-ui.production.min.js",
-    "lib/clsx.min.js",
+    */
+   "lib/react.development.js",
+   "lib/react-dom.development.js",
+   "lib/material-ui.development.js",
+   "lib/clsx.min.js",
     "lib/redux.min.js",
     "lib/react-redux.min.js",
     "lib/require-bro.js",

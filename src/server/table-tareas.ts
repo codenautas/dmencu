@@ -16,6 +16,7 @@ export function tareas(context:TableContext, opts:any):TableDefinition {
             {name:'tarea' , typeName:'text'},
             {name:'nombre', typeName:'text'},
             {name:'rol_asignante', typeName:'text', visible:false},
+            {name:'main_form', typeName:'text'}
         ],
         primaryKey:['tarea'],
         detailTables:[

@@ -76,7 +76,7 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
             'observaciones' , tt.carga_observaciones ,
             'cita'          , cita ,
             'carga'         , t.area         
-        ) as casos, t.area,
+        ) as tem, t.area,
         tt.visitas,
         --TODO: GENERALIZAR
         jsonb_object_agg(coalesce(tarea,'rel'),jsonb_build_object(
@@ -90,7 +90,7 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
         where ${quotedCondViv}
         group by t.enc, t.json_encuesta, t.resumen_estado, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area, tt.visitas
     )
-    select ${jsono(`select enc, respuestas, "resumenEstado", casos, tareas, coalesce(visitas,'[]') as visitas from viviendas`, 'enc')} as hdr,
+    select ${jsono(`select enc, respuestas, "resumenEstado", tem, tareas, coalesce(visitas,'[]') as visitas from viviendas`, 'enc')} as hdr,
         ${json(`
             select area as carga, observaciones_hdr as observaciones, min(fecha_asignacion) as fecha
                 from viviendas inner join areas using (area) 
@@ -393,6 +393,8 @@ export const ProceduresDmEncu : ProcedureDef[] = [
         ],
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             var be=context.be;
+            ///////////// ojojojojojojo
+            context.user.idper='11';
             var num_sincro:number=0;
             var token:string|null=parameters.datos?.token;
             if(!token){
@@ -415,7 +417,6 @@ export const ProceduresDmEncu : ProcedureDef[] = [
                         and tt.habilitada
                         and (tt.cargado_dm is null or tt.cargado_dm = ${context.be.db.quoteLiteral(token)})
             `
-            condviv=` enc in ('130030','130031')`;
             if(parameters.datos){
                 await Promise.all(likeAr(parameters.datos.hdr).map(async (vivienda,idCaso)=>{
                     var tareas = vivienda.tareas;
@@ -450,11 +451,11 @@ export const ProceduresDmEncu : ProcedureDef[] = [
                     }
                 }).array());
             }
-            var {row} = await context.client.query(getHdrQuery(condviv),[/*OPERATIVO,context.user.idper*/]).fetchUniqueRow();
-            console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxx',getHdrQuery(condviv));
+            var {row} = await context.client.query(getHdrQuery(condviv),[OPERATIVO,context.user.idper]).fetchUniqueRow();
+            // console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxx',getHdrQuery(condviv));
             await context.client.query(
                 `update tareas_casos tt
-                    set  cargado_dm=$3
+                    set  cargado_dm=$3::text
                     where ${condviv} `
                 ,
                 [OPERATIVO, parameters.enc?parameters.enc:context.user.idper, token]

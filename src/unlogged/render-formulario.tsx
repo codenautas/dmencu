@@ -907,20 +907,23 @@ export function DesplegarCarga(props:{
         {carga.estado_carga==null && !props.posicion || carga.estado_carga=='relevamiento'?
         <Table className="tabla-carga-hoja-de-ruta">
             <colgroup>
-                <col style={{width:"70%"}}/>
                 <col style={{width:"15%"}}/>
+                <col style={{width:"70%"}}/>
                 <col style={{width:"15%"}}/>
             </colgroup>
             <TableHead style={{fontSize: "1.2rem"}}>
                 <TableRow className="tr-carga">
+                    <TableCell>enc</TableCell>
                     <TableCell>domicilio</TableCell>
-                    <TableCell>etiqueta</TableCell>
-                    <TableCell>vivienda</TableCell>
+                    <TableCell>form</TableCell>
                 </TableRow>
             </TableHead>
             <TableBody>
                 {likeAr(hdr).filter((datosVivienda:DatosVivienda, idCaso:IdCaso)=>datosVivienda.tem.carga==idCarga).map((datosVivienda: DatosVivienda, idCaso: IdCaso)=>
                     <TableRow key={idCaso}>
+                        <TableCell>
+                            {idCaso}
+                        </TableCell>
                         <TableCell>
                             <DesplegarTem tem={datosVivienda.tem}/>
                             {datosVivienda.resumenEstado=="cita pactada"?
@@ -931,48 +934,20 @@ export function DesplegarCarga(props:{
                             <DesplegarNotasYVisitas tareas={datosVivienda.tareas} visitas={datosVivienda.visitas} idCaso={idCaso}/>
                         </TableCell>
                         <TableCell>
-                            {datosVivienda.respuestas[c5] && etiquetaRepetida(etiquetas, datosVivienda.respuestas[c5] as string)?
-                                <span>
-                                    <Button 
-                                        variant="contained" 
-                                        color="secondary" 
-                                        size="small"
-                                        onClick={()=>setDesplegarEtiquetasRepetidas(true)}
-                                    >
-                                        {datosVivienda.respuestas[c5]}
-                                    </Button>
-                                    <Dialog 
-                                        open={desplegarEtiquetasRepetidas}
-                                        onClose={()=>setDesplegarEtiquetasRepetidas(false)}
-                                    >
-                                        <DialogTitle id="alert-dialog-title-obs">Etiqueta repetida en las viviendas</DialogTitle>
-                                        <DialogContent>
-                                            {buscarCasosEnHdrParaEtiqueta(hdr,datosVivienda.respuestas[c5] as string,c5, idCaso).map((caso:IdCaso)=>
-                                                <Typography align="center">{caso}</Typography>
-                                            )}
-                                        </DialogContent>
-                                        <DialogActions>
-                                            <Button color="primary" variant="contained" onClick={()=>setDesplegarEtiquetasRepetidas(false)}>Cerrar</Button>
-                                        </DialogActions>
-                                    </Dialog>
-                                </span>
-                            :
-                                datosVivienda.respuestas[c5]
-                            }
-                        </TableCell>
-                        <TableCell>
-                            {datosVivienda.tareas.rel?
+                            {likeAr(datosVivienda.tareas).map((tarea, idTarea)=>
                                 <Button
+                                    key={idTarea}
                                     size="small"
                                     resumen-vivienda={datosVivienda.resumenEstado}
                                     variant="outlined"
                                     onClick={()=>{
-                                        dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:{vivienda:idCaso, formulario:mainForm}}))
+                                        ////////////////// OJOJOJOJO sacar el formulario de la tabla de tareas GENERALIZAR TODO
+                                        dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:{vivienda:idCaso, formulario:'F:S1' as IdFormulario}}))
                                     }}
                                 >
-                                    {idCaso}
+                                    {'S1'}
                                 </Button>
-                            :idCaso}
+                            ).array()}
                         </TableCell>
                     </TableRow>
                 ).array()}
