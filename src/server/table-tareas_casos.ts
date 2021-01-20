@@ -3,7 +3,7 @@
 import {TableDefinition, TableContext} from "./types-dmencu";
 import { FieldDefinition } from "rel-enc";
 
-export function tareas_tem(context:TableContext, opt:any):TableDefinition {
+export function tareas_casos(context:TableContext, opt:any):TableDefinition {
     var opt=opt||{}
     var mis=opt.mis?'mis_':'';
     var be=context.be;

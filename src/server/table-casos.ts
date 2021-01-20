@@ -2,7 +2,7 @@
 
 import {TableDefinition, TableContext} from "./types-dmencu";
 
-export function tem(context:TableContext, opts:any):TableDefinition {
+export function casos(context:TableContext, opts:any):TableDefinition {
     var opts=opts||{};
     var recepcion=opts.recepcion?'_recepcion':'';
     var be=context.be;

@@ -26,7 +26,7 @@ import { parametros          } from "./table-parametros";
 import { roles_subordinados  } from "./table-roles_subordinados";
 
 import {no_rea               } from "./table-no_rea";
-import {tem                  } from "./table-tem";
+import {casos                  } from "./table-casos";
 import {tem_recepcion        } from "./table-tem_recepcion";
 import {semanas              } from "./table-semanas";
 import { planchas            } from './table-planchas';
@@ -45,7 +45,7 @@ import { personas            } from './table-personas';
 import { personas_extendida  } from './table-personas_extendida';
 import { personas_extendida_onda_anterior  } from './table-personas_extendida_onda_anterior';
 import { tareas              } from './table-tareas';
-import { tareas_tem          } from './table-tareas_tem';
+import { tareas_casos          } from './table-tareas_casos';
 import { tareas_areas        } from './table-tareas_areas';
 import { mis_tareas          } from './table-mis_tareas';
 import { mis_tareas_tem      } from './table-mis_tareas_tem';
@@ -420,7 +420,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             , roles_subordinados
             , no_rea
             , semanas
-            , tem
+            , tem: casos
             , tem_recepcion
             , parametros
             , planchas
@@ -439,7 +439,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             , personas_extendida_onda_anterior
             , tareas
             , resultados_tarea
-            , tareas_tem
+            , tareas_tem: tareas_casos
             , tareas_areas
             , mis_tareas
             , mis_tareas_tem

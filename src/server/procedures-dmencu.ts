@@ -60,44 +60,43 @@ type AnyObject = {[k:string]:any}
 
 var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
     return `
-        with viviendas as 
-            (select pla_enc as enc, '{}'::jsonb as respuestas, null as "resumenEstado", 
-                jsonb_build_object(
-                    'nomcalle'      , pla_cnombre ,
-                    'sector'        , pla_sector  ,
-                    'edificio'      , pla_edificio ,
-                    'entrada'       , pla_entrada  ,
-                    'nrocatastral'  , pla_hn       ,
-                    'piso'          , pla_hp       ,
-                    'departamento'  , pla_hd       ,
-                    'habitacion'    , pla_hab      ,
-                    'casa'          , pla_casa     ,
-                    'prioridad'     , 1            ,
-                    'observaciones' , pla_obs      ,
-                    'cita'          , null         ,
-                    'carga'         , pla_area
-                ) as tem, t.pla_area as area,
-                pla_obs as observaciones_hdr,
-                '[]'::jsonb as visitas,
-                --TODO: GENERALIZAR
-                -- jsonb_object_agg(coalesce(tarea,'rel'),jsonb_build_object(
-                jsonb_build_object('rel',jsonb_build_object(
-					'tarea', 'rel',
-					'notas', null,
-					'fecha_asignacion', null,
-					'asignado', null
-				)) as tareas,
-                /*min(fecha_asignacion)*/ null::date as fecha_asignacion
-                from plana_tem_ t
-                where pla_area=1300 /* ${quotedCondViv} */
-            )
-            select ${jsono(`select enc, respuestas, "resumenEstado", tem, tareas, coalesce(visitas,'[]') as visitas from viviendas`, 'enc')} as hdr,
-                ${json(`
-                    select area as carga, observaciones_hdr as observaciones, min(fecha_asignacion) as fecha
-                        from viviendas -- inner join areas using (area) 
-                        group by area, observaciones_hdr`, 
-                    'fecha')} as cargas
-    `
+    with viviendas as 
+    (select enc, t.json_encuesta as respuestas, t.resumen_estado as "resumenEstado", 
+        jsonb_build_object(
+            'nomcalle'      , nomcalle      ,
+            'sector'        , sector        ,
+            'edificio'      , edificio      ,
+            'entrada'       , entrada       ,
+            'nrocatastral'  , nrocatastral  ,
+            'piso'          , piso          ,
+            'departamento'  , departamento  ,
+            'habitacion'    , habitacion    ,
+            'casa'          , casa          ,
+            'prioridad'     , reserva+1     ,
+            'observaciones' , tt.carga_observaciones ,
+            'cita'          , cita ,
+            'carga'         , t.area         
+        ) as casos, t.area,
+        tt.visitas,
+        --TODO: GENERALIZAR
+        jsonb_object_agg(coalesce(tarea,'rel'),jsonb_build_object(
+            'tarea', tarea,
+            'notas', notas,
+            'fecha_asignacion', fecha_asignacion,
+            'asignado', asignado
+        )) as tareas,
+        min(fecha_asignacion) as fecha_asignacion
+        from casos t join tareas_casos tt using (operativo, enc)
+        where ${quotedCondViv}
+        group by t.enc, t.json_encuesta, t.resumen_estado, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area, tt.visitas
+    )
+    select ${jsono(`select enc, respuestas, "resumenEstado", casos, tareas, coalesce(visitas,'[]') as visitas from viviendas`, 'enc')} as hdr,
+        ${json(`
+            select area as carga, observaciones_hdr as observaciones, min(fecha_asignacion) as fecha
+                from viviendas inner join areas using (area) 
+                group by area, observaciones_hdr`, 
+            'fecha')} as cargas
+`
 }
     
 export const ProceduresDmEncu : ProcedureDef[] = [
@@ -335,7 +334,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
                 throw new Error('HAY DATOS. NO SE PUEDE INICIAR EL PASAJE');
             }
             let resultJson = await context.client.query(
-                `SELECT operativo, enc id_caso, json_encuesta datos_caso from tem WHERE operativo=$1`,
+                `SELECT operativo, enc id_caso, json_encuesta datos_caso from casos WHERE operativo=$1`,
                 [OPERATIVO]
             ).fetchAll();
             var procedureGuardar = be.procedure.caso_guardar;
@@ -373,7 +372,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
             //GENERALIZAR
             var soloLectura = !!(await context.client.query(
                 `select *
-                    from tareas_tem
+                    from tareas_casos
                     where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm is not null`
                 ,
                 [OPERATIVO, parameters.enc, "rel"]
@@ -416,13 +415,14 @@ export const ProceduresDmEncu : ProcedureDef[] = [
                         and tt.habilitada
                         and (tt.cargado_dm is null or tt.cargado_dm = ${context.be.db.quoteLiteral(token)})
             `
+            condviv=` enc in ('130030','130031')`;
             if(parameters.datos){
                 await Promise.all(likeAr(parameters.datos.hdr).map(async (vivienda,idCaso)=>{
                     var tareas = vivienda.tareas;
                     for(let tarea in tareas){
                         var puedoGuardarEnTEM=true;
                         var queryTareasTem = await context.client.query(
-                            `update tareas_tem
+                            `update tareas_casos
                                 set cargado_dm=null, notas = $4, visitas = $5
                                 where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm = ${context.be.db.quoteLiteral(token!)}
                                 returning 'ok'`
@@ -436,7 +436,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
                         //GENERALIZAR
                         if(tarea == 'rel' && puedoGuardarEnTEM){
                             await context.client.query(
-                                `update tem
+                                `update casos
                                     set json_encuesta = $3, resumen_estado=$4
                                     where operativo= $1 and enc = $2
                                     returning 'ok'`
@@ -451,8 +451,9 @@ export const ProceduresDmEncu : ProcedureDef[] = [
                 }).array());
             }
             var {row} = await context.client.query(getHdrQuery(condviv),[/*OPERATIVO,context.user.idper*/]).fetchUniqueRow();
+            console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxx',getHdrQuery(condviv));
             await context.client.query(
-                `update tareas_tem tt
+                `update tareas_casos tt
                     set  cargado_dm=$3
                     where ${condviv} `
                 ,
@@ -477,7 +478,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
                 //GENERALIZAR
                 var result = await context.client.query(
                     `select *
-                        from tareas_tem
+                        from tareas_casos
                         where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm is not null`
                     ,
                     [OPERATIVO, idCaso, "rel"]
@@ -486,7 +487,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
                     throw new Error('La encuesta que intenta guardar ha sido cargada por un encuestador.')
                 }
                 await context.client.query(
-                    `update tem
+                    `update casos
                         set json_encuesta = $3, resumen_estado=$4
                         where operativo= $1 and enc = $2
                         returning 'ok'`
@@ -519,7 +520,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
             if(parameters.casos){
                 await Promise.all(parameters.casos.map(async ({vivienda,idCaso}:{vivienda:{respuestas:object},idCaso:string})=>{
                     await context.client.query(
-                        `update tem
+                        `update casos
                             set json_backup = $3
                             where operativo= $1 and enc = $2 and json_backup is distinct from $4
                             returning 'ok'`
@@ -621,7 +622,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             var tem = await context.client.query(
                 `select * 
-                    from tem
+                    from casos
                     where etiqueta = $1`,
                 [parameters.etiqueta]
             ).fetchOneRowIfExists();
@@ -765,7 +766,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
                     (json_encuesta->>'e2')::text as nombre, pagina_texto
                         from  etiquetas e
                         left join resultados_test rt using (resultado)
-                        left join tem t using(etiqueta)
+                        left join casos t using(etiqueta)
                         where e.etiqueta =$1 and (t.json_encuesta->>'e7')::text = $2 and resultado is not null
             `,
                 [parameters.etiqueta, parameters.numero_documento]

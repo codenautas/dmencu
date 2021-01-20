@@ -2,8 +2,8 @@
 
 import {TableDefinition, TableContext} from "./types-dmencu";
 
-import {tem} from "./table-tem";
+import {casos} from "./table-casos";
 
 export function tem_recepcion(context:TableContext):TableDefinition {
-    return tem(context, {recepcion:true});
+    return casos(context, {recepcion:true});
 }
