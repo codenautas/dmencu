@@ -123,9 +123,19 @@ export function getFuncionHabilitar(nombreFuncionComoExpresion:string):FuncionHa
 var rowValidator = getRowValidator({getFuncionHabilitar})
 
 ////// TODOS LOS NOMBRES DE variables o formularios o casilleros deben estar en el objeto operativo
-var operativo = {
+export var defOperativo = {
     esVacio:(respuestas:Respuestas)=>JSON.stringify(respuestas)=='{}',
     esNorea:(respuestas:Respuestas)=>respuestas['entrea' as IdVariable]!=1,
+    defUA:{
+        hogares:{ pk: 'hogar' },
+        personas:{ pk: 'persona'}
+    },
+    defFor:{
+        'F:RE':{arbolUA:[]},
+        'F:S1':{arbolUA:['hogares']},
+        'F:S1_P':{arbolUA:['hogares', 'personas']},
+        'F:I1':{arbolUA:['hogares', 'personas']}
+    } as unknown as {[f in IdFormulario]:{arbolUA:string[]}}
 }
 ///// ABAJO de esta línea no puede haber otros nombres de variables o formularios o casilleros en general
 
@@ -378,10 +388,10 @@ function calcularResumenVivienda(
     feedbackRowValidator:{[formulario in PlainForPk]:FormStructureState<IdVariable,IdFin>}, 
     respuestas:Respuestas
 ){
-    if(operativo.esNorea(respuestas)){
+    if(defOperativo.esNorea(respuestas)){
        return "no rea";
     }
-    if(operativo.esVacio(respuestas)){
+    if(defOperativo.esVacio(respuestas)){
         return "vacio";
     }
     //TODO GENERALIZAR
@@ -841,12 +851,8 @@ export async function traerEstructura(params:{operativo: string}){
                 }
             }
         ).plain();
-    if(mainForm==null){
-        throw new Error('falta definir el formulario principal');
-    }
     var estructura={
         formularios:casillerosTodosFormularios,
-        mainForm,
         tareas:{} as TareasEstructura
     };
     return estructura;

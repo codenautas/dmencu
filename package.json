@@ -52,6 +52,7 @@
   "scripts": {
     "prepublish": "npm run build",
     "build": "(tsc -p src/unlogged || echo \"continue w/error\") && (tsc -p src/client || echo \"continue w/error\") && (tsc -p src/server || echo \"continue w/error\") && mixin-patch",
+    "build-unlogged": "(tsc -p src/unlogged || echo \"continue w/error\") && mixin-patch",
     "mixin-patch": "mixin-patch",
     "watch:buildC": "(tsc -p src/client --watch || echo \"continue w/error\")",
     "watch:buildS": "(tsc -p src/server --watch || echo \"continue w/error\")",

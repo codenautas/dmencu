@@ -44,7 +44,7 @@ window.addEventListener('load', async function(){
             ]).create()
             layout.appendChild(avisoInicial);        
         }
-        if('serviceWorker' in navigator){
+        if('serviceWorker' in navigator && false){
             navigator.serviceWorker.register('service-worker.js').then(function(reg) {
                 console.log('Registered:', reg);
                 //updatefound is fired if service-worker.js changes.

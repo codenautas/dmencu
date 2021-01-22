@@ -25,11 +25,13 @@ import { dmTraerDatosFormulario, dispatchers,
     toPlainForPk,
     saveSurvey,
     consultarEtiqueta,
-    gotoVer
+    gotoVer,
+    defOperativo
 } from "./redux-formulario";
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux"; 
 import * as likeAr from "like-ar";
+import {serie} from "best-globals";
 
 import {
     AppBar, Badge, Button, ButtonGroup, Card, Chip, CircularProgress, CssBaseline, 
@@ -499,18 +501,31 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     var habilitado = habilitador(respuestas);
     var dispatch = useDispatch();
     var [confirmarForzarIr, setConfirmarForzarIr] = useState(false);
-    const ir = ()=>{
+    var multipleFormularios=formularioAAbrir.unidad_analisis != props.formulario.unidad_analisis;
+    var cantForm:number = 1;
+    if(multipleFormularios){
+        if(casillero.expresion_habilitar==null){
+            throw new Error('se necesita la variable cantidad en expresion_habilitar del BF: '+casillero.casillero);
+        }
+        cantForm = Number(respuestas[casillero.expresion_habilitar as IdVariable]) || 1;
+    }
+    const ir = (numero:number|null)=>{
         if(!casillero.salto){
             opciones.modoDirecto?
                 null
             :
                 dispatch(dispatchers.VOLVER_HDR({}));
         }else{
-            dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:{...forPk, formulario:idFormularioDestino}}));
+            var nuevaForPk={...forPk, formulario:idFormularioDestino};
+            if(multipleFormularios){
+                // @ts-ignore
+                var nuevoCampoPk = defOperativo.defUA[formularioAAbrir.unidad_analisis].pk;;
+                nuevaForPk[nuevoCampoPk] = numero
+            }
+            dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:nuevaForPk}));
         }
         if(confirmarForzarIr){setConfirmarForzarIr(false)}
     };
-    var datosUa=[{p1:'jose'},{p1:'maria'}];
     return <div 
         className="seccion-boton-formulario" 
         nuestro-validator={habilitado?'actual':'todavia_no'}
@@ -519,38 +534,32 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
         tiene-valor="NO"
     >
         <div className="aclaracion">{casillero.aclaracion}</div>
-        {formularioAAbrir.unidad_analisis != props.formulario.unidad_analisis?datosUa.map((row, i)=>(
-            <Button
-                variant="contained"
-                color={habilitado?"primary":"default"}
-                onClick={()=>{
-                    if(habilitado) ir(); 
-                    else setConfirmarForzarIr(true);
-                }}
-            >{casillero.nombre + ' ' + (i+1)}{casillero.salto?<ICON.Send/>:<ICON.ExitToApp/>}</Button>
-        )):
-            <Button
-                variant="contained"
-                color={habilitado?"primary":"default"}
-                onClick={()=>{
-                    if(habilitado) ir(); 
-                    else setConfirmarForzarIr(true);
-                }}
-            >{casillero.nombre}{casillero.salto?<ICON.Send/>:<ICON.ExitToApp/>}</Button>
-        }
-        <Dialog 
-            className="nuestro-dialogo"
-            open={confirmarForzarIr}
-            onClose={()=>setConfirmarForzarIr(false)}
-        >
-            <div className="nuestro-dialogo">
-                <Typography>No se puede avanzar al siguiente formulario.</Typography>
-                <Typography>Quizás no terminó de contestar las preguntas correspondientes</Typography>
-                <Typography>Quizás no corresponde en base a las respuestas obtenidas</Typography>
+        {(multipleFormularios?serie({from:1, to:cantForm}):[null]).map((num:number|null)=>(
+            <div key={num}>
+                <Button
+                    variant="contained"
+                    color={habilitado?"primary":"default"}
+                    onClick={()=>{
+                        if(habilitado) ir(num); 
+                        else setConfirmarForzarIr(true);
+                    }}
+                >{casillero.nombre + ' ' + (num||'')}{casillero.salto?<ICON.Send/>:<ICON.ExitToApp/>}</Button>
+                <Dialog 
+                    className="nuestro-dialogo"
+                    open={confirmarForzarIr}
+                    onClose={()=>setConfirmarForzarIr(false)}
+                >
+                    <div className="nuestro-dialogo">
+                        <Typography>No se puede avanzar al siguiente formulario.</Typography>
+                        <Typography>Quizás no terminó de contestar las preguntas correspondientes</Typography>
+                        <Typography>Quizás no corresponde en base a las respuestas obtenidas</Typography>
+                    </div>
+                    <Button color="secondary" onClick={()=>ir(num)}>forzar</Button>
+                    <Button color="primary" variant="contained" onClick={()=>setConfirmarForzarIr(false)}>Entendido</Button>
+                </Dialog>
             </div>
-            <Button color="secondary" onClick={ir}>forzar</Button>
-            <Button color="primary" variant="contained" onClick={()=>setConfirmarForzarIr(false)}>Entendido</Button>
-        </Dialog>
+        ))
+        }
     </div>
 }
 
@@ -568,7 +577,15 @@ function useSelectorVivienda(forPk:ForPk){
         var dirty=state.datos.hdr[forPk.vivienda].dirty;
         //TODO: generalizar
         // @ts-ignore
-        var respuestas:typeof respuestasVivienda = forPk.persona?respuestasVivienda.personas[forPk.persona-1]:respuestasVivienda
+        var respuestas:typeof respuestasVivienda = respuestasVivienda;
+        var arbol = defOperativo.defFor[forPk.formulario].arbolUA.slice();
+        while(arbol.length){
+            var ua = arbol.shift(); // ejemplo "hogares"
+            // @ts-ignore
+            var pkUa = defOperativo.defUA[ua].pk; // ejemplo "hogar"
+            // @ts-ignore
+            respuestas = respuestas[ua][forPk[pkUa]]
+        }
         var g1='g1' as IdVariable;
         var tipo_relevamiento='tipo_relevamiento' as IdVariable;
         var tipo_seleccion='tipo_seleccion' as IdVariable;
@@ -942,10 +959,10 @@ export function DesplegarCarga(props:{
                                     variant="outlined"
                                     onClick={()=>{
                                         ////////////////// OJOJOJOJO sacar el formulario de la tabla de tareas GENERALIZAR TODO
-                                        dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:{vivienda:idCaso, formulario:'F:S1' as IdFormulario}}))
+                                        dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:{vivienda:idCaso, formulario:'F:RE' as IdFormulario}}))
                                     }}
                                 >
-                                    {'S1'}
+                                    {'RE'}
                                 </Button>
                             ).array()}
                         </TableCell>

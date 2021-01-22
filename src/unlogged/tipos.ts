@@ -169,7 +169,7 @@ export type Formulario = CasilleroBase & {
 
 export type CasillerosImplementados=Formulario|Bloque|Filtro|ConjuntoPreguntas|Pregunta|OpcionMultiple|Opcion|BotonFormulario|Consistencia
 
-export type ForPk={vivienda:IdCaso, formulario:IdFormulario, persona?:number}
+export interface ForPk {vivienda:IdCaso, formulario:IdFormulario, hogar?:number, persona?:number}
 export type PlainForPk='{"vivienda":"10202","formulario":"F:F1","persona":null}'|'etc...';
 
 export type Respuestas={
