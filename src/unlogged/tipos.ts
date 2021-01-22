@@ -237,7 +237,7 @@ export type DatosVivienda= {
     dirty?:boolean,
 }
 
-export type HojaDeRuta={
+export type VivendasHdR={
     [idCaso in IdCaso]: DatosVivienda
 }
 
@@ -284,7 +284,7 @@ export type CasoState={
         mainForm:IdFormulario
     }
     datos:{
-        hdr:HojaDeRuta
+        hdr:VivendasHdR
         token?:string
         persona:string
         tarea:IdTarea

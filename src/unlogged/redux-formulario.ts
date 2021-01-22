@@ -126,13 +126,16 @@ var rowValidator = getRowValidator({getFuncionHabilitar})
 export var defOperativo = {
     esVacio:(respuestas:Respuestas)=>JSON.stringify(respuestas)=='{}',
     esNorea:(respuestas:Respuestas)=>respuestas['entrea' as IdVariable]!=1,
+    UAprincipal:'viviendas',
     defUA:{
-        hogares:{ pk: 'hogar' },
-        personas:{ pk: 'persona'}
+        hogares:{ pk: 'hogar' , incluidas:['personas'], idsFor:['F:S1', 'F:A1']},
+        personas:{ pk: 'persona', idsFor:['F:S1_P', 'F:I1']},
+        viviendas:{ pk: false, incluidas:['hogares'], idsFor:['F:RE']}
     },
     defFor:{
         'F:RE':{arbolUA:[]},
         'F:S1':{arbolUA:['hogares']},
+        'F:A1':{arbolUA:['hogares']},
         'F:S1_P':{arbolUA:['hogares', 'personas']},
         'F:I1':{arbolUA:['hogares', 'personas']}
     } as unknown as {[f in IdFormulario]:{arbolUA:string[]}}
@@ -858,6 +861,29 @@ export async function traerEstructura(params:{operativo: string}){
     return estructura;
 }
 
+export async function calcularFeedbackUnidadAnalisis(state:CasoState, respuestas:Respuestas, UA:string, forPk:ForPk){
+            // @ts-ignore esto se va
+    for(var formulario of defOperativo.defUA[UA].idsFor){
+        state.feedbackRowValidator[toPlainForPk({...forPk, formulario})]=
+            rowValidator(
+                state.estructura.formularios[formulario].estructuraRowValidator, 
+                respuestas
+            )
+    }
+    for(var UAincluida of defOperativo.defUA[UA].incluidas){
+        var pkNueva = defOperativo.defUA[UAincluida].pk;
+        var conjuntoRespuestasUA = respuestas[UAincluida];
+        conjuntoRespuestasUA.forEach((respuestas, i)=>{
+            calcularFeedbackUnidadAnalisis(state, respuestas, UAincluida, {...forPk, [pkNueva]:i+1});
+        })
+    }
+}
+
+export async function calcularFeedbackEncuesta(vivienda:IdCaso, state:CasoState){
+    var forPk={vivienda, formulario:defOperativo.defUA[defOperativo.UAprincipal].idsFor[0]}
+    calcularFeedbackUnidadAnalisis(state, state.datos.hdr[vivienda].respuestas, defOperativo.UAprincipal, {vivienda, formulario});
+}
+
 export async function dmTraerDatosFormulario(opts:{modoDemo:boolean, vivienda?: IdCaso, useSessionStorage?:boolean}){
     opts.useSessionStorage= opts.useSessionStorage||false;
     var createInitialState = async function createInitialState(){
@@ -899,14 +925,7 @@ export async function dmTraerDatosFormulario(opts:{modoDemo:boolean, vivienda?: 
         var formulario:IdFormulario;
         // @ts-ignore esto se va
         for(var vivienda in initialState.datos.hdr){
-            // @ts-ignore esto se va
-            for(var formulario in initialState.estructura.formularios){
-                initialState.feedbackRowValidator[toPlainForPk({vivienda,formulario})]=
-                    rowValidator(
-                        initialState.estructura.formularios[formulario].estructuraRowValidator, 
-                        initialState.datos.hdr[vivienda].respuestas
-                    )
-            }
+            calcularFeedbackEncuesta(vivienda);
         }
         return initialState;
     }

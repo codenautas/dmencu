@@ -16,7 +16,7 @@ import {Bloque, BotonFormulario,
     ModoDespliegue,
     Opcion, OpcionMultiple, OpcionNo, OpcionSi, 
     Pregunta, PreguntaConOpciones, PreguntaConOpcionesMultiples, PreguntaSimple, 
-    Respuestas, Valor, TEM, IdCarga, Carga, HojaDeRuta, PlainForPk, IdFin, InfoTarea, Tareas, Visita
+    Respuestas, Valor, TEM, IdCarga, Carga, VivendasHdR, PlainForPk, IdFin, InfoTarea, Tareas, Visita
 } from "./tipos";
 import { dmTraerDatosFormulario, dispatchers, 
     getFuncionHabilitar, 
@@ -887,7 +887,7 @@ export function DesplegarCarga(props:{
     carga:Carga, 
     idCarga:IdCarga, 
     posicion:number,
-    hdr:HojaDeRuta, 
+    hdr:VivendasHdR, 
     mainForm:IdFormulario, 
     feedbackRowValidator:{
         [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> 
@@ -900,7 +900,7 @@ export function DesplegarCarga(props:{
     const etiquetaRepetida = (etiquetas:(string|null)[], etiqueta:string)=>{
         return etiquetas.filter((e)=>e==etiqueta).length > 1
     }
-    const buscarCasosEnHdrParaEtiqueta = (hdr:HojaDeRuta, etiqueta:string, etiquetaVarname:IdVariable, casoActual:IdCaso)=>{
+    const buscarCasosEnHdrParaEtiqueta = (hdr:VivendasHdR, etiqueta:string, etiquetaVarname:IdVariable, casoActual:IdCaso)=>{
         return likeAr(hdr)
             .filter((datosVivienda:DatosVivienda, idCaso:IdCaso)=>datosVivienda.respuestas[etiquetaVarname]==etiqueta)
             .map((_datosVivienda:DatosVivienda,idCaso:IdCaso)=>idCaso)
