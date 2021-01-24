@@ -165,7 +165,7 @@ export type Formulario = CasilleroBase & {
     casilleros:ContenidoFormulario[]
     var_name?:null
     tipovar?:null
-    unidad_analisis:string
+    unidad_analisis:IdUnidadAnalisis
 }
 
 export type CasillerosImplementados=Formulario|Bloque|Filtro|ConjuntoPreguntas|Pregunta|OpcionMultiple|Opcion|BotonFormulario|Consistencia

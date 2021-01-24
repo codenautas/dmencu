@@ -16,7 +16,7 @@ import {Bloque, BotonFormulario,
     ModoDespliegue,
     Opcion, OpcionMultiple, OpcionNo, OpcionSi, 
     Pregunta, PreguntaConOpciones, PreguntaConOpcionesMultiples, PreguntaSimple, 
-    Respuestas, Valor, TEM, IdCarga, Carga, VivendasHdR, PlainForPk, IdFin, InfoTarea, Tareas, Visita
+    Respuestas, Valor, TEM, IdCarga, Carga, VivendasHdR, PlainForPk, IdFin, InfoTarea, Tareas, Visita, IdUnidadAnalisis
 } from "./tipos";
 import { dmTraerDatosFormulario, dispatchers, 
     getFuncionHabilitar, 
@@ -504,10 +504,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     var multipleFormularios=formularioAAbrir.unidad_analisis != props.formulario.unidad_analisis;
     var cantForm:number = 1;
     if(multipleFormularios){
-        if(casillero.expresion_habilitar==null){
-            throw new Error('se necesita la variable cantidad en expresion_habilitar del BF: '+casillero.casillero);
-        }
-        cantForm = Number(respuestas[casillero.expresion_habilitar as IdVariable]) || 1;
+        cantForm = respuestas[formularioAAbrir.unidad_analisis].length;
     }
     const ir = (numero:number|null)=>{
         if(!casillero.salto){
@@ -518,8 +515,8 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
         }else{
             var nuevaForPk={...forPk, formulario:idFormularioDestino};
             if(multipleFormularios){
-                // @ts-ignore
-                var nuevoCampoPk = defOperativo.defUA[formularioAAbrir.unidad_analisis].pk;;
+                var nuevoCampoPk = defOperativo.defUA[formularioAAbrir.unidad_analisis].pk;
+                // @ts-ignore forPk y sus componentes
                 nuevaForPk[nuevoCampoPk] = numero
             }
             dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:nuevaForPk}));
@@ -584,7 +581,7 @@ function useSelectorVivienda(forPk:ForPk){
             // @ts-ignore
             var pkUa = defOperativo.defUA[ua].pk; // ejemplo "hogar"
             // @ts-ignore
-            respuestas = respuestas[ua][forPk[pkUa]]
+            respuestas = respuestas[ua][forPk[pkUa]-1]
         }
         var g1='g1' as IdVariable;
         var tipo_relevamiento='tipo_relevamiento' as IdVariable;
