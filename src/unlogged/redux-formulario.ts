@@ -3,6 +3,7 @@ import { CasilleroBase, CasillerosImplementados, CasoState,
     DatosVivienda, EstadoCarga, EstructuraRowValidator, 
     FeedbackVariable, Formulario, ForPk, 
     IdCarga, IdCasillero, IdCaso, IdDestino, IdFin, IdFormulario, IdTarea, IdVariable, 
+    IdUnidadAnalisis,
     InfoFormulario, 
     ModoDespliegue, 
     Opcion, PlainForPk, Respuestas, ResumenEstado,
@@ -126,12 +127,12 @@ var rowValidator = getRowValidator({getFuncionHabilitar})
 export var defOperativo = {
     esVacio:(respuestas:Respuestas)=>JSON.stringify(respuestas)=='{}',
     esNorea:(respuestas:Respuestas)=>respuestas['entrea' as IdVariable]!=1,
-    UAprincipal:'viviendas',
+    UAprincipal:'viviendas' as IdUnidadAnalisis,
     defUA:{
         hogares:{ pk: 'hogar' , incluidas:['personas'], idsFor:['F:S1', 'F:A1']},
         personas:{ pk: 'persona', idsFor:['F:S1_P', 'F:I1']},
         viviendas:{ pk: false, incluidas:['hogares'], idsFor:['F:RE']}
-    },
+    } as unknown as {[i in IdUnidadAnalisis]:{pk:IdVariable, incluidas:IdUnidadAnalisis[], idsFor:IdFormulario[]}},
     defFor:{
         'F:RE':{arbolUA:[]},
         'F:S1':{arbolUA:['hogares']},
@@ -191,96 +192,130 @@ function encolarBackup(token:string|undefined, idCaso:IdCaso, vivienda:DatosVivi
 function variablesCalculadas(datosVivienda: DatosVivienda):DatosVivienda{
     return datosVivienda;
     // TODO: GENERALIZAR
-    var cp='cp' as IdVariable;
-    var _personas_incompletas = '_personas_incompletas' as IdVariable
-    var p9='p9' as IdVariable;
-    var p11='p11' as IdVariable;
-    var tipo_seleccion = 'tipo_seleccion' as IdVariable;
-    var tipo_relevamiento = 'tipo_relevamiento' as IdVariable;
-    //@ts-ignore
-    var cantidadPersonasActual:number = datosVivienda.respuestas.personas?.length||0;
-    //@ts-ignore
-    var personasIncompletas=datosVivienda.respuestas.personas.filter(p=>!p.p1 || !p.p2 || !p.p3 || p.p3>=18 && !p.p4).length;
-    /*
-    if(
-        (datosVivienda.respuestas[cp]||1)==cantidadPersonasActual
-        && datosVivienda.respuestas[_personas_incompletas]==personasIncompletas
-        && (datosVivienda.respuestas[p9]==null && datosVivienda.respuestas[p11]==null)
-    ) return datosVivienda;
-    */
-    datosVivienda=bestGlobals.changing({respuestas:{personas:[{}]}},datosVivienda) // deepCopy
-    var respuestas = datosVivienda.respuestas as unknown as {
-        cp:number, personas:Persona[],
-        _personas_incompletas:number, 
-        _edad_maxima:number, 
-        _edad_minima:number, 
-        d4:number|null, d5:number|null, d5c:number|null, 
-        p9:number|null, p11:number|null, p12:string|null,
-        dv4:number|null, g1:number|null,
-        c5:string|null,
-        c5ok:number|null
-    };
-    if(respuestas.c5==null){
-        respuestas.c5ok=null;
-    }else{
-        respuestas.c5 = respuestas.c5.replace(/[\+\*\.# _\/,]/g,'-');
-        if(!/-/.test(respuestas.c5) && respuestas.c5.length>4){
-            respuestas.c5=respuestas.c5.substr(0,4)+'-'+respuestas.c5.substr(4);
-        }
-        respuestas.c5ok=controlarCodigoDV2(respuestas.c5)?1:2;
-    }
-    if(respuestas.dv4==2 && respuestas.g1==6 && respuestas.p9==null){
-        respuestas.p9=1;
-    }
-    if(respuestas.d4==1){
-        respuestas.d5c=respuestas.d5c||respuestas.d5;
-        respuestas.d5=null;
-    }else{
-        respuestas.d5=respuestas.d5||respuestas.d5c;
-        respuestas.d5c=null;
-    }
-    respuestas.personas.forEach(p=>{if(p.p3<18) p.p4=null});
-    if(respuestas.p9==2){
-        respuestas.cp=Math.max(respuestas.personas.length,respuestas.cp)+1
-        respuestas.p9=null;
-    }
-    if(respuestas.cp>MAXCP) respuestas.cp=MAXCP;
-    if(respuestas.cp<respuestas.personas.length){
-        respuestas.personas=respuestas.personas.filter(p=>p.p1||p.p3);
-    }
-    if(respuestas.cp>respuestas.personas.length){
-        while(respuestas.cp>respuestas.personas.length){
-            respuestas.personas.push({} as Persona)
-        }
-    }
-    if(respuestas.personas.length==0){
-        respuestas.personas.push({} as Persona)
-    }
-    respuestas._personas_incompletas=respuestas.personas.filter(
-        p=>!p.p1 || !p.p2 || !p.p3 
-            || p.p3>=18 && (!p.p4 && datosVivienda.respuestas[tipo_seleccion]==2 && datosVivienda.respuestas[tipo_relevamiento]==1)
-    ).length;
-    respuestas._edad_maxima=respuestas.personas.reduce((acc,p)=>Math.max(p.p3,acc),0);
-    respuestas._edad_minima=respuestas.personas.reduce((acc,p)=>Math.min(p.p3,acc),99);
-    if(respuestas.p9!=1){
-        respuestas.p11=null;
-        respuestas.p12=null;
-    }
-    if(respuestas.p9==1 && !respuestas.p11 && respuestas._personas_incompletas==0){
-        var sortear=likeAr(respuestas.personas).filter(
-            p=>p.p3>=18 && (
-                datosVivienda.respuestas[tipo_seleccion]==1 && datosVivienda.respuestas[tipo_relevamiento]==1
-                || datosVivienda.respuestas[tipo_seleccion]==1 && datosVivienda.respuestas[tipo_relevamiento]==2 && p.p6==1
-                || datosVivienda.respuestas[tipo_seleccion]==2 && datosVivienda.respuestas[tipo_relevamiento]==1 && p.p4==1
-                || datosVivienda.respuestas[tipo_seleccion]==2 && datosVivienda.respuestas[tipo_relevamiento]==2 && p.p5==1
+//    var cp='cp' as IdVariable;
+//    var _personas_incompletas = '_personas_incompletas' as IdVariable
+//    var p9='p9' as IdVariable;
+//    var p11='p11' as IdVariable;
+//    var tipo_seleccion = 'tipo_seleccion' as IdVariable;
+//    var tipo_relevamiento = 'tipo_relevamiento' as IdVariable;
+//    //@ts-ignore
+//    var cantidadPersonasActual:number = datosVivienda.respuestas.personas?.length||0;
+//    //@ts-ignore
+//    var personasIncompletas=datosVivienda.respuestas.personas.filter(p=>!p.p1 || !p.p2 || !p.p3 || p.p3>=18 && !p.p4).length;
+//    /*
+//    if(
+//        (datosVivienda.respuestas[cp]||1)==cantidadPersonasActual
+//        && datosVivienda.respuestas[_personas_incompletas]==personasIncompletas
+//        && (datosVivienda.respuestas[p9]==null && datosVivienda.respuestas[p11]==null)
+//    ) return datosVivienda;
+//    */
+//    datosVivienda=bestGlobals.changing({respuestas:{personas:[{}]}},datosVivienda) // deepCopy
+//    var respuestas = datosVivienda.respuestas as unknown as {
+//        cp:number, personas:Persona[],
+//        _personas_incompletas:number, 
+//        _edad_maxima:number, 
+//        _edad_minima:number, 
+//        d4:number|null, d5:number|null, d5c:number|null, 
+//        p9:number|null, p11:number|null, p12:string|null,
+//        dv4:number|null, g1:number|null,
+//        c5:string|null,
+//        c5ok:number|null
+//    };
+//    if(respuestas.c5==null){
+//        respuestas.c5ok=null;
+//    }else{
+//        respuestas.c5 = respuestas.c5.replace(/[\+\*\.# _\/,]/g,'-');
+//        if(!/-/.test(respuestas.c5) && respuestas.c5.length>4){
+//            respuestas.c5=respuestas.c5.substr(0,4)+'-'+respuestas.c5.substr(4);
+//        }
+//        respuestas.c5ok=controlarCodigoDV2(respuestas.c5)?1:2;
+//    }
+//    if(respuestas.dv4==2 && respuestas.g1==6 && respuestas.p9==null){
+//        respuestas.p9=1;
+//    }
+//    if(respuestas.d4==1){
+//        respuestas.d5c=respuestas.d5c||respuestas.d5;
+//        respuestas.d5=null;
+//    }else{
+//        respuestas.d5=respuestas.d5||respuestas.d5c;
+//        respuestas.d5c=null;
+//    }
+//    respuestas.personas.forEach(p=>{if(p.p3<18) p.p4=null});
+//    if(respuestas.p9==2){
+//        respuestas.cp=Math.max(respuestas.personas.length,respuestas.cp)+1
+//        respuestas.p9=null;
+//    }
+//    if(respuestas.cp>MAXCP) respuestas.cp=MAXCP;
+//    if(respuestas.cp<respuestas.personas.length){
+//        respuestas.personas=respuestas.personas.filter(p=>p.p1||p.p3);
+//    }
+//    if(respuestas.cp>respuestas.personas.length){
+//        while(respuestas.cp>respuestas.personas.length){
+//            respuestas.personas.push({} as Persona)
+//        }
+//    }
+//    if(respuestas.personas.length==0){
+//        respuestas.personas.push({} as Persona)
+//    }
+//    respuestas._personas_incompletas=respuestas.personas.filter(
+//        p=>!p.p1 || !p.p2 || !p.p3 
+//            || p.p3>=18 && (!p.p4 && datosVivienda.respuestas[tipo_seleccion]==2 && datosVivienda.respuestas[tipo_relevamiento]==1)
+//    ).length;
+//    respuestas._edad_maxima=respuestas.personas.reduce((acc,p)=>Math.max(p.p3,acc),0);
+//    respuestas._edad_minima=respuestas.personas.reduce((acc,p)=>Math.min(p.p3,acc),99);
+//    if(respuestas.p9!=1){
+//        respuestas.p11=null;
+//        respuestas.p12=null;
+//    }
+//    if(respuestas.p9==1 && !respuestas.p11 && respuestas._personas_incompletas==0){
+//        var sortear=likeAr(respuestas.personas).filter(
+//            p=>p.p3>=18 && (
+//                datosVivienda.respuestas[tipo_seleccion]==1 && datosVivienda.respuestas[tipo_relevamiento]==1
+//                || datosVivienda.respuestas[tipo_seleccion]==1 && datosVivienda.respuestas[tipo_relevamiento]==2 && p.p6==1
+//                || datosVivienda.respuestas[tipo_seleccion]==2 && datosVivienda.respuestas[tipo_relevamiento]==1 && p.p4==1
+//                || datosVivienda.respuestas[tipo_seleccion]==2 && datosVivienda.respuestas[tipo_relevamiento]==2 && p.p5==1
+//            )
+//        ).map((p,i)=>({p0:num(i)+1, ...p})).array();
+//        sortear.sort(bestGlobals.compareForOrder([{column:"p3"},{column:"p2"},{column:"p1"},{column:"p0"}]));
+//        var posicionSorteada=((num(datosVivienda.tem.nrocatastral)*13+num(datosVivienda.tem.piso))*17 % 3127) % sortear.length
+//        respuestas.p11=sortear[posicionSorteada].p0;
+//        respuestas.p12 = respuestas.personas[respuestas.p11-1].p1;
+//    }
+//    return datosVivienda;
+}
+
+export async function calcularFeedbackUnidadAnalisis(
+    feedbackRowValidator:{ [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> },
+    formularios:{ [nombreFormulario in IdFormulario]:InfoFormulario }, 
+    respuestas:Respuestas, 
+    UA:IdUnidadAnalisis, 
+    forPk:ForPk
+){
+    // @ts-ignore esto se va
+    for(var formulario of defOperativo.defUA[UA].idsFor){
+        feedbackRowValidator[toPlainForPk({...forPk, formulario})]=
+            rowValidator(
+                formularios[formulario].estructuraRowValidator, 
+                respuestas
             )
-        ).map((p,i)=>({p0:num(i)+1, ...p})).array();
-        sortear.sort(bestGlobals.compareForOrder([{column:"p3"},{column:"p2"},{column:"p1"},{column:"p0"}]));
-        var posicionSorteada=((num(datosVivienda.tem.nrocatastral)*13+num(datosVivienda.tem.piso))*17 % 3127) % sortear.length
-        respuestas.p11=sortear[posicionSorteada].p0;
-        respuestas.p12 = respuestas.personas[respuestas.p11-1].p1;
     }
-    return datosVivienda;
+    for(var UAincluida of defOperativo.defUA[UA].incluidas){
+        var pkNueva = defOperativo.defUA[UAincluida].pk;
+        var conjuntoRespuestasUA = respuestas[UAincluida];
+        conjuntoRespuestasUA.forEach((respuestas, i)=>{
+            calcularFeedbackUnidadAnalisis(feedbackRowValidator, formularios, respuestas, UAincluida, {...forPk, [pkNueva]:i+1});
+        })
+    }
+}
+
+export async function calcularFeedbackEncuesta(
+    feedbackRowValidator:{ [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> },
+    formularios:{ [nombreFormulario in IdFormulario]:InfoFormulario }, 
+    vivienda:IdCaso, 
+    respuestas:Respuestas
+){
+    var forPk={vivienda, formulario:defOperativo.defUA[defOperativo.UAprincipal].idsFor[0]}
+    calcularFeedbackUnidadAnalisis(feedbackRowValidator, formularios, respuestas, defOperativo.UAprincipal, forPk);
 }
 
 function calcularFeedback(state: CasoState, forPk?:ForPk|null):CasoState{
@@ -293,39 +328,16 @@ function calcularFeedback(state: CasoState, forPk?:ForPk|null):CasoState{
     var vivienda = forPk.vivienda;
     var respuestas = state.datos.hdr[vivienda].respuestas;
     if(respuestas){
+        /*
         var nuevosRows = likeAr([
             ...likeAr(state.estructura.formularios).map((_, id)=>({
                 forPk:{vivienda, formulario:id},
                 formulario:id,
                 post:null
             })).array()
-        /*
-        var nuevosRows = likeAr([
-            {forPk:{vivienda, formulario:'F:F1' as IdFormulario}, formulario:'F:F1' as IdFormulario, post:null},
-            {forPk:{vivienda, formulario:'F:F2' as IdFormulario}, formulario:'F:F2' as IdFormulario, post:null},
-            {forPk:{vivienda, formulario:'F:F3' as IdFormulario}, formulario:'F:F3' as IdFormulario, post:null},
-            ...bestGlobals.serie({
-                from:1, 
-                //@ts-ignore existen las personas y es un array
-                to:respuestas.personas?.length||0
-            }).map(persona=>({forPk:{vivienda, formulario:'F:F2' as IdFormulario, persona}, formulario:'F:F2_personas' as IdFormulario, 
-                post:true
-            }))
-        */
         ]).build(({forPk, formulario, post})=>{
             var respuestasUnidadAnalisis;
             var respuestasVivienda=state.datos.hdr[forPk.vivienda].respuestas;
-            // TODO: GENERALIZAR:
-            /*if('persona' in forPk && forPk.persona!=null){
-                // @ts-ignore exite
-                respuestasUnidadAnalisis={...respuestasVivienda.personas[forPk.persona-1]};
-                try{
-                    Object.defineProperties(respuestasUnidadAnalisis,{
-                        tipo_seleccion   :{ get:function(){ return respuestasVivienda[tipo_seleccion]   }, enumerable:false},
-                        tipo_relevamiento:{ get:function(){ return respuestasVivienda[tipo_relevamiento]}, enumerable:false},
-                    });
-                }finally{}
-            }else*/{
                 respuestasUnidadAnalisis=respuestasVivienda;
             }
             var estructura=state.estructura.formularios[formulario].estructuraRowValidator;
@@ -356,6 +368,10 @@ function calcularFeedback(state: CasoState, forPk?:ForPk|null):CasoState{
                 [toPlainForPk(forPk)]: row
             }
         })
+        */
+        // @ts-ignore Partial
+        var nuevosRows : {[x in PlainForPk]:FormStructureState<IdVariable,IdFin>}={}
+        calcularFeedbackEncuesta(nuevosRows, state.estructura.formularios, forPk.vivienda, respuestas);
         var resumenEstado = calcularResumenVivienda(forPk.vivienda, 
             // @ts-ignore sí, tiene los feedbacks de los formularios 
             nuevosRows,
@@ -367,6 +383,7 @@ function calcularFeedback(state: CasoState, forPk?:ForPk|null):CasoState{
         resumenEstado='vacio';
     }
     var datosVivienda = state.datos.hdr[forPk.vivienda];
+    var feedbackRowValidator
     return {
         ...state,
         datos:{
@@ -861,29 +878,6 @@ export async function traerEstructura(params:{operativo: string}){
     return estructura;
 }
 
-export async function calcularFeedbackUnidadAnalisis(state:CasoState, respuestas:Respuestas, UA:string, forPk:ForPk){
-            // @ts-ignore esto se va
-    for(var formulario of defOperativo.defUA[UA].idsFor){
-        state.feedbackRowValidator[toPlainForPk({...forPk, formulario})]=
-            rowValidator(
-                state.estructura.formularios[formulario].estructuraRowValidator, 
-                respuestas
-            )
-    }
-    for(var UAincluida of defOperativo.defUA[UA].incluidas){
-        var pkNueva = defOperativo.defUA[UAincluida].pk;
-        var conjuntoRespuestasUA = respuestas[UAincluida];
-        conjuntoRespuestasUA.forEach((respuestas, i)=>{
-            calcularFeedbackUnidadAnalisis(state, respuestas, UAincluida, {...forPk, [pkNueva]:i+1});
-        })
-    }
-}
-
-export async function calcularFeedbackEncuesta(vivienda:IdCaso, state:CasoState){
-    var forPk={vivienda, formulario:defOperativo.defUA[defOperativo.UAprincipal].idsFor[0]}
-    calcularFeedbackUnidadAnalisis(state, state.datos.hdr[vivienda].respuestas, defOperativo.UAprincipal, {vivienda, formulario});
-}
-
 export async function dmTraerDatosFormulario(opts:{modoDemo:boolean, vivienda?: IdCaso, useSessionStorage?:boolean}){
     opts.useSessionStorage= opts.useSessionStorage||false;
     var createInitialState = async function createInitialState(){
@@ -925,7 +919,7 @@ export async function dmTraerDatosFormulario(opts:{modoDemo:boolean, vivienda?: 
         var formulario:IdFormulario;
         // @ts-ignore esto se va
         for(var vivienda in initialState.datos.hdr){
-            calcularFeedbackEncuesta(vivienda);
+            // calcularFeedbackEncuesta(vivienda);
         }
         return initialState;
     }

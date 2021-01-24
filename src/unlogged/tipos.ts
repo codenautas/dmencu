@@ -8,10 +8,11 @@
 import {FormStructureState, Structure, Feedback} from "row-validator";
 
 export type IdOpcion = number
-export type IdVariable = 'v1'|'v2'|'personas'|'etc...'
+export type IdVariable = 'v1'|'v2'|'v3'|'etc...'
 export type IdPregunta = 'P1'|'P2'|'etc...'
 export type IdBloque = 'B1'|'B2'|'etc...'
 export type IdFormulario = 'F1'|'F2'|'etc...'
+export type IdUnidadAnalisis = 'viviendas'|'hogares'|'personas'
 export type IdBotonFormulario = 'BF:F1'|'BF:F2'|'etc...'
 export type IdConsistencia = 'CONS1'|'CONS2'|'etc...'
 export type IdFiltro = 'FILTRO1' | 'FILTRO2' | 'etc...'
@@ -174,6 +175,8 @@ export type PlainForPk='{"vivienda":"10202","formulario":"F:F1","persona":null}'
 
 export type Respuestas={
         [pregunta in IdVariable]:Valor
+    } & {
+        [ua in IdUnidadAnalisis]:Respuestas[]
     }
 
 /*
@@ -281,7 +284,6 @@ export type CasoState={
             [nombreFormulario in IdFormulario]:InfoFormulario
         }
         tareas:TareasEstructura
-        mainForm:IdFormulario
     }
     datos:{
         hdr:VivendasHdR

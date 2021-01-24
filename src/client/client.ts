@@ -1,5 +1,4 @@
 import {html, HtmlTag} from "js-to-html";
-import * as myOwn from "myOwn";
 import {LOCAL_STORAGE_STATE_NAME, dmTraerDatosFormulario, traerEstructura, replaceSpecialWords} from "../unlogged/redux-formulario";
 import { CasoState, EtiquetaOpts, IdVariable, IdCaso } from "../unlogged/tipos";
 import { crearEtiqueta } from "../unlogged/generador-qr";
@@ -24,35 +23,41 @@ async function sincronizarDatos(state:CasoState|null){
     var datos = await my.ajax.dm_sincronizar({datos:state?.datos||null});
     var estructura = await traerEstructura({operativo:OPERATIVO})
     if(state==null){
+        //@ts-ignore
         state={};
     }
-    state.datos=datos;
-    state.estructura=estructura;
-    state.modo = {
-        demo: false
+    if(state){
+        state.datos=datos;
+        state.estructura=estructura;
+        state.modo = {
+            demo: false
+        }
+        state.opciones = {
+            bienvenido: false,
+            forPk: null,
+            modoDespliegue: "relevamiento",
+            modoDirecto: false,
+        }
+        //@ts-ignore
+        state.feedbackRowValidator={};
+        my.setLocalVar(LOCAL_STORAGE_STATE_NAME, state);
     }
-    state.opciones = {
-        bienvenido: false,
-        forPk: null,
-        modoDespliegue: "relevamiento",
-        modoDirecto: false,
-    }
-    state.feedbackRowValidator={};
-    my.setLocalVar(LOCAL_STORAGE_STATE_NAME, state);
     return datos;
 }
 
 async function abrirDirecto(enc:IdCaso){
     if(!my.getSessionVar(LOCAL_STORAGE_STATE_NAME)){
         var datos = await my.ajax.dm_enc_cargar({enc:enc});
-        var state={};
+        // @ts-ignore
+        var state:CasoState={};
         state.datos=datos;
+        // @ts-ignore
         state.feedbackRowValidator={};
         my.setSessionVar(LOCAL_STORAGE_STATE_NAME, state);
     }
 }
 
-myOwn.wScreens.sincronizar_dm=function(){
+myOwn.wScreens.sincronizar_dm=async function(){
     var mainLayout = document.getElementById('main_layout')!;
     // TODO: Generalizar
     var dv1='dv1' as IdVariable;
@@ -107,7 +112,6 @@ myOwn.wScreens.sincronizar_dm=function(){
         }
     }
 };
-
 
 myOwn.wScreens.proc.result.qrs_traer = async (result:{etiquetas:EtiquetaOpts[]}, divResult:HTMLDivElement)=>{
     var planchas=html.div({class:"planchas"}).create();
@@ -174,16 +178,6 @@ function mostrarDatosPersona(hayDatos:boolean, datos:any, divResult:HTMLDivEleme
     )
 }
 
-var wScreenProcResultResultadoLaboratorio = function(atributo:string, mensajeNo){
-    return async (result:{estado:'ok'|'tenia', hayDatos:boolean, datos:any}, divResult:HTMLDivElement)=>{
-        divResult.removeAttribute("style");
-        divResult.setAttribute(atributo,result.estado);
-        divResult.appendChild(
-            html.h2({class:result.estado}, result.estado=="ok"?'ok':mensajeNo).create()
-        )
-        mostrarDatosPersona(result.hayDatos, result.datos, divResult);
-    }
-}
 myOwn.clientSides.avisar={
     prepare: (depot, fieldName)=>{
         var avisarButton = html.button({class:'avisar-button'},'aviso').create();
@@ -208,20 +202,24 @@ myOwn.clientSides.tareasTemRow={
     update:(depot)=>{
         var tarea:'nada'|'preasignar'|'cargar'|'realizar'|'verificar'='nada';
         var row=depot.row;
+        // @ts-ignore
+        var idper=my.config.idper;
         var esperar:boolean=false;
+        // @ts-ignore
+        var idper = my.config.idper;
         if(row.habilitada){
             if(!row.asignante && !row.asignado){
                 tarea='preasignar';
                 esperar=true;
             }else if(!row.asignado || !row.fecha_asignacion || !row.operacion){
                 tarea='cargar';
-                esperar=row.asignante!=my.config.idper;
+                esperar=row.asignante!=idper;
             }else if(!row.resultado){
                 tarea='realizar';
-                esperar=row.asignado!=my.config.idper;
+                esperar=row.asignado!=idper;
             }else if(!row.verificado){
                 tarea='verificar';
-                esperar=row.asignante!=my.config.idper;
+                esperar=row.asignante!=idper;
             }
         }
         var poner={
@@ -231,7 +229,7 @@ myOwn.clientSides.tareasTemRow={
             operacion          :tarea=='cargar'     && (esperar?'esperar':'normal'),
             carga_observaciones:(tarea=='cargar'   || tarea=='realizar' && !row.cargado && !row.resultado && !row.notas) && row.asignante==my.config.idper && 'optativo',
             resultado          :tarea=='realizar'   && (esperar?'esperar':'normal'),
-            notas              :(tarea=='realizar' || tarea=='verificar' && !row.verificado) && row.asignado==my.config.idper && 'optativo',
+            notas              :(tarea=='realizar' || tarea=='verificar' && !row.verificado) && row.asignado==idper && 'optativo',
             verificado         :tarea=='verificar'  && (esperar?'esperar':'normal'),
             obs_verificado     :tarea=='verificar'  && (esperar?'esperar':'optativo'),
         }
@@ -242,7 +240,8 @@ myOwn.clientSides.tareasTemRow={
                 depot.rowControls[campo].setAttribute('my-mandatory',valor);
             }
         })
-    }
+    },
+    prepare: function(){}
 }
 
 myOwn.clientSides.avisar_email={
@@ -266,16 +265,10 @@ myOwn.clientSides.avisar_email={
     update: false,
 };
 
-myOwn.wScreens.proc.result.resultado_cargar = wScreenProcResultResultadoLaboratorio('resultado-rectificar', "No se cargó el resultado ya que fue cargado anteriormente. Vaya a rectificar si desea modificalo.");
-
-myOwn.wScreens.proc.result.resultado_rectificar = wScreenProcResultResultadoLaboratorio('resultado-rectificar', "No se cargó la rectificación revise el número de rectificación.");
-
-myOwn.wScreens.proc.result.laboratorio_ingresar = wScreenProcResultResultadoLaboratorio('resultado-cargar', "Recepción de la muestra ya había sido registrada");
-
 myOwn.wScreens.resultados_ver = async ()=>{
     var mainLayout = document.getElementById('main_layout')!;
     mainLayout.appendChild(html.h1('ingrese fecha de busqueda').create());
-    var fechaElement=html.td({style:'min-width:100px; border:solid 1px black', "typed-controls-direct-input":"true"}).create();
+    var fechaElement=html.td({style:'min-width:100px; border:solid 1px black', $attrs:{"typed-controls-direct-input":"true"}}).create();
     var searchButton = html.button({class:'ver-resultados-button'},'buscar').create();
     var allButton = html.button({class:'ver-todos-resultados-button'},'todos').create();
     mainLayout.appendChild(html.label(['fecha:',fechaElement]).create());
@@ -288,8 +281,10 @@ myOwn.wScreens.resultados_ver = async ()=>{
         resultDiv.innerHTML='';
         var fecha;
         try{
+            // @ts-ignore typed-controls
             fecha = fechaElement.getPlainValue();
         }catch(err){
+            // @ts-ignore typed-controls
             fechaElement.setTypedValue(null)
         }
         var fixedFields = [];
@@ -301,21 +296,25 @@ myOwn.wScreens.resultados_ver = async ()=>{
     }
     allButton.onclick=async ()=>{
         resultDiv.innerHTML='';
+        // @ts-ignore typed-controls
         fechaElement.setTypedValue(null)
         my.tableGrid('etiquetas_resultado',resultDiv,{tableDef:{}})
     }
 }
 
-myOwn.wScreens.abrirDirecto=async function(addrParams){
+myOwn.wScreens.abrirDirecto=async function(addrParams:myOwn.AddrParams){
+    // @ts-ignore AddPrams
+    var enc = addrParams.enc;
     try{
-        await abrirDirecto(addrParams.enc);
-        desplegarFormularioActual({modoDemo:false, vivienda:addrParams.enc, useSessionStorage:true});
+        await abrirDirecto(enc);
+        // @ts-ignore desplegarFormularioActual es global
+        desplegarFormularioActual({modoDemo:false, vivienda:enc, useSessionStorage:true});
     }catch(err){
         alertPromise(err.message)
     }
 };
 
-var crearBotonVer = (depot, fieldName, label:'abrir'|'ver'){
+var crearBotonVer = (depot:myOwn.Depot, fieldName:string, label:'abrir'|'ver')=>{
     //var openButton = my.createForkeableButton({w:'abrirDirecto',enc:depot.row.enc},{label})
     var openButton = html.button({class:'open-dm-button'},label).create();
     depot.rowControls[fieldName].innerHTML='';
@@ -327,25 +326,26 @@ var crearBotonVer = (depot, fieldName, label:'abrir'|'ver'){
 }
 
 myOwn.clientSides.abrir={
-    prepare: (depot, fieldName)=>{},
+    prepare: (_depot, _fieldName)=>{},
     update: (depot, fieldName)=>{
-        var label = depot.row.cargado_dm?'ver':'abrir';
+        var label:'ver'|'abrir' = depot.row.cargado_dm?'ver':'abrir';
         crearBotonVer(depot,fieldName,label);
     }
 };
 
 myOwn.clientSides.abrirRecepcion={
-    prepare: (depot, fieldName)=>{},
+    prepare: (_depot, _fieldName)=>{},
     update: (depot, fieldName)=>{
-        var label = depot.row.cargado?'ver':'abrir';
+        var label:'ver'|'abrir' = depot.row.cargado?'ver':'abrir';
         crearBotonVer(depot,fieldName,label);
     }
 };
 
-myOwn.wScreens.demo=function(){
+myOwn.wScreens.demo=async function(_addrParams){
+    // @ts-ignore desplegarFormularioActual global
     window.desplegarFormularioActual({modoDemo:true});
 }
 
 function arrayFlat<T>(arrays:T[][]):T[]{
-    return [].concat.apply([], arrays);
+    return ([] as T[]).concat.apply([], arrays);
 }
