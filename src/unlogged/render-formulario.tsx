@@ -501,13 +501,20 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     }));
     var habilitado = habilitador(respuestas);
     var dispatch = useDispatch();
-    var [confirmarForzarIr, setConfirmarForzarIr] = useState(false);
+    var [confirmarForzarIr, setConfirmarForzarIr] = useState<number|boolean|null>(null);
     var multipleFormularios=formularioAAbrir.unidad_analisis != props.formulario.unidad_analisis;
-    var cantForm:number = 1;
+    type DefinicionFormularioAbrir={num:number} | {num:number, esAgregar:true} | {num:false, unico:true};
+    var listaDeBotonesAbrir:DefinicionFormularioAbrir[]
     if(multipleFormularios){
-        cantForm = respuestas[formularioAAbrir.unidad_analisis].length;
+        let cantForm = respuestas[formularioAAbrir.unidad_analisis].length;
+        listaDeBotonesAbrir = serie({from:1, to:cantForm}).map(num=>({num}));
+        if("puede agregar //TODO VER ESTO"){
+            listaDeBotonesAbrir.push({num:cantForm+1, esAgregar:true});
+        }
+    }else{
+        listaDeBotonesAbrir = [{num:false, unico:true}]
     }
-    const ir = (numero:number|null)=>{
+    const ir = (defBoton:DefinicionFormularioAbrir)=>{
         if(!casillero.salto){
             opciones.modoDirecto?
                 null
@@ -518,7 +525,10 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
             if(multipleFormularios){
                 var nuevoCampoPk = defOperativo.defUA[formularioAAbrir.unidad_analisis].pk;
                 // @ts-ignore forPk y sus componentes
-                nuevaForPk[nuevoCampoPk] = numero
+                nuevaForPk[nuevoCampoPk] = defBoton.num
+                if('esAgregar' in defBoton){
+                    dispatch(dispatchers.AGREGAR_FORMULARIO({forPk:nuevaForPk}));        
+                }
             }
             dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:nuevaForPk}));
         }
@@ -532,28 +542,28 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
         tiene-valor="NO"
     >
         <div className="aclaracion">{casillero.aclaracion}</div>
-        {(multipleFormularios?serie({from:1, to:cantForm}):[null]).map((num:number|null)=>(
-            <div key={num}>
+        {listaDeBotonesAbrir.map((defBoton:DefinicionFormularioAbrir)=>(
+            <div key={defBoton.num.toString()}>
                 <Button
                     variant="contained"
                     color={habilitado?"primary":"default"}
                     onClick={()=>{
-                        if(habilitado) ir(num); 
-                        else setConfirmarForzarIr(true);
+                        if(habilitado) ir(defBoton); 
+                        else setConfirmarForzarIr(defBoton.num);
                     }}
-                >{casillero.nombre + ' ' + (num||'')}{casillero.salto?<ICON.Send/>:<ICON.ExitToApp/>}</Button>
+                >{casillero.nombre + ' ' + ('esAgregar' in defBoton?'+':defBoton.num||'')}{casillero.salto?<ICON.Send/>:<ICON.ExitToApp/>}</Button>
                 <Dialog 
                     className="nuestro-dialogo"
-                    open={confirmarForzarIr}
-                    onClose={()=>setConfirmarForzarIr(false)}
+                    open={confirmarForzarIr == defBoton.num}
+                    onClose={()=>setConfirmarForzarIr(null)}
                 >
                     <div className="nuestro-dialogo">
                         <Typography>No se puede avanzar al siguiente formulario.</Typography>
                         <Typography>Quizás no terminó de contestar las preguntas correspondientes</Typography>
                         <Typography>Quizás no corresponde en base a las respuestas obtenidas</Typography>
                     </div>
-                    <Button color="secondary" onClick={()=>ir(num)}>forzar</Button>
-                    <Button color="primary" variant="contained" onClick={()=>setConfirmarForzarIr(false)}>Entendido</Button>
+                    <Button color="secondary" onClick={()=>ir(defBoton)}>forzar</Button>
+                    <Button color="primary" variant="contained" onClick={()=>setConfirmarForzarIr(null)}>Entendido</Button>
                 </Dialog>
             </div>
         ))
@@ -573,7 +583,7 @@ function useSelectorVivienda(forPk:ForPk){
     return useSelector((state:CasoState)=>{
         var respuestasVivienda=state.datos.hdr[forPk.vivienda].respuestas;
         var dirty=state.datos.hdr[forPk.vivienda].dirty;
-        var respuestas = respuestasForPk(state, forPk)
+        var {respuestas} = respuestasForPk(state, forPk)
         return {
             dirty,
             respuestas,

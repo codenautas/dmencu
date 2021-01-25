@@ -447,8 +447,29 @@ function calcularResumenVivienda(
     return minResumen
 }
 
-export const respuestasForPk = (state:CasoState, forPk:ForPk, clone?:boolean)=>{
-    var respuestasVivienda=state.datos.hdr[forPk.vivienda].respuestas;
+export const respuestasForPk = (oldState:CasoState, forPk:ForPk, clone?:boolean)=>{
+    var state:CasoState;
+    if(clone){
+        var respuestasVivienda:Respuestas = {...oldState.datos.hdr[forPk.vivienda].respuestas};
+        var datosVivienda = {
+            ...oldState.datos.hdr[forPk.vivienda], 
+            respuestas:respuestasVivienda
+        }
+        state = {
+            ...oldState,
+            datos:{
+                ...oldState.datos,
+                hdr:{
+                    ...oldState.datos.hdr,
+                    [forPk.vivienda]:datosVivienda
+                }
+            }
+        }
+    }else{
+        state=oldState;
+        var datosVivienda=state.datos.hdr[forPk.vivienda]
+        var respuestasVivienda=datosVivienda.respuestas;
+    }
     var respuestas:typeof respuestasVivienda = respuestasVivienda;
     var arbol = defOperativo.defFor[forPk.formulario].arbolUA.slice();
     while(arbol.length){
@@ -456,26 +477,26 @@ export const respuestasForPk = (state:CasoState, forPk:ForPk, clone?:boolean)=>{
         var pkUa = defOperativo.defUA[ua].pk; // ejemplo "hogar"
         // @ts-ignore forPk
         var valorUa:number = forPk[pkUa]-1
-        if(clone && !arbol.length){
+        if(clone){
+            respuestas[ua] = respuestas[ua].slice();
             respuestas[ua][valorUa] = {...respuestas[ua][valorUa]};
         }
         respuestas = respuestas[ua][valorUa];
     }
-    return respuestas
+    return {respuestas, datosVivienda, respuestasVivienda, state}
 }
 
 var reducers={
     REGISTRAR_RESPUESTA: (payload: {forPk:ForPk, variable:IdVariable, respuesta:any}) => 
-        function(state: CasoState){
-            var datosViviendaRecibidos=state.datos.hdr[payload.forPk.vivienda];
+        function(oldState: CasoState){
+            let datosViviendaRecibidos=oldState.datos.hdr[payload.forPk.vivienda];
             if(datosViviendaRecibidos==null){
-                return state;
+                return oldState;
             }
-            var datosVivienda = state.datos.hdr[payload.forPk.vivienda] = {...state.datos.hdr[payload.forPk.vivienda]}; // Se clona el puntero a vivienda
-            var respuestas = respuestasForPk(state, payload.forPk, true); // se clona la respuesta particular
+            let {respuestas, datosVivienda, state} = respuestasForPk(oldState, payload.forPk, true); // se clona la respuesta particular
             /////////// ESPECIALES
-            var respuestasAModificar = respuestas;
-            var dirty = respuestasAModificar[payload.variable] != payload.respuesta
+            let respuestasAModificar = respuestas;
+            let dirty = respuestasAModificar[payload.variable] != payload.respuesta
             respuestasAModificar[payload.variable] = payload.respuesta;
             ////////// FIN ESPECIALES
             datosVivienda=variablesCalculadas(datosVivienda)
@@ -589,6 +610,11 @@ var reducers={
                     modoDespliegue:payload.modoDespliegue
                 }
             })
+        },
+    AGREGAR_FORMULARIO: (payload: {forPk:ForPk}) => 
+        function(state: CasoState){
+            var {state, respuestas} = respuestasForPk(state, payload.forPk, true);
+            return calcularFeedback(state)
         },
     CAMBIAR_FORMULARIO: (payload: {forPk:ForPk}) => 
         function(state: CasoState){
