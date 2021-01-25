@@ -19,6 +19,8 @@ import { controlarCodigoDV2 } from "./digitov";
 
 var my=myOwn;
 
+export const ultimaVaribleVivienda = 'NO_ESTA_DEFINIDA_AUN//TODO' as IdVariable;
+
 export const MAXCP=20;
 // TODO: Generalizar
 const OPERATIVO='etoi211';
@@ -139,7 +141,7 @@ export var defOperativo = {
         'F:A1':{arbolUA:['hogares']},
         'F:S1_P':{arbolUA:['hogares', 'personas']},
         'F:I1':{arbolUA:['hogares', 'personas']}
-    } as unknown as {[f in IdFormulario]:{arbolUA:string[]}}
+    } as unknown as {[f in IdFormulario]:{arbolUA:IdUnidadAnalisis[]}}
 }
 ///// ABAJO de esta línea no puede haber otros nombres de variables o formularios o casilleros en general
 
@@ -445,60 +447,39 @@ function calcularResumenVivienda(
     return minResumen
 }
 
+export const respuestasForPk = (state:CasoState, forPk:ForPk, clone?:boolean)=>{
+    var respuestasVivienda=state.datos.hdr[forPk.vivienda].respuestas;
+    var respuestas:typeof respuestasVivienda = respuestasVivienda;
+    var arbol = defOperativo.defFor[forPk.formulario].arbolUA.slice();
+    while(arbol.length){
+        var ua = arbol.shift()!; // ejemplo "hogares"
+        var pkUa = defOperativo.defUA[ua].pk; // ejemplo "hogar"
+        // @ts-ignore forPk
+        var valorUa:number = forPk[pkUa]-1
+        if(clone && !arbol.length){
+            respuestas[ua][valorUa] = {...respuestas[ua][valorUa]};
+        }
+        respuestas = respuestas[ua][valorUa];
+    }
+    return respuestas
+}
+
 var reducers={
     REGISTRAR_RESPUESTA: (payload: {forPk:ForPk, variable:IdVariable, respuesta:any}) => 
         function(state: CasoState){
-            const c5ok = 'c5ok' as IdVariable;
             var datosViviendaRecibidos=state.datos.hdr[payload.forPk.vivienda];
             if(datosViviendaRecibidos==null){
                 return state;
             }
+            var datosVivienda = state.datos.hdr[payload.forPk.vivienda] = {...state.datos.hdr[payload.forPk.vivienda]}; // Se clona el puntero a vivienda
+            var respuestas = respuestasForPk(state, payload.forPk, true); // se clona la respuesta particular
             /////////// ESPECIALES
-            var otrasRespuestasCalculadas={};
-            if(payload.variable==('dv1' as IdVariable) && payload.respuesta != null 
-                // @ts-ignore en esta encuesta existe
-                && datosViviendaRecibidos.respuestas.dv2 == null
-            ){
-                // @ts-expect-error tengo que agregar toDmy en los tipos
-                otrasRespuestasCalculadas.dv2=bestGlobals.date.today().toDmy();
-            }
-            if(payload.variable==('c5' as IdVariable) && payload.respuesta != null 
-                // @ts-ignore en esta encuesta existe
-                && datosViviendaRecibidos.respuestas.c5 == null
-            ){
-                // @ts-expect-error tengo que agregar toDmy en los tipos
-                otrasRespuestasCalculadas.c6=bestGlobals.date.today().toDmy();
-            }
-            var respuestas = {
-                ...datosViviendaRecibidos.respuestas,
-                ...otrasRespuestasCalculadas,
-            };
             var respuestasAModificar = respuestas;
-            /// GENERALIZAR:
-            if(payload.forPk.persona!=null){
-                var iPersona = payload.forPk.persona-1;
-                //@ts-ignore personas existe
-                respuestas.personas = respuestas.personas.map((p,i)=>
-                    payload.variable!='p6' as IdVariable && payload.variable!='p5' as IdVariable ? p : (
-                        {...p, [payload.variable]:i==iPersona?payload.respuesta:null}
-                    )
-                );
-                //@ts-ignore personas existe
-                respuestas.personas[iPersona] = {...respuestas.personas[iPersona]}
-                //@ts-ignore personas existe
-                respuestasAModificar = respuestas.personas[iPersona];
-                // TODO: Generalizar
-                var p9 = 'p9' as IdVariable;
-                respuestas[p9] = null;
-            }
             var dirty = respuestasAModificar[payload.variable] != payload.respuesta
             respuestasAModificar[payload.variable] = payload.respuesta;
             ////////// FIN ESPECIALES
-            var datosVivienda=variablesCalculadas({
-                ...datosViviendaRecibidos,
-                respuestas
-            })
-            if(datosViviendaRecibidos.respuestas[c5ok]==null && datosVivienda.respuestas[c5ok]!=null){
+            datosVivienda=variablesCalculadas(datosVivienda)
+            if(datosViviendaRecibidos.respuestas[ultimaVaribleVivienda]==null && datosVivienda.respuestas[ultimaVaribleVivienda]!=null){
                 encolarBackup(state.datos.token, payload.forPk.vivienda, datosVivienda);
             }
             datosVivienda.dirty = datosVivienda.dirty || dirty;
@@ -509,7 +490,6 @@ var reducers={
                     hdr:{
                         ...state.datos.hdr,
                         [payload.forPk.vivienda]:datosVivienda
-                        
                     }
                 }
             }, payload.forPk)

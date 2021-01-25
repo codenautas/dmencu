@@ -26,6 +26,7 @@ import { dmTraerDatosFormulario, dispatchers,
     saveSurvey,
     consultarEtiqueta,
     gotoVer,
+    respuestasForPk,
     defOperativo
 } from "./redux-formulario";
 import { useState, useEffect } from "react";
@@ -572,20 +573,7 @@ function useSelectorVivienda(forPk:ForPk){
     return useSelector((state:CasoState)=>{
         var respuestasVivienda=state.datos.hdr[forPk.vivienda].respuestas;
         var dirty=state.datos.hdr[forPk.vivienda].dirty;
-        //TODO: generalizar
-        // @ts-ignore
-        var respuestas:typeof respuestasVivienda = respuestasVivienda;
-        var arbol = defOperativo.defFor[forPk.formulario].arbolUA.slice();
-        while(arbol.length){
-            var ua = arbol.shift(); // ejemplo "hogares"
-            // @ts-ignore
-            var pkUa = defOperativo.defUA[ua].pk; // ejemplo "hogar"
-            // @ts-ignore
-            respuestas = respuestas[ua][forPk[pkUa]-1]
-        }
-        var g1='g1' as IdVariable;
-        var tipo_relevamiento='tipo_relevamiento' as IdVariable;
-        var tipo_seleccion='tipo_seleccion' as IdVariable;
+        var respuestas = respuestasForPk(state, forPk)
         return {
             dirty,
             respuestas,
@@ -597,10 +585,6 @@ function useSelectorVivienda(forPk:ForPk){
             modoDespliegue: state.modo.demo?state.opciones.modoDespliegue:'relevamiento',
             modo: state.modo,
             opciones: state.opciones,
-            // TODO: GENERALIZAR
-            g1: respuestasVivienda[g1],
-            tipo_relevamiento: respuestasVivienda[tipo_relevamiento],
-            tipo_seleccion: respuestasVivienda[tipo_seleccion]
         }
     })
 }
