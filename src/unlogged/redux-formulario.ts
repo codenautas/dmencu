@@ -286,26 +286,36 @@ function variablesCalculadas(datosVivienda: DatosVivienda):DatosVivienda{
 //    return datosVivienda;
 }
 
+// total_h>1 & edad==2 & 
+
 export async function calcularFeedbackUnidadAnalisis(
     feedbackRowValidator:{ [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> },
     formularios:{ [nombreFormulario in IdFormulario]:InfoFormulario }, 
     respuestas:Respuestas, 
     UA:IdUnidadAnalisis, 
-    forPk:ForPk
+    forPk:ForPk,
+    respuestasAumentadas:Respuestas // incluyen la de todos los padres y ansestros
 ){
     // @ts-ignore esto se va
     for(var formulario of defOperativo.defUA[UA].idsFor){
         feedbackRowValidator[toPlainForPk({...forPk, formulario})]=
             rowValidator(
                 formularios[formulario].estructuraRowValidator, 
-                respuestas
+                respuestasAumentadas
             )
     }
     for(var UAincluida of defOperativo.defUA[UA].incluidas){
         var pkNueva = defOperativo.defUA[UAincluida].pk;
         var conjuntoRespuestasUA = respuestas[UAincluida];
         conjuntoRespuestasUA.forEach((respuestas, i)=>{
-            calcularFeedbackUnidadAnalisis(feedbackRowValidator, formularios, respuestas, UAincluida, {...forPk, [pkNueva]:i+1});
+            calcularFeedbackUnidadAnalisis(
+                feedbackRowValidator, 
+                formularios, 
+                respuestas, 
+                UAincluida, 
+                {...forPk, [pkNueva]:i+1},
+                {...respuestasAumentadas, ...respuestas}
+            );
         })
     }
 }
@@ -317,7 +327,7 @@ export async function calcularFeedbackEncuesta(
     respuestas:Respuestas
 ){
     var forPk={vivienda, formulario:defOperativo.defUA[defOperativo.UAprincipal].idsFor[0]}
-    calcularFeedbackUnidadAnalisis(feedbackRowValidator, formularios, respuestas, defOperativo.UAprincipal, forPk);
+    calcularFeedbackUnidadAnalisis(feedbackRowValidator, formularios, respuestas, defOperativo.UAprincipal, forPk, respuestas);
 }
 
 function calcularFeedback(state: CasoState, forPk?:ForPk|null):CasoState{

@@ -495,24 +495,35 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     var habilitador = casillero.expresion_habilitar?getFuncionHabilitar(casillero.expresion_habilitar):()=>true;
     var {respuestas, opciones} = useSelectorVivienda(forPk);
     var idFormularioDestino = 'F:'+casillero.salto! as IdFormulario;
-    var {soloLectura, formularioAAbrir} = useSelector((state:CasoState)=>({
+    var {soloLectura, formularioAAbrir,feedbackRowValidator} = useSelector((state:CasoState)=>({
         soloLectura:state.datos.soloLectura, 
-        formularioAAbrir:state.estructura.formularios[idFormularioDestino].casilleros
+        formularioAAbrir:state.estructura.formularios[idFormularioDestino].casilleros,
+        feedbackRowValidator: state.feedbackRowValidator
     }));
     var habilitado = habilitador(respuestas);
     var dispatch = useDispatch();
     var [confirmarForzarIr, setConfirmarForzarIr] = useState<number|boolean|null>(null);
     var multipleFormularios=formularioAAbrir.unidad_analisis != props.formulario.unidad_analisis;
-    type DefinicionFormularioAbrir={num:number} | {num:number, esAgregar:true} | {num:false, unico:true};
+    type DefinicionFormularioAbrir={num:number, actual:boolean, previo:boolean} | {num:number, actual:false, previo:boolean, esAgregar:true} | {num:false, actual:boolean, previo:true, unico:true};
     var listaDeBotonesAbrir:DefinicionFormularioAbrir[]
+    var nuevoCampoPk = defOperativo.defUA[formularioAAbrir.unidad_analisis].pk;
+    var numActual:number|null = null;
     if(multipleFormularios){
         let cantForm = respuestas[formularioAAbrir.unidad_analisis].length;
-        listaDeBotonesAbrir = serie({from:1, to:cantForm}).map(num=>({num}));
+        listaDeBotonesAbrir = serie({from:1, to:cantForm}).map(num=>{
+            let forPk={...props.forPk, formulario:idFormularioDestino, [nuevoCampoPk]:num};
+            let resumen = feedbackRowValidator[toPlainForPk(forPk)]?.resumen || 'vacio';
+            if(numActual == null && (resumen == 'vacio' || resumen == 'incompleto')){
+                numActual = num;
+            }
+            return {num, actual: numActual == num, previo: numActual == null}
+        });
         if("puede agregar //TODO VER ESTO"){
-            listaDeBotonesAbrir.push({num:cantForm+1, esAgregar:true});
+            listaDeBotonesAbrir.push({num:cantForm+1, esAgregar:true, actual:false, previo: numActual != null});
         }
     }else{
-        listaDeBotonesAbrir = [{num:false, unico:true}]
+        let resumen = feedbackRowValidator[toPlainForPk(props.forPk)]?.resumen || 'vacio';
+        listaDeBotonesAbrir = [{num:false, unico:true, actual:resumen == 'vacio' || resumen == 'incompleto', previo:true}]
     }
     const ir = (defBoton:DefinicionFormularioAbrir)=>{
         if(!casillero.salto){
@@ -523,7 +534,6 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
         }else{
             var nuevaForPk={...forPk, formulario:idFormularioDestino};
             if(multipleFormularios){
-                var nuevoCampoPk = defOperativo.defUA[formularioAAbrir.unidad_analisis].pk;
                 // @ts-ignore forPk y sus componentes
                 nuevaForPk[nuevoCampoPk] = defBoton.num
                 if('esAgregar' in defBoton){
@@ -534,6 +544,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
         }
         if(confirmarForzarIr){setConfirmarForzarIr(false)}
     };
+
     return <div 
         className="seccion-boton-formulario" 
         nuestro-validator={habilitado?'actual':'todavia_no'}
@@ -545,10 +556,10 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
         {listaDeBotonesAbrir.map((defBoton:DefinicionFormularioAbrir)=>(
             <div key={defBoton.num.toString()}>
                 <Button
-                    variant="contained"
-                    color={habilitado?"primary":"default"}
+                    variant={!habilitado || defBoton.actual || !defBoton.previo?"contained":"outlined"} 
+                    color={habilitado && (defBoton.actual || defBoton.previo)?"primary":"default"}
                     onClick={()=>{
-                        if(habilitado) ir(defBoton); 
+                        if(habilitado && (defBoton.actual || defBoton.previo)) ir(defBoton); 
                         else setConfirmarForzarIr(defBoton.num);
                     }}
                 >{casillero.nombre + ' ' + ('esAgregar' in defBoton?'+':defBoton.num||'')}{casillero.salto?<ICON.Send/>:<ICON.ExitToApp/>}</Button>
@@ -566,8 +577,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                     <Button color="primary" variant="contained" onClick={()=>setConfirmarForzarIr(null)}>Entendido</Button>
                 </Dialog>
             </div>
-        ))
-        }
+        ))}
     </div>
 }
 
