@@ -504,7 +504,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     var dispatch = useDispatch();
     var [confirmarForzarIr, setConfirmarForzarIr] = useState<number|boolean|null>(null);
     var multipleFormularios=formularioAAbrir.unidad_analisis != props.formulario.unidad_analisis;
-    type DefinicionFormularioAbrir={num:number, actual:boolean, previo:boolean} | {num:number, actual:false, previo:boolean, esAgregar:true} | {num:false, actual:boolean, previo:true, unico:true};
+    type DefinicionFormularioAbrir={num:number, actual:boolean, previo:boolean} | {num:number, actual:boolean, previo:false, esAgregar:true} | {num:false, actual:boolean, previo:true, unico:true};
     var listaDeBotonesAbrir:DefinicionFormularioAbrir[]
     var nuevoCampoPk = defOperativo.defUA[formularioAAbrir.unidad_analisis].pk;
     var numActual:number|null = null;
@@ -516,10 +516,10 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
             if(numActual == null && (resumen == 'vacio' || resumen == 'incompleto')){
                 numActual = num;
             }
-            return {num, actual: numActual == num, previo: numActual == null}
+            return {resumen, num, actual: numActual == num, previo: numActual == null}
         });
         if("puede agregar //TODO VER ESTO"){
-            listaDeBotonesAbrir.push({num:cantForm+1, esAgregar:true, actual:false, previo: numActual != null});
+            listaDeBotonesAbrir.push({num:cantForm+1, esAgregar:true, actual:numActual == null, previo: false});
         }
     }else{
         let resumen = feedbackRowValidator[toPlainForPk(props.forPk)]?.resumen || 'vacio';
@@ -545,24 +545,27 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
         if(confirmarForzarIr){setConfirmarForzarIr(false)}
     };
 
-    return <div 
-        className="seccion-boton-formulario" 
-        nuestro-validator={habilitado?'actual':'todavia_no'}
-        esta-inhabilitada={!habilitado?'SI':'NO'}
-        ocultar-salteada={casillero.despliegue?.includes('ocultar')?(casillero.expresion_habilitar?'INHABILITAR':'SI'):'NO'}
-        tiene-valor="NO"
-    >
-        <div className="aclaracion">{casillero.aclaracion}</div>
-        {listaDeBotonesAbrir.map((defBoton:DefinicionFormularioAbrir)=>(
+    return listaDeBotonesAbrir.map((defBoton:DefinicionFormularioAbrir)=>(
+        <div 
+            className="seccion-boton-formulario" 
+            nuestro-validator={defBoton.actual?'actual':defBoton.previo?'valida':'todavia_no'}
+            esta-inhabilitada={!habilitado && !defBoton.previo && !defBoton.actual?'SI':'NO'}
+            ocultar-salteada={casillero.despliegue?.includes('ocultar')?(casillero.expresion_habilitar?'INHABILITAR':'SI'):'NO'}
+            tiene-valor="NO"
+        >
+            <div className="aclaracion">{casillero.aclaracion}</div>
             <div key={defBoton.num.toString()}>
                 <Button
-                    variant={!habilitado || defBoton.actual || !defBoton.previo?"contained":"outlined"} 
-                    color={habilitado && (defBoton.actual || defBoton.previo)?"primary":"default"}
+                    variant="outlined"
+                    x-color={false && habilitado && (defBoton.actual || defBoton.previo)?"primary":"default"}
+                    color="inherit"
                     onClick={()=>{
                         if(habilitado && (defBoton.actual || defBoton.previo)) ir(defBoton); 
                         else setConfirmarForzarIr(defBoton.num);
                     }}
-                >{casillero.nombre + ' ' + ('esAgregar' in defBoton?'+':defBoton.num||'')}{casillero.salto?<ICON.Send/>:<ICON.ExitToApp/>}</Button>
+                >   {casillero.nombre + ' ' + ('esAgregar' in defBoton?'':defBoton.num||'')}
+                    {'esAgregar' in defBoton?<ICON.Add/>:casillero.salto?<ICON.Forward/>:<ICON.ExitToApp/>}
+                </Button>
                 <Dialog 
                     className="nuestro-dialogo"
                     open={confirmarForzarIr == defBoton.num}
@@ -577,8 +580,8 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                     <Button color="primary" variant="contained" onClick={()=>setConfirmarForzarIr(null)}>Entendido</Button>
                 </Dialog>
             </div>
-        ))}
-    </div>
+        </div>
+    ))
 }
 
 function CasilleroDesconocido(props:{casillero:CasilleroBase}){
