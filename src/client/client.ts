@@ -32,9 +32,11 @@ async function sincronizarDatos(state:CasoState|null){
         state.modo = {
             demo: false
         }
+        // OJO state.opciones se modifica acá y en otro lado con este mismo cartel
         state.opciones = {
             bienvenido: false,
             forPk: null,
+            pilaForPk: [], 
             modoDespliegue: "relevamiento",
             modoDirecto: false,
         }

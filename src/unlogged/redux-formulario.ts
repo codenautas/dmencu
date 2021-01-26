@@ -616,13 +616,27 @@ var reducers={
             var {state, respuestas} = respuestasForPk(state, payload.forPk, true);
             return calcularFeedback(state)
         },
-    CAMBIAR_FORMULARIO: (payload: {forPk:ForPk}) => 
+    CAMBIAR_FORMULARIO: (payload: {forPk:ForPk, apilarVuelta:boolean}) => 
         function(state: CasoState){
             return calcularFeedback({
                 ...state,
                 opciones:{
                     ...state.opciones,
-                    forPk: payload.forPk
+                    forPk: payload.forPk,
+                    ...(payload.apilarVuelta?{
+                        pilaForPk: state.opciones.forPk==null?[]:[...state.opciones.pilaForPk, state.opciones.forPk]
+                    }:{})
+                }
+            })
+        },
+    VOLVER_DE_FORMULARIO: (_payload: {}) => 
+        function(state: CasoState){
+            return calcularFeedback({
+                ...state,
+                opciones:{
+                    ...state.opciones,
+                    forPk: state.opciones.pilaForPk[state.opciones.pilaForPk.length-1]||null,
+                    pilaForPk: state.opciones.pilaForPk.slice(0,state.opciones.pilaForPk.length-1)
                 }
             })
         },
@@ -648,7 +662,8 @@ var reducers={
                 ...state,
                 opciones:{
                     ...state.opciones,
-                    forPk: null
+                    forPk: null,
+                    pilaForPk: []
                 }
             })
         },
@@ -896,12 +911,7 @@ export async function dmTraerDatosFormulario(opts:{modoDemo:boolean, vivienda?: 
                 // @ts-ignore
                 hdr:{}
             },
-            opciones:{
-                modoDespliegue:'relevamiento',
-                bienvenido:false,
-                forPk:null,
-                modoDirecto: false
-            },
+            opciones:{} as CasoState["opciones"], // poner los valores por defecto más abajo
             modo:{
                 demo:false
             },
@@ -937,10 +947,12 @@ export async function dmTraerDatosFormulario(opts:{modoDemo:boolean, vivienda?: 
                 casoState = {...initialState, ...casoState};
                 casoState={
                     ...casoState,
+                    // OJO state.opciones se modifica acá y en otro lado con este mismo cartel
                     opciones: {
                         ...casoState.opciones,
                         modoDirecto: opts.vivienda?true:false,
                         forPk: opts.vivienda?{vivienda:opts.vivienda, formulario:MAIN_FORM}:null,
+                        pilaForPk:[],
                         bienvenido:true,
                     }
                 }

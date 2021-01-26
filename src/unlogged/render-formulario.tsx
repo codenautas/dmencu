@@ -530,7 +530,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                     dispatch(dispatchers.AGREGAR_FORMULARIO({forPk:nuevaForPk}));        
                 }
             }
-            dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:nuevaForPk}));
+            dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:nuevaForPk, apilarVuelta:true}));
         }
         if(confirmarForzarIr){setConfirmarForzarIr(false)}
     };
@@ -651,44 +651,32 @@ function BloqueDespliegue(props:{bloque:Bloque, formulario:Formulario, forPk:For
 
 const FormularioEncabezado = DespliegueEncabezado;
 
-function BarraDeNavegacion(props:{forPk:ForPk, modoDirecto: boolean, soloLectura:boolean}){
+function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean}){
     const dispatch = useDispatch();
     const forPk = props.forPk;
-    const {respuestas, dirty} = useSelectorVivienda(forPk);
+    const {respuestas, dirty, opciones} = useSelectorVivienda(forPk);
     const [confirmaCerrar, setConfirmaCerrar] = useState<boolean|null>(false);
     const [mensajeDescarga, setMensajeDescarga] = useState<string|null>(null);
     const [descargaCompleta, setDescargaCompleta] = useState<boolean|null>(false);
     const [descargando, setDescargando] = useState<boolean|null>(false);
     var botonesFormulario=[
-        {formulario: null, abr:'HdR', label:'hoja de ruta'},
-        {formulario: 'F:F1' as IdFormulario, abr:'Viv', label:'vivienda'  },
-        {formulario: 'F:F2' as IdFormulario, abr:'Per', label:'personas'  },
-        {formulario: 'F:F3' as IdFormulario, abr:'Ind', label:'individual'}
-    ];
-    // TODO: GENERALIZAR:
-    var seleccionado=respuestas['p11' as IdVariable];
-    if(seleccionado){
-        // @ts-ignore
-        var p=respuestas.personas[seleccionado-1];
-        botonesFormulario[3].label=p.p1+' '+p.p3;
-        botonesFormulario[3].abr=p.p1;
-    }else{
-        botonesFormulario.pop();
-    }
-    if(props.modoDirecto){
-        botonesFormulario.shift();
+        {que: 'hdr'    , abr:'HdR', label:'hoja de ruta'},
+    ]
+    if(opciones.pilaForPk.length && !opciones.modoDirecto){
+        botonesFormulario.push({que: 'volver' , abr:'<=',  label:'<='          })
     }
     return <>
         <ButtonGroup className="barra-navegacion" solo-lectura={props.soloLectura?'si':'no'} >
             {botonesFormulario.map(b=>
-                <Button color={b.formulario==forPk.formulario?"primary":"inherit"} variant="outlined"
-                    disabled={b.formulario==forPk.formulario}
+                <Button color={b.que==forPk.formulario?"primary":"inherit"} variant="outlined"
+                    disabled={false}
                     onClick={()=>
-                    dispatch(
-                        b.formulario==null?dispatchers.VOLVER_HDR({}):
-                        dispatchers.CAMBIAR_FORMULARIO({forPk:{vivienda:forPk.vivienda, formulario:b.formulario}})
-                    )
-                }>
+                        dispatch(
+                            b.que=='hdr'?dispatchers.VOLVER_HDR({}):
+                            dispatchers.VOLVER_DE_FORMULARIO({})
+                        )
+                    }
+                >
                     <span className="abr">{b.abr}</span>
                     <span className="label">{b.label}</span>
                 </Button>
@@ -831,7 +819,7 @@ function FormularioDespliegue(props:{forPk:ForPk}){
         <>
             <AppBar position="fixed" color={soloLectura?'secondary':'primary'}>
                 <Toolbar>
-                    <BarraDeNavegacion forPk={forPk} modoDirecto={opciones.modoDirecto} soloLectura={soloLectura || false}/>
+                    <BarraDeNavegacion forPk={forPk} soloLectura={soloLectura || false}/>
                 </Toolbar>
             </AppBar>
             <main nuestro-g1={g1} nuestro-seleccion={tipo_seleccion} nuestro-relevamiento={tipo_relevamiento}>
@@ -950,7 +938,7 @@ export function DesplegarCarga(props:{
                                     variant="outlined"
                                     onClick={()=>{
                                         ////////////////// OJOJOJOJO sacar el formulario de la tabla de tareas GENERALIZAR TODO
-                                        dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:{vivienda:idCaso, formulario:'F:RE' as IdFormulario}}))
+                                        dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:{vivienda:idCaso, formulario:'F:RE' as IdFormulario}, apilarVuelta:false}))
                                     }}
                                 >
                                     {'RE'}

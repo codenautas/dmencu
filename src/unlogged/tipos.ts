@@ -297,6 +297,7 @@ export type CasoState={
     }
     opciones:{ // datos de navegación que elije el usuario
         forPk:ForPk|null // índice dentro de las unidades de análisis. Null = en hoja de ruta
+        pilaForPk:ForPk[]
         modoDespliegue:ModoDespliegue
         bienvenido:boolean
         modoDirecto:boolean
