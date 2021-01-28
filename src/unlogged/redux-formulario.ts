@@ -96,6 +96,9 @@ const helpersHabilitar={
     funs:{
         blanco(x:any){
             return x!==0 && !x
+        },
+        nsnc(x:any){
+            return x == -9
         }
     }
 };
