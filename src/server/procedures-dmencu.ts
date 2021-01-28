@@ -9,6 +9,9 @@ import {json, jsono} from "pg-promise-strict";
 
 import {changing, datetime, date } from 'best-globals';
 import {promises as  fs} from "fs";
+
+import * as ExpresionParser from 'expre-parser';
+
 var path = require('path');
 var sqlTools = require('sql-tools');
 
@@ -98,8 +101,58 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
             'fecha')} as cargas
 `
 }
+
+var funcionesConocidas:{[k in string]:boolean} = {}
+
+var compiler = new ExpresionParser.Compiler({
+    language:'js',
+    varWrapper:(var_name:string)=>`helpers.null2zero(valores.${var_name})`,
+    funWrapper:(functionName:string)=>{
+        if(!funcionesConocidas[functionName]){
+            console.log(functionName)
+            funcionesConocidas[functionName] = true;
+        }
+        return `helpers.funs.${functionName}`
+    }
+})
+
+type CasilleroDeAca={
+    childs: CasilleroDeAca[],
+    data:{
+        expresion_habilitar: string,
+        expresion_habilitar_js: string
+    }
+}
+
+function compilarExpresiones(casillero:CasilleroDeAca){
+    if(!casillero){ return }
+    if(casillero.data.expresion_habilitar){
+        casillero.data.expresion_habilitar_js = compiler.toCode(ExpresionParser.parse(
+            casillero.data.expresion_habilitar
+                .replace(/\bis distinct from\b/gi,' <> ')
+                .replace(/!!/gi,' ')
+        ));
+    }
+    for(var casilleroInterno of casillero.childs) compilarExpresiones(casilleroInterno);
+}
     
 export const ProceduresDmEncu : ProcedureDef[] = [
+    {
+        action:'operativo_estructura',
+        parameters:[
+            {name:'operativo'            ,typeName:'text', references:'operativos'},
+        ],
+        resultOk:'desplegarFormulario',
+        coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters){
+            return context.client.query(
+                "select casilleros_jerarquizados($1)",
+                [parameters.operativo]
+            ).fetchUniqueValue().then(function(result:any){
+                likeAr(result.value).forEach(f=>compilarExpresiones(f))
+                return result.value;
+            });
+        }
+    },
     {
         action:'generar_formularios',
         parameters:[

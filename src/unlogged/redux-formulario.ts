@@ -75,7 +75,9 @@ var reemplazosHabilitar:{[key:string]:string}={
     "OR": '||',
     "AND": '&&',
     "or": '||',
-    "and": '&&'
+    "and": '&&',
+    "not": '!',
+    "NOT": '!',
 };
 
 const helpersHabilitar={
@@ -90,6 +92,11 @@ const helpersHabilitar={
             throw new Error("Error en "+pk+" division por cero de "+numerador);
         }
         return numerador/denominador;
+    },
+    funs:{
+        blanco(x:any){
+            return x!==0 && !x
+        }
     }
 };
 
@@ -99,29 +106,50 @@ var funcionesHabilitar:{[key:string]:FuncionHabilitar}={
     'v1 < v2': function(valores){ return valores.v1 < valores.v2 },
 }
 
-export function getFuncionHabilitar(nombreFuncionComoExpresion:string):FuncionHabilitar{
-    if(!funcionesHabilitar[nombreFuncionComoExpresion]){
-        var expresion = nombreFuncionComoExpresion.replace(/\u00A0/g,' ');
-        var cuerpo = expresion.replace(/\b.+?\b/g, function(elToken){
-            var elTokenTrimeado=elToken.trim();
-            if(elTokenTrimeado in reemplazosHabilitar){
-                return reemplazosHabilitar[elTokenTrimeado];
-            }else if(/^\d+\.?\d*$/.test(elTokenTrimeado)){
-                return elToken
-            }else if(/^\W+$/.test(elTokenTrimeado)){
-                return elToken
-            }else if(/^\s+$/.test(elToken)){
-                return elToken
+export function miniCompiladorSQlJs(expresionCasiSQL:string){
+    var expresion = expresionCasiSQL.replace(/\u00A0/g,' ');
+    var cuerpo = expresion.replace(/\bis distinct from\b/gi,'!=').replace(/\b.+?\b/g, function(elToken){
+        var elTokenTrimeado=elToken.trim();
+        if(elTokenTrimeado in reemplazosHabilitar){
+            return reemplazosHabilitar[elTokenTrimeado];
+        }else if(/^\d+\.?\d*$/.test(elTokenTrimeado)){
+            return elToken
+        }else if(/^\W+$/.test(elTokenTrimeado)){
+            return elToken
+        }else if(/^\s+$/.test(elToken)){
+            return elToken
+        }
+        return 'helpers.null2zero(valores.'+elToken+')';
+    });
+    return cuerpo;
+}
+
+export function getFuncionHabilitar(nombreFuncionComoExpresionJs:string):FuncionHabilitar{
+    if(!funcionesHabilitar[nombreFuncionComoExpresionJs]){
+        try{
+            // var cuerpo = miniCompiladorSQlJs(nombreFuncionComoExpresionJs);
+            var cuerpo = nombreFuncionComoExpresionJs;
+            var internalFun =  new Function('valores', 'helpers', 'return '+cuerpo);
+            funcionesHabilitar[nombreFuncionComoExpresionJs] = function(valores){
+                try{
+                    var result = internalFun(valores, helpersHabilitar);
+                }catch(err){
+                    console.log('ERROR EJECUCCION EXPRESION EXTERNA ',nombreFuncionComoExpresionJs)
+                    console.log(cuerpo);
+                    console.log(valores);
+                    throw err;
+                }
+                return result;
             }
-            return 'helpers.null2zero(valores.'+elToken+')';
-        });
-        var internalFun =  new Function('valores', 'helpers', 'return '+cuerpo);
-        funcionesHabilitar[nombreFuncionComoExpresion] = function(valores){
-            return internalFun(valores, helpersHabilitar);
+        }catch(err){
+            console.log('ERROR COMPILACION EXPRESION EXTERNA ',nombreFuncionComoExpresionJs)
+            console.log(cuerpo);
+            throw err;
         }
     }
-    return funcionesHabilitar[nombreFuncionComoExpresion];
+    return funcionesHabilitar[nombreFuncionComoExpresionJs];
 }
+
 
 var rowValidator = getRowValidator({getFuncionHabilitar})
 
@@ -296,14 +324,7 @@ export async function calcularFeedbackUnidadAnalisis(
     forPk:ForPk,
     respuestasAumentadas:Respuestas // incluyen la de todos los padres y ansestros
 ){
-    // @ts-ignore esto se va
-    for(var formulario of defOperativo.defUA[UA].idsFor){
-        feedbackRowValidator[toPlainForPk({...forPk, formulario})]=
-            rowValidator(
-                formularios[formulario].estructuraRowValidator, 
-                respuestasAumentadas
-            )
-    }
+    // recorriend UA personas y mascotas
     for(var UAincluida of defOperativo.defUA[UA].incluidas){
         var pkNueva = defOperativo.defUA[UAincluida].pk;
         var conjuntoRespuestasUA = respuestas[UAincluida];
@@ -317,6 +338,14 @@ export async function calcularFeedbackUnidadAnalisis(
                 {...respuestasAumentadas, ...respuestas}
             );
         })
+    }
+    // S1 , A1
+    for(var formulario of defOperativo.defUA[UA].idsFor){
+        feedbackRowValidator[toPlainForPk({...forPk, formulario})]=
+            rowValidator(
+                formularios[formulario].estructuraRowValidator, 
+                respuestasAumentadas
+            )
     }
 }
 
@@ -745,24 +774,44 @@ function aplanarLaCurva<T extends {tipoc:string}>(casillerosData:IDataSeparada<T
 // type AnyRef<T extends {}>=[T, keyof T];
 
 function rellenarVariablesYOpciones(estructura:EstructuraRowValidator, casillero:CasillerosImplementados, unidadAnalisis?:string|null){
-    if(casillero.var_name != null){
-        if(casillero.var_name.endsWith('!')){
+    if(casillero.var_name != null || casillero.tipoc=='FILTRO'){
+        var var_name:IdVariable
+        if(casillero.tipoc=='FILTRO'){
+            // @ts-ignore pongo como nombre de variable el filtro;
+            var_name = casillero.casillero;
+        }else if(casillero.var_name.endsWith('!')){
             // @ts-ignore las variables espejo son las que terminan en !
-            casillero.var_name=casillero.var_name_especial.replace(/!+$/,'');
+            var_name = casillero.var_name_especial.replace(/!+$/,'');
+            casillero.var_name = var_name;
+        }else{
+            var_name = casillero.var_name
         }
-        var variableDef={
-            tipo:casillero.tipoc=='OM' || casillero.tipovar=='si_no'?'opciones':casillero.tipovar,
+        let variableDef={
+            tipo:casillero.tipoc=='FILTRO'?'filtro':casillero.tipoc=='OM' || casillero.tipovar=='si_no'?'opciones':casillero.tipovar,
             // @ts-ignore optativo podría no existir, quedará null.
             optativa:casillero.optativo!,
             opciones:(casillero.tipoc=='OM' || casillero.tipovar=='opciones' || casillero.tipovar=='si_no'?
                 likeAr.createIndex(casillero.casilleros, 'casillero'):{}) as unknown as { [key: string]: RowValidatorOpcion<IdVariable> },
             salto:casillero.salto as IdVariable,
             saltoNsNr:'salto_ns_nc' in casillero && casillero.salto_ns_nc || null,
-            funcionHabilitar:casillero.expresion_habilitar,
+            funcionHabilitar:casillero.expresion_habilitar_js,
             calculada:casillero.unidad_analisis && casillero.unidad_analisis!=unidadAnalisis || casillero.despliegue?.includes('calculada'),
             libre:casillero.despliegue?.includes('libre')
         }
-        estructura.variables[casillero.var_name]=variableDef;
+        estructura.variables[var_name]=variableDef;
+    } else if (casillero.tipoc=='BF'){
+        // agregamos 100 botones 1, 2 ,3 ,4 ,5 ,6 (múltiples)
+        // c/u salto listo
+        // 1 variable mas $FOR:M1:listo guaramos
+        let variableDef={
+            tipo:'opciones',
+            // @ts-ignore optativo podría no existir, quedará null.
+            optativa:casillero.optativo!,
+            opciones:{1:{}},
+            funcionHabilitar:casillero.expresion_habilitar_js,
+            libre:casillero.despliegue?.includes('libre')
+        }
+        estructura.variables['$FOR:'+casillero.salto as IdVariable]=variableDef;
     }
     if(casillero.casilleros){
         casillero.casilleros.forEach((casillero:CasillerosImplementados)=>

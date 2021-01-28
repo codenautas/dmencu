@@ -375,7 +375,7 @@ function OpcionesDespliegue(
     return <Grid container direction={horizontal?"row":"column"} wrap={horizontal?"nowrap":"wrap"}>{
         casilleroConOpciones.casilleros.map((opcion:Opcion)=>
             <Grid key={opcion.casillero} item
-                ocultar-salteada={opcion.despliegue?.includes('ocultar')?(opcion.expresion_habilitar?'INHABILITAR':'SI'):'NO'}
+                ocultar-salteada={opcion.despliegue?.includes('ocultar')?(opcion.expresion_habilitar_js?'INHABILITAR':'SI'):'NO'}
             >
                 <OpcionDespliegue 
                     casillero={opcion} 
@@ -420,7 +420,7 @@ function PreguntaDespliegue(props:{
         nuestro-tipovar={pregunta.tipovar||"multiple"} 
         nuestro-validator={estado}
         tiene-valor={tieneValor} 
-        ocultar-salteada={pregunta.despliegue?.includes('ocultar')?(pregunta.expresion_habilitar?'INHABILITAR':'SI'):'NO'}
+        ocultar-salteada={pregunta.despliegue?.includes('ocultar')?(pregunta.expresion_habilitar_js?'INHABILITAR':'SI'):'NO'}
         esta-inhabilitada={props.feedback?.inhabilitada?'SI':'NO'}
     >
         <EncabezadoDespliegue 
@@ -480,7 +480,7 @@ function FiltroDespliegue(props:{filtro:Filtro, forPk:ForPk}){
 
 function ConsistenciaDespliegue(props:{casillero:Consistencia, forPk:ForPk}){
     var {casillero, forPk} = props;
-    var habilitador = casillero.expresion_habilitar?getFuncionHabilitar(casillero.expresion_habilitar):()=>true;
+    var habilitador = casillero.expresion_habilitar_js?getFuncionHabilitar(casillero.expresion_habilitar_js):()=>true;
     var {respuestas, modoDespliegue} = useSelectorVivienda(forPk);
     var habilitado = habilitador(respuestas);
     return habilitado || modoDespliegue=='metadatos'?<div 
@@ -492,7 +492,7 @@ function ConsistenciaDespliegue(props:{casillero:Consistencia, forPk:ForPk}){
 
 function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:Formulario, forPk:ForPk}){
     var {casillero, forPk} = props;
-    var habilitador = casillero.expresion_habilitar?getFuncionHabilitar(casillero.expresion_habilitar):()=>true;
+    var habilitador = casillero.expresion_habilitar_js?getFuncionHabilitar(casillero.expresion_habilitar_js):()=>true;
     var {respuestas, opciones} = useSelectorVivienda(forPk);
     var idFormularioDestino = 'F:'+casillero.salto! as IdFormulario;
     var {soloLectura, formularioAAbrir,feedbackRowValidator} = useSelector((state:CasoState)=>({
@@ -550,22 +550,27 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
             className="seccion-boton-formulario" 
             nuestro-validator={defBoton.actual?'actual':defBoton.previo?'valida':'todavia_no'}
             esta-inhabilitada={!habilitado && !defBoton.previo && !defBoton.actual?'SI':'NO'}
-            ocultar-salteada={casillero.despliegue?.includes('ocultar')?(casillero.expresion_habilitar?'INHABILITAR':'SI'):'NO'}
+            ocultar-salteada={casillero.despliegue?.includes('ocultar')?(casillero.expresion_habilitar_js?'INHABILITAR':'SI'):'NO'}
             tiene-valor="NO"
         >
             <div className="aclaracion">{casillero.aclaracion}</div>
             <div key={defBoton.num.toString()}>
                 <Button
                     variant="outlined"
-                    x-color={false && habilitado && (defBoton.actual || defBoton.previo)?"primary":"default"}
                     color="inherit"
                     onClick={()=>{
                         if(habilitado && (defBoton.actual || defBoton.previo)) ir(defBoton); 
                         else setConfirmarForzarIr(defBoton.num);
                     }}
-                >   {casillero.nombre + ' ' + ('esAgregar' in defBoton?'':defBoton.num||'')}
+                >   {'esAgregar' in defBoton?'':casillero.nombre + ' ' + defBoton.num||''}
                     {'esAgregar' in defBoton?<ICON.Add/>:casillero.salto?<ICON.Forward/>:<ICON.ExitToApp/>}
                 </Button>
+                {'esAgregar' in defBoton?<> <span>  </span> <Button
+                    variant="outlined"
+                    color="inherit"
+                    onClick={()=>{
+                    }}
+                ><ICON.Check/></Button></>:null}
                 <Dialog 
                     className="nuestro-dialogo"
                     open={confirmarForzarIr == defBoton.num}
@@ -644,7 +649,7 @@ function BloqueDespliegue(props:{bloque:Bloque, formulario:Formulario, forPk:For
     var activeStep=0;
     var multiple = !!bloque.unidad_analisis;
     var lista = [{forPk, key:0, multiple:false}];
-    var habilitador = bloque.expresion_habilitar?getFuncionHabilitar(bloque.expresion_habilitar):()=>true;
+    var habilitador = bloque.expresion_habilitar_js?getFuncionHabilitar(bloque.expresion_habilitar_js):()=>true;
     var {respuestas, modoDespliegue} = useSelectorVivienda(forPk);
     if(multiple){
         // TODO: GENERALIZAR
