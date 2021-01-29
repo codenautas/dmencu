@@ -338,7 +338,7 @@ export async function calcularFeedbackUnidadAnalisis(
                 respuestas, 
                 UAincluida, 
                 {...forPk, [pkNueva]:i+1},
-                {...respuestasAumentadas, ...respuestas}
+                {...respuestasAumentadas, ...respuestas, [pkNueva]:i+1}
             );
         })
     }
@@ -827,7 +827,9 @@ type RegistroDestinos={[destino in IdDestino]:IdVariable|null};
 
 function obtenerDestinosCasilleros(casillero:CasillerosImplementados, destinos?:RegistroDestinos):RegistroDestinos{
     if(destinos==null) return obtenerDestinosCasilleros(casillero, {} as RegistroDestinos);
-    if(casillero.tipoc!='F' && casillero.tipoc!='O' && casillero.tipoc!='OM'){
+    if(casillero.tipoc=='FILTRO'){
+        destinos[casillero.casillero]=casillero.casillero as IdVariable;
+    }else if(casillero.tipoc!='F' && casillero.tipoc!='O' && casillero.tipoc!='OM'){
         destinos[casillero.casillero]=casillero.primera_variable||null
     }
     if(casillero.casilleros){
