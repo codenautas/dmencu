@@ -385,6 +385,12 @@ function OpcionesDespliegue(
                     elegida={valorActual==opcion.casillero}
                     leer={leer}
                 />
+                {opcion.casilleros.map(casilleroHijo=>
+                    <div className="casillerHijo">
+                        <Typography>{casilleroHijo.nombre}</Typography>
+                        <TextField/>
+                    </div>
+                )}
             </Grid>
         )
     }</Grid>
