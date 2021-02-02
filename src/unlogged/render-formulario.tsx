@@ -10,7 +10,7 @@ import {
     InputTypes
 } from "./render-general";
 import {Bloque, BotonFormulario, 
-    CasilleroBase, CasoState, Consistencia, DatosVivienda,
+    CasilleroBase, CasoState, ConjuntoPreguntas, Consistencia, DatosVivienda,
     EstadoCarga, FeedbackVariable, Filtro, ForPk, Formulario, 
     IdCaso, IdFormulario, IdTarea, IdVariable, InfoFormulario,
     ModoDespliegue,
@@ -623,7 +623,22 @@ function useSelectorVivienda(forPk:ForPk){
     })
 }
 
-function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Bloque|Formulario, formulario:Formulario, forPk:ForPk, multiple:boolean}){
+function ConjuntoPreguntasDespliegue(props:{casillero:ConjuntoPreguntas, formulario:Formulario, forPk:ForPk}){
+    let {casillero, forPk} = props;
+    let modoDespliegue = "normal";
+    let habilitado = true;
+    return habilitado || modoDespliegue=='metadatos'?<div className="conjuntopreguntas" nuestro-bloque={casillero.casillero}>
+        <EncabezadoDespliegue casillero={casillero} forPk={forPk}/>
+        <DesplegarContenidoInternoBloqueOFormulario bloqueOFormulario={casillero} formulario={props.formulario} forPk={forPk} multiple={false}/>
+    </div>:null;
+}
+
+        // {casillero.casilleros.map(pregunta=, formulario="", forPk={forPk}, multiple={false}>
+        //     <PreguntaDespliegue key={pregunta.casillero} pregunta={pregunta} formulario={props.formulario} forPk={forPk} multiple={multiple}>, formulario="", forPk={forPk}, multiple={false}>
+        // )}
+
+
+function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Bloque|Formulario|ConjuntoPreguntas, formulario:Formulario, forPk:ForPk, multiple:boolean}){
     var {respuestas, feedbackRow} = useSelectorVivienda(props.forPk);
     return <div className="casilleros">{
         props.bloqueOFormulario.casilleros.map((casillero)=>
@@ -642,6 +657,7 @@ function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Blo
                     casillero.tipoc == "FILTRO"?<FiltroDespliegue filtro={casillero} forPk={props.forPk}/>:
                     casillero.tipoc == "BF"?<BotonFormularioDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
                     casillero.tipoc == "CONS"?<ConsistenciaDespliegue casillero={casillero} forPk={props.forPk}/>:
+                    casillero.tipoc == "CP"?<ConjuntoPreguntasDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
                     <CasilleroDesconocido casillero={casillero}/>
                 }
             </Grid>

@@ -221,6 +221,18 @@ anchoNormal(ancho)
     align-self flex-end
     min-width 33%
 
+.conjuntopreguntas
+  border-top 1px solid colorFondoEncabezadoBloque
+  .pregunta
+    margin-left 8px
+    @media print
+      margin-left 48px
+      justify-content space-between
+    @media (min-width 600px)
+      margin-left 48px
+      justify-content space-between
+    border-top 0px solid transparent
+
 .pregunta
   @media screen and (max-width 599px)
     flex-direction column
