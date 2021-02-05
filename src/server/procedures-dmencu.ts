@@ -131,7 +131,7 @@ function compilarExpresiones(casillero:CasilleroDeAca){
             casillero.data.expresion_habilitar
                 .replace(/\bis distinct from\b/gi,' <> ')
                 .replace(/!!/gi,' ')
-        ));
+        )).replace(/helpers\.funs\.blanco\(helpers.null2zero\(/g,'helpers.funs.blanco((');
     }
     for(var casilleroInterno of casillero.childs) compilarExpresiones(casilleroInterno);
 }
