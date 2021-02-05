@@ -840,7 +840,7 @@ function obtenerDestinosCasilleros(casillero:CasillerosImplementados, destinos?:
 
 function rellenarDestinos(estructura:EstructuraRowValidator, destinos:RegistroDestinos):EstructuraRowValidator{
     function obtenerDestino(idVariableQueTieneUnDestino:IdVariable|null|undefined):IdVariable|null{
-        return idVariableQueTieneUnDestino!=null && destinos[idVariableQueTieneUnDestino as IdDestino] || null
+        return idVariableQueTieneUnDestino=='fin' as IdVariable ? 'fin' as IdVariable : idVariableQueTieneUnDestino!=null && destinos[idVariableQueTieneUnDestino as IdDestino] || null
     }
     return {
         ...estructura,
@@ -854,7 +854,7 @@ function rellenarDestinos(estructura:EstructuraRowValidator, destinos:RegistroDe
 }
 
 function generarEstructuraRowValidator(casillero:CasillerosImplementados):EstructuraRowValidator{
-    var estructuraIncompleta:EstructuraRowValidator={variables:{}} as unknown as EstructuraRowValidator;
+    var estructuraIncompleta:EstructuraRowValidator={variables:{}, marcaFin:'fin'} as unknown as EstructuraRowValidator;
     rellenarVariablesYOpciones(estructuraIncompleta, casillero, casillero.unidad_analisis);
     var destinos=obtenerDestinosCasilleros(casillero);
     return rellenarDestinos(estructuraIncompleta, destinos);
