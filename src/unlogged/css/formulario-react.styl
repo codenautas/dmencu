@@ -351,6 +351,10 @@ anchoNormal(ancho)
   min-width 36px
   margin-right 8px
 
+.pregunta
+  .pregunta > .encabezado > .id-div
+    display none
+
 boton-id-div-invalido()
   .id-div
     .id
@@ -638,24 +642,6 @@ app-cache-version, #app-dm-version
   font-weight: bold
   background-color: #FB8
 
-[nuestro-g1="6"]
-  [nuestro-casillero=DV5]
-    display none
-  [nuestro-casillero=CP]
-    display none
-  [nuestro-casillero=P1]
-    display none
-  [nuestro-casillero=P2]
-    display none
-  [nuestro-casillero=P3]
-    display none
-  [nuestro-casillero=P4]
-    display none
-  [nuestro-bloque=LP]
-    display none
-  [nuestro-casillero=P9]
-    display none
-
 .formulario-consulta-resultados
   padding 15px
   max-width 800px
@@ -664,7 +650,22 @@ app-cache-version, #app-dm-version
     margin 15px 0 15px
     max-width 600px
 
-[nuestro-casillero=TF]
-  display none
-[nuestro-casillero=G1]
-  display none
+.casillerHijo > .pregunta
+  border-top 0px
+.casillerHijo > .pregunta[nuestro-validator=salteada]
+  background-image none
+  > .casilleros
+    visibility hidden
+
+[nuestro-casillero=I3]
+  .multiple > .encabezado
+    min-width 50%
+    max-width 50%
+  .multiple 
+    .pregunta > .encabezado
+      min-width 20%
+      width 20%
+    .pregunta > .casilleros
+      width 90%
+      .input-campo
+        width 80%

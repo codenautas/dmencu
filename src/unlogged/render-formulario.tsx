@@ -169,17 +169,23 @@ interface IcasilleroConOpciones{
 }
 
 
-function SiNoDespliegue(props:{casilleroConOpciones:IcasilleroConOpciones, forPk:ForPk, valorActual:Valor}){
+function SiNoDespliegue(props:{casilleroConOpciones:IcasilleroConOpciones, forPk:ForPk, valorActual:Valor, respuestas:Respuestas|null,
+    feedbackRow:{[v in IdVariable]:FeedbackVariable}|null
+}){
     return <OpcionesDespliegue 
         casilleroConOpciones={props.casilleroConOpciones} 
         forPk={props.forPk} 
         valorActual={props.valorActual}
+        respuestas={props.respuestas}
         leer={false}
         horizontal={true}
+        feedbackRow={props.feedbackRow}
     />
 }
 
-function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk, valorActual:Valor, feedback:FeedbackVariable}){
+function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk, valorActual:Valor, respuestas:Respuestas|null, 
+    feedback:FeedbackVariable, feedbackRow:{[v in IdVariable]:FeedbackVariable}|null
+}){
     const {opcionM} = props;
     var classes = useStyles();
     var tieneValor=props.valorActual!=null?(props.feedback.conProblema?'invalido':'valido'):'NO';
@@ -203,6 +209,8 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk, va
                     casilleroConOpciones={opcionM} 
                     forPk={props.forPk}
                     valorActual={props.valorActual}
+                    respuestas={props.respuestas}
+                    feedbackRow={props.feedbackRow}
                 />
             </Grid>
         </div>
@@ -368,15 +376,22 @@ interface IcasilleroConOpciones{
 }
 
 function OpcionesDespliegue(
-    {casilleroConOpciones, forPk, valorActual, leer, horizontal}:
-    {casilleroConOpciones:IcasilleroConOpciones, forPk:ForPk, valorActual:Valor, leer:boolean, horizontal:boolean}
+    {casilleroConOpciones, forPk, valorActual, leer, horizontal, respuestas, feedbackRow}:
+    {casilleroConOpciones:IcasilleroConOpciones, forPk:ForPk, valorActual:Valor, leer:boolean, horizontal:boolean, 
+        respuestas:Respuestas|null, feedbackRow:{[v in IdVariable]:FeedbackVariable}|null}
     // {casilleroConOpciones:PreguntaConOpciones|OpcionMultiple, forPk:ForPk, valorActual:Valor, leer:boolean, horizontal:boolean}
 ){
-    const desplegarOtros = (opcion:Opcion, verHorizontal:boolean, verVertical:boolean) => opcion.casilleros.map(casilleroHijo=>(
-        verHorizontal && casilleroHijo.despliegue=="horizontal" || verVertical && casilleroHijo.despliegue!="horizontal"?
-        <div className="casillerHijo">
-            <Typography>{casilleroHijo.nombre}</Typography>
-            <TextField/>
+    const desplegarOtros = (opcion:Opcion, verHorizontal:boolean, verVertical:boolean) => opcion.casilleros.map((subPregunta:Pregunta)=>(
+        verHorizontal && subPregunta.despliegue=="horizontal" || verVertical && subPregunta.despliegue!="horizontal"?
+        <div className="casillerHijo" key={subPregunta.casillero}>
+            <PreguntaDespliegue 
+                pregunta={subPregunta} 
+                forPk={forPk} 
+                valorActual={respuestas?.[subPregunta.var_name!] as Valor} 
+                respuestas={null}
+                feedback={feedbackRow?.[subPregunta.var_name!] || {} as FeedbackVariable} 
+                feedbackRow={feedbackRow} 
+            />
         </div>:null
     ))
     return <><Grid container direction={horizontal?"row":"column"} wrap={horizontal?"nowrap":"wrap"}>
@@ -451,6 +466,8 @@ function PreguntaDespliegue(props:{
                     casilleroConOpciones={pregunta} 
                     forPk={props.forPk} 
                     valorActual={props.valorActual}
+                    respuestas={props.respuestas}
+                    feedbackRow={props.feedbackRow}
                 />
             </Grid>:
             pregunta.tipovar=="opciones" ?
@@ -458,8 +475,10 @@ function PreguntaDespliegue(props:{
                     casilleroConOpciones={pregunta} 
                     forPk={props.forPk} 
                     valorActual={props.valorActual}
+                    respuestas={props.respuestas}
                     leer={!!pregunta.despliegue?.includes('si_leer')}
                     horizontal={!!pregunta.despliegue?.includes('horizontal')}
+                    feedbackRow={feedbackRow}
                 />:
             pregunta.tipovar==null?
                 (pregunta.casilleros as OpcionMultiple[]).map((opcionMultiple)=>
@@ -468,7 +487,9 @@ function PreguntaDespliegue(props:{
                         opcionM={opcionMultiple} 
                         forPk={props.forPk} 
                         valorActual={props.respuestas?.[opcionMultiple.var_name]!}
+                        respuestas={props.respuestas}
                         feedback={props.feedbackRow?.[opcionMultiple.var_name]!}
+                        feedbackRow={props.feedbackRow}
                     />
                 )
             :
@@ -559,8 +580,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
         }
         if(confirmarForzarIr){setConfirmarForzarIr(false)}
     };
-
-    return listaDeBotonesAbrir.map((defBoton:DefinicionFormularioAbrir)=>(
+    return <div>{listaDeBotonesAbrir.map((defBoton:DefinicionFormularioAbrir)=>(
         <div 
             className="seccion-boton-formulario" 
             nuestro-validator={defBoton.actual?'actual':defBoton.previo?'valida':'todavia_no'}
@@ -601,7 +621,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                 </Dialog>
             </div>
         </div>
-    ))
+    ))}</div>
 }
 
 function CasilleroDesconocido(props:{casillero:CasilleroBase}){
@@ -642,10 +662,6 @@ function ConjuntoPreguntasDespliegue(props:{casillero:ConjuntoPreguntas, formula
     </div>:null;
 }
 
-        // {casillero.casilleros.map(pregunta=, formulario="", forPk={forPk}, multiple={false}>
-        //     <PreguntaDespliegue key={pregunta.casillero} pregunta={pregunta} formulario={props.formulario} forPk={forPk} multiple={multiple}>, formulario="", forPk={forPk}, multiple={false}>
-        // )}
-
 
 function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Bloque|Formulario|ConjuntoPreguntas, formulario:Formulario, forPk:ForPk, multiple:boolean}){
     var {respuestas, feedbackRow} = useSelectorVivienda(props.forPk);
@@ -658,9 +674,9 @@ function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Blo
                             pregunta={casillero} 
                             forPk={props.forPk} 
                             valorActual={casillero.var_name && respuestas[casillero.var_name] || null} 
-                            respuestas={(!casillero.var_name || null) && respuestas}
+                            respuestas={true /*casillero.tieneVariablesInternas*/ && respuestas || null}
                             feedback={casillero.var_name && feedbackRow[casillero.var_name] || null}
-                            feedbackRow={!casillero.var_name && feedbackRow || null}
+                            feedbackRow={true /*casillero.tieneVariablesInternas*/  && feedbackRow || null}
                         />:
                     casillero.tipoc == "B"?<BloqueDespliegue bloque={casillero} formulario={props.formulario} forPk={props.forPk}/>:
                     casillero.tipoc == "FILTRO"?<FiltroDespliegue filtro={casillero} forPk={props.forPk}/>:
@@ -700,7 +716,7 @@ function BloqueDespliegue(props:{bloque:Bloque, formulario:Formulario, forPk:For
 
 const FormularioEncabezado = DespliegueEncabezado;
 
-function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean}){
+function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:boolean}){
     const dispatch = useDispatch();
     const forPk = props.forPk;
     const {respuestas, dirty, opciones} = useSelectorVivienda(forPk);
@@ -850,7 +866,7 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean}){
 
 function FormularioDespliegue(props:{forPk:ForPk}){
     var forPk = props.forPk;
-    var {formulario, modoDespliegue, modo, actual, completo, opciones, g1, tipo_seleccion, tipo_relevamiento} 
+    var {formulario, modoDespliegue, modo, actual, completo, opciones} 
         = useSelectorVivienda(props.forPk);
     var {soloLectura} = useSelector((state:CasoState)=>({soloLectura:state.datos.soloLectura}));
     const dispatch = useDispatch();
@@ -868,10 +884,10 @@ function FormularioDespliegue(props:{forPk:ForPk}){
         <>
             <AppBar position="fixed" color={soloLectura?'secondary':'primary'}>
                 <Toolbar>
-                    <BarraDeNavegacion forPk={forPk} soloLectura={soloLectura || false}/>
+                    <BarraDeNavegacion forPk={forPk} soloLectura={soloLectura || false} modoDirecto={false}/>
                 </Toolbar>
             </AppBar>
-            <main nuestro-g1={g1} nuestro-seleccion={tipo_seleccion} nuestro-relevamiento={tipo_relevamiento}>
+            <main>
                 <Paper className="formulario" modo-despliegue={modoDespliegue}>
                     {modo.demo?<div>
                         <Typography component="span">Modo de despliegue:</Typography>
@@ -892,10 +908,10 @@ function FormularioDespliegue(props:{forPk:ForPk}){
     );
 }
 
-export function Atributo(props:{nombre:string, valor:string|null}){
+export function Atributo(props:{nombre:string, valor:any}){
     return props.valor!=null && props.valor!=''?<span className="atributo-par">
         {props.nombre?<span className="atributo-nombre">{props.nombre}</span>:null}
-         <span className="atributo-valor">{props.valor}</span>
+         <span className="atributo-valor">{props.valor.toString()}</span>
     </span>:null
 }
 
@@ -916,12 +932,11 @@ export function DesplegarCarga(props:{
     idCarga:IdCarga, 
     posicion:number,
     hdr:VivendasHdR, 
-    mainForm:IdFormulario, 
     feedbackRowValidator:{
         [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> 
     }
 }){
-    const {carga, idCarga, hdr, mainForm, feedbackRowValidator} = props;
+    const {carga, idCarga, hdr, feedbackRowValidator} = props;
     const etiquetas = likeAr(hdr).map((datosVivienda:DatosVivienda)=>datosVivienda.respuestas[c5]).array() as (string|null)[];
     const dispatch = useDispatch();
     const [desplegarEtiquetasRepetidas, setDesplegarEtiquetasRepetidas] = useState<boolean>(false);
@@ -1305,7 +1320,7 @@ export function DesplegarNotasYVisitas(props:{tareas:Tareas, idCaso:IdCaso, visi
 }
 
 export function HojaDeRutaDespliegue(){
-    var {hdr, cargas, mainForm, modo, feedbackRowValidator, num_sincro} = useSelector((state:CasoState)=>({hdr:state.datos.hdr, cargas: state.datos.cargas, mainForm:state.estructura.mainForm, modo:state.modo, feedbackRowValidator:state.feedbackRowValidator, num_sincro:state.datos.num_sincro}));
+    var {hdr, cargas, modo, feedbackRowValidator, num_sincro} = useSelector((state:CasoState)=>({hdr:state.datos.hdr, cargas: state.datos.cargas, modo:state.modo, feedbackRowValidator:state.feedbackRowValidator, num_sincro:state.datos.num_sincro}));
     var dispatch = useDispatch();
     const updateOnlineStatus = function(){
         setOnline(window.navigator.onLine);
@@ -1354,7 +1369,7 @@ export function HojaDeRutaDespliegue(){
                     <div>{my.getLocalVar('app-version')} - sincro {num_sincro}</div>
                 </div>
                 {likeAr(cargas).map((carga: Carga, idCarga: IdCarga, _, posicion:number)=>
-                    <DesplegarCarga key={idCarga} carga={carga} idCarga={idCarga} posicion={posicion} hdr={hdr} mainForm={mainForm} feedbackRowValidator={feedbackRowValidator}/>
+                    <DesplegarCarga key={idCarga} carga={carga} idCarga={idCarga} posicion={posicion} hdr={hdr} feedbackRowValidator={feedbackRowValidator}/>
                 ).array()}
             </div>
         </>

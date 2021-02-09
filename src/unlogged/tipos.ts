@@ -141,6 +141,7 @@ export type Bloque = CasilleroBase & {
     casilleros:ContenidoFormulario[]
     var_name?:null
     tipovar?:null
+    unidad_analisis?:IdUnidadAnalisis
 }
 
 export type Consistencia = CasilleroBase & {
