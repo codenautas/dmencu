@@ -16,6 +16,7 @@ import * as JSON4all from "json4all";
 import * as likeAr from "like-ar";
 import * as bestGlobals from "best-globals";
 import { controlarCodigoDV2 } from "./digitov";
+import { Variable } from "operativos";
 
 var my=myOwn;
 
@@ -776,7 +777,9 @@ function aplanarLaCurva<T extends {tipoc:string}>(casillerosData:IDataSeparada<T
 
 // type AnyRef<T extends {}>=[T, keyof T];
 
-function rellenarVariablesYOpciones(estructura:EstructuraRowValidator, casillero:CasillerosImplementados, unidadAnalisis?:string|null){
+function rellenarVariablesYOpciones(estructura:EstructuraRowValidator, casillero:CasillerosImplementados, unidadAnalisis?:string|null,
+    subordinadaVar?:IdVariable, subordinadaValor?:any
+){
     if(casillero.var_name != null || casillero.tipoc=='FILTRO'){
         var var_name:IdVariable
         if(casillero.tipoc=='FILTRO'){
@@ -801,6 +804,10 @@ function rellenarVariablesYOpciones(estructura:EstructuraRowValidator, casillero
             calculada:casillero.unidad_analisis && casillero.unidad_analisis!=unidadAnalisis || casillero.despliegue?.includes('calculada'),
             libre:casillero.despliegue?.includes('libre')
         }
+        if(subordinadaValor != undefined){
+            variableDef.subordinadaVar = subordinadaVar;
+            variableDef.subordinadaValor = subordinadaValor;
+        }
         estructura.variables[var_name]=variableDef;
     } else if (casillero.tipoc=='BF'){
         // agregamos 100 botones 1, 2 ,3 ,4 ,5 ,6 (múltiples)
@@ -817,8 +824,8 @@ function rellenarVariablesYOpciones(estructura:EstructuraRowValidator, casillero
         estructura.variables['$FOR:'+casillero.salto as IdVariable]=variableDef;
     }
     if(casillero.casilleros){
-        casillero.casilleros.forEach((casillero:CasillerosImplementados)=>
-            rellenarVariablesYOpciones(estructura, casillero, unidadAnalisis)
+        casillero.casilleros.forEach((casilleroHijo:CasillerosImplementados)=>
+            rellenarVariablesYOpciones(estructura, casilleroHijo, unidadAnalisis, casillero.var_name?casillero.var_name:casillero.tipoc=='O'?subordinadaVar:undefined,casillero.tipoc=='O'?casillero.casillero:undefined)
         )
     }
 }

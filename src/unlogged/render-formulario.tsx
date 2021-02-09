@@ -372,8 +372,15 @@ function OpcionesDespliegue(
     {casilleroConOpciones:IcasilleroConOpciones, forPk:ForPk, valorActual:Valor, leer:boolean, horizontal:boolean}
     // {casilleroConOpciones:PreguntaConOpciones|OpcionMultiple, forPk:ForPk, valorActual:Valor, leer:boolean, horizontal:boolean}
 ){
-    return <Grid container direction={horizontal?"row":"column"} wrap={horizontal?"nowrap":"wrap"}>{
-        casilleroConOpciones.casilleros.map((opcion:Opcion)=>
+    const desplegarOtros = (opcion:Opcion, verHorizontal:boolean, verVertical:boolean) => opcion.casilleros.map(casilleroHijo=>(
+        verHorizontal && casilleroHijo.despliegue=="horizontal" || verVertical && casilleroHijo.despliegue!="horizontal"?
+        <div className="casillerHijo">
+            <Typography>{casilleroHijo.nombre}</Typography>
+            <TextField/>
+        </div>:null
+    ))
+    return <><Grid container direction={horizontal?"row":"column"} wrap={horizontal?"nowrap":"wrap"}>
+        {casilleroConOpciones.casilleros.map((opcion:Opcion)=>
             <Grid key={opcion.casillero} item
                 ocultar-salteada={opcion.despliegue?.includes('ocultar')?(opcion.expresion_habilitar_js?'INHABILITAR':'SI'):'NO'}
             >
@@ -385,15 +392,17 @@ function OpcionesDespliegue(
                     elegida={valorActual==opcion.casillero}
                     leer={leer}
                 />
-                {opcion.casilleros.map(casilleroHijo=>
-                    <div className="casillerHijo">
-                        <Typography>{casilleroHijo.nombre}</Typography>
-                        <TextField/>
-                    </div>
-                )}
+                {horizontal?null:desplegarOtros(opcion,true,true)}
             </Grid>
-        )
-    }</Grid>
+        )}
+        {horizontal?casilleroConOpciones.casilleros.map((opcion:Opcion)=>
+            desplegarOtros(opcion,true,false)
+        ):null}
+    </Grid>
+    {horizontal?casilleroConOpciones.casilleros.map((opcion:Opcion)=>
+        desplegarOtros(opcion,false,true)
+    ):null}
+    </>
 }
 
 function PreguntaDespliegue(props:{

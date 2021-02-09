@@ -29,7 +29,7 @@ export type FeedbackVariable = Feedback<IdVariable, IdFin>
 
 export type TipoVariables = 'texto'|'numero'|'fecha'
 
-export type Despliegue = 'calculada'|'libre'|'no_leer'|'leer'
+export type Despliegue = 'calculada'|'libre'|'no_leer'|'leer'|'horizontal'
 
 export type CasilleroBase = {
     tipoc:Tipoc
