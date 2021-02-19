@@ -937,7 +937,7 @@ export function DesplegarCarga(props:{
     }
 }){
     const {carga, idCarga, hdr, feedbackRowValidator} = props;
-    const etiquetas = likeAr(hdr).map((datosVivienda:DatosVivienda)=>datosVivienda.respuestas[c5]).array() as (string|null)[];
+    const etiquetas = []; //likeAr(hdr).map((datosVivienda:DatosVivienda)=>datosVivienda.respuestas[c5]).array() as (string|null)[];
     const dispatch = useDispatch();
     const [desplegarEtiquetasRepetidas, setDesplegarEtiquetasRepetidas] = useState<boolean>(false);
     const etiquetaRepetida = (etiquetas:(string|null)[], etiqueta:string)=>{

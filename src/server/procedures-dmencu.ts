@@ -447,7 +447,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             var be=context.be;
             ///////////// ojojojojojojo
-            context.user.idper='11';
+           // context.user.idper='11';
             var num_sincro:number=0;
             var token:string|null=parameters.datos?.token;
             if(!token){
