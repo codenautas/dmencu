@@ -304,7 +304,7 @@ export type CasoState={
         modoDespliegue:ModoDespliegue
         bienvenido:boolean
         modoDirecto:boolean
-        modoBorrarRespuesta:IdVariable
+        modoBorrarRespuesta:IdVariable|null
     }, 
     modo:{ // no se persiste
         demo:boolean

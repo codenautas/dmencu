@@ -130,9 +130,9 @@ export function miniCompiladorSQlJs(expresionCasiSQL:string){
 
 export function getFuncionHabilitar(nombreFuncionComoExpresionJs:string):FuncionHabilitar{
     if(!funcionesHabilitar[nombreFuncionComoExpresionJs]){
+        var cuerpo = nombreFuncionComoExpresionJs;
         try{
             // var cuerpo = miniCompiladorSQlJs(nombreFuncionComoExpresionJs);
-            var cuerpo = nombreFuncionComoExpresionJs;
             var internalFun =  new Function('valores', 'helpers', 'return '+cuerpo);
             funcionesHabilitar[nombreFuncionComoExpresionJs] = function(valores){
                 try{
@@ -739,7 +739,7 @@ var reducers={
                 datos:bestGlobals.deepCopy(state.modo.demo)
             })
         },
-    CONFIRMAR_BORRAR_RESPUESTA: (payload: {forPk:ForPk, variable:IdVariable}) => {
+    CONFIRMAR_BORRAR_RESPUESTA: (payload: {forPk:ForPk, variable:IdVariable|null}) => 
         function(state: CasoState){
             return calcularFeedback({
                 ...state,
@@ -750,8 +750,6 @@ var reducers={
                 }
             })
         },
-    }
-    
 }
 
 export type ActionFormularioState = ActionsFrom<typeof reducers>;

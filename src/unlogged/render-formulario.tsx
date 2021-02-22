@@ -37,7 +37,7 @@ import {serie} from "best-globals";
 import {
     AppBar, Badge, /*Button,*/ ButtonGroup, Card, Chip, CircularProgress, CssBaseline, 
     Dialog, DialogActions, DialogContent, DialogContentText, 
-    DialogTitle, Divider, Fab, Grid, IconButton, InputBase, 
+    DialogTitle, Divider, Fab, /*Grid,*/ IconButton, InputBase, 
     Link, List, ListItem, ListItemIcon, ListItemText, Drawer, 
     Menu, MenuItem, Paper, Popover,
     Step, Stepper, StepContent, StepLabel, 
@@ -52,9 +52,9 @@ import { controlarCodigoDV2 } from "./digitov";
 // /*
 const Button = (props:{
     variant:string,
-    "opcion-seleccionada":string,
+    "opcion-seleccionada"?:string,
     className:string,
-    onClick:()=>void,
+    onClick?:()=>void,
     disabled?:boolean
     children:any,
 })=><button 
@@ -89,6 +89,26 @@ const Typography = (props:{
 })=><div
     className={props.className}
 >{props.children}</div>;
+
+const Grid = (props:{
+    className?:string,
+    container?:boolean,
+    item?:boolean,
+    wrap?:'wrap'|'nowrap',
+    direction?:'row'|'column'
+    alignItems?:'stretch' | 'flex-start' | 'flex-end' | 'center' | 'baseline',
+    children:any
+}) => <div
+    className={props.className}
+    style={props.container?{
+        display:'flex',
+        flexWrap:props.wrap,
+        flexDirection:props.direction,
+        alignItems:props.alignItems
+    }:{
+    }}
+>{props.children}</div>
+
 // */
 
 // TODO: Generalizar
@@ -179,14 +199,15 @@ function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, va
     const {casillero} = props;
     var classes = useStyles();
     var dispatch = useDispatch();
+    var handleClick=()=>{
+        dispatch(dispatchers.REGISTRAR_RESPUESTA({respuesta:props.valorOpcion, variable:props.variable, forPk:props.forPk}))
+    };
     return <Grid className="opcion"> 
         <Button 
             variant="outlined"
             opcion-seleccionada={props.elegida?"SI":"NO"}
             className={classes.buttonOpcion}
-            onClick={()=>{
-                dispatch(dispatchers.REGISTRAR_RESPUESTA({respuesta:props.valorOpcion, variable:props.variable, forPk:props.forPk}))
-            }}
+            onClick={handleClick}
         >
             <Grid container wrap="nowrap">
                 <Grid className="id">
@@ -303,10 +324,11 @@ function EncabezadoDespliegue(props:{casillero:CasilleroBase, verIdGuion?:boolea
 
 function DesplegarConfirmarBorrarRespuesta(props:{forPk:ForPk, variableBorrar:IdVariable}){
     var [open, setOpen] = useState(!!props.variableBorrar)
+    var dispatch = useDispatch();
     const handleClose = () => {
+        dispatch(dispatchers.CONFIRMAR_BORRAR_RESPUESTA({forPk:props.forPk, variable:null}));
         setOpen(false);
     }
-    var dispatch = useDispatch();
     return <Popover
             id={"popover-confirmar"}
             open={open}
@@ -326,7 +348,7 @@ function DesplegarConfirmarBorrarRespuesta(props:{forPk:ForPk, variableBorrar:Id
                     if(props.variableBorrar){
                         dispatch(dispatchers.REGISTRAR_RESPUESTA({forPk:props.forPk, variable:props.variableBorrar, respuesta:null}))
                     }
-                    handleClose()
+                    handleClose();
                 }}>borrar respuesta</Button>
                 <Button color="primary" variant="outlined" onClick={handleClose}>volver sin borrar</Button>
             </div>
@@ -959,9 +981,9 @@ function FormularioDespliegue(props:{forPk:ForPk}){
                     </div>:null}
                     <FormularioEncabezado casillero={formulario}/>
                     <DesplegarContenidoInternoBloqueOFormulario bloqueOFormulario={formulario} formulario={formulario} forPk={forPk} multiple={false}/>
-                    {opciones.variableBorrar?<DesplegarConfirmarBorrarRespuesta forPk={opciones.forPk} variable={opciones.variableBorrar}/>:null}
                 </Paper>
                 <div className='espacio-final-formulario'></div>
+                {opciones.modoBorrarRespuesta && opciones.forPk?<DesplegarConfirmarBorrarRespuesta forPk={opciones.forPk} variableBorrar={opciones.modoBorrarRespuesta}/>:null}
             </main>
         </>
     );
