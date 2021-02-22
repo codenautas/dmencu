@@ -50,7 +50,7 @@ install:
       - upd_operacion_area_tem_trg.sql
       - sincronizacion_tem.sql
 login:
-  infoFieldList: [usu_usu, usu_rol, usu_rol as rol, usu_rol_secundario]
+  infoFieldList: [usu_usu, usu_rol, usu_rol as rol, usu_rol_secundario, idper]
   table: usuarios
   userFieldName: usu_usu
   passFieldName: usu_clave
