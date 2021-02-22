@@ -1,4 +1,5 @@
 "use strict";
+import { Variable } from "operativos";
 /* TODO: controlar los nombres y tipos de la base
  * atributo
  * producto
@@ -303,6 +304,7 @@ export type CasoState={
         modoDespliegue:ModoDespliegue
         bienvenido:boolean
         modoDirecto:boolean
+        modoBorrarRespuesta:IdVariable
     }, 
     modo:{ // no se persiste
         demo:boolean

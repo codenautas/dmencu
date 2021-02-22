@@ -35,19 +35,61 @@ import * as likeAr from "like-ar";
 import {serie} from "best-globals";
 
 import {
-    AppBar, Badge, Button, ButtonGroup, Card, Chip, CircularProgress, CssBaseline, 
+    AppBar, Badge, /*Button,*/ ButtonGroup, Card, Chip, CircularProgress, CssBaseline, 
     Dialog, DialogActions, DialogContent, DialogContentText, 
     DialogTitle, Divider, Fab, Grid, IconButton, InputBase, 
     Link, List, ListItem, ListItemIcon, ListItemText, Drawer, 
     Menu, MenuItem, Paper, Popover,
     Step, Stepper, StepContent, StepLabel, 
     SvgIcon, Switch, 
-    Table, TableBody, TableCell, TableHead, TableRow, TextField, Theme, Toolbar, Typography, Zoom,
+    Table, TableBody, TableCell, TableHead, TableRow, /*TextField,*/ Theme, Toolbar, /*Typography,*/ Zoom,
     useScrollTrigger,
     createStyles, makeStyles, Icon, Hidden, Grow
 } from "@material-ui/core";
 import { EstadoVariable, FormStructureState } from "row-validator";
 import { controlarCodigoDV2 } from "./digitov";
+
+// /*
+const Button = (props:{
+    variant:string,
+    "opcion-seleccionada":string,
+    className:string,
+    onClick:()=>void,
+    disabled?:boolean
+    children:any,
+})=><button 
+    className={`btn btn-${props.variant=='contained'?'':props.variant}-primary ${props.className}`}
+    disabled={props.disabled}
+    opcion-seleccionada={props["opcion-seleccionada"]}
+    onClick={props.onClick}
+>{props.children}</button>
+const TextField = (props:{
+    disabled:boolean,
+    className:string,
+    fullWidth:boolean
+    inputProps:any,
+    value:any,
+    type:any,
+    onChange:(event:any)=>void,
+    onFocus:(event:any)=>void,
+    onBlur:(event:any)=>void,
+})=><input
+disabled={props.disabled}
+className={props.className}
+value={props.value} 
+type={props.type}
+onChange={props.onChange}
+onFocus={props.onFocus}
+onBlur={props.onBlur}
+/>;
+
+const Typography = (props:{
+    children:any,
+    className:string,
+})=><div
+    className={props.className}
+>{props.children}</div>;
+// */
 
 // TODO: Generalizar
 var c5 = 'c5' as IdVariable;
@@ -220,22 +262,17 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk, va
 function EncabezadoDespliegue(props:{casillero:CasilleroBase, verIdGuion?:boolean, leer?:boolean, tieneValor?:string, feedback?:FeedbackVariable|null, forPk:ForPk}){
     var {casillero} = props;
     var dispatch = useDispatch()
-    const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
     var key=(casillero.ver_id!='-' || props.verIdGuion) && casillero.ver_id || casillero.casillero;
-    const handleClose=()=>{
-        setAnchorEl(null);
-    }
-    const open = Boolean(anchorEl);
     return <div 
         className="encabezado" 
         debe-leer={props.leer?'SI':'NO'} 
     >
         <div id={casillero.var_name || undefined} className="id-div"
-            onClick={event=>{
+            onClick={()=>{
                 if(casillero.var_name!=null && props.tieneValor=='invalido'){
                     dispatch(dispatchers.REGISTRAR_RESPUESTA({forPk:props.forPk, variable:casillero.var_name, respuesta:null}))
                 }else if(casillero.var_name!=null){
-                    setAnchorEl(event.currentTarget);
+                    dispatch(dispatchers.CONFIRMAR_BORRAR_RESPUESTA({forPk:props.forPk, variable:casillero.var_name}))
                 }
             }}
         >
@@ -261,10 +298,18 @@ function EncabezadoDespliegue(props:{casillero:CasilleroBase, verIdGuion?:boolea
                 {casillero.expresion_habilitar?<span el-metadato="expresion_habilitar">habilita: {casillero.expresion_habilitar}</span>:null}
             </div>
         </div>
-        <Popover
-            id={anchorEl && "popover-confirmar" || undefined}
+    </div>
+}
+
+function DesplegarConfirmarBorrarRespuesta(props:{forPk:ForPk, variableBorrar:IdVariable}){
+    var [open, setOpen] = useState(!!props.variableBorrar)
+    const handleClose = () => {
+        setOpen(false);
+    }
+    var dispatch = useDispatch();
+    return <Popover
+            id={"popover-confirmar"}
             open={open}
-            anchorEl={anchorEl}
             onClose={handleClose}
             anchorOrigin={{
                 vertical: 'bottom',
@@ -275,6 +320,21 @@ function EncabezadoDespliegue(props:{casillero:CasilleroBase, verIdGuion?:boolea
                 horizontal: 'left',
             }}
         >   
+            <Typography>La pregunta tiene registrada una respuesta que no fue detectada como errónea</Typography>
+            <div className="confirma-botones">
+                <Button color="secondary" variant="outlined" onClick={()=>{
+                    if(props.variableBorrar){
+                        dispatch(dispatchers.REGISTRAR_RESPUESTA({forPk:props.forPk, variable:props.variableBorrar, respuesta:null}))
+                    }
+                    handleClose()
+                }}>borrar respuesta</Button>
+                <Button color="primary" variant="outlined" onClick={handleClose}>volver sin borrar</Button>
+            </div>
+        </Popover>;
+}
+
+/*
+
             {props.tieneValor=="valido" && casillero.var_name?<div className="confirma-borrado">
                 <Typography>La pregunta tiene registrada una respuesta</Typography>
                 <div className="confirma-botones">
@@ -315,9 +375,7 @@ function EncabezadoDespliegue(props:{casillero:CasilleroBase, verIdGuion?:boolea
                     <Button color="primary"   variant="outlined" onClick={handleClose}>continuar</Button>
                 </div>
             </div>}
-        </Popover>
-    </div>
-}
+*/
 
 function calcularNuestraLongitud(longitud:string |null){
     var value = parseInt(longitud||'9999');
@@ -901,6 +959,7 @@ function FormularioDespliegue(props:{forPk:ForPk}){
                     </div>:null}
                     <FormularioEncabezado casillero={formulario}/>
                     <DesplegarContenidoInternoBloqueOFormulario bloqueOFormulario={formulario} formulario={formulario} forPk={forPk} multiple={false}/>
+                    {opciones.variableBorrar?<DesplegarConfirmarBorrarRespuesta forPk={opciones.forPk} variable={opciones.variableBorrar}/>:null}
                 </Paper>
                 <div className='espacio-final-formulario'></div>
             </main>
@@ -1536,6 +1595,7 @@ export async function desplegarFormularioActual(opts:{modoDemo:boolean, useSessi
     const store = await dmTraerDatosFormulario(opts)
     ReactDOM.render(
         <RenderPrincipal store={store} dispatchers={dispatchers} mensajeRetorno="Volver a la hoja de ruta">
+            <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous"></link>            
             <OpenedTabs/>
             <AppDmEncu/>
         </RenderPrincipal>,

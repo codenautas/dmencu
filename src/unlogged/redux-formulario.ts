@@ -739,6 +739,19 @@ var reducers={
                 datos:bestGlobals.deepCopy(state.modo.demo)
             })
         },
+    CONFIRMAR_BORRAR_RESPUESTA: (payload: {forPk:ForPk, variable:IdVariable}) => {
+        function(state: CasoState){
+            return calcularFeedback({
+                ...state,
+                opciones:{
+                    ...state.opciones,
+                    forPk:payload.forPk,
+                    modoBorrarRespuesta: payload.variable
+                }
+            })
+        },
+    }
+    
 }
 
 export type ActionFormularioState = ActionsFrom<typeof reducers>;
