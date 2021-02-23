@@ -50,19 +50,20 @@ import { EstadoVariable, FormStructureState } from "row-validator";
 import { controlarCodigoDV2 } from "./digitov";
 
 // /*
-const Button = (props:{
+const Button = ({variant, onClick, disabled, children, className, ...other}:{
     variant:string,
-    "opcion-seleccionada"?:string,
     className:string,
     onClick?:()=>void,
     disabled?:boolean
     children:any,
 })=><button 
-    className={`btn btn-${props.variant=='contained'?'':props.variant}-primary ${props.className}`}
-    disabled={props.disabled}
-    opcion-seleccionada={props["opcion-seleccionada"]}
-    onClick={props.onClick}
->{props.children}</button>
+    {...other}
+    className={`btn btn-${variant=='contained'?'':variant}-primary ${className}`}
+    disabled={disabled}
+    onClick={onClick}
+>{children}</button>;
+
+
 const TextField = (props:{
     disabled:boolean,
     className:string,
@@ -90,16 +91,18 @@ const Typography = (props:{
     className={props.className}
 >{props.children}</div>;
 
-const Grid = (props:{
+function Grid(props:{
     className?:string,
     container?:boolean,
     item?:boolean,
     wrap?:'wrap'|'nowrap',
     direction?:'row'|'column'
     alignItems?:'stretch' | 'flex-start' | 'flex-end' | 'center' | 'baseline',
-    children:any
-}) => <div
-    className={props.className}
+    children:any,
+}){
+    var {container, item, wrap, direction, alignItems, children, ...other} = props;
+    return <div
+    {...other}
     style={props.container?{
         display:'flex',
         flexWrap:props.wrap,
@@ -108,6 +111,7 @@ const Grid = (props:{
     }:{
     }}
 >{props.children}</div>
+}
 
 // */
 
