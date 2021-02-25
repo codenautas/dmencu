@@ -48,69 +48,86 @@ import {
 } from "@material-ui/core";
 import { EstadoVariable, FormStructureState } from "row-validator";
 import { controlarCodigoDV2 } from "./digitov";
+import { CSSProperties } from "@material-ui/core/styles/withStyles";
 
 // /*
-const Button = ({variant, onClick, disabled, children, className, ...other}:{
-    variant:string,
-    className:string,
+
+type CommonAttributes = {className?:string,style?:CSSProperties} // CSSProperties
+type ColorValues = 'primary'|'secondary'|'default'|'inherit'
+
+const Button = ({variant, onClick, disabled, children, className, color, size, ...other}:{
+    variant?:string,
+    color?:ColorValues,
     onClick?:()=>void,
     disabled?:boolean
     children:any,
-})=><button 
+    className?:string,
+    size?:'small'
+} & CommonAttributes)=><button 
     {...other}
-    className={`btn btn-${variant=='contained'?'':variant}-primary ${className}`}
+    className={`btn btn${variant=='contained'?'':'-'+variant}-${(color=='default' || color=='inherit'?'secondary':color=='secondary'?'danger':color)||'secondary'} ${className||''} ${size=='small'?'btn-sm':''}`}
     disabled={disabled}
     onClick={onClick}
 >{children}</button>;
 
 
 const TextField = (props:{
-    disabled:boolean,
-    className:string,
+    disabled?:boolean,
+    className?:string,
+    autoFocus?:boolean,
     fullWidth:boolean
-    inputProps:any,
+    inputProps?:any,
     value:any,
     type:any,
+    label?:string,
+    error?:boolean,
+    helperText?:string,
+    multiline?:boolean,
     onChange:(event:any)=>void,
-    onFocus:(event:any)=>void,
-    onBlur:(event:any)=>void,
+    onFocus?:(event:any)=>void,
+    onBlur?:(event:any)=>void,
 })=><input
-disabled={props.disabled}
-className={props.className}
-value={props.value} 
-type={props.type}
-onChange={props.onChange}
-onFocus={props.onFocus}
-onBlur={props.onBlur}
+    disabled={props.disabled}
+    className={props.className}
+    autoFocus={props.autoFocus}
+    value={props.value} 
+    type={props.type}
+    onChange={props.onChange}
+    onFocus={props.onFocus}
+    onBlur={props.onBlur}
+    placeholder={props.label}
 />;
 
-const Typography = (props:{
+const Typography = ({children, ...others}:{
     children:any,
-    className:string,
-})=><div
-    className={props.className}
->{props.children}</div>;
+    component?:string
+    variant?:'h6'
+}&CommonAttributes)=>React.createElement(others.variant||others.component||'div',others,children);
 
 function Grid(props:{
-    className?:string,
     container?:boolean,
+    spacing?:number,
     item?:boolean,
     wrap?:'wrap'|'nowrap',
     direction?:'row'|'column'
     alignItems?:'stretch' | 'flex-start' | 'flex-end' | 'center' | 'baseline',
     children:any,
-}){
-    var {container, item, wrap, direction, alignItems, children, ...other} = props;
+    xs?:number,
+    sm?:number,
+}&CommonAttributes){
+    var {container, item, wrap, direction, alignItems, children, className, xs, sm, spacing, ...other} = props;
     return <div
     {...other}
-    style={props.container?{
+    className={`${className||''} ${xs!=null?'grid-xs-'+xs:''} ${sm!=null?'grid-sm-'+sm:''}`}
+    style={container?{
         display:'flex',
-        flexWrap:props.wrap,
-        flexDirection:props.direction,
-        alignItems:props.alignItems
+        flexWrap:wrap,
+        flexDirection:direction,
+        alignItems:alignItems,
+        margin:spacing!=null?spacing*8+'px':undefined
     }:{
     }}
->{props.children}</div>
+>{children}</div>
 }
 
 // */
@@ -1028,9 +1045,9 @@ export function DesplegarCarga(props:{
     const etiquetaRepetida = (etiquetas:(string|null)[], etiqueta:string)=>{
         return etiquetas.filter((e)=>e==etiqueta).length > 1
     }
-    const buscarCasosEnHdrParaEtiqueta = (hdr:VivendasHdR, etiqueta:string, etiquetaVarname:IdVariable, casoActual:IdCaso)=>{
+    const buscarCasosEnHdrParaEtiqueta = (hdr:VivendasHdR, etiqueta:string, etiquetaVarname:IdVariable, _casoActual:IdCaso)=>{
         return likeAr(hdr)
-            .filter((datosVivienda:DatosVivienda, idCaso:IdCaso)=>datosVivienda.respuestas[etiquetaVarname]==etiqueta)
+            .filter((datosVivienda:DatosVivienda, _idCaso:IdCaso)=>datosVivienda.respuestas[etiquetaVarname]==etiqueta)
             .map((_datosVivienda:DatosVivienda,idCaso:IdCaso)=>idCaso)
             .array()
     }
@@ -1064,7 +1081,7 @@ export function DesplegarCarga(props:{
                 </TableRow>
             </TableHead>
             <TableBody>
-                {likeAr(hdr).filter((datosVivienda:DatosVivienda, idCaso:IdCaso)=>datosVivienda.tem.carga==idCarga).map((datosVivienda: DatosVivienda, idCaso: IdCaso)=>
+                {likeAr(hdr).filter((datosVivienda:DatosVivienda, _idCaso:IdCaso)=>datosVivienda.tem.carga==idCarga).map((datosVivienda: DatosVivienda, idCaso: IdCaso)=>
                     <TableRow key={idCaso}>
                         <TableCell>
                             {idCaso}
@@ -1079,7 +1096,7 @@ export function DesplegarCarga(props:{
                             <DesplegarNotasYVisitas tareas={datosVivienda.tareas} visitas={datosVivienda.visitas} idCaso={idCaso}/>
                         </TableCell>
                         <TableCell>
-                            {likeAr(datosVivienda.tareas).map((tarea, idTarea)=>
+                            {likeAr(datosVivienda.tareas).map((_tarea, idTarea)=>
                                 <Button
                                     key={idTarea}
                                     size="small"
@@ -1558,7 +1575,7 @@ export function ConsultaResultados(){
                     <TextField 
                         autoFocus={true}
                         error={!!etiqueta && !etiquetaValida}
-                        helperText={!!etiqueta && !etiquetaValida?"Numero de etiqueta incorrecto":null}
+                        helperText={(!!etiqueta && !etiquetaValida?"Numero de etiqueta incorrecto":null)||undefined}
                         fullWidth={true}
                         value={etiqueta || ''} 
                         label="Etiqueta"
@@ -1621,7 +1638,7 @@ export async function desplegarFormularioActual(opts:{modoDemo:boolean, useSessi
     const store = await dmTraerDatosFormulario(opts)
     ReactDOM.render(
         <RenderPrincipal store={store} dispatchers={dispatchers} mensajeRetorno="Volver a la hoja de ruta">
-            <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous"></link>            
+            <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossOrigin="anonymous"></link>            
             <OpenedTabs/>
             <AppDmEncu/>
         </RenderPrincipal>,
