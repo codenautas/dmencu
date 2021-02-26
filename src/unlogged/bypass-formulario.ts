@@ -7,7 +7,7 @@ import { deepFreeze, datetime } from "best-globals";
 import { CasilleroBase, CasillerosImplementados, CasoState, 
     DatosVivienda, EstadoCarga, EstructuraRowValidator, Estructura, 
     FeedbackVariable, Formulario, ForPk, 
-    IdCarga, IdCasillero, IdCaso, IdDestino, IdFin, IdFormulario, IdTarea, IdVariable, 
+    IdCarga, IdCasillero, IdCaso, IdDestino, IdFin, IdFormulario, IdPregunta, IdTarea, IdVariable, 
     IdUnidadAnalisis,
     InfoFormulario, 
     ModoDespliegue, 
@@ -37,6 +37,10 @@ export function cargarHdr(){
 
 }
 
+export function cargarEstructura(estructuraACargar:Estructura){
+    estructura = estructuraACargar;
+}
+
 
 export function getHdr(){
     return datosByPass.hdr;
@@ -48,6 +52,10 @@ export function getFeedbackRowValidator(){
 
 export function getDirty(){
     return datosByPass.dirty
+}
+
+export function getEstructura(){
+    return estructura;
 }
 
 export function registrarElemento<T extends HTMLInputElement|HTMLDivElement>(def:{
@@ -78,81 +86,67 @@ export function setValorDistinto<V, N extends string>(
     }
 }
 
-export function accion_id_pregunta(_payload:{forPk: ForPk}){
-    return function(_datosByPass:DatosByPass){
-    }
+export function accion_id_pregunta(_payload:{pregunta: IdPregunta, forPk: ForPk}, _datosByPass:DatosByPass){
 }
 
-export function accion_registrar_respuesta(payload:{forPk:ForPk, variable:IdVariable, respuesta:Valor}){
-    return function(datosByPass:DatosByPass){
-        let token = 'AVERIGUAR TODO'
-        let { forPk, respuesta, variable } = payload;
-        var datosVivienda = datosByPass.hdr[forPk.vivienda as IdCaso];
-        var recentModified = datosVivienda.respuestas[variable] != respuesta
-        if(recentModified){
-            datosVivienda.respuestas[variable] = respuesta;
-        }
-        variablesCalculadas(datosVivienda)
-        if(datosVivienda.respuestas[ultimaVaribleVivienda]==null && datosVivienda.respuestas[ultimaVaribleVivienda]!=null){
-            encolarBackup(token, forPk.vivienda, datosVivienda);
-        }
-        datosVivienda.dirty = datosVivienda.dirty || recentModified;
-        calcularFeedback(datosVivienda, forPk)
+export function accion_registrar_respuesta(payload:{forPk:ForPk, variable:IdVariable, respuesta:Valor}, datosByPass:DatosByPass){
+    let token = 'AVERIGUAR TODO'
+    let { forPk, respuesta, variable } = payload;
+    var datosVivienda = datosByPass.hdr[forPk.vivienda as IdCaso];
+    var recentModified = datosVivienda.respuestas[variable] != respuesta
+    if(recentModified){
+        datosVivienda.respuestas[variable] = respuesta;
     }
+    variablesCalculadas(datosVivienda)
+    if(datosVivienda.respuestas[ultimaVaribleVivienda]==null && datosVivienda.respuestas[ultimaVaribleVivienda]!=null){
+        encolarBackup(token, forPk.vivienda, datosVivienda);
+    }
+    datosVivienda.dirty = datosVivienda.dirty || recentModified;
+    calcularFeedback(datosVivienda, forPk)
 }
 
-export function accion_registrar_nota(payload:{vivienda:IdCaso, tarea:IdTarea, nota:string|null}){
-    return function(_datosByPass:DatosByPass){
-        let { vivienda, tarea, nota } = payload;
-        console.log("FALTA // TODO")
-    }
+export function accion_registrar_nota(payload:{vivienda:IdCaso, tarea:IdTarea, nota:string|null}, _datosByPass:DatosByPass){
+    let { vivienda, tarea, nota } = payload;
+    console.log("FALTA // TODO")
 }
 
-export function accion_agregar_visita(payload:{vivienda:IdCaso, observaciones:string|null}){
-    return function(datosByPass:DatosByPass){
-        let { vivienda, observaciones } = payload;
-        if(!datosByPass.hdr[vivienda].visitas){
-            datosByPass.hdr[vivienda].visitas = [];
-        }
-        var visitas = datosByPass.hdr[vivienda].visitas;
-        visitas.push({
-            fecha: datetime.now().toYmd(),
-            hora: datetime.now().toHm(),
-            idper: null, // TODO: VER DE DONDE SE SACA EL IDPER state.datos.idper,
-            observaciones:observaciones
-        })
+export function accion_agregar_visita(payload:{vivienda:IdCaso, observaciones:string|null}, datosByPass:DatosByPass){
+    let { vivienda, observaciones } = payload;
+    if(!datosByPass.hdr[vivienda].visitas){
+        datosByPass.hdr[vivienda].visitas = [];
     }
+    var visitas = datosByPass.hdr[vivienda].visitas;
+    visitas.push({
+        fecha: datetime.now().toYmd(),
+        hora: datetime.now().toHm(),
+        idper: null, // TODO: VER DE DONDE SE SACA EL IDPER state.datos.idper,
+        observaciones:observaciones
+    })
 }
 
-export function modificar_visita(payload: {vivienda:IdCaso, index:number, opcion:keyof Visita , valor:string|null}){
-    return function(datosByPass:DatosByPass){
-        let { vivienda, index, opcion, valor} = payload;
-        var visitas = datosByPass.hdr[vivienda].visitas;
-        visitas[index][opcion] = valor;
-    }
+export function accion_modificar_visita(payload: {vivienda:IdCaso, index:number, opcion:keyof Visita , valor:string|null}, datosByPass:DatosByPass){
+    let { vivienda, index, opcion, valor} = payload;
+    var visitas = datosByPass.hdr[vivienda].visitas;
+    visitas[index][opcion] = valor;
 }
 
-export function borrar_visita(payload: {vivienda:IdCaso, index:number}){
-    return function(datosByPass:DatosByPass){
-        let { vivienda, index} = payload;
-        var visitas = datosByPass.hdr[vivienda].visitas;
-        visitas.splice(index, 1);
-    }
+export function accion_borrar_visita(payload: {vivienda:IdCaso, index:number}, datosByPass:DatosByPass){
+    let { vivienda, index} = payload;
+    var visitas = datosByPass.hdr[vivienda].visitas;
+    visitas.splice(index, 1);
 }
 
-export function agregar_formulario(_payload: {forPk:ForPk}){
-    return function(_datosByPass:DatosByPass){
-        // REVISAR!!!! TODO
-        // var {state, respuestas} = respuestasForPk(state, payload.forPk, true);
-        // return calcularFeedback(state)
-    }
+export function accion_agregar_formulario(_payload: {forPk:ForPk}, _datosByPass:DatosByPass){
+    // REVISAR!!!! TODO
+    // var {state, respuestas} = respuestasForPk(state, payload.forPk, true);
+    // return calcularFeedback(state)
 }
 
 export function dispatchByPass<T>(
-    fun:(payload:T)=>(datos:typeof datosByPass)=>void,
+    fun:(payload:T, datos:typeof datosByPass)=>void,
     payload:T
 ){
-    fun(payload)(datosByPass);
+    fun(payload, datosByPass);
 }
 
 //////////////////////////////////////////////////////////////////////////

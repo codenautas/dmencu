@@ -4,6 +4,7 @@ import { CasoState, EtiquetaOpts, IdVariable, IdCaso } from "../unlogged/tipos";
 import { crearEtiqueta } from "../unlogged/generador-qr";
 import * as TypedControls from "typed-controls";
 import * as likeAr from "like-ar";
+import {cargarEstructura, cargarHdr, getHdr} from "../unlogged/bypass-formulario"
 
 const OPERATIVO = 'etoi211';
 const OPERATIVO_ACTUAL = 'etoi211';
@@ -28,7 +29,7 @@ async function sincronizarDatos(state:CasoState|null){
     }
     if(state){
         state.datos=datos;
-        state.estructura=estructura;
+        cargarEstructura(estructura);
         state.modo = {
             demo: false
         }
@@ -39,6 +40,7 @@ async function sincronizarDatos(state:CasoState|null){
             pilaForPk: [], 
             modoDespliegue: "relevamiento",
             modoDirecto: false,
+            modoBorrarRespuesta: null,
         }
         //@ts-ignore
         state.feedbackRowValidator={};
@@ -67,11 +69,12 @@ myOwn.wScreens.sincronizar_dm=async function(){
 
     if(myOwn.existsLocalVar(LOCAL_STORAGE_STATE_NAME)){
         var state: CasoState = my.getLocalVar(LOCAL_STORAGE_STATE_NAME);
+        var hdr = getHdr();
         mainLayout.appendChild(html.div({class:'aviso'},[
             html.h4('información a transmitir'),
             html.p([htmlNumero(likeAr(state.datos.cargas).array().length),' areas: ',likeAr(state.datos.cargas).keys().join(', ')]),
-            html.p([htmlNumero(likeAr(state.datos.hdr).array().length),' viviendas']),
-            html.p([htmlNumero(likeAr(state.datos.hdr).filter(dv=>dv.respuestas?.[dv1]==1 && dv.respuestas?.[c5ok]==1).array().length),' viviendas con muestras']),
+            html.p([htmlNumero(likeAr(hdr).array().length),' viviendas']),
+            html.p([htmlNumero(likeAr(hdr).filter(dv=>dv.respuestas?.[dv1]==1 && dv.respuestas?.[c5ok]==1).array().length),' viviendas con muestras']),
         ]).create());
         var downloadButton = html.button({class:'download-dm-button-cont'},'proceder ⇒').create();
         mainLayout.appendChild(downloadButton);
@@ -197,7 +200,6 @@ myOwn.clientSides.avisar={
             }
         }
     },
-    update: false,
 };
 
 myOwn.clientSides.tareasTemRow={
@@ -207,8 +209,6 @@ myOwn.clientSides.tareasTemRow={
         // @ts-ignore
         var idper=my.config.idper;
         var esperar:boolean=false;
-        // @ts-ignore
-        var idper = my.config.idper;
         if(row.habilitada){
             if(!row.asignante && !row.asignado){
                 tarea='preasignar';
@@ -229,7 +229,7 @@ myOwn.clientSides.tareasTemRow={
             asignado           :tarea=='cargar'     && (esperar?'esperar':'normal'),
             fecha_asignacion   :tarea=='cargar'     && (esperar?'esperar':'normal'),
             operacion          :tarea=='cargar'     && (esperar?'esperar':'normal'),
-            carga_observaciones:(tarea=='cargar'   || tarea=='realizar' && !row.cargado && !row.resultado && !row.notas) && row.asignante==my.config.idper && 'optativo',
+            carga_observaciones:(tarea=='cargar'   || tarea=='realizar' && !row.cargado && !row.resultado && !row.notas) && row.asignante==idper && 'optativo',
             resultado          :tarea=='realizar'   && (esperar?'esperar':'normal'),
             notas              :(tarea=='realizar' || tarea=='verificar' && !row.verificado) && row.asignado==idper && 'optativo',
             verificado         :tarea=='verificar'  && (esperar?'esperar':'normal'),
@@ -264,7 +264,6 @@ myOwn.clientSides.avisar_email={
             depot.rowControls[fieldName].appendChild(html.span("avisa salud").create());
         }
     },
-    update: false,
 };
 
 myOwn.wScreens.resultados_ver = async ()=>{

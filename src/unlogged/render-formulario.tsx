@@ -12,11 +12,12 @@ import {
 import {Bloque, BotonFormulario, 
     CasilleroBase, CasoState, ConjuntoPreguntas, Consistencia, DatosVivienda,
     EstadoCarga, FeedbackVariable, Filtro, ForPk, Formulario, 
-    IdCaso, IdFormulario, IdTarea, IdVariable, InfoFormulario,
+    IdCaso, IdFormulario, IdPregunta, IdTarea, IdVariable, InfoFormulario,
     ModoDespliegue,
     Opcion, OpcionMultiple, OpcionNo, OpcionSi, PlainForPk, 
     Pregunta, PreguntaConOpciones, PreguntaConOpcionesMultiples, PreguntaSimple, 
-    Respuestas, Valor, TEM, IdCarga, Carga, VivendasHdR, IdFin, InfoTarea, Tareas, Visita, IdUnidadAnalisis
+    Respuestas, Valor, TEM, IdCarga, Carga, VivendasHdR, IdFin, InfoTarea, Tareas, Visita, IdUnidadAnalisis,
+    toPlainForPk
 } from "./tipos";
 import { dmTraerDatosFormulario, dispatchers, 
     gotoSincronizar,
@@ -24,7 +25,6 @@ import { dmTraerDatosFormulario, dispatchers,
     saveSurvey,
     consultarEtiqueta,
     gotoVer,
-    respuestasForPk,
 } from "./redux-formulario";
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux"; 
@@ -51,7 +51,15 @@ import {
     registrarElemento, setAttrDistinto, setValorDistinto, dispatchByPass, 
     getDirty, getHdr, getFeedbackRowValidator,
     getFuncionHabilitar, 
+    getEstructura, 
     defOperativo,
+    accion_registrar_respuesta,
+    accion_id_pregunta,
+    accion_agregar_visita,
+    accion_registrar_nota,
+    accion_agregar_formulario,
+    accion_modificar_visita,
+    accion_borrar_visita
 } from "./bypass-formulario"
 
 
@@ -225,7 +233,7 @@ function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, va
     const {casillero} = props;
     var dispatch = useDispatch();
     var handleClick=()=>{
-        dispatch(dispatchers.REGISTRAR_RESPUESTA({respuesta:props.valorOpcion, variable:props.variable, forPk:props.forPk}))
+        dispatchByPass(accion_registrar_respuesta, {respuesta:props.valorOpcion, variable:props.variable, forPk:props.forPk})
     };
     return <Grid className="opcion"> 
         <Button 
@@ -342,7 +350,7 @@ function EncabezadoDespliegue(props:{casillero:CasilleroBase, verIdGuion?:boolea
         <div id={casillero.var_name || undefined} className="id-div"
             onClick={()=>{
                 // TODO. Ver qué hacemos cuando se toca el ID de la pregutna
-                dispatchByPass({tipo:'id-pregunta', forPk:props.forPk});
+                dispatchByPass(accion_id_pregunta, {pregunta: casillero.casillero as IdPregunta, forPk:props.forPk});
             }}
         >
             <div className="id">
@@ -394,7 +402,7 @@ function DesplegarConfirmarBorrarRespuesta(props:{forPk:ForPk, variableBorrar:Id
             <div className="confirma-botones">
                 <Button color="secondary" variant="outlined" onClick={()=>{
                     if(props.variableBorrar){
-                        dispatch(dispatchers.REGISTRAR_RESPUESTA({forPk:props.forPk, variable:props.variableBorrar, respuesta:null}))
+                        dispatchByPass(accion_registrar_respuesta, {forPk:props.forPk, variable:props.variableBorrar, respuesta:null})
                     }
                     handleClose();
                 }}>borrar respuesta</Button>
@@ -558,7 +566,7 @@ function PreguntaDespliegue(props:{
                     disabled={preguntaSimple.despliegue?.includes('calculada')?true:false}
                     pregunta={preguntaSimple}
                     onChange={(nuevoValor)=>
-                        dispatchByPass({tipo:'registrar_respuesta', forPk:props.forPk, variable:preguntaSimple.var_name, respuesta:nuevoValor})
+                        dispatchByPass(accion_registrar_respuesta, {forPk:props.forPk, variable:preguntaSimple.var_name, respuesta:nuevoValor})
                     }
                 />
             )(pregunta)
@@ -593,9 +601,10 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     var habilitador = casillero.expresion_habilitar_js?getFuncionHabilitar(casillero.expresion_habilitar_js):()=>true;
     var {opciones} = useSelectorVivienda(forPk);
     var idFormularioDestino = 'F:'+casillero.salto! as IdFormulario;
+    var estructura = getEstructura();
     var {soloLectura, formularioAAbrir} = useSelector((state:CasoState)=>({
         soloLectura:state.datos.soloLectura, 
-        formularioAAbrir:state.estructura.formularios[idFormularioDestino].casilleros,
+        formularioAAbrir:estructura.formularios[idFormularioDestino].casilleros,
     }));
     var sufijoIdElemento = toPlainForPk(forPk);
     registrarElemento({
@@ -643,7 +652,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                 // @ts-ignore forPk y sus componentes
                 nuevaForPk[nuevoCampoPk] = defBoton.num
                 if('esAgregar' in defBoton){
-                    dispatch(dispatchers.AGREGAR_FORMULARIO({forPk:nuevaForPk}));        
+                    dispatchByPass(accion_agregar_formulario,{forPk:nuevaForPk});
                 }
             }
             dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:nuevaForPk, apilarVuelta:true}));
@@ -704,8 +713,9 @@ function CasilleroDesconocido(props:{casillero:CasilleroBase}){
 
 function useSelectorVivienda(forPk:ForPk){
     return useSelector((state:CasoState)=>{
+        var estructura = getEstructura();
         return {
-            formulario: state.estructura.formularios[forPk.formulario].casilleros,
+            formulario: estructura.formularios[forPk.formulario].casilleros,
             modoDespliegue: state.modo.demo?state.opciones.modoDespliegue:'relevamiento',
             modo: state.modo,
             opciones: state.opciones,
@@ -1221,11 +1231,11 @@ export function DesplegarNotasYVisitas(props:{tareas:Tareas, idCaso:IdCaso, visi
                                 onChange={(event)=>{
                                     let value = event.target.value || null;
                                     setNota(value)
-                                    miTarea!=null && dispatch(dispatchers.REGISTRAR_NOTA({
+                                    miTarea!=null && dispatchByPass(accion_registrar_nota, {
                                         vivienda:idCaso,
                                         tarea: miTarea,
                                         nota: value
-                                    }));
+                                    });
                                 }}
                             />
                         </div>
@@ -1244,10 +1254,10 @@ export function DesplegarNotasYVisitas(props:{tareas:Tareas, idCaso:IdCaso, visi
                             </Hidden>
                             <Grid item xs={2} sm={2}>
                                 <Button disabled={editando!=null} onClick={()=>{
-                                    dispatch(dispatchers.AGREGAR_VISITA({
+                                    dispatchByPass(accion_agregar_visita,{
                                         vivienda:idCaso,
                                         observaciones: null
-                                    }));
+                                    });
                                     setAdding(visitas.length-1);
                                 }} color="primary" variant="outlined">
                                     <ICON.Add/>
@@ -1270,12 +1280,12 @@ export function DesplegarNotasYVisitas(props:{tareas:Tareas, idCaso:IdCaso, visi
                                                         onBlur={()=>setEditando(null)}
                                                         onChange={(event)=>{
                                                             let value = event.target.value || null;
-                                                            dispatch(dispatchers.MODIFICAR_VISITA({
+                                                            dispatchByPass(accion_modificar_visita,{
                                                                 vivienda:idCaso,
                                                                 index,
                                                                 opcion:"fecha",
                                                                 valor: value
-                                                            }));
+                                                            });
                                                         }}
                                                     />
                                                 :
@@ -1292,12 +1302,12 @@ export function DesplegarNotasYVisitas(props:{tareas:Tareas, idCaso:IdCaso, visi
                                                         onBlur={()=>setEditando(null)}
                                                         onChange={(event)=>{
                                                             let value = event.target.value || null;
-                                                            dispatch(dispatchers.MODIFICAR_VISITA({
+                                                            dispatchByPass(accion_modificar_visita,{
                                                                 vivienda:idCaso,
                                                                 index,
                                                                 opcion:"hora",
                                                                 valor: value
-                                                            }));
+                                                            });
                                                         }}
                                                     />
                                                 :
@@ -1318,12 +1328,12 @@ export function DesplegarNotasYVisitas(props:{tareas:Tareas, idCaso:IdCaso, visi
                                                                 onBlur={()=>setEditando(null)}
                                                                 onChange={(event)=>{
                                                                     let value = event.target.value || null;
-                                                                    dispatch(dispatchers.MODIFICAR_VISITA({
+                                                                    dispatchByPass(accion_modificar_visita,{
                                                                         vivienda:idCaso,
                                                                         index,
                                                                         opcion:"observaciones",
                                                                         valor: value
-                                                                    }));
+                                                                    });
                                                                 }}
                                                             />
                                                         </div>
@@ -1348,7 +1358,7 @@ export function DesplegarNotasYVisitas(props:{tareas:Tareas, idCaso:IdCaso, visi
                                                         variant="outlined"
                                                         color="secondary"
                                                         onClick={()=>{
-                                                            dispatch(dispatchers.BORRAR_VISITA({vivienda:idCaso, index: index}))
+                                                            dispatchByPass(accion_borrar_visita, {vivienda:idCaso, index: index})
                                                         }}
                                                     >
                                                         <ICON.DeleteOutline/>
