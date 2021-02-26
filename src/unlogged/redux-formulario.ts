@@ -12,6 +12,7 @@ import { CasilleroBase, CasillerosImplementados, CasoState,
 import { deepFreeze, datetime } from "best-globals";
 import { createReducer, createDispatchers, ActionsFrom } from "redux-typed-reducer";
 import { getRowValidator, Structure, Opcion as RowValidatorOpcion, FormStructureState } from "row-validator";
+import { getHdr } from "./bypass-formulario"
 import * as JSON4all from "json4all";
 import * as likeAr from "like-ar";
 import * as bestGlobals from "best-globals";
@@ -371,7 +372,7 @@ function calcularFeedback(state: CasoState, forPk?:ForPk|null):CasoState{
     var tipo_seleccion = 'tipo_seleccion' as IdVariable;
     var tipo_relevamiento = 'tipo_relevamiento' as IdVariable;
     var vivienda = forPk.vivienda;
-    var respuestas = state.datos.hdr[vivienda].respuestas;
+    var respuestas = getHdr()[vivienda].respuestas;
     if(respuestas){
         /*
         var nuevosRows = likeAr([
@@ -427,7 +428,7 @@ function calcularFeedback(state: CasoState, forPk?:ForPk|null):CasoState{
         nuevosRows={};
         resumenEstado='vacio';
     }
-    var datosVivienda = state.datos.hdr[forPk.vivienda];
+    var datosVivienda = getHdr()[forPk.vivienda];
     var feedbackRowValidator
     return {
         ...state,

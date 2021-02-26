@@ -50,9 +50,15 @@ import { EstadoVariable, FormStructureState } from "row-validator";
 import { controlarCodigoDV2 } from "./digitov";
 import { CSSProperties } from "@material-ui/core/styles/withStyles";
 
+import { 
+    registrarElemento, setAttrDistinto, setValorDistinto, dispatchByPass, 
+    getDirty, getHdr, getFeedbackRowValidator
+} from "./bypass-formulario"
+
+
 // /*
 
-type CommonAttributes = {className?:string,style?:CSSProperties} // CSSProperties
+type CommonAttributes = {className?:string,style?:CSSProperties,id?:string} // CSSProperties
 type ColorValues = 'primary'|'secondary'|'default'|'inherit'
 
 const Button = ({variant, onClick, disabled, children, className, color, size, ...other}:{
@@ -77,13 +83,13 @@ const TextField = (props:{
     autoFocus?:boolean,
     fullWidth:boolean
     inputProps?:any,
-    value:any,
+    value?:any,
     type:any,
     label?:string,
     error?:boolean,
     helperText?:string,
     multiline?:boolean,
-    onChange:(event:any)=>void,
+    onChange?:(event:any)=>void,
     onFocus?:(event:any)=>void,
     onBlur?:(event:any)=>void,
 })=><input
@@ -216,34 +222,35 @@ function DespliegueEncabezado(props:{casillero:CasilleroBase, leer?:boolean}){
     </Grid>
 }
 
-function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, variable:IdVariable, forPk:ForPk, elegida:boolean, leer:boolean}){
+function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, variable:IdVariable, forPk:ForPk, leer:boolean}){
     const {casillero} = props;
-    var classes = useStyles();
     var dispatch = useDispatch();
     var handleClick=()=>{
         dispatch(dispatchers.REGISTRAR_RESPUESTA({respuesta:props.valorOpcion, variable:props.variable, forPk:props.forPk}))
     };
     return <Grid className="opcion"> 
         <Button 
+            id={`opcion-var-${props.variable}-${props.valorOpcion}`}
+            mi-variable={props.variable}
+            valor-opcion={props.valorOpcion}
             variant="outlined"
-            opcion-seleccionada={props.elegida?"SI":"NO"}
-            className={classes.buttonOpcion}
+            className="boton-opcion"
             onClick={handleClick}
         >
             <Grid container wrap="nowrap">
                 <Grid className="id">
                     {casillero.ver_id || casillero.casillero}
                 </Grid>
-                <Grid className={classes.textoOpcion} debe-leer={casillero.despliegue?.includes('si_leer')?'SI':casillero.despliegue?.includes('no_leer')?'NO':props.leer?'SI':'NO'}>
+                <Grid debe-leer={casillero.despliegue?.includes('si_leer')?'SI':casillero.despliegue?.includes('no_leer')?'NO':props.leer?'SI':'NO'}>
                     <Typography>{casillero.nombre}</Typography>
                     {casillero.aclaracion?
-                        <Typography className={classes.aclaracion}>{casillero.aclaracion}</Typography>
+                        <Typography >{casillero.aclaracion}</Typography>
                     :null}
                 </Grid>
             </Grid>
         </Button>
         {casillero.salto?
-            <Typography className={classes.salto}>{casillero.salto}</Typography>
+            <Typography >{casillero.salto}</Typography>
         :null}
     </Grid>
 }
@@ -253,38 +260,66 @@ interface IcasilleroConOpciones{
 }
 
 
-function SiNoDespliegue(props:{casilleroConOpciones:IcasilleroConOpciones, forPk:ForPk, valorActual:Valor, respuestas:Respuestas|null,
-    feedbackRow:{[v in IdVariable]:FeedbackVariable}|null
-}){
+function SiNoDespliegue(props:{casilleroConOpciones:IcasilleroConOpciones, forPk:ForPk}){
     return <OpcionesDespliegue 
         casilleroConOpciones={props.casilleroConOpciones} 
         forPk={props.forPk} 
-        valorActual={props.valorActual}
-        respuestas={props.respuestas}
         leer={false}
         horizontal={true}
-        feedbackRow={props.feedbackRow}
     />
 }
 
-function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk, valorActual:Valor, respuestas:Respuestas|null, 
-    feedback:FeedbackVariable, feedbackRow:{[v in IdVariable]:FeedbackVariable}|null
-}){
+function registradorDeVariable(pregunta:Pregunta|OpcionMultiple){
+    return (
+        respuestas:Respuestas, feedbackAll: FormStructureState<IdVariable,IdFin>, elemento:HTMLDivElement
+    )=>{
+        var valorActual = pregunta.var_name == null ? null : respuestas[pregunta.var_name];
+        var feedbackRow = feedbackAll.feedback;
+        var feedbackVar = pregunta.var_name == null ? null : feedbackRow[pregunta.var_name];
+        var tieneValor=valorActual!=null && feedbackVar!=null?(feedbackVar.conProblema?'invalido':'valido'):'NO';
+        var estado:EstadoVariable; 
+        if(pregunta.tipovar){
+            estado=feedbackVar?.estado!;
+        }else{
+            var feedbackMulti = pregunta.casilleros.reduce((pv, om)=>{
+                var fb=feedbackRow?.[om.var_name!]!
+                return {
+                    tieneActual: pv.tieneActual || fb.estado=='actual',
+                    estaSalteada: pv.estaSalteada && (fb.estado=='salteada' || fb.estado=='fuera_de_flujo_por_salto')
+                }
+            }, {tieneActual:false, estaSalteada:true});
+            estado=feedbackMulti.tieneActual?'actual':feedbackMulti.estaSalteada?'salteada':'todavia_no'
+        }
+        setAttrDistinto(elemento, 'nuestro-validator', estado);
+        setAttrDistinto(elemento, 'tiene-valor', tieneValor);
+        setAttrDistinto(elemento, 'esta-inhabilitada', feedbackVar?.inhabilitada?'SI':'NO');
+        if(pregunta.var_name){
+            var opciones:HTMLButtonElement[] = Array.prototype.slice.call(elemento.querySelectorAll(`.boton-opcion[mi-variable-"${pregunta.var_name}"]`),0);
+            var elementoOpcion:HTMLButtonElement;
+            for(var elementoOpcion of opciones){
+                var valorOpcion = elementoOpcion.getAttribute('valor-opcion');
+                setAttrDistinto(elementoOpcion, 'opcion-seleccionada', valorOpcion == valorActual ? "SI": "NO")
+            }
+        }
+    }
+}
+
+function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
     const {opcionM} = props;
-    var classes = useStyles();
-    var tieneValor=props.valorActual!=null?(props.feedback.conProblema?'invalido':'valido'):'NO';
+    var id = `opcionM-${opcionM.casillero}`;
+    registrarElemento({
+        id, 
+        direct:true, 
+        fun: registradorDeVariable(opcionM)
+    })
     return <div 
+        id={id}
         className="multiple" 
-        nuestro-validator={props.feedback.estado} 
-        esta-inhabilitada={props.feedback?.inhabilitada?'SI':'NO'}
-        tiene-valor={tieneValor} 
     >
         <EncabezadoDespliegue 
             casillero={opcionM} 
             verIdGuion={true} 
             leer={!opcionM.despliegue?.includes('no_leer')} 
-            tieneValor={tieneValor}
-            feedback={props.feedback}
             forPk={props.forPk}
         />
         <div className="casilleros">
@@ -292,18 +327,14 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk, va
                 <SiNoDespliegue 
                     casilleroConOpciones={opcionM} 
                     forPk={props.forPk}
-                    valorActual={props.valorActual}
-                    respuestas={props.respuestas}
-                    feedbackRow={props.feedbackRow}
                 />
             </Grid>
         </div>
     </div>
 }
 
-function EncabezadoDespliegue(props:{casillero:CasilleroBase, verIdGuion?:boolean, leer?:boolean, tieneValor?:string, feedback?:FeedbackVariable|null, forPk:ForPk}){
+function EncabezadoDespliegue(props:{casillero:CasilleroBase, verIdGuion?:boolean, leer?:boolean, forPk:ForPk}){
     var {casillero} = props;
-    var dispatch = useDispatch()
     var key=(casillero.ver_id!='-' || props.verIdGuion) && casillero.ver_id || casillero.casillero;
     return <div 
         className="encabezado" 
@@ -311,11 +342,8 @@ function EncabezadoDespliegue(props:{casillero:CasilleroBase, verIdGuion?:boolea
     >
         <div id={casillero.var_name || undefined} className="id-div"
             onClick={()=>{
-                if(casillero.var_name!=null && props.tieneValor=='invalido'){
-                    dispatch(dispatchers.REGISTRAR_RESPUESTA({forPk:props.forPk, variable:casillero.var_name, respuesta:null}))
-                }else if(casillero.var_name!=null){
-                    dispatch(dispatchers.CONFIRMAR_BORRAR_RESPUESTA({forPk:props.forPk, variable:casillero.var_name}))
-                }
+                // TODO. Ver qué hacemos cuando se toca el ID de la pregutna
+                dispatchByPass({tipo:'id-pregunta', forPk:props.forPk});
             }}
         >
             <div className="id">
@@ -376,50 +404,6 @@ function DesplegarConfirmarBorrarRespuesta(props:{forPk:ForPk, variableBorrar:Id
         </Popover>;
 }
 
-/*
-
-            {props.tieneValor=="valido" && casillero.var_name?<div className="confirma-borrado">
-                <Typography>La pregunta tiene registrada una respuesta</Typography>
-                <div className="confirma-botones">
-                    <Button color="primary"   variant="outlined" onClick={handleClose}>dejar así</Button>
-                    <Button color="secondary" variant="outlined" onClick={()=>{
-                        if(casillero.var_name){
-                            dispatch(dispatchers.REGISTRAR_RESPUESTA({forPk:props.forPk, variable:casillero.var_name, respuesta:null}))
-                        }
-                        handleClose()
-                    }}>Borrar respuesta</Button>
-                </div>
-            </div>:<div className="confirma-borrado">
-                {props.feedback?.estado=="actual"?<>
-                    <Typography>Esta es la pregunta actual {props.leer?"lea la respuesta y ":""} registre la respuesta </Typography>
-                    <Typography>
-                        {casillero.tipovar=="opciones"||casillero.tipovar=="si_no"?
-                            "en el botón azul de la respuesta correspondiente "
-                        :   "sobre la raya azul (pulse sobre ella para que aparezca el teclado)"}
-                    </Typography>
-                </>:props.feedback?.estado=="omitida"?<>
-                    <Typography>Esta es la pregunta parece omitida.</Typography>
-                    <Typography>Quizás falte ingresar la respuesta.</Typography>
-                    <Typography>Quizás haya un error en una pregunta anterior.</Typography>
-                </>:props.feedback?.estado=="fuera_de_rango"?<>
-                    <Typography>La respuesta está fuera de rango</Typography>
-                </>:props.feedback?.estado=="fuera_de_flujo_por_omitida"?<>
-                    <Typography>Hay una respuesta omitida o un error más arriba.</Typography>
-                    <Typography>Revise la pregunta marcada en amarillo.</Typography>
-                </>:props.feedback?.estado=="todavia_no"?<>
-                    <Typography>Todavía no hay que contestar esta pregunta.</Typography>
-                    <Typography>Ingresar la respuesta a la pregunta de fondo blanco.</Typography>
-                </>:props.feedback?.estado=="salteada"?<>
-                    <Typography>Esta pregunta está salteada debido a una respuesta marcada más arriba.</Typography>
-                    <Typography>Buscar la siguiente pregunta de fondo blanco.</Typography>
-                </>:
-                null}
-                <div className="confirma-botones">
-                    <Button color="primary"   variant="outlined" onClick={handleClose}>continuar</Button>
-                </div>
-            </div>}
-*/
-
 function calcularNuestraLongitud(longitud:string |null){
     var value = parseInt(longitud||'9999');
     if(isNaN(value)){
@@ -430,16 +414,25 @@ function calcularNuestraLongitud(longitud:string |null){
     }
 }
 
-function Campo(props:{disabled:boolean, pregunta:PreguntaSimple, valor:Valor, onChange:(valor:Valor)=>void}){
+function Campo(props:{disabled:boolean, pregunta:PreguntaSimple, onChange:(valor:Valor)=>void}){
     var {pregunta, disabled } = props;
-    var [valor, setValor] = useState(props.valor);
+    // var [valor, setValor] = useState(props.valor);
     var [editando, setEditando] = useState(false);
-    useEffect(() => {
-        setValor(props.valor)
-    }, [props.valor]);
+    // useEffect(() => {
+    //     setValor(props.valor)
+    // }, [props.valor]);
     const inputProps = {
         maxLength: pregunta.longitud,
     };
+    var id=`campo-${pregunta.var_name}`;
+    registrarElemento({
+        id,
+        direct:true,
+        fun:(respuestas:Respuestas, _feedbackAll, elemento:HTMLInputElement)=>{
+            var valor = respuestas[pregunta.var_name];
+            setValorDistinto(elemento, 'value', valor)
+        }
+    })
     var nuestraLongitud = calcularNuestraLongitud(pregunta.longitud)
     return <div className="campo" nuestra-longitud={nuestraLongitud}>
         <div className="input-campo">
@@ -449,18 +442,17 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple, valor:Valor, on
                 //var-length={pregunta.longitud} 
                 fullWidth={true}
                 inputProps={inputProps}
-                value={valor?valor:''} 
                 type={pregunta.despliegue?.includes('telefono')?'tel':adaptarTipoVarCasillero(pregunta.tipovar)}
-                onChange={(event)=>{
-                    let value = event.target.value || null;
-                    value = pregunta.despliegue?.includes('entero') && value?value.replace('.',''):value
-                    setValor(value)
-                }}
-                onFocus={(_event)=>setEditando(true)}
-                onBlur={(_event)=>{
-                    props.onChange(valor)
-                    setEditando(false)
-                }}
+                // onChange={(event)=>{
+                //     let value = event.target.value || null;
+                //     value = pregunta.despliegue?.includes('entero') && value?value.replace('.',''):value
+                //     setValor(value)
+                // }}
+                // onFocus={(_event)=>setEditando(true)}
+                // onBlur={(_event)=>{
+                //     props.onChange(valor)
+                //     setEditando(false)
+                // }}
             />
         </div>
         {disabled?null:
@@ -477,10 +469,8 @@ interface IcasilleroConOpciones{
 }
 
 function OpcionesDespliegue(
-    {casilleroConOpciones, forPk, valorActual, leer, horizontal, respuestas, feedbackRow}:
-    {casilleroConOpciones:IcasilleroConOpciones, forPk:ForPk, valorActual:Valor, leer:boolean, horizontal:boolean, 
-        respuestas:Respuestas|null, feedbackRow:{[v in IdVariable]:FeedbackVariable}|null}
-    // {casilleroConOpciones:PreguntaConOpciones|OpcionMultiple, forPk:ForPk, valorActual:Valor, leer:boolean, horizontal:boolean}
+    {casilleroConOpciones, forPk,  leer, horizontal}:
+    {casilleroConOpciones:IcasilleroConOpciones, forPk:ForPk, leer:boolean, horizontal:boolean}
 ){
     const desplegarOtros = (opcion:Opcion, verHorizontal:boolean, verVertical:boolean) => opcion.casilleros.map((subPregunta:Pregunta)=>(
         verHorizontal && subPregunta.despliegue=="horizontal" || verVertical && subPregunta.despliegue!="horizontal"?
@@ -488,10 +478,6 @@ function OpcionesDespliegue(
             <PreguntaDespliegue 
                 pregunta={subPregunta} 
                 forPk={forPk} 
-                valorActual={respuestas?.[subPregunta.var_name!] as Valor} 
-                respuestas={null}
-                feedback={feedbackRow?.[subPregunta.var_name!] || {} as FeedbackVariable} 
-                feedbackRow={feedbackRow} 
             />
         </div>:null
     ))
@@ -502,10 +488,9 @@ function OpcionesDespliegue(
             >
                 <OpcionDespliegue 
                     casillero={opcion} 
-                    valorOpcion={opcion.casillero} 
                     variable={casilleroConOpciones.var_name} 
+                    valorOpcion={opcion.casillero}
                     forPk={forPk} 
-                    elegida={valorActual==opcion.casillero}
                     leer={leer}
                 />
                 {horizontal?null:desplegarOtros(opcion,true,true)}
@@ -524,41 +509,26 @@ function OpcionesDespliegue(
 function PreguntaDespliegue(props:{
     pregunta:Pregunta, 
     forPk:ForPk, 
-    valorActual:Valor, 
-    respuestas:Respuestas|null, 
-    feedback:FeedbackVariable|null,
-    feedbackRow:{[v in IdVariable]:FeedbackVariable}|null
 }){
-    var {pregunta, feedbackRow} = props;
+    var {pregunta} = props;
     var dispatch=useDispatch();
     var estado:EstadoVariable;
-    var tieneValor=props.valorActual!=null && props.feedback!=null?(props.feedback.conProblema?'invalido':'valido'):'NO';
-    if(pregunta.tipovar){
-        estado=props.feedback?.estado!;
-    }else{
-        var feedback = pregunta.casilleros.reduce((pv, om)=>{
-            var fb=feedbackRow?.[om.var_name!]!
-            return {
-                tieneActual: pv.tieneActual || fb.estado=='actual',
-                estaSalteada: pv.estaSalteada && (fb.estado=='salteada' || fb.estado=='fuera_de_flujo_por_salto')
-            }
-        }, {tieneActual:false, estaSalteada:true});
-        estado=feedback.tieneActual?'actual':feedback.estaSalteada?'salteada':'todavia_no'
-    }
-    return <div 
+    var id = `pregunta-${pregunta.casillero}`
+    registrarElemento({
+        id, 
+        direct:true, 
+        fun: registradorDeVariable(pregunta)
+    })
+    return <div
+        id={id}
         className="pregunta"
         nuestro-casillero={pregunta.casillero}
         nuestro-tipovar={pregunta.tipovar||"multiple"} 
-        nuestro-validator={estado}
-        tiene-valor={tieneValor} 
         ocultar-salteada={pregunta.despliegue?.includes('ocultar')?(pregunta.expresion_habilitar_js?'INHABILITAR':'SI'):'NO'}
-        esta-inhabilitada={props.feedback?.inhabilitada?'SI':'NO'}
     >
         <EncabezadoDespliegue 
             casillero={pregunta} 
             leer={!pregunta.despliegue?.includes('no_leer')}  
-            tieneValor={tieneValor}
-            feedback={props.feedback}
             forPk={props.forPk}
         />
         <div className="casilleros">{
@@ -566,20 +536,14 @@ function PreguntaDespliegue(props:{
                 <SiNoDespliegue 
                     casilleroConOpciones={pregunta} 
                     forPk={props.forPk} 
-                    valorActual={props.valorActual}
-                    respuestas={props.respuestas}
-                    feedbackRow={props.feedbackRow}
                 />
             </Grid>:
             pregunta.tipovar=="opciones" ?
                 <OpcionesDespliegue 
                     casilleroConOpciones={pregunta} 
                     forPk={props.forPk} 
-                    valorActual={props.valorActual}
-                    respuestas={props.respuestas}
                     leer={!!pregunta.despliegue?.includes('si_leer')}
                     horizontal={!!pregunta.despliegue?.includes('horizontal')}
-                    feedbackRow={feedbackRow}
                 />:
             pregunta.tipovar==null?
                 (pregunta.casilleros as OpcionMultiple[]).map((opcionMultiple)=>
@@ -587,10 +551,6 @@ function PreguntaDespliegue(props:{
                         key={opcionMultiple.casillero} 
                         opcionM={opcionMultiple} 
                         forPk={props.forPk} 
-                        valorActual={props.respuestas?.[opcionMultiple.var_name]!}
-                        respuestas={props.respuestas}
-                        feedback={props.feedbackRow?.[opcionMultiple.var_name]!}
-                        feedbackRow={props.feedbackRow}
                     />
                 )
             :
@@ -598,9 +558,8 @@ function PreguntaDespliegue(props:{
                 <Campo
                     disabled={preguntaSimple.despliegue?.includes('calculada')?true:false}
                     pregunta={preguntaSimple}
-                    valor={props.valorActual}
                     onChange={(nuevoValor)=>
-                        dispatch(dispatchers.REGISTRAR_RESPUESTA({forPk:props.forPk, variable:preguntaSimple.var_name, respuesta:nuevoValor}))
+                        dispatchByPass({tipo:'registrar_respuesta', forPk:props.forPk, variable:preguntaSimple.var_name, respuesta:nuevoValor})
                     }
                 />
             )(pregunta)
@@ -618,49 +577,60 @@ function FiltroDespliegue(props:{filtro:Filtro, forPk:ForPk}){
 function ConsistenciaDespliegue(props:{casillero:Consistencia, forPk:ForPk}){
     var {casillero, forPk} = props;
     var habilitador = casillero.expresion_habilitar_js?getFuncionHabilitar(casillero.expresion_habilitar_js):()=>true;
-    var {respuestas, modoDespliegue} = useSelectorVivienda(forPk);
-    var habilitado = habilitador(respuestas);
-    return habilitado || modoDespliegue=='metadatos'?<div 
+    var {modoDespliegue} = useSelectorVivienda(forPk);
+    var id = `consistencia-${casillero.casillero}`;
+    registrarElemento({id, style:'display', fun:(r:Respuestas)=>habilitador(r) || modoDespliegue=='metadatos'?'block':'none'})
+    return <div 
+        id={id}
+        style={{display:'none'}}
         className="consistencia" 
     >
         <EncabezadoDespliegue casillero={casillero} leer={false} forPk={forPk}/>
-    </div>:null
+    </div>
 }
 
 function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:Formulario, forPk:ForPk}){
     var {casillero, forPk} = props;
     var habilitador = casillero.expresion_habilitar_js?getFuncionHabilitar(casillero.expresion_habilitar_js):()=>true;
-    var {respuestas, opciones} = useSelectorVivienda(forPk);
+    var {opciones} = useSelectorVivienda(forPk);
     var idFormularioDestino = 'F:'+casillero.salto! as IdFormulario;
-    var {soloLectura, formularioAAbrir,feedbackRowValidator} = useSelector((state:CasoState)=>({
+    var {soloLectura, formularioAAbrir} = useSelector((state:CasoState)=>({
         soloLectura:state.datos.soloLectura, 
         formularioAAbrir:state.estructura.formularios[idFormularioDestino].casilleros,
-        feedbackRowValidator: state.feedbackRowValidator
     }));
-    var habilitado = habilitador(respuestas);
+    var sufijoIdElemento = toPlainForPk(forPk);
+    registrarElemento({
+        id:`div-boton-formulario-${sufijoIdElemento}`, 
+        attr:'esta-inhabilitada', 
+        fun: (r)=>habilitador(r)?'SI':'NO'
+    });
+    registrarElemento({
+        id:`boton-formulario-${sufijoIdElemento}`, 
+        prop:'disabled', 
+        fun: (r)=>!habilitador(r)
+    });
     var dispatch = useDispatch();
     var [confirmarForzarIr, setConfirmarForzarIr] = useState<number|boolean|null>(null);
     var multipleFormularios=formularioAAbrir.unidad_analisis != props.formulario.unidad_analisis;
     type DefinicionFormularioAbrir={num:number, actual:boolean, previo:boolean} | {num:number, actual:boolean, previo:false, esAgregar:true} | {num:false, actual:boolean, previo:true, unico:true};
-    var listaDeBotonesAbrir:DefinicionFormularioAbrir[]
+    var listaDeBotonesAbrir:DefinicionFormularioAbrir[] = [];
     var nuevoCampoPk = defOperativo.defUA[formularioAAbrir.unidad_analisis].pk;
     var numActual:number|null = null;
     if(multipleFormularios){
-        let cantForm = respuestas[formularioAAbrir.unidad_analisis].length;
-        listaDeBotonesAbrir = serie({from:1, to:cantForm}).map(num=>{
-            let forPk={...props.forPk, formulario:idFormularioDestino, [nuevoCampoPk]:num};
-            let resumen = feedbackRowValidator[toPlainForPk(forPk)]?.resumen || 'vacio';
-            if(numActual == null && (resumen == 'vacio' || resumen == 'incompleto')){
-                numActual = num;
-            }
-            return {resumen, num, actual: numActual == num, previo: numActual == null}
-        });
+        // let cantForm = respuestas[formularioAAbrir.unidad_analisis].length;
+        let cantForm = 4
+        // listaDeBotonesAbrir = serie({from:1, to:cantForm}).map(num=>{
+        //     let forPk={...props.forPk, formulario:idFormularioDestino, [nuevoCampoPk]:num};
+        //     if(numActual == null){
+        //         numActual = num;
+        //     }
+        //     return {resumen:null, num, actual: numActual == num, previo: numActual == null}
+        // });
         if("puede agregar //TODO VER ESTO"){
             listaDeBotonesAbrir.push({num:cantForm+1, esAgregar:true, actual:numActual == null, previo: false});
         }
     }else{
-        let resumen = feedbackRowValidator[toPlainForPk(props.forPk)]?.resumen || 'vacio';
-        listaDeBotonesAbrir = [{num:false, unico:true, actual:resumen == 'vacio' || resumen == 'incompleto', previo:true}]
+        listaDeBotonesAbrir = [{num:false, unico:true, actual:false, previo:true}]
     }
     const ir = (defBoton:DefinicionFormularioAbrir)=>{
         if(!casillero.salto){
@@ -683,20 +653,20 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     };
     return <div>{listaDeBotonesAbrir.map((defBoton:DefinicionFormularioAbrir)=>(
         <div 
+            id={`div-boton-formulario-${sufijoIdElemento}`}
             className="seccion-boton-formulario" 
             nuestro-validator={defBoton.actual?'actual':defBoton.previo?'valida':'todavia_no'}
-            esta-inhabilitada={!habilitado && !defBoton.previo && !defBoton.actual?'SI':'NO'}
             ocultar-salteada={casillero.despliegue?.includes('ocultar')?(casillero.expresion_habilitar_js?'INHABILITAR':'SI'):'NO'}
             tiene-valor="NO"
         >
             <div className="aclaracion">{casillero.aclaracion}</div>
             <div key={defBoton.num.toString()}>
                 <Button
+                    id={`boton-formulario-${sufijoIdElemento}`}
                     variant="outlined"
                     color="inherit"
                     onClick={()=>{
-                        if(habilitado && (defBoton.actual || defBoton.previo)) ir(defBoton); 
-                        else setConfirmarForzarIr(defBoton.num);
+                        ir(defBoton); 
                     }}
                 >   {'esAgregar' in defBoton?'':casillero.nombre + ' ' + defBoton.num||''}
                     {'esAgregar' in defBoton?<ICON.Add/>:casillero.salto?<ICON.Forward/>:<ICON.ExitToApp/>}
@@ -735,16 +705,7 @@ function CasilleroDesconocido(props:{casillero:CasilleroBase}){
 
 function useSelectorVivienda(forPk:ForPk){
     return useSelector((state:CasoState)=>{
-        var respuestasVivienda=state.datos.hdr[forPk.vivienda].respuestas;
-        var dirty=state.datos.hdr[forPk.vivienda].dirty;
-        var {respuestas} = respuestasForPk(state, forPk)
         return {
-            dirty,
-            respuestas,
-            feedbackRow: state.feedbackRowValidator[toPlainForPk(forPk)].feedback,
-            actual: state.feedbackRowValidator[toPlainForPk(forPk)].actual,
-            completo: !state.feedbackRowValidator[toPlainForPk(forPk)].feedbackResumen.pendiente,
-            resumen: state.feedbackRowValidator[toPlainForPk(forPk)].resumen,
             formulario: state.estructura.formularios[forPk.formulario].casilleros,
             modoDespliegue: state.modo.demo?state.opciones.modoDespliegue:'relevamiento',
             modo: state.modo,
@@ -765,20 +726,11 @@ function ConjuntoPreguntasDespliegue(props:{casillero:ConjuntoPreguntas, formula
 
 
 function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Bloque|Formulario|ConjuntoPreguntas, formulario:Formulario, forPk:ForPk, multiple:boolean}){
-    var {respuestas, feedbackRow} = useSelectorVivienda(props.forPk);
     return <div className="casilleros">{
         props.bloqueOFormulario.casilleros.map((casillero)=>
             <Grid key={casillero.casillero} item>
                 {
-                    casillero.tipoc == "P"?
-                        <PreguntaDespliegue 
-                            pregunta={casillero} 
-                            forPk={props.forPk} 
-                            valorActual={casillero.var_name && respuestas[casillero.var_name] || null} 
-                            respuestas={true /*casillero.tieneVariablesInternas*/ && respuestas || null}
-                            feedback={casillero.var_name && feedbackRow[casillero.var_name] || null}
-                            feedbackRow={true /*casillero.tieneVariablesInternas*/  && feedbackRow || null}
-                        />:
+                    casillero.tipoc == "P"?<PreguntaDespliegue pregunta={casillero} forPk={props.forPk} />:
                     casillero.tipoc == "B"?<BloqueDespliegue bloque={casillero} formulario={props.formulario} forPk={props.forPk}/>:
                     casillero.tipoc == "FILTRO"?<FiltroDespliegue filtro={casillero} forPk={props.forPk}/>:
                     casillero.tipoc == "BF"?<BotonFormularioDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
@@ -798,21 +750,26 @@ function BloqueDespliegue(props:{bloque:Bloque, formulario:Formulario, forPk:For
     var multiple = !!bloque.unidad_analisis;
     var lista = [{forPk, key:0, multiple:false}];
     var habilitador = bloque.expresion_habilitar_js?getFuncionHabilitar(bloque.expresion_habilitar_js):()=>true;
-    var {respuestas, modoDespliegue} = useSelectorVivienda(forPk);
+    var {modoDespliegue} = useSelectorVivienda(forPk);
     if(multiple){
         // TODO: GENERALIZAR
         // @ts-ignore 
-        lista=respuestas.personas.map((_persona, i)=>(
-            {forPk:{...forPk, persona:i+1}, key:i+1, multiple:true}
-        ))
+        // lista=respuestas.personas.map((_persona, i)=>(
+        //     {forPk:{...forPk, persona:i+1}, key:i+1, multiple:true}
+        // ))
     }
-    var habilitado = habilitador(respuestas);
-    return habilitado || modoDespliegue=='metadatos'?<div className="bloque" nuestro-bloque={bloque.casillero} es-multiple={multiple?'SI':'NO'}>
+    var id = `bloque-${bloque.casillero}`;
+    registrarElemento({
+        id,
+        style:'display',
+        fun: (respuestas:Respuestas)=> habilitador(respuestas) || modoDespliegue=='metadatos'?'unset':'none'
+    })
+    return <div className="bloque" nuestro-bloque={bloque.casillero} es-multiple={multiple?'SI':'NO'}>
         <EncabezadoDespliegue casillero={bloque} forPk={forPk}/>
         {lista.map(({key, forPk, multiple})=>
             <DesplegarContenidoInternoBloqueOFormulario key={key} bloqueOFormulario={bloque} formulario={props.formulario} forPk={forPk} multiple={multiple}/>
         )}
-    </div>:null;
+    </div>;
 }
 
 const FormularioEncabezado = DespliegueEncabezado;
@@ -820,7 +777,8 @@ const FormularioEncabezado = DespliegueEncabezado;
 function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:boolean}){
     const dispatch = useDispatch();
     const forPk = props.forPk;
-    const {respuestas, dirty, opciones} = useSelectorVivienda(forPk);
+    const {opciones} = useSelectorVivienda(forPk);
+    var dirty = getDirty();
     const [confirmaCerrar, setConfirmaCerrar] = useState<boolean|null>(false);
     const [mensajeDescarga, setMensajeDescarga] = useState<string|null>(null);
     const [descargaCompleta, setDescargaCompleta] = useState<boolean|null>(false);
@@ -967,10 +925,13 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
 
 function FormularioDespliegue(props:{forPk:ForPk}){
     var forPk = props.forPk;
-    var {formulario, modoDespliegue, modo, actual, completo, opciones} 
+    var {formulario, modoDespliegue, modo, opciones} 
         = useSelectorVivienda(props.forPk);
     var {soloLectura} = useSelector((state:CasoState)=>({soloLectura:state.datos.soloLectura}));
     const dispatch = useDispatch();
+    // TODO Volver a poner el movimiento a la actual
+    var actual:any
+    var completo:any
     useEffect(() => {
         if(actual){
             focusToId(actual, {moveToElement:true, moveBehavior:'smooth'});            
@@ -1414,15 +1375,13 @@ export function DesplegarNotasYVisitas(props:{tareas:Tareas, idCaso:IdCaso, visi
                 </Dialog>
             </div>
         ).array()}
-        
-        
-
-        
     </div>
 }
 
 export function HojaDeRutaDespliegue(){
-    var {hdr, cargas, modo, feedbackRowValidator, num_sincro} = useSelector((state:CasoState)=>({hdr:state.datos.hdr, cargas: state.datos.cargas, modo:state.modo, feedbackRowValidator:state.feedbackRowValidator, num_sincro:state.datos.num_sincro}));
+    var {cargas, modo, num_sincro} = useSelector((state:CasoState)=>({cargas: state.datos.cargas, modo:state.modo, num_sincro:state.datos.num_sincro}));
+    var hdr = getHdr();
+    var feedbackRowValidator = getFeedbackRowValidator()
     var dispatch = useDispatch();
     const updateOnlineStatus = function(){
         setOnline(window.navigator.onLine);

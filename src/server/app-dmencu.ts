@@ -232,6 +232,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             { type: 'js', src: 'tipos.js' },
             { type: 'js', src: 'generador-qr.js' },
             { type: 'js', src: 'digitov.js' },
+            { type: 'js', src: 'bypass-formulario.js' },
             { type: 'js', src: 'redux-formulario.js' },
             { type: 'js', src: 'render-general.js' },
             { type: 'js', src: 'render-formulario.js' },

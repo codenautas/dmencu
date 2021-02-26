@@ -289,7 +289,6 @@ export type CasoState={
         tareas:TareasEstructura
     }
     datos:{
-        hdr:VivendasHdR
         token?:string
         persona:string
         tarea:IdTarea
@@ -308,9 +307,6 @@ export type CasoState={
     }, 
     modo:{ // no se persiste
         demo:boolean
-    }
-    feedbackRowValidator:{  // no se persiste
-        [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> // resultado del rowValidator para estado.forPk
     }
 }
 
