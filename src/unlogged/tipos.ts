@@ -6,6 +6,7 @@ import { Variable } from "operativos";
  * 
  */
 
+
 import {FormStructureState, Structure, Feedback} from "row-validator";
 
 export type IdOpcion = number
@@ -271,6 +272,8 @@ export type InfoFormulario={
     estructuraRowValidator:EstructuraRowValidator // estructura de variables para el RowValidator
 }
 
+export type IdResultado = 'AVERIGUAR'|'TODO';
+
 export type TareasEstructura={
     [idTarea in IdTarea]:{
         resultados:{
@@ -281,13 +284,14 @@ export type TareasEstructura={
     }
 }
 
-export type CasoState={
-    estructura:{
-        formularios:{ 
-            [nombreFormulario in IdFormulario]:InfoFormulario
-        }
-        tareas:TareasEstructura
+export type Estructura = {
+    formularios:{ 
+        [nombreFormulario in IdFormulario]:InfoFormulario
     }
+    tareas:TareasEstructura
+}
+
+export type CasoState={
     datos:{
         token?:string
         persona:string
@@ -315,4 +319,9 @@ export type EtiquetaOpts={
     operativo: string,
     etiqueta: string,
     plancha: string
+}
+
+export function toPlainForPk(forPk:ForPk):PlainForPk{
+    // @ts-ignore sabemos que hay que hacer un JSON
+    return JSON.stringify(forPk);
 }

@@ -14,20 +14,17 @@ import {Bloque, BotonFormulario,
     EstadoCarga, FeedbackVariable, Filtro, ForPk, Formulario, 
     IdCaso, IdFormulario, IdTarea, IdVariable, InfoFormulario,
     ModoDespliegue,
-    Opcion, OpcionMultiple, OpcionNo, OpcionSi, 
+    Opcion, OpcionMultiple, OpcionNo, OpcionSi, PlainForPk, 
     Pregunta, PreguntaConOpciones, PreguntaConOpcionesMultiples, PreguntaSimple, 
-    Respuestas, Valor, TEM, IdCarga, Carga, VivendasHdR, PlainForPk, IdFin, InfoTarea, Tareas, Visita, IdUnidadAnalisis
+    Respuestas, Valor, TEM, IdCarga, Carga, VivendasHdR, IdFin, InfoTarea, Tareas, Visita, IdUnidadAnalisis
 } from "./tipos";
 import { dmTraerDatosFormulario, dispatchers, 
-    getFuncionHabilitar, 
     gotoSincronizar,
     gotoCampo,
-    toPlainForPk,
     saveSurvey,
     consultarEtiqueta,
     gotoVer,
     respuestasForPk,
-    defOperativo
 } from "./redux-formulario";
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux"; 
@@ -52,7 +49,9 @@ import { CSSProperties } from "@material-ui/core/styles/withStyles";
 
 import { 
     registrarElemento, setAttrDistinto, setValorDistinto, dispatchByPass, 
-    getDirty, getHdr, getFeedbackRowValidator
+    getDirty, getHdr, getFeedbackRowValidator,
+    getFuncionHabilitar, 
+    defOperativo,
 } from "./bypass-formulario"
 
 
