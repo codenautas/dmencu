@@ -13,7 +13,8 @@ import { CasilleroBase, CasillerosImplementados, CasoState,
     ModoDespliegue, 
     Opcion, PlainForPk, Respuestas, ResumenEstado,
     Tareas, TareasEstructura, TEM, Valor, Visita, VivendasHdR,
-    toPlainForPk
+    toPlainForPk,
+    LOCAL_STORAGE_STATE_NAME, LOCAL_STORAGE_ESTRUCTURA_NAME
 } from "./tipos";
 
 
@@ -27,34 +28,48 @@ type DatosByPass = {
 
 var datosByPass = {} as DatosByPass
 
-var estructura:Estructura = {
-    
-} as Estructura;
+//@ts-ignore arranca en blanco
+var estructura:Estructura = null as Estructura;
 
+export function levantarDelRepositorioSiFueraNecesario(){
+    if(!datosByPass.hdr){
+        var datos = my.getLocalVar(LOCAL_STORAGE_STATE_NAME);
+        datosByPass.hdr = datos.datos.hdr;
+        datosByPass.feedbackRowValidator = datos.feedbackRowValidator;
+        datosByPass.dirty = datos.dirty;
+        estructura = datos.estructura;
+    }
+}
 
-export function cargarHdr(){
-
-
+export function cargarHdr(_hdr:VivendasHdR){
 }
 
 export function cargarEstructura(estructuraACargar:Estructura){
     estructura = estructuraACargar;
+    my.setLocalVar(LOCAL_STORAGE_ESTRUCTURA_NAME, estructura);
 }
 
 
 export function getHdr(){
+    levantarDelRepositorioSiFueraNecesario();
     return datosByPass.hdr;
 }
 
 export function getFeedbackRowValidator(){
+    levantarDelRepositorioSiFueraNecesario()
     return datosByPass.feedbackRowValidator;
 }
 
 export function getDirty(){
+    levantarDelRepositorioSiFueraNecesario()
     return datosByPass.dirty
 }
 
 export function getEstructura(){
+    levantarDelRepositorioSiFueraNecesario();
+    if(!estructura){
+        estructura = my.getLocalVar(LOCAL_STORAGE_ESTRUCTURA_NAME);
+    }
     return estructura;
 }
 

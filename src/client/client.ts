@@ -1,6 +1,6 @@
 import {html, HtmlTag} from "js-to-html";
-import {LOCAL_STORAGE_STATE_NAME, dmTraerDatosFormulario, traerEstructura, replaceSpecialWords} from "../unlogged/redux-formulario";
-import { CasoState, EtiquetaOpts, IdVariable, IdCaso } from "../unlogged/tipos";
+import {dmTraerDatosFormulario, traerEstructura, replaceSpecialWords} from "../unlogged/redux-formulario";
+import { CasoState, EtiquetaOpts, IdVariable, IdCaso, LOCAL_STORAGE_STATE_NAME,  } from "../unlogged/tipos";
 import { crearEtiqueta } from "../unlogged/generador-qr";
 import * as TypedControls from "typed-controls";
 import * as likeAr from "like-ar";
@@ -23,13 +23,15 @@ function htmlNumero(num:number){
 async function sincronizarDatos(state:CasoState|null){
     var datos = await my.ajax.dm_sincronizar({datos:state?.datos||null});
     var estructura = await traerEstructura({operativo:OPERATIVO})
+    cargarEstructura(estructura);
+    // @ts-ignore
+    cargarHdr(datos.hdr);
     if(state==null){
         //@ts-ignore
         state={};
     }
     if(state){
         state.datos=datos;
-        cargarEstructura(estructura);
         state.modo = {
             demo: false
         }

@@ -1,7 +1,7 @@
 "use strict";
 import {html}  from 'js-to-html';
 import * as AjaxBestPromise from "ajax-best-promise";
-import {LOCAL_STORAGE_STATE_NAME} from "../unlogged/redux-formulario";
+import {LOCAL_STORAGE_STATE_NAME} from "../unlogged/tipos";
 //import {CACHE_NAME} from "service-worker";
 import { desplegarFormularioActual, desplegarFormularioConsultaResultados } from './render-formulario';
 
@@ -42,7 +42,7 @@ window.addEventListener('load', async function(){
                     //html.img({src:'img/logo-dm.png'}),
                 ])
             ]).create()
-            layout.appendChild(avisoInicial);        
+            layout.appendChild(avisoInicial);
         }
         if('serviceWorker' in navigator && false){
             navigator.serviceWorker.register('service-worker.js').then(function(reg) {

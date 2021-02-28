@@ -6,8 +6,10 @@ import { Variable } from "operativos";
  * 
  */
 
-
 import {FormStructureState, Structure, Feedback} from "row-validator";
+
+export const LOCAL_STORAGE_STATE_NAME ='hdr-campo-0.6';
+export const LOCAL_STORAGE_ESTRUCTURA_NAME ='estructura-0.6';
 
 export type IdOpcion = number
 export type IdVariable = 'v1'|'v2'|'v3'|'etc...'

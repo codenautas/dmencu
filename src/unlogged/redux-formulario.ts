@@ -7,7 +7,8 @@ import { CasilleroBase, CasillerosImplementados, CasoState,
     InfoFormulario, 
     ModoDespliegue, 
     Opcion, PlainForPk, Respuestas, ResumenEstado,
-    Tareas, TareasEstructura, TEM, Visita
+    Tareas, TareasEstructura, TEM, Visita,
+    LOCAL_STORAGE_STATE_NAME
 } from "./tipos";
 import { deepFreeze, datetime } from "best-globals";
 import { createReducer, createDispatchers, ActionsFrom } from "redux-typed-reducer";
@@ -19,8 +20,6 @@ import { controlarCodigoDV2 } from "./digitov";
 import { Variable } from "operativos";
 
 import { Opcion as RowValidatorOpcion } from "row-validator";
-
-export const LOCAL_STORAGE_STATE_NAME ='hdr-campo-0.6';
 
 export const OPERATIVO = 'eseco211';
 
