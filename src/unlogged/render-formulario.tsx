@@ -53,6 +53,7 @@ import {
     getFuncionHabilitar, 
     getEstructura, 
     defOperativo,
+    volcadoInicialElementosRegistrados,
     accion_registrar_respuesta,
     accion_id_pregunta,
     accion_agregar_visita,
@@ -301,7 +302,7 @@ function registradorDeVariable(pregunta:Pregunta|OpcionMultiple){
         setAttrDistinto(elemento, 'tiene-valor', tieneValor);
         setAttrDistinto(elemento, 'esta-inhabilitada', feedbackVar?.inhabilitada?'SI':'NO');
         if(pregunta.var_name){
-            var opciones:HTMLButtonElement[] = Array.prototype.slice.call(elemento.querySelectorAll(`.boton-opcion[mi-variable-"${pregunta.var_name}"]`),0);
+            var opciones:HTMLButtonElement[] = Array.prototype.slice.call(elemento.querySelectorAll(`.boton-opcion[mi-variable-${pregunta.var_name}]`),0);
             var elementoOpcion:HTMLButtonElement;
             for(var elementoOpcion of opciones){
                 var valorOpcion = elementoOpcion.getAttribute('valor-opcion');
@@ -938,6 +939,9 @@ function FormularioDespliegue(props:{forPk:ForPk}){
         = useSelectorVivienda(props.forPk);
     var {soloLectura} = useSelector((state:CasoState)=>({soloLectura:state.datos.soloLectura}));
     const dispatch = useDispatch();
+    useEffect(()=>{
+        volcadoInicialElementosRegistrados(props.forPk);
+    },[])
     // TODO Volver a poner el movimiento a la actual
     var actual:any
     var completo:any

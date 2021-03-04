@@ -16,6 +16,7 @@ import { CasilleroBase, CasillerosImplementados, CasoState,
     toPlainForPk,
     LOCAL_STORAGE_STATE_NAME, LOCAL_STORAGE_ESTRUCTURA_NAME
 } from "./tipos";
+import { nextTick } from "process";
 
 
 type DatosByPass = {
@@ -73,11 +74,53 @@ export function getEstructura(){
     return estructura;
 }
 
-export function registrarElemento<T extends HTMLInputElement|HTMLDivElement>(def:{
+type ElementosRegistrables = HTMLDivElement|HTMLButtonElement|HTMLInputElement;
+
+type RegistroElemento<T extends ElementosRegistrables> = {
     id:string, 
     fun:(respuestas:Respuestas, feedback: FormStructureState<IdVariable,IdFin>, elemento:T)=>void
-} & ({prop:string}|{attr:string}|{style:string}|{direct:true}) ){
-    console.log(registrarElemento, def);
+} & ({prop:string}|{attr:string}|{style:string}|{direct:true})
+
+type RegistroElementos<T extends ElementosRegistrables> = { [id:string]: RegistroElemento<T> & {elemento?:T} };
+
+var registroElementosGlobal = {} as RegistroElementos<ElementosRegistrables>;
+
+export function registrarElemento<T extends ElementosRegistrables>(def:RegistroElemento<T>){
+    // @ts-ignore Sí, podría ser que los tipos de T sean distintos, pero van a ser coherentes
+    var registroElementos:RegistroElementos<T> = registroElementosGlobal;
+    registroElementos[def.id] = def;
+}
+
+export function volcadoInicialElementosRegistrados(forPk:ForPk){
+    calcularFeedback(datosByPass.hdr[forPk.vivienda], forPk);
+    var respuestasAumentadas = datosByPass.hdr[forPk.vivienda].respuestas;
+    var unidad_analisis = estructura.formularios[forPk.formulario].casilleros.unidad_analisis as IdUnidadAnalisis
+    var registroElementos = registroElementosGlobal;
+    for(var id in registroElementos){
+        var def = registroElementos[id];
+        if(def.elemento){
+            if(!document.body.contains(def.elemento)){
+                def.elemento = undefined;
+            }
+        }
+        if(!def.elemento){
+            def.elemento = document.getElementById(def.id) as ElementosRegistrables;
+        }
+        if(!def.elemento){
+            console.log('BUSCANDO el elemento registrado ',id,'no está en el DOM')
+            continue;
+        }
+        var value = def.fun(respuestasAumentadas, datosByPass.feedbackRowValidator[toPlainForPk(forPk)], def.elemento);
+        if('prop' in def){
+            setValorDistinto(def.elemento, def.prop, value)
+        }
+        if('attr' in def){
+            setAttrDistinto(def.elemento, def.attr, value)
+        }
+        if('style' in def){
+            setValorDistinto(def.elemento.style, def.style, value)
+        }
+    }
 }
 
 export function setAttrDistinto<N extends string>(
@@ -89,7 +132,6 @@ export function setAttrDistinto<N extends string>(
         objeto.setAttribute(name, valor);
     }
 }
-
 
 export function setValorDistinto<V, N extends string>(
     objeto:{[K in N]:V},

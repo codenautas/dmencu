@@ -4,6 +4,7 @@ import { ProcedureDef, TableDefinition, Client } from "./types-dmencu";
 import { adaptParameterTypes, TablaDatos, OperativoGenerator, ProcedureContext, CoreFunctionParameters, ForeignKey } from "meta-enc";
 import * as likeAr from "like-ar";
 export * from "./types-dmencu";
+import { IdUnidadAnalisis, UnidadAnalisis } from "../unlogged/tipos";
 
 import {json, jsono} from "pg-promise-strict";
 
@@ -11,6 +12,7 @@ import {changing, datetime, date } from 'best-globals';
 import {promises as  fs} from "fs";
 
 import * as ExpresionParser from 'expre-parser';
+import { usuarios } from "./table-usuarios";
 
 var path = require('path');
 var sqlTools = require('sql-tools');
@@ -135,20 +137,32 @@ function compilarExpresiones(casillero:CasilleroDeAca){
     }
     for(var casilleroInterno of casillero.childs) compilarExpresiones(casilleroInterno);
 }
-    
+
 export const ProceduresDmEncu : ProcedureDef[] = [
     {
-        action:'operativo_estructura',
+        action:'operativo_estructura_completo',
         parameters:[
             {name:'operativo'            ,typeName:'text', references:'operativos'},
         ],
         resultOk:'desplegarFormulario',
         coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters){
             return context.client.query(
-                "select casilleros_jerarquizados($1)",
+                `select casilleros_jerarquizados($1) as formularios, 
+                    ${jsono(`select unidad_analisis, padre, pk_agregada, '{}'::jsonb as hijas`, 'unidad_analisis', true)} as unidades_analisis,
+                `,
                 [parameters.operativo]
             ).fetchUniqueValue().then(function(result:any){
-                likeAr(result.value).forEach(f=>compilarExpresiones(f))
+                likeAr(result.value.formularios).forEach(f=>compilarExpresiones(f));
+                function completarUA(ua:UnidadAnalisis, idUa:IdUnidadAnalisis, uAs:{[k in IdUnidadAnalisis]: UnidadAnalisis}){
+                    if(ua.padre){
+                        uAs[ua.padre].hijas[idUa] = ua;
+                    }else{
+                        ua.principal=true;
+                    }
+                }
+                likeAr(result.value.unidades_analisis).forEach((ua, idUa)=>
+                    completarUA(ua, idUa as IdUnidadAnalisis, result.value.unidades_analisis)
+                )
                 return result.value;
             });
         }
@@ -471,7 +485,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
                         and (tt.cargado_dm is null or tt.cargado_dm = ${context.be.db.quoteLiteral(token)})
             `
             if(parameters.datos){
-                await Promise.all(likeAr(parameters.datos.hdr).map(async (vivienda,idCaso)=>{
+                await Promise.all(likeAr(parameters.datos.hdr).map(async (vivienda:any, idCaso:number)=>{
                     var tareas = vivienda.tareas;
                     for(let tarea in tareas){
                         var puedoGuardarEnTEM=true;

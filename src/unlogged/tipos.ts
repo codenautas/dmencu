@@ -191,6 +191,13 @@ export type Respuestas={
     está anidado por unidad de análisis
 */
 
+export type UnidadAnalisis = {
+    unidad_analisis:IdUnidadAnalisis, 
+    padre?:IdUnidadAnalisis, 
+    pk_agregada:IdVariable, 
+    principal?:boolean, 
+    hijas: {[k in IdUnidadAnalisis]?: UnidadAnalisis}
+}
 
 export type IdCaso='10202'|'10902'|'10909'|'etc...' // el caso es una vivienda
 
@@ -289,6 +296,9 @@ export type TareasEstructura={
 export type Estructura = {
     formularios:{ 
         [nombreFormulario in IdFormulario]:InfoFormulario
+    }
+    unidades_analisis:{ 
+        [idUnidadAnalisis in IdUnidadAnalisis]: UnidadAnalisis
     }
     tareas:TareasEstructura
 }
