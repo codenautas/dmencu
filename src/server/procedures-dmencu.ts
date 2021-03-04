@@ -465,7 +465,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
             num_sincro=value;
             var condviv= `
                         operativo= $1 
-                        and asignado = (select idper from usuarios where idper=$2)
+                        and asignado = $2
                         and tt.operacion='cargar' 
                         and tt.habilitada
                         and (tt.cargado_dm is null or tt.cargado_dm = ${context.be.db.quoteLiteral(token)})

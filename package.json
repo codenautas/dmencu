@@ -42,7 +42,7 @@
     "discrepances": "~0.2.4",
     "pg-triggers": "~0.2.3",
     "types.d.ts": "~0.5.2",
-    "typescript": "^4.1.3",
+    "typescript": "^4.2.2",
     "mixin-patch": "~0.3.3",
     "cross-var": "^1.1.0"
   },
