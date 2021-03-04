@@ -308,6 +308,8 @@ function registradorDeVariable(pregunta:Pregunta|OpcionMultiple){
                 var valorOpcion = elementoOpcion.getAttribute('valor-opcion');
                 setAttrDistinto(elementoOpcion, 'opcion-seleccionada', valorOpcion == valorActual ? "SI": "NO")
             }
+            var elementoInput:HTMLInputElement|null = elemento.querySelector('.variable');
+            if(elementoInput) setValorDistinto(elementoInput, 'value', valorActual);
         }
     }
 }
