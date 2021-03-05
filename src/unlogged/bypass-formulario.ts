@@ -76,10 +76,24 @@ export function getEstructura(){
 
 type ElementosRegistrables = HTMLDivElement|HTMLButtonElement|HTMLInputElement;
 
+type DirectFunction<T, Result> = (respuestas:Respuestas, feedback: FormStructureState<IdVariable,IdFin>, elemento:T) => Result
+
 type RegistroElemento<T extends ElementosRegistrables> = {
-    id:string, 
-    fun:(respuestas:Respuestas, feedback: FormStructureState<IdVariable,IdFin>, elemento:T)=>void
-} & ({prop:string}|{attr:string}|{style:string}|{direct:true})
+    id: string, 
+    fun: DirectFunction<T, any>
+} & ({
+    prop:keyof T
+    fun: DirectFunction<T, T[keyof T]>
+}|{
+    attr:string
+    fun: DirectFunction<T, string>
+}|{
+    style:keyof CSSStyleDeclaration
+    fun: DirectFunction<T, string>
+}|{
+    direct:true
+    fun: DirectFunction<T, void>
+})
 
 type RegistroElementos<T extends ElementosRegistrables> = { [id:string]: RegistroElemento<T> & {elemento?:T} };
 
@@ -133,10 +147,10 @@ export function setAttrDistinto<N extends string>(
     }
 }
 
-export function setValorDistinto<V, N extends string>(
-    objeto:{[K in N]:V},
+export function setValorDistinto<T extends {}, N extends keyof T>(
+    objeto:T,
     name:N,
-    valor:V
+    valor:T[N]
 ){
     if(objeto[name] != valor){
         objeto[name] = valor;

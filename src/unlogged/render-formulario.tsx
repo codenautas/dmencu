@@ -309,7 +309,7 @@ function registradorDeVariable(pregunta:Pregunta|OpcionMultiple){
                 setAttrDistinto(elementoOpcion, 'opcion-seleccionada', valorOpcion == valorActual ? "SI": "NO")
             }
             var elementoInput:HTMLInputElement|null = elemento.querySelector('.variable');
-            if(elementoInput) setValorDistinto(elementoInput, 'value', valorActual);
+            if(elementoInput) setValorDistinto(elementoInput, 'value', valorActual == null ? '' : valorActual.toString());
         }
     }
 }
@@ -434,15 +434,6 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple, onChange:(valor
     const inputProps = {
         maxLength: pregunta.longitud,
     };
-    var id=`campo-${pregunta.var_name}`;
-    registrarElemento({
-        id,
-        direct:true,
-        fun:(respuestas:Respuestas, _feedbackAll, elemento:HTMLInputElement)=>{
-            var valor = respuestas[pregunta.var_name];
-            setValorDistinto(elemento, 'value', valor)
-        }
-    })
     var nuestraLongitud = calcularNuestraLongitud(pregunta.longitud)
     return <div className="campo" nuestra-longitud={nuestraLongitud}>
         <div className="input-campo">
@@ -613,12 +604,12 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     registrarElemento({
         id:`div-boton-formulario-${sufijoIdElemento}`, 
         attr:'esta-inhabilitada', 
-        fun: (r)=>habilitador(r)?'SI':'NO'
+        fun: (r:Respuestas)=>habilitador(r)?'SI':'NO'
     });
-    registrarElemento({
+    registrarElemento<HTMLButtonElement>({
         id:`boton-formulario-${sufijoIdElemento}`, 
         prop:'disabled', 
-        fun: (r)=>!habilitador(r)
+        fun: (r:Respuestas)=>!habilitador(r)
     });
     var dispatch = useDispatch();
     var [confirmarForzarIr, setConfirmarForzarIr] = useState<number|boolean|null>(null);
