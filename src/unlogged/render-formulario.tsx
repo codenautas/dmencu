@@ -302,7 +302,7 @@ function registradorDeVariable(pregunta:Pregunta|OpcionMultiple){
         setAttrDistinto(elemento, 'tiene-valor', tieneValor);
         setAttrDistinto(elemento, 'esta-inhabilitada', feedbackVar?.inhabilitada?'SI':'NO');
         if(pregunta.var_name){
-            var opciones:HTMLButtonElement[] = Array.prototype.slice.call(elemento.querySelectorAll(`.boton-opcion[mi-variable-${pregunta.var_name}]`),0);
+            var opciones:HTMLButtonElement[] = Array.prototype.slice.call(elemento.querySelectorAll(`.boton-opcion[mi-variable="${pregunta.var_name}"]`),0);
             var elementoOpcion:HTMLButtonElement;
             for(var elementoOpcion of opciones){
                 var valorOpcion = elementoOpcion.getAttribute('valor-opcion');
