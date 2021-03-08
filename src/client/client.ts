@@ -64,7 +64,7 @@ async function abrirDirecto(forPkRaiz:ForPkRaiz){
 
 myOwn.wScreens.abrir_encuesta={
     parameters:[
-        {name:'encuesta', typeName:'integer', defaultValue:130030}
+        {name:'encuesta', typeName:'integer', defaultValue:130031}
     ],
     mainAction:(params, _divResult)=>{
         // GENERALIZAR:

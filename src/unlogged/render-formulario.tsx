@@ -606,12 +606,14 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     registrarElemento({
         id:`div-boton-formulario-${sufijoIdElemento}`, 
         attr:'esta-inhabilitada', 
-        fun: (r:Respuestas)=>habilitador(r)?'SI':'NO'
+        // fun: (r:Respuestas)=>habilitador(r)?'SI':'NO'
+        fun: (_r:Respuestas)=>'NO'
     });
     registrarElemento<HTMLButtonElement>({
         id:`boton-formulario-${sufijoIdElemento}`, 
         prop:'disabled', 
-        fun: (r:Respuestas)=>!habilitador(r)
+        // fun: (r:Respuestas)=>!habilitador(r)
+        fun: (_r:Respuestas)=>false
     });
     var dispatch = useDispatch();
     var [confirmarForzarIr, setConfirmarForzarIr] = useState<number|boolean|null>(null);
@@ -769,7 +771,7 @@ function BloqueDespliegue(props:{bloque:Bloque, formulario:Formulario, forPk:For
         style:'display',
         fun: (respuestas:Respuestas)=> habilitador(respuestas) || modoDespliegue=='metadatos'?'unset':'none'
     })
-    return <div className="bloque" nuestro-bloque={bloque.casillero} es-multiple={multiple?'SI':'NO'}>
+    return <div className="bloque" nuestro-bloque={bloque.casillero} es-multiple={multiple?'SI':'NO'} id={id}>
         <EncabezadoDespliegue casillero={bloque} forPk={forPk}/>
         {lista.map(({key, forPk, multiple})=>
             <DesplegarContenidoInternoBloqueOFormulario key={key} bloqueOFormulario={bloque} formulario={props.formulario} forPk={forPk} multiple={multiple}/>
@@ -936,7 +938,7 @@ function FormularioDespliegue(props:{forPk:ForPk}){
     const dispatch = useDispatch();
     useEffect(()=>{
         volcadoInicialElementosRegistrados(props.forPk);
-    },[])
+    },[toPlainForPk(props.forPk)])
     // TODO Volver a poner el movimiento a la actual
     var actual:any
     var completo:any

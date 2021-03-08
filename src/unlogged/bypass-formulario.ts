@@ -168,7 +168,7 @@ function respuestasForPk(forPk:ForPk, conAumentadas?:boolean):RespuestasForPkCom
         if(valorPkOPosicion == undefined){
             throw new Error(`falta un valor para ${JSON.stringify(uaDef.pk_agregada)}`)
         }
-        respuestas = respuestas[unidad_analisis][(respuestas instanceof Array?valorPkOPosicion - 1:valorPkOPosicion)];
+        respuestas = respuestas[unidad_analisis][(respuestas[unidad_analisis] instanceof Array?valorPkOPosicion - 1:valorPkOPosicion)];
         forPkRaiz ||= forPkApilada;
         // @ts-expect-error Sé que es raíz por cómo estoy revolviendo la pila
         respuestasRaiz ||= respuestas;
