@@ -6,25 +6,32 @@ import { deepFreeze, datetime } from "best-globals";
 
 import { CasilleroBase, CasillerosImplementados, CasoState, 
     DatosVivienda, EstadoCarga, EstructuraRowValidator, Estructura, 
-    FeedbackVariable, Formulario, ForPk, 
-    IdCarga, IdCasillero, IdCaso, IdDestino, IdFin, IdFormulario, IdPregunta, IdTarea, IdVariable, 
+    FeedbackVariable, Formulario, ForPk, ForPkRaiz,
+    HojaDeRuta,  
+    IdCarga, IdCasillero, IdDestino, IdFin, IdFormulario, IdPregunta, IdTarea, IdVariable, 
     IdUnidadAnalisis,
     InfoFormulario, 
     ModoDespliegue, 
-    Opcion, PlainForPk, Respuestas, ResumenEstado,
-    Tareas, TareasEstructura, TEM, Valor, Visita, VivendasHdR,
+    Opcion, PlainForPk, Respuestas, RespuestasRaiz, ResumenEstado,
+    Tareas, TareasEstructura, TEM, Valor, Visita, 
     toPlainForPk,
-    LOCAL_STORAGE_STATE_NAME, LOCAL_STORAGE_ESTRUCTURA_NAME
+    UnidadAnalisis
 } from "./tipos";
-import { nextTick } from "process";
 
+const GLOVAR_DATOSBYPASS='datosbypass';
+const GLOVAR_MODOBYPASS='modobypass';
+const GLOVAR_ESTRUCTURA='estructura';
+
+export type ModoAlmacenamiento = 'session'| // cuando sea para una sola pestaña, se usa en modo directo,
+                                 'local'    // para todo el dispositivo, se usa al cargar hojas de ruta entres
 
 type DatosByPass = {
-    hdr:VivendasHdR,
+    hojaDeRuta:HojaDeRuta
     feedbackRowValidator:{  // no se persiste
         [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> // resultado del rowValidator para estado.forPk
     }
     dirty:boolean
+    modoAlmacenamiento:ModoAlmacenamiento
 };
 
 var datosByPass = {} as DatosByPass
@@ -32,45 +39,75 @@ var datosByPass = {} as DatosByPass
 //@ts-ignore arranca en blanco
 var estructura:Estructura = null as Estructura;
 
-export function levantarDelRepositorioSiFueraNecesario(){
-    if(!datosByPass.hdr){
-        var datos = my.getLocalVar(LOCAL_STORAGE_STATE_NAME);
-        datosByPass.hdr = datos.datos.hdr;
-        datosByPass.feedbackRowValidator = datos.feedbackRowValidator;
-        datosByPass.dirty = datos.dirty;
-        estructura = datos.estructura;
+function persistirDatosByPass(){
+    var {modoAlmacenamiento, feedbackRowValidator, ...persistentes} = datosByPass
+    if(modoAlmacenamiento=='local'){
+        my.setLocalVar(GLOVAR_DATOSBYPASS, persistentes)
+    }else{
+        my.setSessionVar(GLOVAR_DATOSBYPASS, persistentes)
     }
+    my.setSessionVar(GLOVAR_MODOBYPASS, modoAlmacenamiento)
 }
 
-export function cargarHdr(_hdr:VivendasHdR){
+function recuperarDatosByPass(){
+    var recuperado:DatosByPass;
+    var modoAlmacenamiento = my.getSessionVar(GLOVAR_MODOBYPASS) as ModoAlmacenamiento;
+    if(modoAlmacenamiento=='local'){
+        recuperado = my.getLocalVar(GLOVAR_DATOSBYPASS)
+    }else{
+        recuperado = my.getSessionVar(GLOVAR_DATOSBYPASS)
+    }
+    recuperado.feedbackRowValidator={} as DatosByPass["feedbackRowValidator"];
+    datosByPass = {...recuperado, modoAlmacenamiento}
+    calcularFeedbackHojaDeRuta();
+}
+
+export function cargarHojaDeRuta(nuevoPaquete:{hojaDeRuta:HojaDeRuta, modoAlmacenamiento:ModoAlmacenamiento, dirty?:boolean}){
+    var modoActual = my.getSessionVar(GLOVAR_MODOBYPASS);
+    if(modoActual && nuevoPaquete.modoAlmacenamiento!=modoActual){
+        throw new Error('No se pueden mezclar modos de apertura de encuestas, directo y por hoja de ruta para MD ('+modoActual+', '+nuevoPaquete.modoAlmacenamiento+')');
+    }
+    datosByPass = {
+        ...nuevoPaquete, 
+        feedbackRowValidator: {} as DatosByPass["feedbackRowValidator"],
+        dirty: nuevoPaquete.dirty??false
+    }
+    calcularFeedbackHojaDeRuta();
+    persistirDatosByPass();
 }
 
 export function cargarEstructura(estructuraACargar:Estructura){
     estructura = estructuraACargar;
-    my.setLocalVar(LOCAL_STORAGE_ESTRUCTURA_NAME, estructura);
+    my.setLocalVar(GLOVAR_ESTRUCTURA, estructura);
 }
 
 
-export function getHdr(){
-    levantarDelRepositorioSiFueraNecesario();
-    return datosByPass.hdr;
+export function getHojaDeRuta(){
+    if(!datosByPass.hojaDeRuta){
+        recuperarDatosByPass();
+    }
+    return datosByPass.hojaDeRuta;
+}
+
+function objetoVacio(o:object){
+    for(var k in o){
+        return false;
+    }
+    return true;
 }
 
 export function getFeedbackRowValidator(){
-    levantarDelRepositorioSiFueraNecesario()
+    if(!datosByPass.feedbackRowValidator || objetoVacio(datosByPass.feedbackRowValidator)){
+        calcularFeedbackHojaDeRuta();
+    }
     return datosByPass.feedbackRowValidator;
 }
 
 export function getDirty(){
-    levantarDelRepositorioSiFueraNecesario()
     return datosByPass.dirty
 }
 
 export function getEstructura(){
-    levantarDelRepositorioSiFueraNecesario();
-    if(!estructura){
-        estructura = my.getLocalVar(LOCAL_STORAGE_ESTRUCTURA_NAME);
-    }
     return estructura;
 }
 
@@ -105,10 +142,49 @@ export function registrarElemento<T extends ElementosRegistrables>(def:RegistroE
     registroElementos[def.id] = def;
 }
 
-export function volcadoInicialElementosRegistrados(forPk:ForPk){
-    calcularFeedback(datosByPass.hdr[forPk.vivienda], forPk);
-    var respuestasAumentadas = datosByPass.hdr[forPk.vivienda].respuestas;
-    var unidad_analisis = estructura.formularios[forPk.formulario].casilleros.unidad_analisis as IdUnidadAnalisis
+type RespuestasForPkComun = {respuestas:Respuestas, respuestasRaiz:RespuestasRaiz, forPkRaiz:ForPkRaiz}
+
+function respuestasForPk(forPk:ForPk):RespuestasForPkComun
+function respuestasForPk(forPk:ForPk, conAumentadas:true):RespuestasForPkComun & {respuestasAumentadas:Respuestas}
+function respuestasForPk(forPk:ForPk, conAumentadas?:boolean):RespuestasForPkComun & {respuestasAumentadas?:Respuestas} {
+    var respuestasAumentadas = {} as Respuestas;
+    // @ts-expect-error lo que sobrar de respuestas no me importa...
+    var respuestas = datosByPass.hojaDeRuta.respuestas as Respuestas;
+    var respuestasRaiz: RespuestasRaiz; 
+    var forPkRaiz: ForPk; 
+    var unidad_analisis:IdUnidadAnalisis|undefined = estructura.formularios[forPk.formulario].casilleros.unidad_analisis
+    var forPkApilada = forPk;
+    var pila:[unidad_analisis:IdUnidadAnalisis, uaDef:UnidadAnalisis, forPk:ForPk][] = [];
+    while(unidad_analisis){
+        var uaDef:UnidadAnalisis = estructura.unidades_analisis[unidad_analisis];
+        pila.push([unidad_analisis, uaDef, forPkApilada]);
+        forPkApilada={...forPkApilada};
+        delete forPkApilada[uaDef.pk_agregada]
+        unidad_analisis=uaDef.padre
+    }
+    while(pila.length){
+        [unidad_analisis, uaDef, forPkApilada] = pila.pop()!
+        var valorPkOPosicion = forPkApilada[uaDef.pk_agregada];
+        if(valorPkOPosicion == undefined){
+            throw new Error(`falta un valor para ${JSON.stringify(uaDef.pk_agregada)}`)
+        }
+        respuestas = respuestas[unidad_analisis][(respuestas instanceof Array?valorPkOPosicion - 1:valorPkOPosicion)];
+        forPkRaiz ||= forPkApilada;
+        // @ts-expect-error Sé que es raíz por cómo estoy revolviendo la pila
+        respuestasRaiz ||= respuestas;
+        if(conAumentadas){
+            respuestasAumentadas = {...respuestasAumentadas, ...respuestas}
+        }
+    }
+    return {
+        respuestas, respuestasAumentadas, 
+        // @ts-ignore Sé que la pila tiene al menos un elemento por lo tanto esto está lleno seguro. 
+        respuestasRaiz, forPkRaiz
+    }
+}
+
+export function volcadoInicialElementosRegistrados(forPkRaiz:ForPkRaiz){
+    var {respuestasAumentadas} = respuestasForPk(forPkRaiz, true)
     var registroElementos = registroElementosGlobal;
     for(var id in registroElementos){
         var def = registroElementos[id];
@@ -124,7 +200,7 @@ export function volcadoInicialElementosRegistrados(forPk:ForPk){
             console.log('BUSCANDO el elemento registrado ',id,'no está en el DOM')
             continue;
         }
-        var value = def.fun(respuestasAumentadas, datosByPass.feedbackRowValidator[toPlainForPk(forPk)], def.elemento);
+        var value = def.fun(respuestasAumentadas, datosByPass.feedbackRowValidator[toPlainForPk(forPkRaiz)], def.elemento);
         if('prop' in def){
             setValorDistinto(def.elemento, def.prop, value)
         }
@@ -160,51 +236,55 @@ export function setValorDistinto<T extends {}, N extends keyof T>(
 export function accion_id_pregunta(_payload:{pregunta: IdPregunta, forPk: ForPk}, _datosByPass:DatosByPass){
 }
 
-export function accion_registrar_respuesta(payload:{forPk:ForPk, variable:IdVariable, respuesta:Valor}, datosByPass:DatosByPass){
+export function accion_registrar_respuesta(payload:{forPk:ForPk, variable:IdVariable, respuesta:Valor}, _datosByPass:DatosByPass){
     let token = 'AVERIGUAR TODO'
     let { forPk, respuesta, variable } = payload;
-    var datosVivienda = datosByPass.hdr[forPk.vivienda as IdCaso];
-    var recentModified = datosVivienda.respuestas[variable] != respuesta
+    var {respuestas, respuestasRaiz, forPkRaiz}  = respuestasForPk(forPk);
+    var unidad_analisis = estructura.formularios[forPk.formulario];
+    
+    var recentModified = respuestas[variable] != respuesta
     if(recentModified){
-        datosVivienda.respuestas[variable] = respuesta;
+        respuestas[variable] = respuesta;
     }
-    variablesCalculadas(datosVivienda)
-    if(datosVivienda.respuestas[ultimaVaribleVivienda]==null && datosVivienda.respuestas[ultimaVaribleVivienda]!=null){
-        encolarBackup(token, forPk.vivienda, datosVivienda);
+    variablesCalculadas(respuestasRaiz)
+    if(respuestas[ultimaVaribleVivienda]==null && respuestas[ultimaVaribleVivienda]!=null){
+        encolarBackup(token, forPkRaiz, respuestasRaiz);
     }
-    datosVivienda.dirty = datosVivienda.dirty || recentModified;
-    calcularFeedback(datosVivienda, forPk)
+    respuestasRaiz.$dirty = respuestasRaiz.$dirty || recentModified;
+    calcularFeedback(respuestasRaiz, forPkRaiz)
 }
 
-export function accion_registrar_nota(payload:{vivienda:IdCaso, tarea:IdTarea, nota:string|null}, _datosByPass:DatosByPass){
-    let { vivienda, tarea, nota } = payload;
+export function accion_registrar_nota(payload:{forPkRaiz:ForPkRaiz, tarea:IdTarea, nota:string|null}, _datosByPass:DatosByPass){
+    let { forPkRaiz, tarea, nota } = payload;
     console.log("FALTA // TODO")
 }
 
-export function accion_agregar_visita(payload:{vivienda:IdCaso, observaciones:string|null}, datosByPass:DatosByPass){
-    let { vivienda, observaciones } = payload;
-    if(!datosByPass.hdr[vivienda].visitas){
-        datosByPass.hdr[vivienda].visitas = [];
+export function accion_agregar_visita(payload:{forPkRaiz:ForPkRaiz, observaciones:string|null}, datosByPass:DatosByPass){
+    let { forPkRaiz, observaciones } = payload;
+    /*
+    if(!datosByPass.hojaDeRuta[vivienda].visitas){
+        datosByPass.hojaDeRuta[vivienda].visitas = [];
     }
-    var visitas = datosByPass.hdr[vivienda].visitas;
+    var visitas = datosByPass.hojaDeRuta[vivienda].visitas;
     visitas.push({
         fecha: datetime.now().toYmd(),
         hora: datetime.now().toHm(),
         idper: null, // TODO: VER DE DONDE SE SACA EL IDPER state.datos.idper,
         observaciones:observaciones
     })
+    */
 }
 
-export function accion_modificar_visita(payload: {vivienda:IdCaso, index:number, opcion:keyof Visita , valor:string|null}, datosByPass:DatosByPass){
-    let { vivienda, index, opcion, valor} = payload;
-    var visitas = datosByPass.hdr[vivienda].visitas;
-    visitas[index][opcion] = valor;
+export function accion_modificar_visita(payload: {forPkRaiz:ForPkRaiz, index:number, opcion:keyof Visita , valor:string|null}, datosByPass:DatosByPass){
+    let { forPkRaiz, index, opcion, valor} = payload;
+    // var visitas = datosByPass.hojaDeRuta[vivienda].visitas;
+    // visitas[index][opcion] = valor;
 }
 
-export function accion_borrar_visita(payload: {vivienda:IdCaso, index:number}, datosByPass:DatosByPass){
-    let { vivienda, index} = payload;
-    var visitas = datosByPass.hdr[vivienda].visitas;
-    visitas.splice(index, 1);
+export function accion_borrar_visita(payload: {forPkRaiz:ForPkRaiz, index:number}, datosByPass:DatosByPass){
+    let { forPkRaiz, index} = payload;
+    // var visitas = datosByPass.hojaDeRuta[vivienda].visitas;
+    // visitas.splice(index, 1);
 }
 
 export function accion_agregar_formulario(_payload: {forPk:ForPk}, _datosByPass:DatosByPass){
@@ -392,7 +472,7 @@ function num(num:number|string|null):number{
 type Backups={
     idActual:number,
     token:string|undefined,
-    casos:{idBackup:number, idCaso:IdCaso, vivienda:DatosVivienda}[]
+    casos:{idBackup:number, forPkRaiz:ForPkRaiz, respuestasRaiz:Respuestas}[]
 }
 
 var backupPendiente = Promise.resolve();
@@ -413,20 +493,20 @@ async function enviarBackup(){
     }
 }
 
-function encolarBackup(token:string|undefined, idCaso:IdCaso, vivienda:DatosVivienda){
+function encolarBackup(token:string|undefined, forPkRaiz:ForPkRaiz, respuestasRaiz:Respuestas){
     var backups:Backups = my.existsLocalVar('backups')?my.getLocalVar('backups'):{
         idActual:0,
         casos:[]
     };
     backups.idActual+=1;
     backups.token=token;
-    backups.casos.push({idBackup:backups.idActual, idCaso, vivienda});
+    backups.casos.push({idBackup:backups.idActual, forPkRaiz, respuestasRaiz});
     my.setLocalVar('backups',backups);
     backupPendiente = backupPendiente.then(enviarBackup)
 }
 
-function variablesCalculadas(datosVivienda: DatosVivienda):DatosVivienda{
-    return datosVivienda;
+function variablesCalculadas(_respuestasRaiz: Respuestas){
+    return; 
     // TODO: GENERALIZAR
 //    var cp='cp' as IdVariable;
 //    var _personas_incompletas = '_personas_incompletas' as IdVariable
@@ -534,14 +614,15 @@ export async function calcularFeedbackUnidadAnalisis(
     for(var UAincluida of defOperativo.defUA[UA].incluidas){
         var pkNueva = defOperativo.defUA[UAincluida].pk;
         var conjuntoRespuestasUA = respuestas[UAincluida];
-        conjuntoRespuestasUA.forEach((respuestas, i)=>{
+        likeAr(conjuntoRespuestasUA).forEach((respuestas, valorPkOPosicion)=>{
+            var valorPk = numberOrStringIncIfArray(valorPkOPosicion, conjuntoRespuestasUA);
             calcularFeedbackUnidadAnalisis(
                 feedbackRowValidator, 
                 formularios, 
                 respuestas, 
                 UAincluida, 
-                {...forPk, [pkNueva]:i+1},
-                {...respuestasAumentadas, ...respuestas, [pkNueva]:i+1}
+                {...forPk, [pkNueva]:valorPk},
+                {...respuestasAumentadas, ...respuestas, [pkNueva]:valorPk}
             );
         })
     }
@@ -556,26 +637,43 @@ export async function calcularFeedbackUnidadAnalisis(
     }
 }
 
+function numberOrStringIncIfArray(numberOrString:number|string, object:object|any[]):(number|string){
+    // @ts-expect-error estoy usando isNaN para ver si es o no un número sumable
+    if(isNaN(numberOrString)){
+        return numberOrString;
+    }
+    return Number(numberOrString)+(object instanceof Array?1:0);
+}
+
+export async function calcularFeedbackHojaDeRuta(){
+    likeAr(estructura.unidades_analisis).filter(uaDef=>!uaDef.padre).forEach(uaDef=>{
+        likeAr(estructura.formularios).filter(f=>f.casilleros.unidad_analisis == uaDef.unidad_analisis).forEach((_defF, formulario)=>{
+            var conjuntoRespuestasUA = datosByPass.hojaDeRuta.respuestas[uaDef.unidad_analisis]
+            likeAr(conjuntoRespuestasUA).forEach((respuestas, valorPkOPosicion)=>{
+                var valorPk = numberOrStringIncIfArray(valorPkOPosicion, conjuntoRespuestasUA);
+                var forPkRaiz = {formulario, [uaDef.pk_agregada]:valorPk}
+                calcularFeedback(respuestas, forPkRaiz);
+            })
+        })
+    });
+}
+
 export async function calcularFeedbackEncuesta(
     feedbackRowValidator:{ [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> },
     formularios:{ [nombreFormulario in IdFormulario]:InfoFormulario }, 
-    vivienda:IdCaso, 
+    forPkRaiz: ForPkRaiz, 
     respuestas:Respuestas
 ){
-    var forPk={vivienda, formulario:defOperativo.defUA[defOperativo.UAprincipal].idsFor[0]}
+    var forPk:ForPk ={...forPkRaiz};
     calcularFeedbackUnidadAnalisis(feedbackRowValidator, formularios, respuestas, defOperativo.UAprincipal, forPk, respuestas);
 }
 
-function calcularFeedback(datosVivienda: DatosVivienda, forPk:ForPk){
-    var tipo_seleccion = 'tipo_seleccion' as IdVariable;
-    var tipo_relevamiento = 'tipo_relevamiento' as IdVariable;
-    var vivienda = forPk.vivienda;
-    var respuestas = datosVivienda.respuestas;
+function calcularFeedback(respuestas: Respuestas, forPkRaiz:ForPkRaiz){
     if(respuestas){
         // @ts-ignore Partial
         var nuevosRows : {[x in PlainForPk]:FormStructureState<IdVariable,IdFin>}={}
-        calcularFeedbackEncuesta(nuevosRows, estructura.formularios, forPk.vivienda, respuestas);
-        var resumenEstado = calcularResumenVivienda(forPk.vivienda, 
+        calcularFeedbackEncuesta(nuevosRows, estructura.formularios, forPkRaiz, respuestas);
+        var resumenEstado = calcularResumenVivienda(forPkRaiz, 
             // @ts-ignore sí, tiene los feedbacks de los formularios 
             nuevosRows,
             respuestas
@@ -590,8 +688,8 @@ function calcularFeedback(datosVivienda: DatosVivienda, forPk:ForPk){
 
 
 function calcularResumenVivienda(
-    idCaso:IdCaso, 
-    feedbackRowValidator:{[formulario in PlainForPk]:FormStructureState<IdVariable,IdFin>}, 
+    _forPkRaiz:ForPkRaiz, 
+    _feedbackRowValidator:{[formulario in PlainForPk]:FormStructureState<IdVariable,IdFin>}, 
     respuestas:Respuestas
 ){
     if(defOperativo.esNorea(respuestas)){
@@ -601,6 +699,8 @@ function calcularResumenVivienda(
         return "vacio";
     }
     //TODO GENERALIZAR
+    return "no rea"; 
+    /*
     var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>JSON.parse(plainPk).vivienda==idCaso && JSON.parse(plainPk).formulario != 'F:F2_personas').array();
     var feedBackViviendaPlain = likeAr(feedbackRowValidator).filter((_row, plainPk)=>JSON.parse(plainPk).vivienda==idCaso && JSON.parse(plainPk).formulario != 'F:F2_personas').plain();
     var prioridades:{[key in ResumenEstado]: {prioridad:number, cantidad:number}} = {
@@ -628,6 +728,7 @@ function calcularResumenVivienda(
             minResumen='incompleto';
         }
     }
-    return minResumen
+    return minResumen;
+    */
 }
 

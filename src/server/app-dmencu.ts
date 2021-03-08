@@ -297,6 +297,9 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             menu.push(
                 {menuType:'sincronizar_dm', name:'sincronizar'},
             );
+            menu.push(
+                {menuType:'abrir_encuesta', name:'abrir_encuesta'},
+            )
         }
         if(context.puede?.lab_resultado?.editar || context.puede?.lab_resultado?.ver){
             let menuContent=[];

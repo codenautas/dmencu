@@ -1,15 +1,17 @@
 import {html, HtmlTag} from "js-to-html";
 import {dmTraerDatosFormulario, traerEstructura, replaceSpecialWords} from "../unlogged/redux-formulario";
-import { CasoState, EtiquetaOpts, IdVariable, IdCaso, LOCAL_STORAGE_STATE_NAME,  } from "../unlogged/tipos";
+import { CasoState, EtiquetaOpts, IdUnidadAnalisis, IdVariable, LOCAL_STORAGE_STATE_NAME,  
+    ForPkRaiz, HojaDeRuta, IdFormulario
+} from "../unlogged/tipos";
 import { crearEtiqueta } from "../unlogged/generador-qr";
 import * as TypedControls from "typed-controls";
 import * as likeAr from "like-ar";
-import {cargarEstructura, cargarHdr, getHdr} from "../unlogged/bypass-formulario"
+import {cargarEstructura, cargarHojaDeRuta, getEstructura, getHojaDeRuta} from "../unlogged/bypass-formulario"
 
 const OPERATIVO = 'etoi211';
 const OPERATIVO_ACTUAL = 'etoi211';
 
-async function traerHdr(opts:{modoDemo:boolean, vivienda?:IdCaso}){
+async function traerHdr(opts:{modoDemo:boolean}){
     await dmTraerDatosFormulario(opts);
     history.replaceState(null, '', `${location.origin+location.pathname}/../campo`);
     location.reload();   
@@ -25,7 +27,7 @@ async function sincronizarDatos(state:CasoState|null){
     var estructura = await traerEstructura({operativo:OPERATIVO})
     cargarEstructura(estructura);
     // @ts-ignore
-    cargarHdr(datos.hdr);
+    cargarHojaDeRuta(datos.hojaDeRuta);
     if(state==null){
         //@ts-ignore
         state={};
@@ -51,15 +53,23 @@ async function sincronizarDatos(state:CasoState|null){
     return datos;
 }
 
-async function abrirDirecto(enc:IdCaso){
-    if(!my.getSessionVar(LOCAL_STORAGE_STATE_NAME)){
-        var datos = await my.ajax.dm_enc_cargar({enc:enc});
+async function abrirDirecto(forPkRaiz:ForPkRaiz){
+    if(!getEstructura()){
+        var estructura = await traerEstructura({operativo:OPERATIVO})
+        cargarEstructura(estructura);
+    }
+    var carga = await my.ajax.dm_forpkraiz_cargar({forPkRaiz}) as {hojaDeRuta:HojaDeRuta};
+    cargarHojaDeRuta({...carga, modoAlmacenamiento:'session'});
+}
+
+myOwn.wScreens.abrir_encuesta={
+    parameters:[
+        {name:'encuesta', typeName:'integer', defaultValue:130030}
+    ],
+    mainAction:(params, _divResult)=>{
+        // GENERALIZAR:
         // @ts-ignore
-        var state:CasoState={};
-        state.datos=datos;
-        // @ts-ignore
-        state.feedbackRowValidator={};
-        my.setSessionVar(LOCAL_STORAGE_STATE_NAME, state);
+        return myOwn.wScreens.abrirDirecto({forPkRaiz:{formulario:"F:RE" as IdFormulario, vivienda:params.encuesta}})
     }
 }
 
@@ -71,12 +81,13 @@ myOwn.wScreens.sincronizar_dm=async function(){
 
     if(myOwn.existsLocalVar(LOCAL_STORAGE_STATE_NAME)){
         var state: CasoState = my.getLocalVar(LOCAL_STORAGE_STATE_NAME);
-        var hdr = getHdr();
+        var hojaDeRuta = getHojaDeRuta();
         mainLayout.appendChild(html.div({class:'aviso'},[
             html.h4('información a transmitir'),
             html.p([htmlNumero(likeAr(state.datos.cargas).array().length),' areas: ',likeAr(state.datos.cargas).keys().join(', ')]),
-            html.p([htmlNumero(likeAr(hdr).array().length),' viviendas']),
-            html.p([htmlNumero(likeAr(hdr).filter(dv=>dv.respuestas?.[dv1]==1 && dv.respuestas?.[c5ok]==1).array().length),' viviendas con muestras']),
+            ...(likeAr(hojaDeRuta.respuestas).map((lista, nombreLista)=>
+                html.p([htmlNumero(lista.length), ' '+nombreLista])
+            ).array())
         ]).create());
         var downloadButton = html.button({class:'download-dm-button-cont'},'proceder ⇒').create();
         mainLayout.appendChild(downloadButton);
@@ -307,11 +318,11 @@ myOwn.wScreens.resultados_ver = async ()=>{
 
 myOwn.wScreens.abrirDirecto=async function(addrParams:myOwn.AddrParams){
     // @ts-ignore AddPrams
-    var enc = addrParams.enc;
+    var forPkRaiz = addrParams.forPkRaiz;
     try{
-        await abrirDirecto(enc);
+        await abrirDirecto(forPkRaiz);
         // @ts-ignore desplegarFormularioActual es global
-        desplegarFormularioActual({modoDemo:false, vivienda:enc, useSessionStorage:true});
+        desplegarFormularioActual({modoDemo:false, forPkRaiz, useSessionStorage:true});
     }catch(err){
         alertPromise(err.message)
     }

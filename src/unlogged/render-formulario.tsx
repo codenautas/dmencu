@@ -11,12 +11,14 @@ import {
 } from "./render-general";
 import {Bloque, BotonFormulario, 
     CasilleroBase, CasoState, ConjuntoPreguntas, Consistencia, DatosVivienda,
-    EstadoCarga, FeedbackVariable, Filtro, ForPk, Formulario, 
-    IdCaso, IdFormulario, IdPregunta, IdTarea, IdVariable, InfoFormulario,
+    EstadoCarga, FeedbackVariable, Filtro, ForPk, ForPkRaiz, Formulario, 
+    IdFormulario, IdPregunta, IdTarea, IdVariable, InfoFormulario,
+    HojaDeRuta,
     ModoDespliegue,
     Opcion, OpcionMultiple, OpcionNo, OpcionSi, PlainForPk, 
     Pregunta, PreguntaConOpciones, PreguntaConOpcionesMultiples, PreguntaSimple, 
-    Respuestas, Valor, TEM, IdCarga, Carga, VivendasHdR, IdFin, InfoTarea, Tareas, Visita, IdUnidadAnalisis,
+    Respuestas, RespuestasRaiz, Valor, TEM, IdCarga, Carga, IdFin, InfoTarea, Tareas, Visita, IdUnidadAnalisis,
+    ModoAlmacenamiento,
     toPlainForPk
 } from "./tipos";
 import { dmTraerDatosFormulario, dispatchers, 
@@ -49,7 +51,7 @@ import { CSSProperties } from "@material-ui/core/styles/withStyles";
 
 import { 
     registrarElemento, setAttrDistinto, setValorDistinto, dispatchByPass, 
-    getDirty, getHdr, getFeedbackRowValidator,
+    getDirty, getHojaDeRuta, getFeedbackRowValidator,
     getFuncionHabilitar, 
     getEstructura, 
     defOperativo,
@@ -621,13 +623,13 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     if(multipleFormularios){
         // let cantForm = respuestas[formularioAAbrir.unidad_analisis].length;
         let cantForm = 4
-        // listaDeBotonesAbrir = serie({from:1, to:cantForm}).map(num=>{
-        //     let forPk={...props.forPk, formulario:idFormularioDestino, [nuevoCampoPk]:num};
-        //     if(numActual == null){
-        //         numActual = num;
-        //     }
-        //     return {resumen:null, num, actual: numActual == num, previo: numActual == null}
-        // });
+        listaDeBotonesAbrir = serie({from:1, to:cantForm}).map(num=>{
+            let forPk={...props.forPk, formulario:idFormularioDestino, [nuevoCampoPk]:num};
+            if(numActual == null){
+                numActual = num;
+            }
+            return {resumen:null, num, actual: numActual == num, previo: numActual == null}
+        });
         if("puede agregar //TODO VER ESTO"){
             listaDeBotonesAbrir.push({num:cantForm+1, esAgregar:true, actual:numActual == null, previo: false});
         }
@@ -1000,23 +1002,16 @@ export function DesplegarCarga(props:{
     carga:Carga, 
     idCarga:IdCarga, 
     posicion:number,
-    hdr:VivendasHdR, 
+    hojaDeRuta:HojaDeRuta, 
     feedbackRowValidator:{
         [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> 
     }
 }){
-    const {carga, idCarga, hdr, feedbackRowValidator} = props;
-    const etiquetas = []; //likeAr(hdr).map((datosVivienda:DatosVivienda)=>datosVivienda.respuestas[c5]).array() as (string|null)[];
+    const {carga, idCarga, hojaDeRuta, feedbackRowValidator} = props;
     const dispatch = useDispatch();
     const [desplegarEtiquetasRepetidas, setDesplegarEtiquetasRepetidas] = useState<boolean>(false);
     const etiquetaRepetida = (etiquetas:(string|null)[], etiqueta:string)=>{
         return etiquetas.filter((e)=>e==etiqueta).length > 1
-    }
-    const buscarCasosEnHdrParaEtiqueta = (hdr:VivendasHdR, etiqueta:string, etiquetaVarname:IdVariable, _casoActual:IdCaso)=>{
-        return likeAr(hdr)
-            .filter((datosVivienda:DatosVivienda, _idCaso:IdCaso)=>datosVivienda.respuestas[etiquetaVarname]==etiqueta)
-            .map((_datosVivienda:DatosVivienda,idCaso:IdCaso)=>idCaso)
-            .array()
     }
     return <Paper className="carga">
         <div className="informacion-carga">
@@ -1048,22 +1043,22 @@ export function DesplegarCarga(props:{
                 </TableRow>
             </TableHead>
             <TableBody>
-                {likeAr(hdr).filter((datosVivienda:DatosVivienda, _idCaso:IdCaso)=>datosVivienda.tem.carga==idCarga).map((datosVivienda: DatosVivienda, idCaso: IdCaso)=>
-                    <TableRow key={idCaso}>
+                {likeAr(hojaDeRuta.respuestas.viviendas).filter((respuestas:RespuestasRaiz, _numVivienda:number)=>!!respuestas).map((respuestas:RespuestasRaiz, numVivienda:number)=>
+                    <TableRow key={numVivienda}>
                         <TableCell>
-                            {idCaso}
+                            {numVivienda}
                         </TableCell>
                         <TableCell>
-                            <DesplegarTem tem={datosVivienda.tem}/>
-                            {datosVivienda.resumenEstado=="cita pactada"?
-                                <DesplegarCitaPactada respuestas={datosVivienda.respuestas}/>
+                            <DesplegarTem tem={respuestas.TEM}/>
+                            {respuestas.resumenEstado=="cita pactada"?
+                                <DesplegarCitaPactada respuestas={respuestas}/>
                             :
-                                <DesplegarCitaPactadaYSeleccionadoAnteriorTem tem={datosVivienda.tem}/>
+                                <DesplegarCitaPactadaYSeleccionadoAnteriorTem tem={respuestas.TEM}/>
                             }
-                            <DesplegarNotasYVisitas tareas={datosVivienda.tareas} visitas={datosVivienda.visitas} idCaso={idCaso}/>
+                            {`<DesplegarNotasYVisitas tareas={datosVivienda.tareas} visitas={datosVivienda.visitas} idCaso={numVivienda}/>`}
                         </TableCell>
                         <TableCell>
-                            {likeAr(datosVivienda.tareas).map((_tarea, idTarea)=>
+                            {"tareas"||`likeAr(datosVivienda.tareas).map((_tarea, idTarea)=>
                                 <Button
                                     key={idTarea}
                                     size="small"
@@ -1071,42 +1066,12 @@ export function DesplegarCarga(props:{
                                     variant="outlined"
                                     onClick={()=>{
                                         ////////////////// OJOJOJOJO sacar el formulario de la tabla de tareas GENERALIZAR TODO
-                                        dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:{vivienda:idCaso, formulario:'F:RE' as IdFormulario}, apilarVuelta:false}))
+                                        dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:{vivienda:numVivienda, formulario:'F:RE' as IdFormulario}, apilarVuelta:false}))
                                     }}
                                 >
                                     {'RE'}
                                 </Button>
-                            ).array()}
-                        </TableCell>
-                    </TableRow>
-                ).array()}
-            </TableBody>
-        </Table>:carga.estado_carga=='recibo'?
-        <Table className="tabla-carga-hoja-de-ruta">
-            <colgroup>
-                <col style={{width:"15%"}}/>
-                <col style={{width:"15%"}}/>
-                <col style={{width:"70%"}}/>
-            </colgroup>
-            <TableHead style={{fontSize: "1.2rem"}}>
-                <TableRow className="tr-carga">
-                    <TableCell>muestra</TableCell>
-                    <TableCell>documento</TableCell>
-                    <TableCell>apellido y nombre</TableCell>
-                </TableRow>
-            </TableHead>
-            <TableBody>
-                {likeAr(hdr).filter((datosVivienda:DatosVivienda)=>datosVivienda.tem.carga==idCarga).map((datosVivienda: DatosVivienda, idCaso: IdCaso)=>
-                    <TableRow key={idCaso}>
-                        <TableCell>
-                            {datosVivienda.respuestas[c5]}
-                        </TableCell>
-                        <TableCell>
-                            {datosVivienda.respuestas[e7]}
-                        </TableCell>
-                        <TableCell>
-                            {datosVivienda.respuestas[e1]}, 
-                            {datosVivienda.respuestas[e2]}
+                            ).array()`}
                         </TableCell>
                     </TableRow>
                 ).array()}
@@ -1122,18 +1087,6 @@ export function DesplegarCarga(props:{
                     )}
                 </TableRow>
             </TableHead>
-            <TableBody>
-                <TableRow>
-                    {resumidores.map((resumidor: typeof resumidores[0], i:number)=>
-                        <TableCell key={i}>
-                            {likeAr(hdr).array()
-                                .filter((datosVivienda:DatosVivienda)=>datosVivienda.tem.carga==idCarga)
-                                .reduce((count, datosVivienda: DatosVivienda)=>count+(resumidor.f(datosVivienda)?1:0),0)
-                            }
-                        </TableCell>
-                    )}
-                </TableRow>
-            </TableBody>
         </Table>
         }
     </Paper>
@@ -1176,8 +1129,8 @@ export function DesplegarTem(props:{tem:TEM}){
     </div>
 }
 
-export function DesplegarNotasYVisitas(props:{tareas:Tareas, idCaso:IdCaso, visitas:Visita[]}){
-    const {tareas, visitas, idCaso} = props;
+export function DesplegarNotasYVisitas(props:{tareas:Tareas, forPkRaiz:ForPkRaiz, visitas:Visita[]}){
+    const {tareas, visitas, forPkRaiz} = props;
     const {miIdPer} = useSelector((state:CasoState)=>({miIdPer:state.datos.idper}));
     const [dialogoNotas, setDialogoNotas] = useState<boolean>(false);
     const [nota, setNota] = useState<string|null>(null);
@@ -1205,7 +1158,7 @@ export function DesplegarNotasYVisitas(props:{tareas:Tareas, idCaso:IdCaso, visi
                         setNota(tarea.notas)
                         setMiTarea(tarea.tarea)
                         setDialogoNotas(true)
-                        setTitulo(`Vivienda  ${idCaso} - tarea "${tarea.tarea}"`)
+                        setTitulo(`${toPlainForPk(forPkRaiz)} - tarea "${tarea.tarea}"`)
                     }}
                 >
                     <ICON.Create/>
@@ -1229,7 +1182,7 @@ export function DesplegarNotasYVisitas(props:{tareas:Tareas, idCaso:IdCaso, visi
                                     let value = event.target.value || null;
                                     setNota(value)
                                     miTarea!=null && dispatchByPass(accion_registrar_nota, {
-                                        vivienda:idCaso,
+                                        forPkRaiz,
                                         tarea: miTarea,
                                         nota: value
                                     });
@@ -1252,7 +1205,7 @@ export function DesplegarNotasYVisitas(props:{tareas:Tareas, idCaso:IdCaso, visi
                             <Grid item xs={2} sm={2}>
                                 <Button disabled={editando!=null} onClick={()=>{
                                     dispatchByPass(accion_agregar_visita,{
-                                        vivienda:idCaso,
+                                        forPkRaiz,
                                         observaciones: null
                                     });
                                     setAdding(visitas.length-1);
@@ -1278,7 +1231,7 @@ export function DesplegarNotasYVisitas(props:{tareas:Tareas, idCaso:IdCaso, visi
                                                         onChange={(event)=>{
                                                             let value = event.target.value || null;
                                                             dispatchByPass(accion_modificar_visita,{
-                                                                vivienda:idCaso,
+                                                                forPkRaiz,
                                                                 index,
                                                                 opcion:"fecha",
                                                                 valor: value
@@ -1300,7 +1253,7 @@ export function DesplegarNotasYVisitas(props:{tareas:Tareas, idCaso:IdCaso, visi
                                                         onChange={(event)=>{
                                                             let value = event.target.value || null;
                                                             dispatchByPass(accion_modificar_visita,{
-                                                                vivienda:idCaso,
+                                                                forPkRaiz,
                                                                 index,
                                                                 opcion:"hora",
                                                                 valor: value
@@ -1326,7 +1279,7 @@ export function DesplegarNotasYVisitas(props:{tareas:Tareas, idCaso:IdCaso, visi
                                                                 onChange={(event)=>{
                                                                     let value = event.target.value || null;
                                                                     dispatchByPass(accion_modificar_visita,{
-                                                                        vivienda:idCaso,
+                                                                        forPkRaiz,
                                                                         index,
                                                                         opcion:"observaciones",
                                                                         valor: value
@@ -1355,7 +1308,7 @@ export function DesplegarNotasYVisitas(props:{tareas:Tareas, idCaso:IdCaso, visi
                                                         variant="outlined"
                                                         color="secondary"
                                                         onClick={()=>{
-                                                            dispatchByPass(accion_borrar_visita, {vivienda:idCaso, index: index})
+                                                            dispatchByPass(accion_borrar_visita, {forPkRaiz, index: index})
                                                         }}
                                                     >
                                                         <ICON.DeleteOutline/>
@@ -1386,7 +1339,7 @@ export function DesplegarNotasYVisitas(props:{tareas:Tareas, idCaso:IdCaso, visi
 
 export function HojaDeRutaDespliegue(){
     var {cargas, modo, num_sincro} = useSelector((state:CasoState)=>({cargas: state.datos.cargas, modo:state.modo, num_sincro:state.datos.num_sincro}));
-    var hdr = getHdr();
+    var hojaDeRuta = getHojaDeRuta();
     var feedbackRowValidator = getFeedbackRowValidator()
     var dispatch = useDispatch();
     const updateOnlineStatus = function(){
@@ -1436,7 +1389,7 @@ export function HojaDeRutaDespliegue(){
                     <div>{my.getLocalVar('app-version')} - sincro {num_sincro}</div>
                 </div>
                 {likeAr(cargas).map((carga: Carga, idCarga: IdCarga, _, posicion:number)=>
-                    <DesplegarCarga key={idCarga} carga={carga} idCarga={idCarga} posicion={posicion} hdr={hdr} feedbackRowValidator={feedbackRowValidator}/>
+                    <DesplegarCarga key={idCarga} carga={carga} idCarga={idCarga} posicion={posicion} hojaDeRuta={hojaDeRuta} feedbackRowValidator={feedbackRowValidator}/>
                 ).array()}
             </div>
         </>
@@ -1596,13 +1549,13 @@ export function ConsultaResultados(){
     </>
 }
 
-export async function desplegarFormularioActual(opts:{modoDemo:boolean, useSessionStorage?:boolean}){
+export async function desplegarFormularioActual(opts:{modoDemo:boolean, modoAlmacenamiento:ModoAlmacenamiento, forPkRaiz?:ForPkRaiz}){
     // traer los metadatos en una "estructura"
     // traer los datos de localStorage
     // verificar el main Layout
     const store = await dmTraerDatosFormulario(opts)
     ReactDOM.render(
-        <RenderPrincipal store={store} dispatchers={dispatchers} mensajeRetorno="Volver a la hoja de ruta">
+        <RenderPrincipal store={store} dispatchers={dispatchers} mensajeRetorno={opts.forPkRaiz?"Volver al formulario":"Volver a la hoja de ruta"}>
             <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossOrigin="anonymous"></link>            
             <OpenedTabs/>
             <AppDmEncu/>

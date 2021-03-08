@@ -1,8 +1,8 @@
 import { createStore } from "redux";
 import { CasilleroBase, CasillerosImplementados, CasoState, 
     DatosVivienda, EstadoCarga, EstructuraRowValidator, 
-    FeedbackVariable, Formulario, ForPk, 
-    IdCarga, IdCasillero, IdCaso, IdDestino, IdFin, IdFormulario, IdTarea, IdVariable, 
+    FeedbackVariable, Formulario, ForPk, ForPkRaiz, 
+    IdCarga, IdCasillero, IdDestino, IdFin, IdFormulario, IdTarea, IdVariable, 
     IdUnidadAnalisis,
     InfoFormulario, 
     ModoDespliegue, 
@@ -12,7 +12,7 @@ import { CasilleroBase, CasillerosImplementados, CasoState,
 } from "./tipos";
 import { deepFreeze, datetime } from "best-globals";
 import { createReducer, createDispatchers, ActionsFrom } from "redux-typed-reducer";
-import { getHdr } from "./bypass-formulario"
+import { ModoAlmacenamiento } from "./bypass-formulario"
 import * as JSON4all from "json4all";
 import * as likeAr from "like-ar";
 import * as bestGlobals from "best-globals";
@@ -333,7 +333,8 @@ export async function saveSurvey(){
 }
 
 export async function traerEstructura(params:{operativo: string}){
-    var casillerosOriginales:{} = await my.ajax.operativo_estructura(params);
+    var estructura =  await my.ajax.operativo_estructura_completa(params);
+    var casillerosOriginales:{} = estructura.formularios;
     //TODO: GENERALIZAR
     //@ts-ignore
     // casillerosOriginales['F:F2_personas']=casillerosOriginales['F:F2'].childs.find(casillero=>casillero.data.casillero=='LP');
@@ -352,107 +353,55 @@ export async function traerEstructura(params:{operativo: string}){
                 }
             }
         ).plain();
-    var estructura={
-        formularios:casillerosTodosFormularios,
-        tareas:{} as TareasEstructura
-    };
+    estructura.formularios = casillerosTodosFormularios
     return estructura;
 }
 
-export async function dmTraerDatosFormulario(opts:{modoDemo:boolean, vivienda?: IdCaso, useSessionStorage?:boolean}){
-    opts.useSessionStorage= opts.useSessionStorage||false;
-    var createInitialState = async function createInitialState(){
-        var estructura = await traerEstructura({ operativo: OPERATIVO });
-        var initialState:CasoState={
-            estructura,
-            datos:{
-                // @ts-ignore
-                cargas:{},
-                // @ts-ignore
-                hdr:{}
-            },
-            opciones:{} as CasoState["opciones"], // poner los valores por defecto más abajo
+export async function dmTraerDatosFormulario(opts:{modoDemo:boolean, modoAlmacenamiento:ModoAlmacenamiento, forPkRaiz?:ForPkRaiz}){
+    var useSessionStorage = opts.modoAlmacenamiento == 'session';
+    var estructura = await traerEstructura({ operativo: OPERATIVO });
+    var loadState = async function loadState():Promise<CasoState>{
+        var casoState:CasoState|null = useSessionStorage?my.getSessionVar(LOCAL_STORAGE_STATE_NAME):my.getLocalVar(LOCAL_STORAGE_STATE_NAME);
+        var initialState = {
+            opciones:{
+                forPk:null,
+                pilaForPk:[],
+                modoDespliegue:'relevamiento',
+                modoDirecto:false,
+                bienvenido:true,
+                modoBorrarRespuesta:null,
+            } as CasoState["opciones"], // poner los valores por defecto más abajo
             modo:{
-                demo:false
+                //@ts-ignore es un booleano pero pongo ahí los datos de demo!
+                demo: 
+                    // @ts-ignore
+                    myOwn.config.config.ambiente=='test' || myOwn.config.config.ambiente=='demo',
             },
-            // @ts-ignore lo lleno después
-            feedbackRowValidator:{}
-        };
-        // @ts-ignore variable global
-        if(myOwn.config.config.ambiente=='produccion'){
-            // @ts-ignore lo vacio
-            initialState.datos={hdr:{}, casos:{}}
+            datos:{
+                soloLectura:false // TODO: RESTAURAR MODO https://github.com/codenautas/dmencu/issues/7
+            }
+        } as CasoState;
+        if(casoState){
+            initialState = {
+                ...initialState, 
+                datos:casoState.datos, 
+                opciones:casoState.opciones,
+            }
         }
-        var vivienda:IdCaso;
-        var formulario:IdFormulario;
-        // @ts-ignore esto se va
-        for(var vivienda in initialState.datos.hdr){
-            // calcularFeedbackEncuesta(vivienda);
+        if(opts.forPkRaiz){
+            initialState.opciones.forPk=opts.forPkRaiz;
+            initialState.opciones.modoDirecto=!!opts.forPkRaiz;
         }
         return initialState;
     }
-    var loadState = async function loadState():Promise<CasoState>{
-        var casoState:CasoState|null = opts.useSessionStorage?my.getSessionVar(LOCAL_STORAGE_STATE_NAME):my.getLocalVar(LOCAL_STORAGE_STATE_NAME);
-        if(casoState && !opts.modoDemo){
-            /*
-            if(casoState.estructura==null){
-                initialState = await createInitialState();
-                casoState = {...initialState, ...casoState};
-                casoState={
-                    ...casoState,
-                    // OJO state.opciones se modifica acá y en otro lado con este mismo cartel
-                    opciones: {
-                        ...casoState.opciones,
-                        modoDirecto: opts.vivienda?true:false,
-                        forPk: opts.vivienda?{vivienda:opts.vivienda, formulario:MAIN_FORM}:null,
-                        pilaForPk:[],
-                        bienvenido:true,
-                    }
-                }
-            }
-            */
-        }else{
-            var initialState = await createInitialState();
-            if(opts.modoDemo){
-                initialState = {
-                    ...initialState, 
-                    modo:{
-                        ...initialState.modo, 
-                        //@ts-ignore es un booleano pero pongo ahí los datos de demo!
-                        demo: initialState.datos && 
-                            // @ts-ignore
-                            myOwn.config.config.ambiente=='test' || myOwn.config.config.ambiente=='demo',
-                    }
-                };
-                if(casoState){
-                    initialState = {
-                        ...initialState, 
-                        datos:casoState.datos, 
-                        opciones:casoState.opciones,
-                    }
-                }
-            }
-            //inicializo feedbacks
-            
-            return initialState;
-        }
-        /*
-        for(var vivienda in casoState.datos.hdr){
-            casoState=calcularFeedback(casoState, {vivienda:vivienda as IdCaso, formulario: 'F:F1' as IdFormulario});
-        }
-        */
-        return casoState;
-    }
     var saveState = function saveState(state:CasoState){
-        opts.useSessionStorage?my.setSessionVar(LOCAL_STORAGE_STATE_NAME, state):my.setLocalVar(LOCAL_STORAGE_STATE_NAME, state);
+        useSessionStorage?my.setSessionVar(LOCAL_STORAGE_STATE_NAME, state):my.setLocalVar(LOCAL_STORAGE_STATE_NAME, state);
     }
     /* DEFINICION CONTROLADOR */
     var initialState:CasoState = await loadState();
     const hdrReducer = createReducer(reducers, initialState);
     /* FIN DEFINICION CONTROLADOR */
     /* CARGA Y GUARDADO DE STATE */
-
-    
     /* CREACION STORE */
     const store = createStore(hdrReducer, initialState); 
     saveState(store.getState());
@@ -460,7 +409,6 @@ export async function dmTraerDatosFormulario(opts:{modoDemo:boolean, vivienda?: 
          saveState(store.getState());
     });
     /* FIN CREACION STORE */
-
     //HDR CON STORE CREADO
     return store;
 }

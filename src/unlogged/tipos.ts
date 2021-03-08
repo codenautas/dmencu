@@ -176,14 +176,34 @@ export type Formulario = CasilleroBase & {
 
 export type CasillerosImplementados=Formulario|Bloque|Filtro|ConjuntoPreguntas|Pregunta|OpcionMultiple|Opcion|BotonFormulario|Consistencia
 
-export interface ForPk {vivienda:IdCaso, formulario:IdFormulario, hogar?:number, persona?:number}
-export type PlainForPk='{"vivienda":"10202","formulario":"F:F1","persona":null}'|'etc...';
+export type CampoPkRaiz = 'vivienda'|'etc...';
+
+export type ForPkRaiz={
+    formulario:IdFormulario, 
+} & {
+    [campo in CampoPkRaiz]?:number
+}
+
+export type CampoPk = 'vivienda'|'hogar'|'persona'|'etc...';
+export type ForPk = {
+    formulario:IdFormulario, 
+} & {
+    [campo in CampoPk]?:number
+}
+export type PlainForPk='{"formulario":"F:F1","vivienda":"10202","persona":null}'|'etc...';
+
+export type ObjetoNumeradoOArray<T> = T[] | {[n in number]:T}
 
 export type Respuestas={
         [pregunta in IdVariable]:Valor
     } & {
-        [ua in IdUnidadAnalisis]:Respuestas[]
+        [ua in IdUnidadAnalisis]:ObjetoNumeradoOArray<Respuestas>
     }
+
+export type RespuestasRaiz=Respuestas & {
+    TEM:TEM
+    $dirty:boolean
+}
 
 /*
     aclaración:
@@ -194,12 +214,10 @@ export type Respuestas={
 export type UnidadAnalisis = {
     unidad_analisis:IdUnidadAnalisis, 
     padre?:IdUnidadAnalisis, 
-    pk_agregada:IdVariable, 
+    pk_agregada:CampoPk, 
     principal?:boolean, 
     hijas: {[k in IdUnidadAnalisis]?: UnidadAnalisis}
 }
-
-export type IdCaso='10202'|'10902'|'10909'|'etc...' // el caso es una vivienda
 
 export type TEM = {
     nomcalle:string
@@ -238,7 +256,7 @@ export type Visita={
     observaciones: string | null
 }
 
-export type DatosVivienda= {
+export type  DatosVivienda= {
     respuestas: Respuestas
     tareas: Tareas
     tem: TEM
@@ -251,10 +269,6 @@ export type DatosVivienda= {
     resumenEstado:ResumenEstado
     visitas: Visita[]
     dirty?:boolean,
-}
-
-export type VivendasHdR={
-    [idCaso in IdCaso]: DatosVivienda
 }
 
 export type IdCarga="2020-07-07"|"2020-07-08"
@@ -332,6 +346,10 @@ export type EtiquetaOpts={
     etiqueta: string,
     plancha: string
 }
+
+export type HojaDeRuta = {
+    respuestas:{[ua in IdUnidadAnalisis]:RespuestasRaiz[]}
+} 
 
 export function toPlainForPk(forPk:ForPk):PlainForPk{
     // @ts-ignore sabemos que hay que hacer un JSON

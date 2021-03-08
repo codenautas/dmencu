@@ -9,7 +9,7 @@
             "request": "launch",
             "name": "Launch Program",
             "preLaunchTask": "build-all",
-            "program": "${workspaceFolder}/dist/server/server-dmencu.js",
+            "program": "${workspaceFolder}/dist/server/server/server-dmencu.js",
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ]
@@ -18,7 +18,7 @@
             "type": "node",
             "request": "launch",
             "name": "Fast Launch",
-            "program": "${workspaceFolder}/dist/server/server-dmencu.js",
+            "program": "${workspaceFolder}/dist/server/server/server-dmencu.js",
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ]
@@ -28,7 +28,7 @@
             "request": "launch",
             "name": "dumpDb",
             "preLaunchTask": "build-all",
-            "program": "${workspaceFolder}/dist/server/server-dmencu.js",
+            "program": "${workspaceFolder}/dist/server/server/server-dmencu.js",
             "args": [
                 "--dump-db"
             ],
@@ -40,7 +40,7 @@
             "type": "node",
             "request": "launch",
             "name": "Fast dumpDb",
-            "program": "${workspaceFolder}/dist/server/server-dmencu.js",
+            "program": "${workspaceFolder}/dist/server/server/server-dmencu.js",
             "args": [
                 "--dump-db"
             ],

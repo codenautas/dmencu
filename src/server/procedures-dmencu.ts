@@ -95,7 +95,13 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
         where ${quotedCondViv}
         group by t.enc, t.json_encuesta, t.resumen_estado, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area, tt.visitas
     )
-    select ${jsono(`select enc, respuestas, "resumenEstado", tem, tareas, coalesce(visitas,'[]') as visitas from viviendas`, 'enc')} as hdr,
+    select jsonb_build_object(
+            'viviendas', ${jsono(
+                `select enc, respuestas, jsonb_build_object('resumenEstado',"resumenEstado", 'tem', tem, 'tareas', tareas, 'visitas', coalesce(visitas,'[]')) as otras from viviendas`,
+                'enc',
+                'otras || respuestas'
+            )}
+        ) as respuestas,
         ${json(`
             select area as carga, observaciones_hdr as observaciones, min(fecha_asignacion) as fecha
                 from viviendas inner join areas using (area) 
@@ -140,31 +146,30 @@ function compilarExpresiones(casillero:CasilleroDeAca){
 
 export const ProceduresDmEncu : ProcedureDef[] = [
     {
-        action:'operativo_estructura_completo',
+        action:'operativo_estructura_completa',
         parameters:[
             {name:'operativo'            ,typeName:'text', references:'operativos'},
         ],
         resultOk:'desplegarFormulario',
         coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters){
-            return context.client.query(
+            var result = await context.client.query(
                 `select casilleros_jerarquizados($1) as formularios, 
-                    ${jsono(`select unidad_analisis, padre, pk_agregada, '{}'::jsonb as hijas`, 'unidad_analisis', true)} as unidades_analisis,
+                    ${jsono(`select unidad_analisis, padre, pk_agregada, '{}'::jsonb as hijas from unidad_analisis`, 'unidad_analisis')} as unidades_analisis
                 `,
                 [parameters.operativo]
-            ).fetchUniqueValue().then(function(result:any){
-                likeAr(result.value.formularios).forEach(f=>compilarExpresiones(f));
-                function completarUA(ua:UnidadAnalisis, idUa:IdUnidadAnalisis, uAs:{[k in IdUnidadAnalisis]: UnidadAnalisis}){
-                    if(ua.padre){
-                        uAs[ua.padre].hijas[idUa] = ua;
-                    }else{
-                        ua.principal=true;
-                    }
+            ).fetchUniqueRow();
+            likeAr(result.row.formularios).forEach(f=>compilarExpresiones(f));
+            function completarUA(ua:UnidadAnalisis, idUa:IdUnidadAnalisis, uAs:{[k in IdUnidadAnalisis]: UnidadAnalisis}){
+                if(ua.padre){
+                    uAs[ua.padre].hijas[idUa] = ua;
+                }else{
+                    ua.principal=true;
                 }
-                likeAr(result.value.unidades_analisis).forEach((ua, idUa)=>
-                    completarUA(ua, idUa as IdUnidadAnalisis, result.value.unidades_analisis)
-                )
-                return result.value;
-            });
+            }
+            likeAr(result.row.unidades_analisis).forEach((ua, idUa)=>
+                completarUA(ua, idUa as IdUnidadAnalisis, result.row.unidades_analisis)
+            )
+            return result.row;
         }
     },
     {
@@ -428,6 +433,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
             })
         }
     },
+    /*
     {
         action:'dm_enc_cargar',
         parameters:[
@@ -447,6 +453,32 @@ export const ProceduresDmEncu : ProcedureDef[] = [
             var {row} = await context.client.query(getHdrQuery(condviv),[OPERATIVO,parameters.enc]).fetchUniqueRow();
             return {
                 ...row,
+                soloLectura,
+                idPer:context.user.idper,
+                cargas:likeAr.createIndex(row.cargas.map(carga=>({...carga, fecha:carga.fecha?date.iso(carga.fecha).toDmy():null})), 'carga')
+            };
+        }
+    },
+    */
+    {
+        action:'dm_forpkraiz_cargar',
+        parameters:[
+            {name:'forPkRaiz'         , typeName:'jsonb'},
+        ],
+        coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
+            var be=context.be;
+            var condviv= ` t.operativo= $1 and t.enc =$2`;
+            //GENERALIZAR
+            var soloLectura = !!(await context.client.query(
+                `select *
+                    from tareas_casos
+                    where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm is not null`
+                ,
+                [OPERATIVO, parameters.forPkRaiz.vivienda, "rel"]
+            ).fetchOneRowIfExists()).rowCount;
+            var {row} = await context.client.query(getHdrQuery(condviv),[OPERATIVO,parameters.forPkRaiz.vivienda]).fetchUniqueRow();
+            return {
+                hojaDeRuta:row,
                 soloLectura,
                 idPer:context.user.idper,
                 cargas:likeAr.createIndex(row.cargas.map(carga=>({...carga, fecha:carga.fecha?date.iso(carga.fecha).toDmy():null})), 'carga')
