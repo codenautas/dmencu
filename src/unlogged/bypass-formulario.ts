@@ -251,7 +251,9 @@ export function accion_registrar_respuesta(payload:{forPk:ForPk, variable:IdVari
         encolarBackup(token, forPkRaiz, respuestasRaiz);
     }
     respuestasRaiz.$dirty = respuestasRaiz.$dirty || recentModified;
-    calcularFeedback(respuestasRaiz, forPkRaiz)
+    calcularFeedback(respuestasRaiz, forPkRaiz);
+    volcadoInicialElementosRegistrados(forPk);
+    persistirDatosByPass();
 }
 
 export function accion_registrar_nota(payload:{forPkRaiz:ForPkRaiz, tarea:IdTarea, nota:string|null}, _datosByPass:DatosByPass){
