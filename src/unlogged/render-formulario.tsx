@@ -790,21 +790,23 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
     const [mensajeDescarga, setMensajeDescarga] = useState<string|null>(null);
     const [descargaCompleta, setDescargaCompleta] = useState<boolean|null>(false);
     const [descargando, setDescargando] = useState<boolean|null>(false);
-    var botonesFormulario=[
-        {que: 'hdr'    , abr:'HdR', label:'hoja de ruta'},
-    ]
-    if(opciones.pilaForPk.length && !opciones.modoDirecto){
-        botonesFormulario.push({que: 'volver' , abr:'<=',  label:'<='          })
+    var botonesFormulario=[];
+    if(!opciones.modoDirecto){
+        botonesFormulario.push({que: 'hdr'    , abr:'HdR', label:'hoja de ruta', retroceso:0})
     }
+    opciones.pilaForPk.forEach((forPk,i)=>
+        botonesFormulario.push({que:'volver', abr:forPk.formulario.replace(/^F:/,''), label:forPk.formulario, retroceso:opciones.pilaForPk.length-i})
+    )
+    botonesFormulario.push({que:'', abr:forPk.formulario.replace(/^F:/,''), label:forPk.formulario, retroceso:0});
     return <>
         <ButtonGroup className="barra-navegacion" solo-lectura={props.soloLectura?'si':'no'} >
             {botonesFormulario.map(b=>
                 <Button color={b.que==forPk.formulario?"primary":"inherit"} variant="outlined"
-                    disabled={false}
+                    disabled={!b.que}
                     onClick={()=>
                         dispatch(
                             b.que=='hdr'?dispatchers.VOLVER_HDR({}):
-                            dispatchers.VOLVER_DE_FORMULARIO({})
+                            dispatchers.VOLVER_DE_FORMULARIO({magnitudRetroceso:b.retroceso})
                         )
                     }
                 >

@@ -49,14 +49,14 @@ var reducers={
                 }
             }
         },
-    VOLVER_DE_FORMULARIO: (_payload: {}) => 
+    VOLVER_DE_FORMULARIO: ({magnitudRetroceso}: {magnitudRetroceso:number}) => 
         function(state: CasoState){
             return {
                 ...state,
                 opciones:{
                     ...state.opciones,
-                    forPk: state.opciones.pilaForPk[state.opciones.pilaForPk.length-1]||null,
-                    pilaForPk: state.opciones.pilaForPk.slice(0,state.opciones.pilaForPk.length-1)
+                    forPk: state.opciones.pilaForPk[state.opciones.pilaForPk.length-magnitudRetroceso]||null,
+                    pilaForPk: state.opciones.pilaForPk.slice(0,state.opciones.pilaForPk.length-magnitudRetroceso)
                 }
             }
         },
