@@ -442,6 +442,7 @@ export function getFuncionHabilitar(nombreFuncionComoExpresionJs:string):Funcion
 var rowValidator = getRowValidator({getFuncionHabilitar})
 
 ////// TODOS LOS NOMBRES DE variables o formularios o casilleros deben estar en el objeto operativo
+//// QUITARLO Y REEMPLAZARLO por buscar en estructura.unidad_analisis y estructura.formulario
 export var defOperativo = {
     esVacio:(respuestas:Respuestas)=>JSON.stringify(respuestas)=='{}',
     esNorea:(respuestas:Respuestas)=>respuestas['entrea' as IdVariable]!=1,

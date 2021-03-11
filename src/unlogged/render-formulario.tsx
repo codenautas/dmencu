@@ -217,11 +217,16 @@ function takeElementOrDefault<V,K extends string,KO extends string>(k:K, object:
 }
 
 function DespliegueEncabezado(props:{casillero:CasilleroBase, leer?:boolean}){
+    const forPkNull={} as ForPk;
+    return <EncabezadoDespliegue casillero={props.casillero} leer={props.leer} forPk={forPkNull}/>;
+    /*
     const {casillero} = props;
     var classes = useStyles();
     return <Grid container alignItems="center" debe-leer={props.leer?'SI':'NO'}>
         <Grid item>
-            <Button variant="outlined" className={takeElementOrDefault(casillero.tipoc, classes, classes.root)}>{casillero.ver_id || casillero.casillero}</Button>
+            {casillero.tipoc=='B'?null:
+                <Button variant="outlined" className={takeElementOrDefault(casillero.tipoc, classes, classes.root)}>{casillero.ver_id ?? casillero.casillero}</Button>
+            }
         </Grid>
         <Grid item>
             <Typography className={takeElementOrDefault(casillero.tipoc, classes, classes.root)}>{casillero.nombre}</Typography>
@@ -230,6 +235,7 @@ function DespliegueEncabezado(props:{casillero:CasilleroBase, leer?:boolean}){
             :null}
         </Grid>
     </Grid>
+    */
 }
 
 function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, variable:IdVariable, forPk:ForPk, leer:boolean}){
@@ -347,11 +353,12 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
 
 function EncabezadoDespliegue(props:{casillero:CasilleroBase, verIdGuion?:boolean, leer?:boolean, forPk:ForPk}){
     var {casillero} = props;
-    var key=(casillero.ver_id!='-' || props.verIdGuion) && casillero.ver_id || casillero.casillero;
+    var key=casillero.ver_id ?? casillero.casillero;
     return <div 
         className="encabezado" 
         debe-leer={props.leer?'SI':'NO'} 
     >
+        {casillero.tipoc=='B'?null:
         <div id={casillero.var_name || undefined} className="id-div"
             onClick={()=>{
                 // TODO. Ver qué hacemos cuando se toca el ID de la pregutna
@@ -362,6 +369,7 @@ function EncabezadoDespliegue(props:{casillero:CasilleroBase, verIdGuion?:boolea
                 {key}
             </div>
         </div>
+        }
         <div className="nombre-div">
             <div className="nombre">{casillero.nombre}</div>
             {casillero.aclaracion?
@@ -730,7 +738,6 @@ function ConjuntoPreguntasDespliegue(props:{casillero:ConjuntoPreguntas, formula
         <DesplegarContenidoInternoBloqueOFormulario bloqueOFormulario={casillero} formulario={props.formulario} forPk={forPk} multiple={false}/>
     </div>:null;
 }
-
 
 function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Bloque|Formulario|ConjuntoPreguntas, formulario:Formulario, forPk:ForPk, multiple:boolean}){
     return <div className="casilleros">{
