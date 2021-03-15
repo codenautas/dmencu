@@ -270,7 +270,20 @@ function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, va
     var handleClick=()=>{
         dispatchByPass(accion_registrar_respuesta, {respuesta:props.valorOpcion, variable:props.variable, forPk:props.forPk})
     };
+    var handleClickBorrar=()=>{
+        dispatchByPass(accion_registrar_respuesta, {respuesta:null, variable:props.variable, forPk:props.forPk})
+    };
     return <Grid className="opcion"> 
+        <Button
+            id={`opcion-var-${props.variable}-${props.valorOpcion}-borrar`}
+            mi-variable={props.variable}
+            valor-opcion={props.valorOpcion}
+            variant="outlined"
+            className="boton-opcion"
+            onClick={handleClickBorrar}
+        >
+            x
+        </Button>
         <Button 
             id={`opcion-var-${props.variable}-${props.valorOpcion}`}
             mi-variable={props.variable}
@@ -1009,7 +1022,19 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
                 <Typography component="span" style={{margin:'0 10px'}}> vivienda {props.forPk.vivienda} </Typography>
             </>
         :null}        
-        
+        <ButtonGroup style={{margin:'0 0 0 30px'}}>
+            <Button
+                color="inherit"
+                variant="outlined"
+                onClick={async ()=>{
+                    var main_layout = document.getElementById('main_layout')!;
+                    var tiene = main_layout.getAttribute('estoy-borrando');
+                    main_layout.setAttribute('estoy-borrando',tiene=='SI'?'NO':'SI');
+                }}
+            >
+                supr
+            </Button>
+        </ButtonGroup>
     </>
 }
 
