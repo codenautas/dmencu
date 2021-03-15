@@ -7,7 +7,8 @@ import {
     focusToId,
     scrollToTop,
     scrollToBottom,
-    InputTypes
+    InputTypes,
+    materialIoIconsSvgPath
 } from "./render-general";
 import {Bloque, BotonFormulario, 
     CasilleroBase, CasoState, ConjuntoPreguntas, Consistencia, DatosVivienda,
@@ -56,6 +57,7 @@ import {
     getEstructura, 
     defOperativo,
     volcadoInicialElementosRegistrados,
+    numberOrStringIncIfArray, 
     accion_registrar_respuesta,
     accion_id_pregunta,
     accion_agregar_visita,
@@ -65,6 +67,7 @@ import {
     accion_borrar_visita
 } from "./bypass-formulario"
 
+import {arrange, html} from "js-to-html";
 
 // /*
 
@@ -74,7 +77,7 @@ type ColorValues = 'primary'|'secondary'|'default'|'inherit'
 const Button = ({variant, onClick, disabled, children, className, color, size, ...other}:{
     variant?:string,
     color?:ColorValues,
-    onClick?:()=>void,
+    onClick?:(event:MouseEvent)=>void,
     disabled?:boolean
     children:any,
     className?:string,
@@ -85,6 +88,29 @@ const Button = ({variant, onClick, disabled, children, className, color, size, .
     disabled={disabled}
     onClick={onClick}
 >{children}</button>;
+
+const Button2 = ({variant, onClick, disabled, children, className, color, size, ...other}:{
+    variant?:string,
+    color?:ColorValues,
+    onClick?:()=>void,
+    disabled?:boolean
+    children:any,
+    className?:string,
+    size?:'small'
+} & CommonAttributes)=>html.button({
+    ...other,
+    class: `btn btn${variant=='contained'?'':'-'+variant}-${(color=='default' || color=='inherit'?'secondary':color=='secondary'?'danger':color)||'secondary'} ${className||''} ${size=='small'?'btn-sm':''}`,
+    /*
+    classList:[
+        `btn`,
+        `btn${variant=='contained'?'':'-'+variant}-${(color=='default' || color=='inherit'?'secondary':color=='secondary'?'danger':color)||'secondary'}`,
+        ...(className?[className]:[]),
+        ...(size=='small'?['btn-sm']:[]),
+    ],
+    */
+    disabled,
+    $on:{click:onClick}
+}, children).create();
 
 
 const TextField = (props:{
@@ -611,6 +637,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
         formularioAAbrir:estructura.formularios[idFormularioDestino].casilleros,
     }));
     var sufijoIdElemento = toPlainForPk(forPk);
+    /*
     registrarElemento({
         id:`div-boton-formulario-${sufijoIdElemento}`, 
         attr:'esta-inhabilitada', 
@@ -623,29 +650,49 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
         // fun: (r:Respuestas)=>!habilitador(r)
         fun: (_r:Respuestas)=>false
     });
+    */
     var dispatch = useDispatch();
-    var [confirmarForzarIr, setConfirmarForzarIr] = useState<number|boolean|null>(null);
+    var [confirmarForzarIr, setConfirmarForzarIr] = useState<DefinicionFormularioAbrir|false|null>(null);
     var multipleFormularios=formularioAAbrir.unidad_analisis != props.formulario.unidad_analisis;
-    type DefinicionFormularioAbrir={num:number, actual:boolean, previo:boolean} | {num:number, actual:boolean, previo:false, esAgregar:true} | {num:false, actual:boolean, previo:true, unico:true};
-    var listaDeBotonesAbrir:DefinicionFormularioAbrir[] = [];
+    type DefinicionFormularioAbrir=
+        {num:number, actual:boolean, previo:boolean} | 
+        {num:number, actual:boolean, previo:false, esAgregar:true} | 
+        {num:false, actual:boolean, previo:true, unico:true};
     var nuevoCampoPk = defOperativo.defUA[formularioAAbrir.unidad_analisis].pk;
-    var numActual:number|null = null;
-    if(multipleFormularios){
-        // let cantForm = respuestas[formularioAAbrir.unidad_analisis].length;
-        let cantForm = 4
-        listaDeBotonesAbrir = serie({from:1, to:cantForm}).map(num=>{
-            let forPk={...props.forPk, formulario:idFormularioDestino, [nuevoCampoPk]:num};
-            if(numActual == null){
-                numActual = num;
+    var idSeccion=`seccion-boton-formulario-${casillero.casillero}-${toPlainForPk(forPk)}`;
+    var idButton=`special-button-${idSeccion}`;
+    registrarElemento<HTMLDivElement>({
+        id:idSeccion, 
+        direct:true,
+        fun: (respuestas:Respuestas, _:any, div:HTMLDivElement)=>{
+            try{
+                var listaDeBotonesAbrir:DefinicionFormularioAbrir[] = [];
+                if(multipleFormularios && casillero.salto!=null){
+                    let defFormulario:InfoFormulario = estructura.formularios['F:'+casillero.salto as IdFormulario];
+                    let defUA = estructura.unidades_analisis[defFormulario.casilleros.unidad_analisis!];
+                    let conjunto = respuestas[defFormulario.casilleros.unidad_analisis!];
+                    var numActual:number|null = null;
+                    listaDeBotonesAbrir = likeAr(conjunto).map((_, i)=>{
+                        let num:number = numberOrStringIncIfArray(i, conjunto) as number;
+                        let forPk={...props.forPk, formulario:idFormularioDestino, [nuevoCampoPk]:num};
+                        if(numActual == null){
+                            numActual = num;
+                        }
+                        return {resumen:null, num, actual: numActual == num, previo: numActual == null}
+                    }).array();
+                    if("puede agregar //TODO VER ESTO" && conjunto instanceof Array){
+                        listaDeBotonesAbrir.push({num:conjunto.length+1, esAgregar:true, actual:numActual == null, previo: false});
+                    }
+                }else{
+                    listaDeBotonesAbrir = [{num:false, unico:true, actual:false, previo:true}]
+                }
+                var todosLosBotones = likeAr(listaDeBotonesAbrir).map(defBoton=>botonFormulario(forPk, defBoton)).array();
+                arrange(document.getElementById(idSeccion)!, todosLosBotones);
+            }catch(err){
+                div.textContent='esto, FALLÉ '+err.message;
             }
-            return {resumen:null, num, actual: numActual == num, previo: numActual == null}
-        });
-        if("puede agregar //TODO VER ESTO"){
-            listaDeBotonesAbrir.push({num:cantForm+1, esAgregar:true, actual:numActual == null, previo: false});
         }
-    }else{
-        listaDeBotonesAbrir = [{num:false, unico:true, actual:false, previo:true}]
-    }
+    });
     const ir = (defBoton:DefinicionFormularioAbrir)=>{
         if(!casillero.salto){
             opciones.modoDirecto?
@@ -665,48 +712,72 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
         }
         if(confirmarForzarIr){setConfirmarForzarIr(false)}
     };
-    return <div>{listaDeBotonesAbrir.map((defBoton:DefinicionFormularioAbrir)=>(
-        <div 
-            id={`div-boton-formulario-${sufijoIdElemento}`}
-            className="seccion-boton-formulario" 
-            nuestro-validator={defBoton.actual?'actual':defBoton.previo?'valida':'todavia_no'}
-            ocultar-salteada={casillero.despliegue?.includes('ocultar')?(casillero.expresion_habilitar_js?'INHABILITAR':'SI'):'NO'}
-            tiene-valor="NO"
-        >
-            <div className="aclaracion">{casillero.aclaracion}</div>
-            <div key={defBoton.num.toString()}>
-                <Button
-                    id={`boton-formulario-${sufijoIdElemento}`}
-                    variant="outlined"
-                    color="inherit"
-                    onClick={()=>{
-                        ir(defBoton); 
-                    }}
-                >   {'esAgregar' in defBoton?'':casillero.nombre + ' ' + defBoton.num||''}
-                    {'esAgregar' in defBoton?<ICON.Add/>:casillero.salto?<ICON.Forward/>:<ICON.ExitToApp/>}
-                </Button>
+    var botonFormulario = (forPk:ForPk, defBoton:DefinicionFormularioAbrir)=>{
+        var sufijoIdElemento = toPlainForPk(forPk);
+        var id = `div-boton-formulario-${sufijoIdElemento}`;
+        return html.div({
+            id, 
+            class:"seccion-boton-formulario" , 
+            $attrs:{
+                "nuestro-validator":defBoton.actual?'actual':defBoton.previo?'valida':'todavia_no',
+                "ocultar-salteada":casillero.despliegue?.includes('ocultar')?(casillero.expresion_habilitar_js?'INHABILITAR':'SI'):'NO',
+                "tiene-valor":"NO",
+                "def-button":JSON.stringify(defBoton)
+            }
+        }, [
+            casillero.aclaracion || html.div({class:"aclaracion"}, [casillero.aclaracion]),
+            html.div([
+                Button2({
+                    id:`boton-formulario-${sufijoIdElemento}`, 
+                    variant:"outlined",
+                    color:"inherit",
+                    onClick:()=>{
+                        var button = document.getElementById(idButton)! as HTMLButtonElement;
+                        button.setAttribute('def-button', JSON.stringify(defBoton));
+                        button.click();
+                    }
+                    , children:[
+                        ('esAgregar' in defBoton?'':casillero.nombre + ' ' + defBoton.num||''),
+                        html.svg({class:"MuiSvgIcon-root", focusable:false, viewbox:"0 0 24 24", "aria-hidden":"true"},[
+                            html.path({d:('esAgregar' in defBoton?materialIoIconsSvgPath.Add:casillero.salto?materialIoIconsSvgPath.Forward:materialIoIconsSvgPath.ExitToApp)})
+                        ])
+                    ]
+                }),
+                // html.div({class:'inline-dialog', $attrs:{"inline-dialog-open": confirmarForzarIr == defBoton.num?'visible':'hidden'}},[                ])
+            ])
+            /*
                 {'esAgregar' in defBoton?<> <span>  </span> <Button
                     variant="outlined"
                     color="inherit"
                     onClick={()=>{
                     }}
                 ><ICON.Check/></Button></>:null}
-                <Dialog 
-                    className="nuestro-dialogo"
-                    open={confirmarForzarIr == defBoton.num}
-                    onClose={()=>setConfirmarForzarIr(null)}
-                >
-                    <div className="nuestro-dialogo">
-                        <Typography>No se puede avanzar al siguiente formulario.</Typography>
-                        <Typography>Quizás no terminó de contestar las preguntas correspondientes</Typography>
-                        <Typography>Quizás no corresponde en base a las respuestas obtenidas</Typography>
-                    </div>
-                    <Button color="secondary" onClick={()=>ir(defBoton)}>forzar</Button>
-                    <Button color="primary" variant="contained" onClick={()=>setConfirmarForzarIr(null)}>Entendido</Button>
-                </Dialog>
             </div>
+            */
+        ])
+    }
+    return <div>
+        <div id={idSeccion}>
         </div>
-    ))}</div>
+        <Button className="special-button" id={idButton}
+            onClick={(event)=>{
+                ir(JSON.parse((event.target! as unknown as HTMLButtonElement).getAttribute('def-button')!))
+            }}
+        >ir (interno)</Button>
+        <Dialog 
+            className="nuestro-dialogo"
+            open={!!confirmarForzarIr}
+            onClose={()=>setConfirmarForzarIr(null)}
+        >
+            <div className="nuestro-dialogo">
+                <Typography>No se puede avanzar al siguiente formulario.</Typography>
+                <Typography>Quizás no terminó de contestar las preguntas correspondientes</Typography>
+                <Typography>Quizás no corresponde en base a las respuestas obtenidas</Typography>
+            </div>
+            <Button color="secondary" onClick={()=>confirmarForzarIr && ir(confirmarForzarIr)}>forzar</Button>
+            <Button color="primary" variant="contained" onClick={()=>setConfirmarForzarIr(null)}>Entendido</Button>
+        </Dialog>
+    </div>
 }
 
 function CasilleroDesconocido(props:{casillero:CasilleroBase}){

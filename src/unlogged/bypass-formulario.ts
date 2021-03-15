@@ -640,7 +640,7 @@ export async function calcularFeedbackUnidadAnalisis(
     }
 }
 
-function numberOrStringIncIfArray(numberOrString:number|string, object:object|any[]):(number|string){
+export function numberOrStringIncIfArray(numberOrString:number|string, object:object|any[]):(number|string){
     // @ts-expect-error estoy usando isNaN para ver si es o no un número sumable
     if(isNaN(numberOrString)){
         return numberOrString;
