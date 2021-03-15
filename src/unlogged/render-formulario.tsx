@@ -655,9 +655,9 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     var [confirmarForzarIr, setConfirmarForzarIr] = useState<DefinicionFormularioAbrir|false|null>(null);
     var multipleFormularios=formularioAAbrir.unidad_analisis != props.formulario.unidad_analisis;
     type DefinicionFormularioAbrir=
-        {num:number, actual:boolean, previo:boolean} | 
-        {num:number, actual:boolean, previo:false, esAgregar:true} | 
-        {num:false, actual:boolean, previo:true, unico:true};
+        {forPk:ForPk, num:number, actual:boolean, previo:boolean} | 
+        {forPk:ForPk, num:number, actual:boolean, previo:false, esAgregar:true} | 
+        {forPk:ForPk, num:false, actual:boolean, previo:true, unico:true};
     var nuevoCampoPk = defOperativo.defUA[formularioAAbrir.unidad_analisis].pk;
     var idSeccion=`seccion-boton-formulario-${casillero.casillero}-${toPlainForPk(forPk)}`;
     var idButton=`special-button-${idSeccion}`;
@@ -678,15 +678,17 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                         if(numActual == null){
                             numActual = num;
                         }
-                        return {resumen:null, num, actual: numActual == num, previo: numActual == null}
+                        return {forPk, resumen:null, num, actual: numActual == num, previo: numActual == null}
                     }).array();
                     if("puede agregar //TODO VER ESTO" && conjunto instanceof Array){
-                        listaDeBotonesAbrir.push({num:conjunto.length+1, esAgregar:true, actual:numActual == null, previo: false});
+                        let forPk={...props.forPk, formulario:idFormularioDestino, [nuevoCampoPk]:conjunto.length+1};
+                        listaDeBotonesAbrir.push({forPk, num:conjunto.length+1, esAgregar:true, actual:numActual == null, previo: false});
                     }
                 }else{
-                    listaDeBotonesAbrir = [{num:false, unico:true, actual:false, previo:true}]
+                    let forPk={...props.forPk, formulario:idFormularioDestino};
+                    listaDeBotonesAbrir = [{forPk, num:false, unico:true, actual:false, previo:true}]
                 }
-                var todosLosBotones = likeAr(listaDeBotonesAbrir).map(defBoton=>botonFormulario(forPk, defBoton)).array();
+                var todosLosBotones = likeAr(listaDeBotonesAbrir).map(defBoton=>botonFormulario(defBoton)).array();
                 arrange(document.getElementById(idSeccion)!, todosLosBotones);
             }catch(err){
                 div.textContent='esto, FALLÉ '+err.message;
@@ -712,7 +714,8 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
         }
         if(confirmarForzarIr){setConfirmarForzarIr(false)}
     };
-    var botonFormulario = (forPk:ForPk, defBoton:DefinicionFormularioAbrir)=>{
+    var botonFormulario = (defBoton:DefinicionFormularioAbrir)=>{
+        var forPk:ForPk = defBoton.forPk;
         var sufijoIdElemento = toPlainForPk(forPk);
         var id = `div-boton-formulario-${sufijoIdElemento}`;
         return html.div({
