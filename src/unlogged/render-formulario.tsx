@@ -279,7 +279,7 @@ function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, va
             mi-variable={props.variable}
             valor-opcion={props.valorOpcion}
             variant="outlined"
-            className="boton-opcion"
+            className="boton-opcion boton-opcion-borrar"
             onClick={handleClickBorrar}
         >
             x
@@ -1032,7 +1032,7 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
                     main_layout.setAttribute('estoy-borrando',tiene=='SI'?'NO':'SI');
                 }}
             >
-                supr
+                borrar
             </Button>
         </ButtonGroup>
     </>
