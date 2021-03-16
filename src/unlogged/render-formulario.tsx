@@ -84,7 +84,7 @@ const Button = ({variant, onClick, disabled, children, className, color, size, .
     size?:'small'
 } & CommonAttributes)=><button 
     {...other}
-    className={`btn btn${variant=='contained'?'':'-'+variant}-${(color=='default' || color=='inherit'?'secondary':color=='secondary'?'danger':color)||'secondary'} ${className||''} ${size=='small'?'btn-sm':''}`}
+    className={`btn btn${variant=='contained'?'':'-'+(variant=='outlined'?'outline':variant)}-${(color=='default' || color=='inherit'?'secondary':color=='secondary'?'danger':color)||'secondary'} ${className||''} ${size=='small'?'btn-sm':''}`}
     disabled={disabled}
     onClick={onClick}
 >{children}</button>;
@@ -99,15 +99,7 @@ const Button2 = ({variant, onClick, disabled, children, className, color, size, 
     size?:'small'
 } & CommonAttributes)=>html.button({
     ...other,
-    class: `btn btn${variant=='contained'?'':'-'+variant}-${(color=='default' || color=='inherit'?'secondary':color=='secondary'?'danger':color)||'secondary'} ${className||''} ${size=='small'?'btn-sm':''}`,
-    /*
-    classList:[
-        `btn`,
-        `btn${variant=='contained'?'':'-'+variant}-${(color=='default' || color=='inherit'?'secondary':color=='secondary'?'danger':color)||'secondary'}`,
-        ...(className?[className]:[]),
-        ...(size=='small'?['btn-sm']:[]),
-    ],
-    */
+    class: `btn btn${variant=='contained'?'':'-'+(variant=='outlined'?'outline':variant)}-${(color=='default' || color=='inherit'?'secondary':color=='secondary'?'danger':color)||'secondary'} ${className||''} ${size=='small'?'btn-sm':''}`,
     disabled,
     $on:{click:onClick}
 }, children).create();
@@ -289,14 +281,14 @@ function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, va
             mi-variable={props.variable}
             valor-opcion={props.valorOpcion}
             variant="outlined"
-            className="boton-opcion"
+            className="boton-opcion boton-opcion-seleccion"
             onClick={handleClick}
         >
             <Grid container wrap="nowrap">
                 <Grid className="id">
                     {casillero.ver_id || casillero.casillero}
                 </Grid>
-                <Grid debe-leer={casillero.despliegue?.includes('si_leer')?'SI':casillero.despliegue?.includes('no_leer')?'NO':props.leer?'SI':'NO'}>
+                <Grid className="opcion-texto" debe-leer={casillero.despliegue?.includes('si_leer')?'SI':casillero.despliegue?.includes('no_leer')?'NO':props.leer?'SI':'NO'}>
                     <Typography>{casillero.nombre}</Typography>
                     {casillero.aclaracion?
                         <Typography >{casillero.aclaracion}</Typography>

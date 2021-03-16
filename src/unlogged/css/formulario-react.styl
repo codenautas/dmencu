@@ -381,7 +381,7 @@ boton-id-div-invalido()
     color #050
   [nuestro-validator=actual]
     background-color #FFF
-    .MuiButton-outlined
+    .boton-opcion-seleccion
       border-color blue
     .MuiInput-underline:after
       border-bottom-color blue
@@ -394,7 +394,7 @@ boton-id-div-invalido()
         color blue
   [nuestro-validator=omitida]
     background repeating-linear-gradient(45deg, #fff, #fff 10px, #ff9 10px, #ff9 12px)
-    .MuiButton-outlined
+    .boton-opcion-seleccion
       border-color blue
     .MuiInput-underline:after
       border-bottom-color blue
@@ -498,6 +498,9 @@ boton-id-div-invalido()
   .id
     font-weight bold
     margin 4px
+  .opcion-texto
+    margin 6px
+    margin-top 4px
 
 [modo-despliegue=relevamiento]
   .opcion
@@ -508,8 +511,10 @@ boton-id-div-invalido()
       border 1px solid #555
       font-weight bold
       margin 4px
+      margin-left 8px
       margin-top 12px
       height 10px
+      width 10px
     [opcion-seleccionada="SI"]
       .id
         background-color #555
@@ -676,3 +681,12 @@ app-cache-version, #app-dm-version
 [estoy-borrando="SI"]
   .boton-opcion-borrar[opcion-seleccionada="SI"]
     visibility visible
+
+.btn.boton-opcion-seleccion
+  min-width 64px
+  display inline-flex
+  padding 0px
+
+.formulario, .hoja-de-ruta
+  .btn
+    display inline-flex  
