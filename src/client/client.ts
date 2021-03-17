@@ -59,6 +59,9 @@ async function abrirDirecto(forPkRaiz:ForPkRaiz){
         cargarEstructura(estructura);
     }
     var carga = await my.ajax.dm_forpkraiz_cargar({forPkRaiz}) as {hojaDeRuta:HojaDeRuta};
+    if(!carga.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!]){
+        throw new Error(`No se encuentra la vivienda ${forPkRaiz.vivienda!}`);
+    }
     cargarHojaDeRuta({...carga, modoAlmacenamiento:'session'});
 }
 

@@ -91,7 +91,7 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
             'asignado', asignado
         )) as tareas,
         min(fecha_asignacion) as fecha_asignacion
-        from casos t join tareas_casos tt using (operativo, enc)
+        from casos t left join tareas_casos tt using (operativo, enc)
         where ${quotedCondViv}
         group by t.enc, t.json_encuesta, t.resumen_estado, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area, tt.visitas
     )
@@ -99,7 +99,7 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
             'viviendas', ${jsono(
                 `select enc, respuestas, jsonb_build_object('resumenEstado',"resumenEstado", 'tem', tem, 'tareas', tareas, 'visitas', coalesce(visitas,'[]')) as otras from viviendas`,
                 'enc',
-                'otras || respuestas'
+                `otras || coalesce(respuestas,'{}'::jsonb)`
             )}
         ) as respuestas,
         ${json(`
