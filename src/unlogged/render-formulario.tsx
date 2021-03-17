@@ -96,7 +96,8 @@ const Button2 = ({variant, onClick, disabled, children, className, color, size, 
     disabled?:boolean
     children:any,
     className?:string,
-    size?:'small'
+    size?:'small',
+    $attrs?:{}
 } & CommonAttributes)=>html.button({
     ...other,
     class: `btn btn${variant=='contained'?'':'-'+(variant=='outlined'?'outline':variant)}-${(color=='default' || color=='inherit'?'secondary':color=='secondary'?'danger':color)||'secondary'} ${className||''} ${size=='small'?'btn-sm':''}`,
@@ -318,10 +319,10 @@ function SiNoDespliegue(props:{casilleroConOpciones:IcasilleroConOpciones, forPk
 
 function registradorDeVariable(pregunta:Pregunta|OpcionMultiple){
     return (
-        respuestas:Respuestas, feedbackAll: FormStructureState<IdVariable,IdFin>, elemento:HTMLDivElement
+        respuestas:Respuestas, feedbackForm: FormStructureState<IdVariable,IdFin>, elemento:HTMLDivElement
     )=>{
         var valorActual = pregunta.var_name == null ? null : respuestas[pregunta.var_name];
-        var feedbackRow = feedbackAll.feedback;
+        var feedbackRow = feedbackForm.feedback;
         var feedbackVar = pregunta.var_name == null ? null : feedbackRow[pregunta.var_name];
         var tieneValor=valorActual!=null && feedbackVar!=null?(feedbackVar.conProblema?'invalido':'valido'):'NO';
         var estado:EstadoVariable; 
@@ -669,7 +670,11 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     registrarElemento<HTMLDivElement>({
         id:idSeccion, 
         direct:true,
-        fun: (respuestas:Respuestas, _:any, div:HTMLDivElement)=>{
+        fun: (respuestas:Respuestas, _: FormStructureState<IdVariable,IdFin>, div:HTMLDivElement,
+                feedbackAll:{
+                    [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> // resultado del rowValidator para estado.forPk
+                }
+            )=>{
             try{
                 var listaDeBotonesAbrir:DefinicionFormularioAbrir[] = [];
                 if(multipleFormularios && casillero.salto!=null){
@@ -693,7 +698,9 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                     let forPk={...props.forPk, formulario:idFormularioDestino};
                     listaDeBotonesAbrir = [{forPk, num:false, unico:true, actual:false, previo:true}]
                 }
-                var todosLosBotones = likeAr(listaDeBotonesAbrir).map(defBoton=>botonFormulario(defBoton)).array();
+                var todosLosBotones = likeAr(listaDeBotonesAbrir).map(defBoton=>
+                    botonFormulario(defBoton, feedbackAll[toPlainForPk(defBoton.forPk)]??{resumen:'vacio'})
+                ).array();
                 arrange(document.getElementById(idSeccion)!, todosLosBotones);
             }catch(err){
                 div.textContent='esto, FALLÉ '+err.message;
@@ -719,10 +726,11 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
         }
         if(confirmarForzarIr){setConfirmarForzarIr(false)}
     };
-    var botonFormulario = (defBoton:DefinicionFormularioAbrir)=>{
+    var botonFormulario = (defBoton:DefinicionFormularioAbrir, feedbackForm:FormStructureState<IdVariable,IdFin>)=>{
         var forPk:ForPk = defBoton.forPk;
         var sufijoIdElemento = toPlainForPk(forPk);
         var id = `div-boton-formulario-${sufijoIdElemento}`;
+        var estado = feedbackForm.resumen;
         return html.div({
             id, 
             class:"seccion-boton-formulario" , 
@@ -743,9 +751,12 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                         var button = document.getElementById(idButton)! as HTMLButtonElement;
                         button.setAttribute('def-button', JSON.stringify(defBoton));
                         button.click();
+                    },
+                    $attrs:{
+                        "resumen-estado":estado!='vacio'?estado: defBoton.actual?'actual':defBoton.previo?estado:'todavia_no',
                     }
                     , children:[
-                        ('esAgregar' in defBoton?'':casillero.nombre + ' ' + defBoton.num||''),
+                        ('esAgregar' in defBoton?'':casillero.nombre + ' ' + (defBoton.num||'')),
                         html.svg({class:"MuiSvgIcon-root", focusable:false, viewbox:"0 0 24 24", "aria-hidden":"true"},[
                             html.path({d:('esAgregar' in defBoton?materialIoIconsSvgPath.Add:casillero.salto?materialIoIconsSvgPath.Forward:materialIoIconsSvgPath.ExitToApp)})
                         ])
@@ -1164,7 +1175,7 @@ export function DesplegarCarga(props:{
                                 <Button
                                     key={idTarea}
                                     size="small"
-                                    resumen-vivienda={datosVivienda.resumenEstado}
+                                    resumen-estado={datosVivienda.resumenEstado}
                                     variant="outlined"
                                     onClick={()=>{
                                         ////////////////// OJOJOJOJO sacar el formulario de la tabla de tareas GENERALIZAR TODO

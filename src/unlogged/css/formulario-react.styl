@@ -12,26 +12,30 @@ anchoNormal(ancho)
   max-width 768px
   margin-top 75px //ajustado para /CAMPO
 
+.formulario, .hoja-de-ruta
+  [resumen-estado="ok"]
+    background-color  #5CB85C
+    color  #FFFFFF
+  [resumen-estado="cita pactada"]
+    background-color  #3f51b5
+    color  #FFFFFF
+  [resumen-estado="vacio"]
+    background-color  FFFFFF
+    color  #000000
+  [resumen-estado="con problemas"]
+    background-color  red
+    color  #FFFFFF
+  [resumen-estado="incompleto"]
+    background-color  yellow
+    color  #000000
+  [resumen-estado="no rea"]
+    background-color  gray
+    color  #FFFFFF
+  [resumen-estado="actual"]
+    background-color  blue
+    color  #FFFFFF
+
 .hoja-de-ruta
-  .MuiButton-root
-    &[resumen-vivienda="ok"]
-      background-color  #5CB85C
-      color  #FFFFFF
-    &[resumen-vivienda="cita pactada"]
-      background-color  #3f51b5
-      color  #FFFFFF
-    &[resumen-vivienda="vacio"]
-      background-color  FFFFFF
-      color  #000000
-    &[resumen-vivienda="con problemas"]
-      background-color  red
-      color  #FFFFFF
-    &[resumen-vivienda="incompleto"]
-      background-color  yellow
-      color  #000000
-    &[resumen-vivienda="no rea"]
-      background-color  gray
-      color  #FFFFFF
   .carga
     margin-bottom 12px;
     .informacion-carga
@@ -690,3 +694,9 @@ app-cache-version, #app-dm-version
 .formulario, .hoja-de-ruta
   .btn
     display inline-flex  
+
+.MuiToolbar-root
+  .btn
+    background-color #EEE
+    &:disabled, &.disabled
+      background-color #BBF

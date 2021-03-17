@@ -113,7 +113,11 @@ export function getEstructura(){
 
 type ElementosRegistrables = HTMLDivElement|HTMLButtonElement|HTMLInputElement;
 
-type DirectFunction<T, Result> = (respuestas:Respuestas, feedback: FormStructureState<IdVariable,IdFin>, elemento:T) => Result
+type DirectFunction<T, Result> = (respuestas:Respuestas, feedbackForm: FormStructureState<IdVariable,IdFin>, elemento:T,
+    feedbackAll:{
+        [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> // resultado del rowValidator para estado.forPk
+    }
+) => Result
 
 type RegistroElemento<T extends ElementosRegistrables> = {
     id: string, 
@@ -200,7 +204,7 @@ export function volcadoInicialElementosRegistrados(forPkRaiz:ForPkRaiz){
             console.log('BUSCANDO el elemento registrado ',id,'no está en el DOM')
             continue;
         }
-        var value = def.fun(respuestasAumentadas, datosByPass.feedbackRowValidator[toPlainForPk(forPkRaiz)], def.elemento);
+        var value = def.fun(respuestasAumentadas, datosByPass.feedbackRowValidator[toPlainForPk(forPkRaiz)], def.elemento, datosByPass.feedbackRowValidator);
         if('prop' in def){
             setValorDistinto(def.elemento, def.prop, value)
         }
