@@ -120,7 +120,7 @@ const TextField = (props:{
     multiline?:boolean,
     onChange?:(event:any)=>void,
     onFocus?:(event:any)=>void,
-    onBlur?:(event:any)=>void,
+    onBlur?:(event:any, valor:any)=>void,
 })=><input
     disabled={props.disabled}
     className={props.className}
@@ -129,7 +129,7 @@ const TextField = (props:{
     type={props.type}
     onChange={props.onChange}
     onFocus={props.onFocus}
-    onBlur={props.onBlur}
+    onBlur={(evt)=>props.onBlur?.(evt, evt.target.value)}
     placeholder={props.label}
 />;
 
@@ -491,11 +491,11 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple, onChange:(valor
                 //     value = pregunta.despliegue?.includes('entero') && value?value.replace('.',''):value
                 //     setValor(value)
                 // }}
-                // onFocus={(_event)=>setEditando(true)}
-                // onBlur={(_event)=>{
-                //     props.onChange(valor)
-                //     setEditando(false)
-                // }}
+                onFocus={(_event)=>setEditando(true)}
+                onBlur={(_event, valor)=>{
+                    props.onChange(valor);
+                    setEditando(false)
+                }}
             />
         </div>
         {disabled?null:
