@@ -146,11 +146,11 @@ export function registrarElemento<T extends ElementosRegistrables>(def:RegistroE
     registroElementos[def.id] = def;
 }
 
-type RespuestasForPkComun = {respuestas:Respuestas, respuestasRaiz:RespuestasRaiz, forPkRaiz:ForPkRaiz}
+type RespuestasForPkComun = {respuestas:Respuestas, respuestasRaiz:RespuestasRaiz, forPkRaiz:ForPkRaiz, unidadAnalisis:UnidadAnalisis}
 
 function respuestasForPk(forPk:ForPk):RespuestasForPkComun
-function respuestasForPk(forPk:ForPk, conAumentadas:true):RespuestasForPkComun & {respuestasAumentadas:Respuestas}
-function respuestasForPk(forPk:ForPk, conAumentadas?:boolean):RespuestasForPkComun & {respuestasAumentadas?:Respuestas} {
+function respuestasForPk(forPk:ForPk, conAumentadas:true, agregarSiFalta?:boolean):RespuestasForPkComun & {respuestasAumentadas:Respuestas}
+function respuestasForPk(forPk:ForPk, conAumentadas?:boolean, agregarSiFalta?:boolean):RespuestasForPkComun & {respuestasAumentadas?:Respuestas} {
     var respuestasAumentadas = {} as Respuestas;
     // @ts-expect-error lo que sobrar de respuestas no me importa...
     var respuestas = datosByPass.hojaDeRuta.respuestas as Respuestas;
@@ -172,7 +172,20 @@ function respuestasForPk(forPk:ForPk, conAumentadas?:boolean):RespuestasForPkCom
         if(valorPkOPosicion == undefined){
             throw new Error(`falta un valor para ${JSON.stringify(uaDef.pk_agregada)}`)
         }
-        respuestas = respuestas[unidad_analisis][(respuestas[unidad_analisis] instanceof Array?valorPkOPosicion - 1:valorPkOPosicion)];
+        if(respuestas[unidad_analisis] == null){
+            respuestas[unidad_analisis] = [];
+        }
+        var respuestasAnterior=respuestas;
+        let posicion = respuestas[unidad_analisis] instanceof Array?valorPkOPosicion - 1:valorPkOPosicion
+        respuestas = respuestas[unidad_analisis][posicion];
+        if(respuestas == null){
+            if(agregarSiFalta){
+                respuestas = {} as Respuestas
+                respuestasAnterior[unidad_analisis][posicion] = respuestas
+            }else{
+                throw new Error(`No existe el elemento '${posicion}' en la unidad_analisis '${unidad_analisis}'`);
+            }
+        }
         forPkRaiz ||= forPkApilada;
         // @ts-expect-error Sé que es raíz por cómo estoy revolviendo la pila
         respuestasRaiz ||= respuestas;
@@ -183,7 +196,7 @@ function respuestasForPk(forPk:ForPk, conAumentadas?:boolean):RespuestasForPkCom
     return {
         respuestas, respuestasAumentadas, 
         // @ts-ignore Sé que la pila tiene al menos un elemento por lo tanto esto está lleno seguro. 
-        respuestasRaiz, forPkRaiz
+        respuestasRaiz, forPkRaiz, unidadAnalisis: uaDef
     }
 }
 
@@ -293,10 +306,9 @@ export function accion_borrar_visita(payload: {forPkRaiz:ForPkRaiz, index:number
     // visitas.splice(index, 1);
 }
 
-export function accion_agregar_formulario(_payload: {forPk:ForPk}, _datosByPass:DatosByPass){
-    // REVISAR!!!! TODO
-    // var {state, respuestas} = respuestasForPk(state, payload.forPk, true);
-    // return calcularFeedback(state)
+export function accion_agregar_formulario({forPk}: {forPk:ForPk}, _datosByPass:DatosByPass){
+    var {respuestas, unidadAnalisis, respuestasAumentadas} = respuestasForPk(forPk, true, true);
+    calcularFeedbackUnidadAnalisis(datosByPass.feedbackRowValidator, estructura.formularios, respuestas, unidadAnalisis.unidad_analisis, forPk, respuestasAumentadas)
 }
 
 export function dispatchByPass<T>(

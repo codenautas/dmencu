@@ -690,9 +690,10 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                         }
                         return {forPk, resumen:null, num, actual: numActual == num, previo: numActual == null}
                     }).array();
-                    if("puede agregar //TODO VER ESTO" && conjunto instanceof Array){
-                        let forPk={...props.forPk, formulario:idFormularioDestino, [nuevoCampoPk]:conjunto.length+1};
-                        listaDeBotonesAbrir.push({forPk, num:conjunto.length+1, esAgregar:true, actual:numActual == null, previo: false});
+                    if("puede agregar //TODO VER ESTO" && (conjunto instanceof Array || conjunto == null)){
+                        let nuevoValorPk=(conjunto==null ? 0 : conjunto.length) + 1;
+                        let forPk={...props.forPk, formulario:idFormularioDestino, [nuevoCampoPk]:nuevoValorPk};
+                        listaDeBotonesAbrir.push({forPk, num:nuevoValorPk, esAgregar:true, actual:numActual == null, previo: false});
                     }
                 }else{
                     let forPk={...props.forPk, formulario:idFormularioDestino};
@@ -899,6 +900,7 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
         <ButtonGroup className="barra-navegacion" solo-lectura={props.soloLectura?'si':'no'} >
             {botonesFormulario.map(b=>
                 <Button color={b.que==forPk.formulario?"primary":"inherit"} variant="outlined"
+                    key={toPlainForPk(forPk)}
                     disabled={!b.que}
                     onClick={()=>
                         dispatch(
@@ -1067,7 +1069,7 @@ function FormularioDespliegue(props:{forPk:ForPk}){
         <>
             <AppBar position="fixed" color={soloLectura?'secondary':'primary'}>
                 <Toolbar>
-                    <BarraDeNavegacion forPk={forPk} soloLectura={soloLectura || false} modoDirecto={false}/>
+                    <BarraDeNavegacion forPk={forPk} soloLectura={soloLectura || false} modoDirecto={opciones.modoDirecto}/>
                 </Toolbar>
             </AppBar>
             <main>
