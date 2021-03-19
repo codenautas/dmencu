@@ -663,6 +663,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     type DefinicionFormularioAbrir=
         {forPk:ForPk, num:number, actual:boolean, previo:boolean} | 
         {forPk:ForPk, num:number, actual:boolean, previo:false, esAgregar:true} | 
+        {forPk:ForPk, num:number, actual:boolean, previo:false, esConfirmar:true} | 
         {forPk:ForPk, num:false, actual:boolean, previo:true, unico:true};
     var nuevoCampoPk = defOperativo.defUA[formularioAAbrir.unidad_analisis].pk;
     var idSeccion=`seccion-boton-formulario-${casillero.casillero}-${toPlainForPk(forPk)}`;
@@ -694,6 +695,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                         let nuevoValorPk=(conjunto==null ? 0 : conjunto.length) + 1;
                         let forPk={...props.forPk, formulario:idFormularioDestino, [nuevoCampoPk]:nuevoValorPk};
                         listaDeBotonesAbrir.push({forPk, num:nuevoValorPk, esAgregar:true, actual:numActual == null, previo: false});
+                        listaDeBotonesAbrir.push({forPk, num:nuevoValorPk, esConfirmar:true, actual:numActual == null, previo: false});
                     }
                 }else{
                     let forPk={...props.forPk, formulario:idFormularioDestino};
@@ -729,7 +731,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     };
     var botonFormulario = (defBoton:DefinicionFormularioAbrir, feedbackForm:FormStructureState<IdVariable,IdFin>)=>{
         var forPk:ForPk = defBoton.forPk;
-        var sufijoIdElemento = toPlainForPk(forPk);
+        var sufijoIdElemento = toPlainForPk(forPk)+('esConfirmar' in defBoton?'-listo':'');
         var id = `div-boton-formulario-${sufijoIdElemento}`;
         var estado = feedbackForm.resumen;
         return html.div({
@@ -757,9 +759,9 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                         "resumen-estado":estado!='vacio'?estado: defBoton.actual?'actual':defBoton.previo?estado:'todavia_no',
                     }
                     , children:[
-                        ('esAgregar' in defBoton?'':casillero.nombre + ' ' + (defBoton.num||'')),
+                        ('esAgregar' in defBoton?'agregar':'esConfirmar' in defBoton?'Listo':casillero.nombre + ' ' + (defBoton.num||'')),
                         html.svg({class:"MuiSvgIcon-root", focusable:false, viewbox:"0 0 24 24", "aria-hidden":"true"},[
-                            html.path({d:('esAgregar' in defBoton?materialIoIconsSvgPath.Add:casillero.salto?materialIoIconsSvgPath.Forward:materialIoIconsSvgPath.ExitToApp)})
+                            html.path({d:('esAgregar' in defBoton?materialIoIconsSvgPath.Add:'esConfirmar' in defBoton?materialIoIconsSvgPath.Check:casillero.salto?materialIoIconsSvgPath.Forward:materialIoIconsSvgPath.ExitToApp)})
                         ])
                     ]
                 }),
