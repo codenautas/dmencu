@@ -15,15 +15,13 @@ import { CasilleroBase, CasillerosImplementados, CasoState,
     Opcion, PlainForPk, Respuestas, RespuestasRaiz, ResumenEstado,
     Tareas, TareasEstructura, TEM, Valor, Visita, 
     toPlainForPk,
+    ModoAlmacenamiento, 
     UnidadAnalisis
 } from "./tipos";
 
 const GLOVAR_DATOSBYPASS='datosbypass';
 const GLOVAR_MODOBYPASS='modobypass';
 const GLOVAR_ESTRUCTURA='estructura';
-
-export type ModoAlmacenamiento = 'session'| // cuando sea para una sola pestaña, se usa en modo directo,
-                                 'local'    // para todo el dispositivo, se usa al cargar hojas de ruta entres
 
 type DatosByPass = {
     hojaDeRuta:HojaDeRuta
@@ -250,7 +248,7 @@ export function setValorDistinto<T extends {}, N extends keyof T>(
     }
 }
 
-function calcularVariablesBotonFormulario(forPk:ForPk){
+function calcularVariablesBotonFormulario(_forPk:ForPk){
     
 };
 
@@ -289,7 +287,7 @@ export function accion_registrar_nota(payload:{forPkRaiz:ForPkRaiz, tarea:IdTare
     console.log("FALTA // TODO")
 }
 
-export function accion_agregar_visita(payload:{forPkRaiz:ForPkRaiz, observaciones:string|null}, datosByPass:DatosByPass){
+export function accion_agregar_visita(payload:{forPkRaiz:ForPkRaiz, observaciones:string|null}, _datosByPass:DatosByPass){
     let { forPkRaiz, observaciones } = payload;
     /*
     if(!datosByPass.hojaDeRuta[vivienda].visitas){
@@ -305,13 +303,13 @@ export function accion_agregar_visita(payload:{forPkRaiz:ForPkRaiz, observacione
     */
 }
 
-export function accion_modificar_visita(payload: {forPkRaiz:ForPkRaiz, index:number, opcion:keyof Visita , valor:string|null}, datosByPass:DatosByPass){
+export function accion_modificar_visita(payload: {forPkRaiz:ForPkRaiz, index:number, opcion:keyof Visita , valor:string|null}, _datosByPass:DatosByPass){
     let { forPkRaiz, index, opcion, valor} = payload;
     // var visitas = datosByPass.hojaDeRuta[vivienda].visitas;
     // visitas[index][opcion] = valor;
 }
 
-export function accion_borrar_visita(payload: {forPkRaiz:ForPkRaiz, index:number}, datosByPass:DatosByPass){
+export function accion_borrar_visita(payload: {forPkRaiz:ForPkRaiz, index:number}, _datosByPass:DatosByPass){
     let { forPkRaiz, index} = payload;
     // var visitas = datosByPass.hojaDeRuta[vivienda].visitas;
     // visitas.splice(index, 1);

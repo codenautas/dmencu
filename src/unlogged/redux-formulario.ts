@@ -12,7 +12,7 @@ import { CasilleroBase, CasillerosImplementados, CasoState,
 } from "./tipos";
 import { deepFreeze, datetime } from "best-globals";
 import { createReducer, createDispatchers, ActionsFrom } from "redux-typed-reducer";
-import { ModoAlmacenamiento } from "./bypass-formulario"
+import { ModoAlmacenamiento } from "./tipos"
 import * as JSON4all from "json4all";
 import * as likeAr from "like-ar";
 import * as bestGlobals from "best-globals";

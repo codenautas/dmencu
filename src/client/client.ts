@@ -12,7 +12,7 @@ const OPERATIVO = 'etoi211';
 const OPERATIVO_ACTUAL = 'etoi211';
 
 async function traerHdr(opts:{modoDemo:boolean}){
-    await dmTraerDatosFormulario(opts);
+    await dmTraerDatosFormulario({...opts, modoAlmacenamiento:'local'});
     history.replaceState(null, '', `${location.origin+location.pathname}/../campo`);
     location.reload();   
 }
@@ -54,7 +54,7 @@ async function sincronizarDatos(state:CasoState|null){
 }
 
 async function abrirDirecto(forPkRaiz:ForPkRaiz){
-    if(!getEstructura()){
+    if(!getEstructura() || my.config.config.devel){
         var estructura = await traerEstructura({operativo:OPERATIVO})
         cargarEstructura(estructura);
     }

@@ -11,6 +11,9 @@ import {FormStructureState, Structure, Feedback} from "row-validator";
 export const LOCAL_STORAGE_STATE_NAME ='hdr-campo-0.6';
 export const LOCAL_STORAGE_ESTRUCTURA_NAME ='estructura-0.6';
 
+export type ModoAlmacenamiento = 'session'| // cuando sea para una sola pestaña, se usa en modo directo,
+                                 'local'    // para todo el dispositivo, se usa al cargar hojas de ruta entres
+
 export type IdOpcion = number
 export type IdVariable = 'v1'|'v2'|'v3'|'etc...'
 export type IdPregunta = 'P1'|'P2'|'etc...'
@@ -163,6 +166,7 @@ export type BotonFormulario = CasilleroBase & {
     tipovar?:null
     primera_variable?:null
     var_name_BF?:IdVariable
+    longitud?:string
 }
 
 export type Formulario = CasilleroBase & {

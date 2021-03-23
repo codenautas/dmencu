@@ -701,7 +701,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                         let debeAgregarOlisto = numActual == null && (cantidadEsperada == null || cantidadEsperada != (conjunto !=null && conjunto.length)) 
                             && (estadoDelBoton =='valida' || esVarActual);
                         listaDeBotonesAbrir.push({forPk, num:nuevoValorPk, esAgregar:true, actual:debeAgregarOlisto, previo: false});
-                        listaDeBotonesAbrir.push({forPk, num:nuevoValorPk, esConfirmar:true, actual:debeAgregarOlisto && (!casillero.longitud || nuevoValorPk > casillero.longitud), previo: false});
+                        listaDeBotonesAbrir.push({forPk, num:nuevoValorPk, esConfirmar:true, actual:debeAgregarOlisto && (!casillero.longitud || nuevoValorPk > Number(casillero.longitud)), previo: false});
                     }
                 }else{
                     let forPk={...props.forPk, formulario:idFormularioDestino};
