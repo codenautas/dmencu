@@ -671,22 +671,26 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     registrarElemento<HTMLDivElement>({
         id:idSeccion, 
         direct:true,
-        fun: (respuestas:Respuestas, _: FormStructureState<IdVariable,IdFin>, div:HTMLDivElement,
+        fun: (respuestasAumentadas:Respuestas, feedbackRow: FormStructureState<IdVariable,IdFin>, div:HTMLDivElement,
                 feedbackAll:{
                     [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> // resultado del rowValidator para estado.forPk
                 }
             )=>{
             try{
                 var listaDeBotonesAbrir:DefinicionFormularioAbrir[] = [];
+                var esVarActual = feedbackRow.actual == '$B.F:'+casillero.salto;
                 if(multipleFormularios && casillero.salto!=null){
                     let defFormulario:InfoFormulario = estructura.formularios['F:'+casillero.salto as IdFormulario];
                     let defUA = estructura.unidades_analisis[defFormulario.casilleros.unidad_analisis!];
-                    let conjunto = respuestas[defFormulario.casilleros.unidad_analisis!];
+                    let conjunto = respuestasAumentadas[defFormulario.casilleros.unidad_analisis!];
+                    let cantidadEsperada = respuestasAumentadas[casillero.expresion_habilitar as IdVariable];
                     var numActual:number|null = null;
+                    var estadoDelBoton = feedbackRow.feedback['$B.F:'+casillero.salto as IdVariable].estado
                     listaDeBotonesAbrir = likeAr(conjunto).map((_, i)=>{
                         let num:number = numberOrStringIncIfArray(i, conjunto) as number;
                         let forPk={...props.forPk, formulario:idFormularioDestino, [nuevoCampoPk]:num};
-                        if(numActual == null){
+                        var feedback = feedbackAll[toPlainForPk(forPk)];
+                        if(numActual == null && feedback.resumen == "vacio" && estadoDelBoton =='valida'){
                             numActual = num;
                         }
                         return {forPk, resumen:null, num, actual: numActual == num, previo: numActual == null}
@@ -694,12 +698,14 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                     if("puede agregar //TODO VER ESTO" && (conjunto instanceof Array || conjunto == null)){
                         let nuevoValorPk=(conjunto==null ? 0 : conjunto.length) + 1;
                         let forPk={...props.forPk, formulario:idFormularioDestino, [nuevoCampoPk]:nuevoValorPk};
-                        listaDeBotonesAbrir.push({forPk, num:nuevoValorPk, esAgregar:true, actual:numActual == null, previo: false});
-                        listaDeBotonesAbrir.push({forPk, num:nuevoValorPk, esConfirmar:true, actual:numActual == null, previo: false});
+                        let debeAgregarOlisto = numActual == null && (cantidadEsperada == null || cantidadEsperada != (conjunto !=null && conjunto.length)) 
+                            && (estadoDelBoton =='valida' || esVarActual);
+                        listaDeBotonesAbrir.push({forPk, num:nuevoValorPk, esAgregar:true, actual:debeAgregarOlisto, previo: false});
+                        listaDeBotonesAbrir.push({forPk, num:nuevoValorPk, esConfirmar:true, actual:debeAgregarOlisto && (!casillero.longitud || nuevoValorPk > casillero.longitud), previo: false});
                     }
                 }else{
                     let forPk={...props.forPk, formulario:idFormularioDestino};
-                    listaDeBotonesAbrir = [{forPk, num:false, unico:true, actual:false, previo:true}]
+                    listaDeBotonesAbrir = [{forPk, num:false, unico:true, actual:esVarActual, previo:true}]
                 }
                 var todosLosBotones = likeAr(listaDeBotonesAbrir).map(defBoton=>
                     botonFormulario(defBoton, feedbackAll[toPlainForPk(defBoton.forPk)]??{resumen:'vacio'})
@@ -899,10 +905,10 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
     )
     botonesFormulario.push({que:'', abr:forPk.formulario.replace(/^F:/,''), label:forPk.formulario, retroceso:0});
     return <>
-        <ButtonGroup className="barra-navegacion" solo-lectura={props.soloLectura?'si':'no'} >
-            {botonesFormulario.map(b=>
+        <ButtonGroup key="formularios" className="barra-navegacion" solo-lectura={props.soloLectura?'si':'no'} >
+            {botonesFormulario.map((b,i)=>
                 <Button color={b.que==forPk.formulario?"primary":"inherit"} variant="outlined"
-                    key={toPlainForPk(forPk)}
+                    key={`${i}-${b.que}-${b.retroceso}`}
                     disabled={!b.que}
                     onClick={()=>
                         dispatch(
@@ -916,10 +922,23 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
                 </Button>
             )}
         </ButtonGroup>
+        <ButtonGroup key="borrar" style={{margin:'0 0 0 30px'}}>
+            <Button
+                color="inherit"
+                variant="outlined"
+                onClick={async ()=>{
+                    var main_layout = document.getElementById('main_layout')!;
+                    var tiene = main_layout.getAttribute('estoy-borrando');
+                    main_layout.setAttribute('estoy-borrando',tiene=='SI'?'NO':'SI');
+                }}
+            >
+                borrar
+            </Button>
+        </ButtonGroup>
         {props.soloLectura?<Typography component="span" style={{margin:'0 10px'}}> (Solo Lectura) </Typography>:null}
         {props.modoDirecto?
             <>
-                <ButtonGroup style={{margin:'0 0 0 30px'}}>
+                <ButtonGroup key="volver_y_grabar" style={{margin:'0 0 0 30px'}}>
                     <Button
                         color="inherit"
                         variant="outlined"
@@ -969,7 +988,6 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
                         </DialogActions>
                     </Dialog>
                     {!props.soloLectura?
-                        <>
                             <Button
                                 color="inherit"
                                 variant="outlined"
@@ -990,7 +1008,9 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
                             >
                                 <ICON.Save/>
                             </Button>
-                            <Dialog
+                    :null}
+                    {!props.soloLectura?
+                        <Dialog
                                 open={!!mensajeDescarga}
                                 //hace que no se cierre el mensaje
                                 onClose={()=>setMensajeDescarga(mensajeDescarga)}
@@ -1023,25 +1043,11 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
                                     }
                                 </DialogActions>
                             </Dialog>
-                        </>
                     :null}
                 </ButtonGroup>
                 <Typography component="span" style={{margin:'0 10px'}}> vivienda {props.forPk.vivienda} </Typography>
             </>
-        :null}        
-        <ButtonGroup style={{margin:'0 0 0 30px'}}>
-            <Button
-                color="inherit"
-                variant="outlined"
-                onClick={async ()=>{
-                    var main_layout = document.getElementById('main_layout')!;
-                    var tiene = main_layout.getAttribute('estoy-borrando');
-                    main_layout.setAttribute('estoy-borrando',tiene=='SI'?'NO':'SI');
-                }}
-            >
-                borrar
-            </Button>
-        </ButtonGroup>
+        :null}
     </>
 }
 

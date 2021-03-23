@@ -162,6 +162,7 @@ export type BotonFormulario = CasilleroBase & {
     var_name?:null
     tipovar?:null
     primera_variable?:null
+    var_name_BF?:IdVariable
 }
 
 export type Formulario = CasilleroBase & {

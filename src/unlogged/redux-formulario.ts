@@ -165,7 +165,7 @@ function aplanarLaCurva<T extends {tipoc:string}>(casillerosData:IDataSeparada<T
 
 // type AnyRef<T extends {}>=[T, keyof T];
 
-function rellenarVariablesYOpciones(estructura:EstructuraRowValidator, casillero:CasillerosImplementados, unidadAnalisis?:string|null,
+function rellenarVariablesYOpciones(idFormulario:IdFormulario, estructura:EstructuraRowValidator, casillero:CasillerosImplementados, unidadAnalisis?:string|null,
     subordinadaVar?:IdVariable, subordinadaValor?:any
 ){
     if(casillero.var_name != null || casillero.tipoc=='FILTRO'){
@@ -201,22 +201,17 @@ function rellenarVariablesYOpciones(estructura:EstructuraRowValidator, casillero
         }
         estructura.variables[var_name]=variableDef;
     } else if (casillero.tipoc=='BF'){
-        // agregamos 100 botones 1, 2 ,3 ,4 ,5 ,6 (múltiples)
-        // c/u salto listo
-        // 1 variable mas $FOR:M1:listo guaramos
+        var var_name = '$B.F:'+casillero.salto as IdVariable;
+        casillero.var_name_BF = var_name;
         let variableDef={
-            tipo:'opciones',
-            // @ts-ignore optativo podría no existir, quedará null.
-            optativa:casillero.optativo!,
-            opciones:{1:{}},
-            funcionHabilitar:casillero.expresion_habilitar_js,
-            libre:casillero.despliegue?.includes('libre')
+            tipo:'texto',
+            libre:true
         }
-        estructura.variables['$FOR:'+casillero.salto as IdVariable]=variableDef;
+        estructura.variables[var_name]=variableDef;
     }
     if(casillero.casilleros){
         casillero.casilleros.forEach((casilleroHijo:CasillerosImplementados)=>
-            rellenarVariablesYOpciones(estructura, casilleroHijo, unidadAnalisis, casillero.var_name?casillero.var_name:casillero.tipoc=='O'?subordinadaVar:undefined,casillero.tipoc=='O'?casillero.casillero:undefined)
+            rellenarVariablesYOpciones(idFormulario, estructura, casilleroHijo, unidadAnalisis, casillero.var_name?casillero.var_name:casillero.tipoc=='O'?subordinadaVar:undefined,casillero.tipoc=='O'?casillero.casillero:undefined)
         )
     }
 }
@@ -251,9 +246,9 @@ function rellenarDestinos(estructura:EstructuraRowValidator, destinos:RegistroDe
     }
 }
 
-function generarEstructuraRowValidator(casillero:CasillerosImplementados):EstructuraRowValidator{
+function generarEstructuraRowValidator(casillero:CasillerosImplementados, idFormulario: IdFormulario):EstructuraRowValidator{
     var estructuraIncompleta:EstructuraRowValidator={variables:{}, marcaFin:'fin'} as unknown as EstructuraRowValidator;
-    rellenarVariablesYOpciones(estructuraIncompleta, casillero, 
+    rellenarVariablesYOpciones(idFormulario, estructuraIncompleta, casillero, 
         // @ts-ignore ver si cualquier cosa puede tener unidad_analisis
         casillero.unidad_analisis
     );
@@ -342,14 +337,14 @@ export async function traerEstructura(params:{operativo: string}){
     //@ts-ignore
     var casillerosTodosFormularios:{[f in IdFormulario]:{casilleros:Formulario, estructuraRowValidator:EstructuraRowValidator}}=
         likeAr(casillerosOriginales).map(
-            (casillerosJerarquizados:any, id)=>{
+            (casillerosJerarquizados:any, idFormulario)=>{
                 var casillerosAplanados:CasillerosImplementados = aplanarLaCurva(casillerosJerarquizados);
                 if(casillerosAplanados.tipoc=='F' && casillerosAplanados.formulario_principal){
-                    mainForm=id;
+                    mainForm=idFormulario;
                 }
                 return {
                     casilleros: casillerosAplanados,
-                    estructuraRowValidator: generarEstructuraRowValidator(casillerosAplanados)
+                    estructuraRowValidator: generarEstructuraRowValidator(casillerosAplanados, idFormulario)
                 }
             }
         ).plain();
@@ -391,6 +386,7 @@ export async function dmTraerDatosFormulario(opts:{modoDemo:boolean, modoAlmacen
         if(opts.forPkRaiz){
             initialState.opciones.forPk=opts.forPkRaiz;
             initialState.opciones.modoDirecto=!!opts.forPkRaiz;
+            initialState.opciones.pilaForPk=[];
         }
         return initialState;
     }

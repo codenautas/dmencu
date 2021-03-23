@@ -113,7 +113,7 @@ export function getEstructura(){
 
 type ElementosRegistrables = HTMLDivElement|HTMLButtonElement|HTMLInputElement;
 
-type DirectFunction<T, Result> = (respuestas:Respuestas, feedbackForm: FormStructureState<IdVariable,IdFin>, elemento:T,
+type DirectFunction<T, Result> = (respuestasAumentadas:Respuestas, feedbackForm: FormStructureState<IdVariable,IdFin>, elemento:T,
     feedbackAll:{
         [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> // resultado del rowValidator para estado.forPk
     }
@@ -250,6 +250,11 @@ export function setValorDistinto<T extends {}, N extends keyof T>(
     }
 }
 
+function calcularVariablesBotonFormulario(forPk:ForPk){
+    
+};
+
+
 export function accion_id_pregunta(_payload:{pregunta: IdPregunta, forPk: ForPk}, _datosByPass:DatosByPass){
 }
 
@@ -257,6 +262,11 @@ export function accion_registrar_respuesta(payload:{forPk:ForPk, variable:IdVari
     let token = 'AVERIGUAR TODO'
     let { forPk, respuesta, variable } = payload;
     var {respuestas, respuestasRaiz, forPkRaiz}  = respuestasForPk(forPk);
+    if(respuesta == ''){
+        respuesta = null;
+    }else if(estructura.formularios[forPk.formulario].estructuraRowValidator.variables[variable].tipo=='numero'){
+        respuesta = Number(respuesta);
+    }
     var unidad_analisis = estructura.formularios[forPk.formulario];
     
     var recentModified = respuestas[variable] != respuesta
@@ -269,6 +279,7 @@ export function accion_registrar_respuesta(payload:{forPk:ForPk, variable:IdVari
     }
     respuestasRaiz.$dirty = respuestasRaiz.$dirty || recentModified;
     calcularFeedback(respuestasRaiz, forPkRaiz);
+    calcularVariablesBotonFormulario(forPk);
     volcadoInicialElementosRegistrados(forPk);
     persistirDatosByPass();
 }
@@ -309,6 +320,7 @@ export function accion_borrar_visita(payload: {forPkRaiz:ForPkRaiz, index:number
 export function accion_agregar_formulario({forPk}: {forPk:ForPk}, _datosByPass:DatosByPass){
     var {respuestas, unidadAnalisis, respuestasAumentadas} = respuestasForPk(forPk, true, true);
     calcularFeedbackUnidadAnalisis(datosByPass.feedbackRowValidator, estructura.formularios, respuestas, unidadAnalisis.unidad_analisis, forPk, respuestasAumentadas)
+    calcularVariablesBotonFormulario(forPk);
 }
 
 export function dispatchByPass<T>(
@@ -464,17 +476,17 @@ export var defOperativo = {
     esNorea:(respuestas:Respuestas)=>respuestas['entrea' as IdVariable]!=1,
     UAprincipal:'viviendas' as IdUnidadAnalisis,
     defUA:{
-        hogares  :{ pk: 'hogar'  , incluidas:['personas'], idsFor:['F:S1', 'F:A1']  },
+        hogares  :{ pk: 'hogar'  , incluidas:['personas'], idsFor:['F:A1', 'F:S1']  },
         personas :{ pk: 'persona', incluidas:[]          , idsFor:['F:S1_P', 'F:I1']},
         viviendas:{ pk: false    , incluidas:['hogares'] , idsFor:['F:RE']          }
     } as unknown as {[i in IdUnidadAnalisis]:{pk:IdVariable, incluidas:IdUnidadAnalisis[], idsFor:IdFormulario[]}},
     defFor:{
         'F:RE':{arbolUA:[]},
         'F:S1':{arbolUA:['hogares']},
-        'F:A1':{arbolUA:['hogares']},
+        'F:A1':{hermano:true, arbolUA:['hogares']},
         'F:S1_P':{arbolUA:['hogares', 'personas']},
         'F:I1':{arbolUA:['hogares', 'personas']}
-    } as unknown as {[f in IdFormulario]:{arbolUA:IdUnidadAnalisis[]}}
+    } as unknown as {[f in IdFormulario]:{arbolUA:IdUnidadAnalisis[], hermano?:true}}
 }
 ///// ABAJO de esta línea no puede haber otros nombres de variables o formularios o casilleros en general
 
@@ -526,100 +538,7 @@ function encolarBackup(token:string|undefined, forPkRaiz:ForPkRaiz, respuestasRa
 
 function variablesCalculadas(_respuestasRaiz: Respuestas){
     return; 
-    // TODO: GENERALIZAR
-//    var cp='cp' as IdVariable;
-//    var _personas_incompletas = '_personas_incompletas' as IdVariable
-//    var p9='p9' as IdVariable;
-//    var p11='p11' as IdVariable;
-//    var tipo_seleccion = 'tipo_seleccion' as IdVariable;
-//    var tipo_relevamiento = 'tipo_relevamiento' as IdVariable;
-//    //@ts-ignore
-//    var cantidadPersonasActual:number = datosVivienda.respuestas.personas?.length||0;
-//    //@ts-ignore
-//    var personasIncompletas=datosVivienda.respuestas.personas.filter(p=>!p.p1 || !p.p2 || !p.p3 || p.p3>=18 && !p.p4).length;
-//    /*
-//    if(
-//        (datosVivienda.respuestas[cp]||1)==cantidadPersonasActual
-//        && datosVivienda.respuestas[_personas_incompletas]==personasIncompletas
-//        && (datosVivienda.respuestas[p9]==null && datosVivienda.respuestas[p11]==null)
-//    ) return datosVivienda;
-//    */
-//    datosVivienda=bestGlobals.changing({respuestas:{personas:[{}]}},datosVivienda) // deepCopy
-//    var respuestas = datosVivienda.respuestas as unknown as {
-//        cp:number, personas:Persona[],
-//        _personas_incompletas:number, 
-//        _edad_maxima:number, 
-//        _edad_minima:number, 
-//        d4:number|null, d5:number|null, d5c:number|null, 
-//        p9:number|null, p11:number|null, p12:string|null,
-//        dv4:number|null, g1:number|null,
-//        c5:string|null,
-//        c5ok:number|null
-//    };
-//    if(respuestas.c5==null){
-//        respuestas.c5ok=null;
-//    }else{
-//        respuestas.c5 = respuestas.c5.replace(/[\+\*\.# _\/,]/g,'-');
-//        if(!/-/.test(respuestas.c5) && respuestas.c5.length>4){
-//            respuestas.c5=respuestas.c5.substr(0,4)+'-'+respuestas.c5.substr(4);
-//        }
-//        respuestas.c5ok=controlarCodigoDV2(respuestas.c5)?1:2;
-//    }
-//    if(respuestas.dv4==2 && respuestas.g1==6 && respuestas.p9==null){
-//        respuestas.p9=1;
-//    }
-//    if(respuestas.d4==1){
-//        respuestas.d5c=respuestas.d5c||respuestas.d5;
-//        respuestas.d5=null;
-//    }else{
-//        respuestas.d5=respuestas.d5||respuestas.d5c;
-//        respuestas.d5c=null;
-//    }
-//    respuestas.personas.forEach(p=>{if(p.p3<18) p.p4=null});
-//    if(respuestas.p9==2){
-//        respuestas.cp=Math.max(respuestas.personas.length,respuestas.cp)+1
-//        respuestas.p9=null;
-//    }
-//    if(respuestas.cp>MAXCP) respuestas.cp=MAXCP;
-//    if(respuestas.cp<respuestas.personas.length){
-//        respuestas.personas=respuestas.personas.filter(p=>p.p1||p.p3);
-//    }
-//    if(respuestas.cp>respuestas.personas.length){
-//        while(respuestas.cp>respuestas.personas.length){
-//            respuestas.personas.push({} as Persona)
-//        }
-//    }
-//    if(respuestas.personas.length==0){
-//        respuestas.personas.push({} as Persona)
-//    }
-//    respuestas._personas_incompletas=respuestas.personas.filter(
-//        p=>!p.p1 || !p.p2 || !p.p3 
-//            || p.p3>=18 && (!p.p4 && datosVivienda.respuestas[tipo_seleccion]==2 && datosVivienda.respuestas[tipo_relevamiento]==1)
-//    ).length;
-//    respuestas._edad_maxima=respuestas.personas.reduce((acc,p)=>Math.max(p.p3,acc),0);
-//    respuestas._edad_minima=respuestas.personas.reduce((acc,p)=>Math.min(p.p3,acc),99);
-//    if(respuestas.p9!=1){
-//        respuestas.p11=null;
-//        respuestas.p12=null;
-//    }
-//    if(respuestas.p9==1 && !respuestas.p11 && respuestas._personas_incompletas==0){
-//        var sortear=likeAr(respuestas.personas).filter(
-//            p=>p.p3>=18 && (
-//                datosVivienda.respuestas[tipo_seleccion]==1 && datosVivienda.respuestas[tipo_relevamiento]==1
-//                || datosVivienda.respuestas[tipo_seleccion]==1 && datosVivienda.respuestas[tipo_relevamiento]==2 && p.p6==1
-//                || datosVivienda.respuestas[tipo_seleccion]==2 && datosVivienda.respuestas[tipo_relevamiento]==1 && p.p4==1
-//                || datosVivienda.respuestas[tipo_seleccion]==2 && datosVivienda.respuestas[tipo_relevamiento]==2 && p.p5==1
-//            )
-//        ).map((p,i)=>({p0:num(i)+1, ...p})).array();
-//        sortear.sort(bestGlobals.compareForOrder([{column:"p3"},{column:"p2"},{column:"p1"},{column:"p0"}]));
-//        var posicionSorteada=((num(datosVivienda.tem.nrocatastral)*13+num(datosVivienda.tem.piso))*17 % 3127) % sortear.length
-//        respuestas.p11=sortear[posicionSorteada].p0;
-//        respuestas.p12 = respuestas.personas[respuestas.p11-1].p1;
-//    }
-//    return datosVivienda;
 }
-
-// total_h>1 & edad==2 & 
 
 export async function calcularFeedbackUnidadAnalisis(
     feedbackRowValidator:{ [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> },
@@ -627,32 +546,43 @@ export async function calcularFeedbackUnidadAnalisis(
     respuestas:Respuestas, 
     UA:IdUnidadAnalisis, 
     forPk:ForPk,
-    respuestasAumentadas:Respuestas // incluyen la de todos los padres y ansestros
+    respuestasAumentadas:Respuestas, // incluyen la de todos los padres y ansestros,
+    respuestasPadre?:Respuestas,
 ){
     // recorriend UA personas y mascotas
     for(var UAincluida of defOperativo.defUA[UA].incluidas){
         var pkNueva = defOperativo.defUA[UAincluida].pk;
         var conjuntoRespuestasUA = respuestas[UAincluida];
-        likeAr(conjuntoRespuestasUA).forEach((respuestas, valorPkOPosicion)=>{
+        likeAr(conjuntoRespuestasUA).forEach((respuestasHijo, valorPkOPosicion)=>{
             var valorPk = numberOrStringIncIfArray(valorPkOPosicion, conjuntoRespuestasUA);
             calcularFeedbackUnidadAnalisis(
                 feedbackRowValidator, 
                 formularios, 
-                respuestas, 
+                respuestasHijo, 
                 UAincluida, 
                 {...forPk, [pkNueva]:valorPk},
-                {...respuestasAumentadas, ...respuestas, [pkNueva]:valorPk}
+                {...respuestasAumentadas, ...respuestasHijo, [pkNueva]:valorPk},
+                respuestas
             );
         })
     }
     // S1 , A1
-    for(var formulario of defOperativo.defUA[UA].idsFor){
-        var plainForPk:PlainForPk = toPlainForPk({...forPk, formulario})
-        feedbackRowValidator[plainForPk]=
-            rowValidator(
-                formularios[formulario].estructuraRowValidator, 
-                respuestasAumentadas
-            )
+    for(var esHermano of [true, false]){
+        for(var formulario of defOperativo.defUA[UA].idsFor) if(!!esHermano == !!defOperativo.defFor[formulario].hermano){
+            var plainForPk:PlainForPk = toPlainForPk({...forPk, formulario})
+            feedbackRowValidator[plainForPk]=
+                rowValidator(
+                    formularios[formulario].estructuraRowValidator, 
+                    respuestasAumentadas
+                )
+            var resumen = feedbackRowValidator[plainForPk].resumen;
+            var resumenOrNull = resumen == 'vacio' ? null : resumen
+            if(esHermano){
+                respuestas['$B.'+formulario as IdVariable] = resumenOrNull;
+            }else if(respuestasPadre != null){
+                respuestasPadre['$B.'+formulario as IdVariable] = resumenOrNull;
+            }
+        }
     }
 }
 

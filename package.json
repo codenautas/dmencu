@@ -27,7 +27,7 @@
     "rel-enc": "^1.2.4",
     "meta-enc": "^1.2.2",
     "procesamiento": "^1.0.2",
-    "row-validator": "^0.7.0",
+    "row-validator": "^0.7.1",
     "typed-controls": "^0.8.25",
     "qrcode": "^1.4.4"
   },
