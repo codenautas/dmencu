@@ -661,10 +661,11 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     var [confirmarForzarIr, setConfirmarForzarIr] = useState<DefinicionFormularioAbrir|false|null>(null);
     var multipleFormularios=formularioAAbrir.unidad_analisis != props.formulario.unidad_analisis;
     type DefinicionFormularioAbrir=
-        {forPk:ForPk, num:number, actual:boolean, previo:boolean} | 
+        ({forPk:ForPk, num:number, actual:boolean, previo:boolean} | 
         {forPk:ForPk, num:number, actual:boolean, previo:false, esAgregar:true} | 
         {forPk:ForPk, num:number, actual:boolean, previo:false, esConfirmar:true} | 
-        {forPk:ForPk, num:false, actual:boolean, previo:true, unico:true};
+        {forPk:ForPk, num:false, actual:boolean, previo:true, unico:true})
+        & {esConfirmar?:true, esAgregar?:true};
     var nuevoCampoPk = defOperativo.defUA[formularioAAbrir.unidad_analisis].pk;
     var idSeccion=`seccion-boton-formulario-${casillero.casillero}-${toPlainForPk(forPk)}`;
     var idButton=`special-button-${idSeccion}`;
@@ -701,7 +702,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                         let debeAgregarOlisto = numActual == null && (cantidadEsperada == null || cantidadEsperada != (conjunto !=null && conjunto.length)) 
                             && (estadoDelBoton =='valida' || esVarActual);
                         listaDeBotonesAbrir.push({forPk, num:nuevoValorPk, esAgregar:true, actual:debeAgregarOlisto, previo: false});
-                        listaDeBotonesAbrir.push({forPk, num:nuevoValorPk, esConfirmar:true, actual:debeAgregarOlisto && (!casillero.longitud || nuevoValorPk > Number(casillero.longitud)), previo: false});
+                        listaDeBotonesAbrir.push({forPk, num:nuevoValorPk - 1, esConfirmar:true, actual:debeAgregarOlisto && (!casillero.longitud || nuevoValorPk > Number(casillero.longitud)), previo: false});
                     }
                 }else{
                     let forPk={...props.forPk, formulario:idFormularioDestino};
@@ -727,7 +728,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
             if(multipleFormularios){
                 // @ts-ignore forPk y sus componentes
                 nuevaForPk[nuevoCampoPk] = defBoton.num
-                if('esAgregar' in defBoton){
+                if(defBoton.esAgregar){
                     dispatchByPass(accion_agregar_formulario,{forPk:nuevaForPk});
                 }
             }
@@ -737,7 +738,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     };
     var botonFormulario = (defBoton:DefinicionFormularioAbrir, feedbackForm:FormStructureState<IdVariable,IdFin>)=>{
         var forPk:ForPk = defBoton.forPk;
-        var sufijoIdElemento = toPlainForPk(forPk)+('esConfirmar' in defBoton?'-listo':'');
+        var sufijoIdElemento = toPlainForPk(forPk)+(defBoton.esConfirmar?'-listo':'');
         var id = `div-boton-formulario-${sufijoIdElemento}`;
         var estado = feedbackForm.resumen;
         return html.div({
@@ -757,24 +758,30 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                     variant:"outlined",
                     color:"inherit",
                     onClick:()=>{
-                        var button = document.getElementById(idButton)! as HTMLButtonElement;
-                        button.setAttribute('def-button', JSON.stringify(defBoton));
-                        button.click();
+                        if(defBoton.esConfirmar){
+                            if(defBoton.num){
+                                dispatchByPass(accion_registrar_respuesta,{forPk:props.forPk, variable:casillero.expresion_habilitar as IdVariable, respuesta:defBoton.num});
+                            }
+                        }else{
+                            var button = document.getElementById(idButton)! as HTMLButtonElement;
+                            button.setAttribute('def-button', JSON.stringify(defBoton));
+                            button.click();
+                        }
                     },
                     $attrs:{
                         "resumen-estado":estado!='vacio'?estado: defBoton.actual?'actual':defBoton.previo?estado:'todavia_no',
                     }
                     , children:[
-                        ('esAgregar' in defBoton?'agregar':'esConfirmar' in defBoton?'Listo':casillero.nombre + ' ' + (defBoton.num||'')),
+                        (defBoton.esAgregar?'agregar':defBoton.esConfirmar?'Listo':casillero.nombre + ' ' + (defBoton.num||'')),
                         html.svg({class:"MuiSvgIcon-root", focusable:false, viewbox:"0 0 24 24", "aria-hidden":"true"},[
-                            html.path({d:('esAgregar' in defBoton?materialIoIconsSvgPath.Add:'esConfirmar' in defBoton?materialIoIconsSvgPath.Check:casillero.salto?materialIoIconsSvgPath.Forward:materialIoIconsSvgPath.ExitToApp)})
+                            html.path({d:(defBoton.esAgregar?materialIoIconsSvgPath.Add:defBoton.esConfirmar?materialIoIconsSvgPath.Check:casillero.salto?materialIoIconsSvgPath.Forward:materialIoIconsSvgPath.ExitToApp)})
                         ])
                     ]
                 }),
                 // html.div({class:'inline-dialog', $attrs:{"inline-dialog-open": confirmarForzarIr == defBoton.num?'visible':'hidden'}},[                ])
             ])
             /*
-                {'esAgregar' in defBoton?<> <span>  </span> <Button
+                {defBoton.esAgregar?<> <span>  </span> <Button
                     variant="outlined"
                     color="inherit"
                     onClick={()=>{
