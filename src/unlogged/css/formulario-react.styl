@@ -376,8 +376,8 @@ boton-id-div-invalido()
     flex-shrink 0
     flex-grow 0
 
-[tiene-valor=invalido]
-  boton-id-div-invalido()
+// [tiene-valor=invalido]
+//  boton-id-div-invalido()
 
 [modo-despliegue=estricto], [modo-despliegue=relevamiento]
   [nuestro-validator=optativa_sd]
@@ -686,6 +686,10 @@ app-cache-version, #app-dm-version
   visibility hidden
 
 [estoy-borrando="SI"]
+  .boton-opcion-borrar[opcion-seleccionada="SI"]
+    visibility visible
+
+[tiene-valor=invalido]
   .boton-opcion-borrar[opcion-seleccionada="SI"]
     visibility visible
 

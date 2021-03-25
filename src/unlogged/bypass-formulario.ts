@@ -256,7 +256,7 @@ function calcularVariablesBotonFormulario(_forPk:ForPk){
 export function accion_id_pregunta(_payload:{pregunta: IdPregunta, forPk: ForPk}, _datosByPass:DatosByPass){
 }
 
-export function accion_registrar_respuesta(payload:{forPk:ForPk, variable:IdVariable, respuesta:Valor}, _datosByPass:DatosByPass){
+export function accion_registrar_respuesta(payload:{forPk:ForPk, variable:IdVariable, respuesta:Valor, onAlreadyExists?:()=>void}, _datosByPass:DatosByPass){
     let token = 'AVERIGUAR TODO'
     let { forPk, respuesta, variable } = payload;
     var {respuestas, respuestasRaiz, forPkRaiz}  = respuestasForPk(forPk);
@@ -266,7 +266,6 @@ export function accion_registrar_respuesta(payload:{forPk:ForPk, variable:IdVari
         respuesta = Number(respuesta);
     }
     var unidad_analisis = estructura.formularios[forPk.formulario];
-    
     var recentModified = respuestas[variable] != respuesta
     if(recentModified){
         respuestas[variable] = respuesta;
@@ -280,6 +279,9 @@ export function accion_registrar_respuesta(payload:{forPk:ForPk, variable:IdVari
     calcularVariablesBotonFormulario(forPk);
     volcadoInicialElementosRegistrados(forPk);
     persistirDatosByPass();
+    if(!recentModified && payload.onAlreadyExists != null){
+        payload.onAlreadyExists();
+    }
 }
 
 export function accion_registrar_nota(payload:{forPkRaiz:ForPkRaiz, tarea:IdTarea, nota:string|null}, _datosByPass:DatosByPass){

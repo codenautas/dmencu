@@ -257,11 +257,33 @@ function DespliegueEncabezado(props:{casillero:CasilleroBase, leer?:boolean}){
     */
 }
 
+function subirHasta(elemento:HTMLElement|null, fun:(elemento:HTMLElement)=>boolean):HTMLElement|null{
+    if(elemento == null) return null;
+    if(fun(elemento)) return elemento;
+    return subirHasta(elemento.parentElement, fun);
+}
+
+var elementoConSennialBorrar:HTMLElement|null = null;
+
 function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, variable:IdVariable, forPk:ForPk, leer:boolean}){
     const {casillero} = props;
     var dispatch = useDispatch();
-    var handleClick=()=>{
-        dispatchByPass(accion_registrar_respuesta, {respuesta:props.valorOpcion, variable:props.variable, forPk:props.forPk})
+    var handleClick=(event:Event)=>{
+        var container = subirHasta(event.target, elemento=>elemento.classList.contains('pregunta')) || document.getElementById('main_layout')!;
+        var tiene = container.getAttribute('estoy-borrando');
+        container.setAttribute('estoy-borrando','NO');
+        if(elementoConSennialBorrar){
+            elementoConSennialBorrar.setAttribute('estoy-borrando','NO');
+            elementoConSennialBorrar = null;
+        }
+        dispatchByPass(accion_registrar_respuesta, {respuesta:props.valorOpcion, variable:props.variable, forPk:props.forPk,
+            onAlreadyExists:()=>{
+                container.setAttribute('estoy-borrando',tiene=='SI'?'NO':'SI');
+                if(tiene!='SI'){
+                    elementoConSennialBorrar=container;
+                }
+            }
+        })
     };
     var handleClickBorrar=()=>{
         dispatchByPass(accion_registrar_respuesta, {respuesta:null, variable:props.variable, forPk:props.forPk})
@@ -275,7 +297,7 @@ function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, va
             className="boton-opcion boton-opcion-borrar"
             onClick={handleClickBorrar}
         >
-            x
+            <ICON.DeleteForever/>
         </Button>
         <Button 
             id={`opcion-var-${props.variable}-${props.valorOpcion}`}
@@ -929,19 +951,6 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
                 </Button>
             )}
         </ButtonGroup>
-        <ButtonGroup key="borrar" style={{margin:'0 0 0 30px'}}>
-            <Button
-                color="inherit"
-                variant="outlined"
-                onClick={async ()=>{
-                    var main_layout = document.getElementById('main_layout')!;
-                    var tiene = main_layout.getAttribute('estoy-borrando');
-                    main_layout.setAttribute('estoy-borrando',tiene=='SI'?'NO':'SI');
-                }}
-            >
-                borrar
-            </Button>
-        </ButtonGroup>
         {props.soloLectura?<Typography component="span" style={{margin:'0 10px'}}> (Solo Lectura) </Typography>:null}
         {props.modoDirecto?
             <>
@@ -1067,7 +1076,7 @@ function BotonVolverEnDiv({id}:{id:string}){
         {opciones.pilaForPk.length>0?
         <Button id={id} className="boton-volver"
             onClick={()=>dispatch(dispatchers.VOLVER_DE_FORMULARIO({magnitudRetroceso:1}))}
-        >Volver</Button>
+        > <ICON.ChevronLeft/> Volver</Button>
         :null}
     </div>
 }
