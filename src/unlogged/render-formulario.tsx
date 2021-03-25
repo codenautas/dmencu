@@ -103,7 +103,7 @@ const Button2 = ({variant, onClick, disabled, children, className, color, size, 
     class: `btn btn${variant=='contained'?'':'-'+(variant=='outlined'?'outline':variant)}-${(color=='default' || color=='inherit'?'secondary':color=='secondary'?'danger':color)||'secondary'} ${className||''} ${size=='small'?'btn-sm':''}`,
     disabled,
     $on:{click:onClick}
-}, children).create();
+}, children);
 
 
 const TextField = (props:{
