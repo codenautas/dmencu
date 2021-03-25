@@ -1052,9 +1052,11 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
                             </Dialog>
                     :null}
                 </ButtonGroup>
-                <Typography component="span" style={{margin:'0 10px'}}> vivienda {props.forPk.vivienda} </Typography>
             </>
         :null}
+        <Typography className="mostrar-forPk" component="span" style={{margin:'0 10px'}}> {likeAr(props.forPk).filter((_,k)=>k!='formulario').map((v,k)=>
+            <div key={k}><span>{k}</span><span>{v}</span></div>
+        ).array()} </Typography>
     </>
 }
 
