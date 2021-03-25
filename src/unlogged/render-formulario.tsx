@@ -265,11 +265,11 @@ function subirHasta(elemento:HTMLElement|null, fun:(elemento:HTMLElement)=>boole
 
 var elementoConSennialBorrar:HTMLElement|null = null;
 
-function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, variable:IdVariable, forPk:ForPk, leer:boolean}){
+function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, variable:IdVariable, forPk:ForPk, leer:boolean, conBotonBorrar:boolean}){
     const {casillero} = props;
     var dispatch = useDispatch();
     var handleClick=(event:Event)=>{
-        var container = subirHasta(event.target, elemento=>elemento.classList.contains('pregunta')) || document.getElementById('main_layout')!;
+        var container = subirHasta(event.target, elemento=>elemento.classList.contains('pregunta') || elemento.classList.contains('multiple')) || document.getElementById('main_layout')!;
         var tiene = container.getAttribute('estoy-borrando');
         container.setAttribute('estoy-borrando','NO');
         if(elementoConSennialBorrar){
@@ -289,16 +289,18 @@ function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, va
         dispatchByPass(accion_registrar_respuesta, {respuesta:null, variable:props.variable, forPk:props.forPk})
     };
     return <Grid className="opcion"> 
-        <Button
-            id={`opcion-var-${props.variable}-${props.valorOpcion}-borrar`}
-            mi-variable={props.variable}
-            valor-opcion={props.valorOpcion}
-            variant="outlined"
-            className="boton-opcion boton-opcion-borrar"
-            onClick={handleClickBorrar}
-        >
-            <ICON.DeleteForever/>
-        </Button>
+        {props.conBotonBorrar?
+            <Button
+                id={`opcion-var-${props.variable}-${props.valorOpcion}-borrar`}
+                mi-variable={props.variable}
+                valor-opcion={props.valorOpcion}
+                variant="outlined"
+                className="boton-opcion boton-opcion-borrar"
+                onClick={handleClickBorrar}
+            >
+                <ICON.DeleteForever/>
+            </Button>
+        :null}
         <Button 
             id={`opcion-var-${props.variable}-${props.valorOpcion}`}
             mi-variable={props.variable}
@@ -546,8 +548,8 @@ function OpcionesDespliegue(
             />
         </div>:null
     ))
-    return <><Grid container direction={horizontal?"row":"column"} wrap={horizontal?"nowrap":"wrap"}>
-        {casilleroConOpciones.casilleros.map((opcion:Opcion)=>
+    return <><Grid container direction={horizontal?"row":"column"} wrap={horizontal?"nowrap":"wrap"} es-horizontal={horizontal?'SI':'NO'}>
+        {casilleroConOpciones.casilleros.map((opcion:Opcion, i:number)=>
             <Grid key={opcion.casillero} item
                 ocultar-salteada={opcion.despliegue?.includes('ocultar')?(opcion.expresion_habilitar_js?'INHABILITAR':'SI'):'NO'}
             >
@@ -557,6 +559,7 @@ function OpcionesDespliegue(
                     valorOpcion={opcion.casillero}
                     forPk={forPk} 
                     leer={leer}
+                    conBotonBorrar={i==0 || !horizontal}
                 />
                 {horizontal?null:desplegarOtros(opcion,true,true)}
             </Grid>
