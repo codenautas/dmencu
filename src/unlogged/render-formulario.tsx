@@ -1058,6 +1058,18 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
     </>
 }
 
+function BotonVolverEnDiv({id}:{id:string}){
+    var {soloLectura, opciones} = useSelector((state:CasoState)=>({soloLectura:state.datos.soloLectura, opciones:state.opciones}));
+    const dispatch = useDispatch();
+    return <div className="div-boton-volver">
+        {opciones.pilaForPk.length>0?
+        <Button id={id} className="boton-volver"
+            onClick={()=>dispatch(dispatchers.VOLVER_DE_FORMULARIO({magnitudRetroceso:1}))}
+        >Volver</Button>
+        :null}
+    </div>
+}
+
 function FormularioDespliegue(props:{forPk:ForPk}){
     var forPk = props.forPk;
     var {formulario, modoDespliegue, modo, opciones} 
@@ -1080,6 +1092,11 @@ function FormularioDespliegue(props:{forPk:ForPk}){
         }
     }, [formulario]);
     var listaModos:ModoDespliegue[]=['metadatos','relevamiento','PDF'];
+    ['boton-volver-1', 'boton-volver-2'].forEach(id=>{
+        registrarElemento({id, attr:'resumen-estado', fun:(_:Respuestas, feedbackForm: FormStructureState<IdVariable,IdFin>)=>(
+            feedbackForm.resumen
+        )})
+    })
     return (
         <>
             <AppBar position="fixed" color={soloLectura?'secondary':'primary'}>
@@ -1099,8 +1116,10 @@ function FormularioDespliegue(props:{forPk:ForPk}){
                         )}
                         </ButtonGroup>
                     </div>:null}
+                    <BotonVolverEnDiv id="boton-volver-1"/>
                     <FormularioEncabezado casillero={formulario}/>
                     <DesplegarContenidoInternoBloqueOFormulario bloqueOFormulario={formulario} formulario={formulario} forPk={forPk} multiple={false}/>
+                    <BotonVolverEnDiv id="boton-volver-2"/>
                 </Paper>
                 <div className='espacio-final-formulario'></div>
                 {opciones.modoBorrarRespuesta && opciones.forPk?<DesplegarConfirmarBorrarRespuesta forPk={opciones.forPk} variableBorrar={opciones.modoBorrarRespuesta}/>:null}
