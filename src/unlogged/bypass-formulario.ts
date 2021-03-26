@@ -212,7 +212,7 @@ export function volcadoInicialElementosRegistrados(forPkRaiz:ForPkRaiz){
             def.elemento = document.getElementById(def.id) as ElementosRegistrables;
         }
         if(!def.elemento){
-            console.log('BUSCANDO el elemento registrado ',id,'no está en el DOM')
+            // console.log('BUSCANDO el elemento registrado ',id,'no está en el DOM')
             continue;
         }
         var value = def.fun(respuestasAumentadas, datosByPass.feedbackRowValidator[toPlainForPk(forPkRaiz)], def.elemento, datosByPass.feedbackRowValidator);

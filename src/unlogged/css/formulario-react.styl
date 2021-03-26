@@ -1,6 +1,15 @@
+@font-face {
+  font-family: 'FormFont';
+  // font-style: normal;
+  // font-weight: 400;
+  // font-display: swap;
+  src: local('Roboto-Regular'), local('Roboto'), url('Roboto-Regular.ttf') format('truetype');
+}
+
 colorFondoEncabezadoBloque = #888
 margenPregunta = 16px
 colorFondoIdBloque = #DDD
+
 
 anchoNormal(ancho)
   @media print
@@ -9,6 +18,7 @@ anchoNormal(ancho)
     width ancho
 
 .formulario, .hoja-de-ruta
+  font-family 'FormFont'
   max-width 768px
   margin-top 75px //ajustado para /CAMPO
 
