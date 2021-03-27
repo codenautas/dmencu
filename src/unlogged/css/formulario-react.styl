@@ -21,6 +21,8 @@ anchoNormal(ancho)
   font-family 'FormFont'
   max-width 768px
   margin-top 75px //ajustado para /CAMPO
+  .btn
+    white-space normal
 
 .formulario, .hoja-de-ruta
   [resumen-estado="ok-full_version"]
@@ -286,6 +288,7 @@ anchoNormal(ancho)
       border-bottom-right-radius 7px
     .nombre-div
       padding margenPregunta
+      padding-right 0
   > .casilleros
     > .campo
       display flex
@@ -511,7 +514,9 @@ boton-id-div-invalido()
   font-size 95%
 
 .opcion
+  display flex
   padding 6px
+  padding-left 0
   .id
     font-weight bold
     margin 4px
@@ -522,6 +527,7 @@ boton-id-div-invalido()
 [modo-despliegue=relevamiento]
   .opcion
     padding 6px
+    padding-left 0
     .id
       border-radius 5px
       color transparent
@@ -713,6 +719,7 @@ app-cache-version, #app-dm-version
   min-width 64px
   display inline-flex
   padding 0px
+  margin 4px
 
 .formulario, .hoja-de-ruta
   .btn
@@ -736,3 +743,16 @@ app-cache-version, #app-dm-version
     font-size 90%
   span 
     margin-left 6px  
+
+.pase
+  display flex
+  flex-direction column
+  text-align center
+.pase-titulo
+  background-color #444
+  color #EEE
+  font-size 70%
+  padding-left 2px
+  padding-right 2px
+  line-height 0.8
+  border-radius 5px
