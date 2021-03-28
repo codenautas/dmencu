@@ -543,6 +543,7 @@ boton-id-div-invalido()
     font-weight bold
     margin 4px
   .opcion-texto
+    font-size 120%
     margin 6px
     margin-top 4px
 
@@ -700,12 +701,23 @@ app-cache-version, #app-dm-version
     margin 15px 0 15px
     max-width 600px
 
-.casillerHijo > .pregunta
-  border-top 0px
-.casillerHijo > .pregunta[nuestro-validator=salteada]
-  background-image none
-  > .casilleros
-    visibility hidden
+.casillerHijo 
+  > .pregunta
+    display flex
+    flex-direction column
+    border-top 0px
+    > .encabezado
+      width 99%
+    > .casilleros
+      width 99%
+    .nombre-div
+      padding-top 0
+      padding-bottom 0
+      font-size 80%
+    &[nuestro-validator=salteada]
+      background-image none
+      > .casilleros
+        x-visibility hidden
 
 [nuestro-casillero=I3]
   .multiple > .encabezado
