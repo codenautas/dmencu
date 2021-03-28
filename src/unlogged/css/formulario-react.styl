@@ -95,6 +95,12 @@ anchoNormal(ancho)
       margin-left 5px
     .input-campo
       max-width calc(100% - 40px)
+      input
+        width 95%
+        background-color rgba(255,255,255,0.2)
+        border-top transparent
+        border-left transparent
+        border-right transparent
     &[nuestra-longitud=full]
       .input-campo
         width 88%
@@ -234,7 +240,7 @@ anchoNormal(ancho)
     @media print
       min-width 55%
     @media (min-width 600px)
-      min-width 70%
+      min-width 62%
   > .casilleros
     justify-self right
     align-self flex-end
@@ -298,27 +304,40 @@ anchoNormal(ancho)
         margin-left 5px
       .input-campo
         max-width calc(100% - 40px)
-      &[nuestra-longitud=full]
+        input
+          width 95%
+          font-size 110%
+          background-color rgba(255,255,255,0.2)
+          border-top transparent
+          border-left transparent
+          border-right transparent
+      &[nuestra-longitud]
         .input-campo
-          width 88%
-        .boton-confirmar-campo
-          width 20%
-      &[nuestra-longitud=medium]
+          width 200px
+      &[nuestra-longitud="telefono"]
         .input-campo
-          width 60%
-        .boton-confirmar-campo
-          width 40%
-      &[nuestra-longitud=small]
+          width 110px
+      &[nuestra-longitud="10"]
         .input-campo
-          width 30%
-        .boton-confirmar-campo
-          width 70%
+          width 110px
+      &[nuestra-longitud="8"]
+        .input-campo
+          width 90px
+      &[nuestra-longitud="6"]
+        .input-campo
+          width 70px
+      &[nuestra-longitud="4"]
+        .input-campo
+          width 50px
       &[nuestra-longitud="3"]
         .input-campo
           width 40px
       &[nuestra-longitud="2"]
         .input-campo
-          width 28px
+          width 30px
+      &[nuestra-longitud="1"]
+        .input-campo
+          width 2px
   > .casilleros, > div .casilleros
     align-self flex-end
     anchoNormal 50%
@@ -403,6 +422,8 @@ boton-id-div-invalido()
     background-color #FFF
     .boton-opcion-seleccion
       border-color blue
+    input
+      border-bottom 2px solid blue
     .MuiInput-underline:after
       border-bottom-color blue
     .MuiInput-underline:before

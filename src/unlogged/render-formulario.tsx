@@ -484,13 +484,7 @@ function DesplegarConfirmarBorrarRespuesta(props:{forPk:ForPk, variableBorrar:Id
 }
 
 function calcularNuestraLongitud(longitud:string |null){
-    var value = parseInt(longitud||'9999');
-    if(isNaN(value)){
-        return 'full';
-    }else{
-        return value<=10?'small'
-            :value<=20?'medium':'full'
-    }
+    return longitud;
 }
 
 function Campo(props:{disabled:boolean, pregunta:PreguntaSimple, onChange:(valor:Valor)=>void}){
