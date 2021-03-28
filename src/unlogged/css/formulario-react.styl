@@ -303,6 +303,7 @@ anchoNormal(ancho)
       .MuiButton-root
         margin-left 5px
       .input-campo
+        display flex
         max-width calc(100% - 40px)
         input
           width 95%
@@ -732,7 +733,7 @@ app-cache-version, #app-dm-version
 [tiene-valor=invalido]
   .boton-opcion-borrar[opcion-seleccionada="SI"]
     visibility visible
-  [es-horizontal="SI"]
+  [es-horizontal="SI"], .campo
     .boton-opcion-borrar
       visibility visible
 
@@ -777,3 +778,11 @@ app-cache-version, #app-dm-version
   padding-right 2px
   line-height 0.8
   border-radius 5px
+
+.boton-borrar
+  width 24px
+  > button
+    position relative
+    left -40px
+    z-index 1
+    background-color white

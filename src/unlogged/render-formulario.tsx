@@ -265,6 +265,24 @@ function subirHasta(elemento:HTMLElement|null, fun:(elemento:HTMLElement)=>boole
 
 var elementoConSennialBorrar:HTMLElement|null = null;
 
+function BotonBorrar({id, variable, forPk, valorOpcion}:{id:string, variable:IdVariable, forPk:ForPk, valorOpcion?:any}){
+    var handleClickBorrar=()=>{
+        dispatchByPass(accion_registrar_respuesta, {respuesta:null, variable:variable, forPk:forPk})
+    };
+    return <div className="boton-borrar">
+        <Button
+            id={id}
+            mi-variable={variable}
+            valor-opcion={valorOpcion}
+            variant="outlined"
+            className="boton-opcion boton-opcion-borrar"
+            onClick={handleClickBorrar}
+        >
+            <ICON.DeleteForever/>
+        </Button>
+    </div>
+}
+
 function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, variable:IdVariable, forPk:ForPk, leer:boolean, conBotonBorrar:boolean}){
     const {casillero} = props;
     var dispatch = useDispatch();
@@ -285,22 +303,13 @@ function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, va
             }
         })
     };
-    var handleClickBorrar=()=>{
-        dispatchByPass(accion_registrar_respuesta, {respuesta:null, variable:props.variable, forPk:props.forPk})
-    };
     return <Grid className="opcion"> 
-        {props.conBotonBorrar?
-            <Button
-                id={`opcion-var-${props.variable}-${props.valorOpcion}-borrar`}
-                mi-variable={props.variable}
-                valor-opcion={props.valorOpcion}
-                variant="outlined"
-                className="boton-opcion boton-opcion-borrar"
-                onClick={handleClickBorrar}
-            >
-                <ICON.DeleteForever/>
-            </Button>
-        :null}
+        {props.conBotonBorrar?<BotonBorrar
+            id={`opcion-var-${props.variable}-${props.valorOpcion}-borrar`}
+            forPk={props.forPk}
+            variable={props.variable}
+            valorOpcion={props.valorOpcion}
+            />:null}
         <Button 
             id={`opcion-var-${props.variable}-${props.valorOpcion}`}
             mi-variable={props.variable}
@@ -487,7 +496,7 @@ function calcularNuestraLongitud(longitud:string |null){
     return longitud;
 }
 
-function Campo(props:{disabled:boolean, pregunta:PreguntaSimple, onChange:(valor:Valor)=>void}){
+function Campo(props:{disabled:boolean, pregunta:PreguntaSimple, forPk:ForPk, onChange:(valor:Valor)=>void}){
     var {pregunta, disabled } = props;
     // var [valor, setValor] = useState(props.valor);
     var [editando, setEditando] = useState(false);
@@ -499,6 +508,11 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple, onChange:(valor
     };
     var nuestraLongitud = calcularNuestraLongitud(pregunta.longitud)
     return <div className="campo" nuestra-longitud={nuestraLongitud}>
+        <BotonBorrar
+            id={`borrar-abierta-${pregunta.var_name}`}
+            variable={pregunta.var_name}
+            forPk={props.forPk}
+        />
         <div className="input-campo">
             <TextField 
                 disabled={disabled}
@@ -623,6 +637,7 @@ function PreguntaDespliegue(props:{
                 <Campo
                     disabled={preguntaSimple.despliegue?.includes('calculada')?true:false}
                     pregunta={preguntaSimple}
+                    forPk={props.forPk}
                     onChange={(nuevoValor)=>
                         dispatchByPass(accion_registrar_respuesta, {forPk:props.forPk, variable:preguntaSimple.var_name, respuesta:nuevoValor})
                     }
