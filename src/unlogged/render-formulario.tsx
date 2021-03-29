@@ -69,6 +69,11 @@ import {
 
 import {arrange, html} from "js-to-html";
 
+function breakeableText(text:string){
+    if(typeof text != "string") return text;
+    return text.replace(/\//g,"/\u2063");
+}
+
 // /*
 
 type CommonAttributes = {className?:string,style?:CSSProperties,id?:string} // CSSProperties
@@ -323,9 +328,9 @@ function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, va
                     {casillero.ver_id || casillero.casillero}
                 </Grid>
                 <Grid className="opcion-texto" debe-leer={casillero.despliegue?.includes('si_leer')?'SI':casillero.despliegue?.includes('no_leer')?'NO':props.leer?'SI':'NO'}>
-                    <Typography>{casillero.nombre}</Typography>
+                    <Typography>{breakeableText(casillero.nombre)}</Typography>
                     {casillero.aclaracion?
-                        <Typography >{casillero.aclaracion}</Typography>
+                        <Typography >{breakeableText(casillero.aclaracion)}</Typography>
                     :null}
                 </Grid>
             </Grid>
@@ -409,7 +414,7 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
             forPk={props.forPk}
         />
         <div className="casilleros">
-            <Grid container>
+            <Grid container direction="column">
                 <SiNoDespliegue 
                     casilleroConOpciones={opcionM} 
                     forPk={props.forPk}
@@ -439,9 +444,9 @@ function EncabezadoDespliegue(props:{casillero:CasilleroBase, verIdGuion?:boolea
         </div>
         }
         <div className="nombre-div">
-            <div className="nombre">{casillero.nombre}</div>
+            <div className="nombre">{breakeableText(casillero.nombre)}</div>
             {casillero.aclaracion?
-                <div className="aclaracion">{casillero.aclaracion}</div>
+                <div className="aclaracion">{breakeableText(casillero.aclaracion)}</div>
             :null}
             <div los-metadatos="si">
                 <span el-metadato="variable">{casillero.var_name}</span>
@@ -788,7 +793,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                 "def-button":JSON.stringify(defBoton)
             }
         }, [
-            casillero.aclaracion || html.div({class:"aclaracion"}, [casillero.aclaracion]),
+            casillero.aclaracion || html.div({class:"aclaracion"}, [breakeableText(casillero.aclaracion)]),
             html.div([
                 Button2({
                     id:`boton-formulario-${sufijoIdElemento}`, 
