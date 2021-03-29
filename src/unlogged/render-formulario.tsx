@@ -870,7 +870,7 @@ function useSelectorVivienda(forPk:ForPk){
         var estructura = getEstructura();
         return {
             formulario: estructura.formularios[forPk.formulario].casilleros,
-            modoDespliegue: state.modo.demo?state.opciones.modoDespliegue:'relevamiento',
+            modoDespliegue: true || state.modo.demo?state.opciones.modoDespliegue:'relevamiento',
             modo: state.modo,
             opciones: state.opciones,
         }
@@ -935,6 +935,30 @@ function BloqueDespliegue(props:{bloque:Bloque, formulario:Formulario, forPk:For
 }
 
 const FormularioEncabezado = DespliegueEncabezado;
+
+function FastSettup(){
+    const [anchorEl, setAnchorEl] = React.useState(null);
+    const [open, setOpen] = React.useState(false);
+    const handleClick = (event:any) => {
+        setAnchorEl(event.currentTarget);
+        setOpen((prev) => !prev);
+    };
+    const dispatch = useDispatch();
+    const cambiar = (modoDespliegue:ModoDespliegue)=>{
+        dispatch(dispatchers.MODO_DESPLIEGUE({modoDespliegue}));
+        setOpen(false)
+    }
+    return <>
+        <Button onClick={handleClick}>
+            <ICON.Settings/>
+        </Button>
+        <Menu open={open} anchorEl={anchorEl} onClose={()=>setOpen(false)}>
+            <MenuItem onClick={()=>cambiar("relevamiento")}>normal</MenuItem>
+            <MenuItem onClick={()=>cambiar("PDF"         )}>PDF para relevamiento</MenuItem>
+            <MenuItem onClick={()=>cambiar("metadatos"   )}>revisar metadatos</MenuItem>
+        </Menu>
+    </>;
+}
 
 function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:boolean}){
     const dispatch = useDispatch();
@@ -1086,6 +1110,7 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
         <Typography className="mostrar-forPk" component="span" style={{margin:'0 10px'}}> {likeAr(props.forPk).filter((_,k)=>k!='formulario').map((v,k)=>
             <div key={k}><span>{k}</span><span>{v}</span></div>
         ).array()} </Typography>
+        <FastSettup/>
     </>
 }
 
