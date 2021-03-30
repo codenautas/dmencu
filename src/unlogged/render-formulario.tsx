@@ -888,19 +888,33 @@ function ConjuntoPreguntasDespliegue(props:{casillero:ConjuntoPreguntas, formula
 }
 
 function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Bloque|Formulario|ConjuntoPreguntas, formulario:Formulario, forPk:ForPk, multiple:boolean}){
+    const [mostrar, setMostrar] = React.useState(5);
+    const casillerosLength = props.bloqueOFormulario.casilleros.length;
+    useEffect(()=>{
+        const mostrarCasilleros=()=>
+            mostrar<casillerosLength?setMostrar(mostrar+5):clearInterval(myInterval);
+        var myInterval = setInterval(mostrarCasilleros, 500);
+        return () => clearInterval(myInterval)
+    })
     return <div className="casilleros">{
-        props.bloqueOFormulario.casilleros.map((casillero)=>
-            <Grid key={casillero.casillero} item>
-                {
-                    casillero.tipoc == "P"?<PreguntaDespliegue pregunta={casillero} forPk={props.forPk} />:
-                    casillero.tipoc == "B"?<BloqueDespliegue bloque={casillero} formulario={props.formulario} forPk={props.forPk}/>:
-                    casillero.tipoc == "FILTRO"?<FiltroDespliegue filtro={casillero} forPk={props.forPk}/>:
-                    casillero.tipoc == "BF"?<BotonFormularioDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
-                    casillero.tipoc == "CONS"?<ConsistenciaDespliegue casillero={casillero} forPk={props.forPk}/>:
-                    casillero.tipoc == "CP"?<ConjuntoPreguntasDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
-                    <CasilleroDesconocido casillero={casillero}/>
-                }
-            </Grid>
+        props.bloqueOFormulario.casilleros.map((casillero, i)=>
+            i<mostrar?
+                <Grid key={casillero.casillero} item>
+                    
+                    {
+                        casillero.tipoc == "P"?<PreguntaDespliegue pregunta={casillero} forPk={props.forPk} />:
+                        casillero.tipoc == "B"?<BloqueDespliegue bloque={casillero} formulario={props.formulario} forPk={props.forPk}/>:
+                        casillero.tipoc == "FILTRO"?<FiltroDespliegue filtro={casillero} forPk={props.forPk}/>:
+                        casillero.tipoc == "BF"?<BotonFormularioDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
+                        casillero.tipoc == "CONS"?<ConsistenciaDespliegue casillero={casillero} forPk={props.forPk}/>:
+                        casillero.tipoc == "CP"?<ConjuntoPreguntasDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
+                        <CasilleroDesconocido casillero={casillero}/>
+                    }
+                </Grid>
+            :
+                <div className="spinner-border" role="status">
+                    <span>cargando bloque...</span>
+                </div>
         )
     }</div>
 }
