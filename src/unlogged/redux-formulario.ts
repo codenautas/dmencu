@@ -192,8 +192,8 @@ function rellenarVariablesYOpciones(idFormulario:IdFormulario, estructura:Estruc
             calculada:
                 // @ts-ignore // TODO. Averiguar si las preguntas y filtros pueden tener unidad de análisis
                 casillero.unidad_analisis && casillero.unidad_analisis!=unidadAnalisis 
-                || casillero.despliegue?.includes('calculada'),
-            libre:casillero.despliegue?.includes('libre')
+                || casillero.calculada,
+            libre:casillero.libre
         } as (typeof estructura.variables)[IdVariable]
         if(subordinadaValor != undefined){
             variableDef.subordinadaVar = subordinadaVar;

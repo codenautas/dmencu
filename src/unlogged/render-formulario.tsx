@@ -11,7 +11,7 @@ import {
     materialIoIconsSvgPath
 } from "./render-general";
 import {Bloque, BotonFormulario, 
-    CasilleroBase, CasoState, ConjuntoPreguntas, Consistencia, DatosVivienda,
+    CasilleroBase, CasoState, ConjuntoPreguntas, Consistencia, DatosVivienda, Despliegue, 
     EstadoCarga, FeedbackVariable, Filtro, ForPk, ForPkRaiz, Formulario, 
     IdFormulario, IdPregunta, IdTarea, IdVariable, InfoFormulario,
     HojaDeRuta,
@@ -69,7 +69,7 @@ import {
 
 import {arrange, html} from "js-to-html";
 
-function breakeableText(text:string){
+function breakeableText(text:string|null){
     if(typeof text != "string") return text;
     return text.replace(/\//g,"/\u2063");
 }
@@ -327,7 +327,7 @@ function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, va
                 <Grid className="id">
                     {casillero.ver_id || casillero.casillero}
                 </Grid>
-                <Grid className="opcion-texto" debe-leer={casillero.despliegue?.includes('si_leer')?'SI':casillero.despliegue?.includes('no_leer')?'NO':props.leer?'SI':'NO'}>
+                <Grid className="opcion-texto" debe-leer={casillero.leer?'SI':casillero.leer===false?'NO':props.leer?'SI':'NO'}>
                     <Typography>{breakeableText(casillero.nombre)}</Typography>
                     {casillero.aclaracion?
                         <Typography >{breakeableText(casillero.aclaracion)}</Typography>
@@ -345,6 +345,7 @@ function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, va
 }
 interface IcasilleroConOpciones{
     var_name:IdVariable,
+    despliegue:Despliegue|null,
     casilleros:Opcion[]
 }
 
@@ -354,7 +355,7 @@ function SiNoDespliegue(props:{casilleroConOpciones:IcasilleroConOpciones, forPk
         casilleroConOpciones={props.casilleroConOpciones} 
         forPk={props.forPk} 
         leer={false}
-        horizontal={true}
+        horizontal={!props.casilleroConOpciones.despliegue?.includes('vertical')}
     />
 }
 
@@ -410,7 +411,7 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
         <EncabezadoDespliegue 
             casillero={opcionM} 
             verIdGuion={true} 
-            leer={!opcionM.despliegue?.includes('no_leer')} 
+            leer={opcionM.leer!==false} 
             forPk={props.forPk}
         />
         <div className="casilleros">
@@ -426,23 +427,23 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
 
 function EncabezadoDespliegue(props:{casillero:CasilleroBase, verIdGuion?:boolean, leer?:boolean, forPk:ForPk}){
     var {casillero} = props;
-    var key=casillero.ver_id ?? casillero.casillero;
+    var ver_id = casillero.ver_id ?? casillero.casillero;
+    // @ts-ignore no está en todos los casilleros pero acá para el despliegue de metadatos no importa
+    var calculada = casillero.calculada;
     return <div 
         className="encabezado" 
         debe-leer={props.leer?'SI':'NO'} 
     >
-        {casillero.tipoc=='B'?null:
-        <div id={casillero.var_name || undefined} className="id-div"
+        <div id={casillero.var_name || undefined} className="id-div" title={`${casillero.casillero} - ${casillero.var_name}`}
             onClick={()=>{
                 // TODO. Ver qué hacemos cuando se toca el ID de la pregutna
                 dispatchByPass(accion_id_pregunta, {pregunta: casillero.casillero as IdPregunta, forPk:props.forPk});
             }}
         >
             <div className="id">
-                {key}
+                {ver_id}
             </div>
         </div>
-        }
         <div className="nombre-div">
             <div className="nombre">{breakeableText(casillero.nombre)}</div>
             {casillero.aclaracion?
@@ -456,7 +457,7 @@ function EncabezadoDespliegue(props:{casillero:CasilleroBase, verIdGuion?:boolea
                 {   //@ts-ignore una opción múltiple nunca lo a a ser, no tiene el campo, no importa
                     casillero.optativo?<span el-metadato="optativa">optativa</span>:null
                 }
-                {casillero.despliegue?.includes('calculada')?<span el-metadato="calculada">calculada</span>:null}
+                {calculada?<span el-metadato="calculada">calculada</span>:null}
                 {casillero.despliegue?.includes('oculta')?<span el-metadato="oculta">oculta</span>:null}
                 {casillero.expresion_habilitar?<span el-metadato="expresion_habilitar">habilita: {casillero.expresion_habilitar}</span>:null}
             </div>
@@ -612,7 +613,7 @@ function PreguntaDespliegue(props:{
     >
         <EncabezadoDespliegue 
             casillero={pregunta} 
-            leer={!pregunta.despliegue?.includes('no_leer')}  
+            leer={pregunta.leer!==false}  
             forPk={props.forPk}
         />
         <div className="casilleros">{
@@ -626,7 +627,7 @@ function PreguntaDespliegue(props:{
                 <OpcionesDespliegue 
                     casilleroConOpciones={pregunta} 
                     forPk={props.forPk} 
-                    leer={!!pregunta.despliegue?.includes('si_leer')}
+                    leer={!!pregunta.leer}
                     horizontal={!!pregunta.despliegue?.includes('horizontal')}
                 />:
             pregunta.tipovar==null?
@@ -640,7 +641,7 @@ function PreguntaDespliegue(props:{
             :
             ((preguntaSimple:PreguntaSimple)=>
                 <Campo
-                    disabled={preguntaSimple.despliegue?.includes('calculada')?true:false}
+                    disabled={preguntaSimple.calculada?true:false}
                     pregunta={preguntaSimple}
                     forPk={props.forPk}
                     onChange={(nuevoValor)=>

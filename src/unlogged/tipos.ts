@@ -45,6 +45,7 @@ export type CasilleroBase = {
     salto:IdDestino|IdFin|null
     ver_id:string|null
     despliegue:Despliegue|null
+    leer:boolean|null
     aclaracion:string|null
     primera_variable?:IdVariable|null
     var_name?:IdVariable|null
@@ -94,6 +95,8 @@ export type PreguntaSimple = PreguntaBase & {
     longitud:string
     salto_ns_nc:IdVariable|null
     casilleros: PreguntaSimple[]
+    calculada: boolean|null
+    libre: boolean|null
 }
 
 export type PreguntaConSiNo = PreguntaBase & {
