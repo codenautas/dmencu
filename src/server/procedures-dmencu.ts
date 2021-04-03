@@ -127,19 +127,35 @@ var compiler = new ExpresionParser.Compiler({
 type CasilleroDeAca={
     childs: CasilleroDeAca[],
     data:{
-        expresion_habilitar: string,
+        expresion_habilitar: string
         expresion_habilitar_js: string
+        especial: any
+        expresion_autoingresar_js: string
     }
+}
+
+function compilarExpresion(expresion:string){
+    return compiler.toCode(ExpresionParser.parse(
+        expresion
+            .replace(/\bis distinct from\b/gi,' <> ')
+            .replace(/!!/gi,' ')
+    )).replace(/helpers\.funs\.blanco\(helpers.null2zero\(/g,'helpers.funs.blanco((');
 }
 
 function compilarExpresiones(casillero:CasilleroDeAca){
     if(!casillero){ return }
     if(casillero.data.expresion_habilitar){
-        casillero.data.expresion_habilitar_js = compiler.toCode(ExpresionParser.parse(
-            casillero.data.expresion_habilitar
-                .replace(/\bis distinct from\b/gi,' <> ')
-                .replace(/!!/gi,' ')
-        )).replace(/helpers\.funs\.blanco\(helpers.null2zero\(/g,'helpers.funs.blanco((');
+        casillero.data.expresion_habilitar_js = compilarExpresion(casillero.data.expresion_habilitar);
+    }
+    if(casillero.data.especial?.autoing){
+        var partes = casillero.data.especial?.autoing.split('=>');
+        if(partes.length>1){
+            var precondicion = partes[0];
+            var valor = partes.slice(1).join('=>');
+            casillero.data.expresion_autoingresar_js = `(${compilarExpresion(precondicion)})?(${compilarExpresion(valor)}):null`;
+        }else{
+            casillero.data.expresion_autoingresar_js = compilarExpresion(partes[0]);
+        }
     }
     for(var casilleroInterno of casillero.childs) compilarExpresiones(casilleroInterno);
 }

@@ -64,7 +64,8 @@ import {
     accion_registrar_nota,
     accion_agregar_formulario,
     accion_modificar_visita,
-    accion_borrar_visita
+    accion_borrar_visita,
+    NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO
 } from "./bypass-formulario"
 
 import {arrange, html} from "js-to-html";
@@ -460,6 +461,9 @@ function EncabezadoDespliegue(props:{casillero:CasilleroBase, verIdGuion?:boolea
                 {calculada?<span el-metadato="calculada">calculada</span>:null}
                 {casillero.despliegue?.includes('oculta')?<span el-metadato="oculta">oculta</span>:null}
                 {casillero.expresion_habilitar?<span el-metadato="expresion_habilitar">habilita: {casillero.expresion_habilitar}</span>:null}
+                {   //@ts-ignore altunos casilleros no tienen especial, no importa, es solo para poner los metadatos
+                    casillero.especial?.autoing?<span el-metadato="expresion_autoing">autoing: {casillero.especial?.autoing}</span>:null
+                }
             </div>
         </div>
     </div>
@@ -502,7 +506,7 @@ function calcularNuestraLongitud(longitud:string |null){
     return longitud;
 }
 
-function Campo(props:{disabled:boolean, pregunta:PreguntaSimple, forPk:ForPk, onChange:(valor:Valor)=>void}){
+function Campo(props:{disabled:boolean, pregunta:PreguntaSimple, forPk:ForPk, onChange:(valor:Valor|typeof NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO)=>void}){
     var {pregunta, disabled } = props;
     // var [valor, setValor] = useState(props.valor);
     var [editando, setEditando] = useState(false);
@@ -541,7 +545,12 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple, forPk:ForPk, on
         </div>
         {disabled?null:
             <div className="boton-confirmar-campo">
-                <Button variant={editando?"contained":'outlined'} size="small" color={editando?'primary':'default'}><ICON.Check/></Button>
+                <Button variant={editando?"contained":'outlined'} size="small" color={editando?'primary':'default'}
+                    onClick={()=>{
+                        props.onChange(NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO);
+                        setEditando(false)
+                    }}
+                ><ICON.Check/></Button>
             </div>
         }
     </div>

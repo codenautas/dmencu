@@ -1,8 +1,8 @@
 import { strict as likeAr } from "like-ar";
 
-import { getRowValidator, Structure, Opcion as RowValidatorOpcion, FormStructureState } from "row-validator";
+import { getRowValidator, Structure, Opcion as RowValidatorOpcion, FormStructureState, OpcionesRowValidator } from "row-validator";
 
-import { deepFreeze, datetime } from "best-globals";
+import { date } from "best-globals";
 
 import { CasilleroBase, CasillerosImplementados, CasoState, 
     DatosVivienda, EstadoCarga, EstructuraRowValidator, Estructura, 
@@ -256,29 +256,36 @@ function calcularVariablesBotonFormulario(_forPk:ForPk){
 export function accion_id_pregunta(_payload:{pregunta: IdPregunta, forPk: ForPk}, _datosByPass:DatosByPass){
 }
 
-export function accion_registrar_respuesta(payload:{forPk:ForPk, variable:IdVariable, respuesta:Valor, onAlreadyExists?:()=>void}, _datosByPass:DatosByPass){
+export const NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO = Symbol('NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO')
+
+export function accion_registrar_respuesta(payload:{forPk:ForPk, variable:IdVariable, respuesta:Valor|typeof NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO, onAlreadyExists?:()=>void}, _datosByPass:DatosByPass){
     let token = 'AVERIGUAR TODO'
     let { forPk, respuesta, variable } = payload;
     var {respuestas, respuestasRaiz, forPkRaiz}  = respuestasForPk(forPk);
-    if(respuesta == ''){
-        respuesta = null;
-    }else if(estructura.formularios[forPk.formulario].estructuraRowValidator.variables[variable].tipo=='numero'){
-        respuesta = Number(respuesta);
-    }
     var unidad_analisis = estructura.formularios[forPk.formulario];
-    var recentModified = respuestas[variable] != respuesta
-    if(recentModified){
-        respuestas[variable] = respuesta;
+    var recentModified = false;
+    if(respuesta !== NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO){
+        if(respuesta == ''){
+            respuesta = null;
+        }else if(estructura.formularios[forPk.formulario].estructuraRowValidator.variables[variable].tipo=='numero'){
+            respuesta = Number(respuesta);
+        }
+        recentModified = respuestas[variable] != respuesta
+        if(recentModified){
+            respuestas[variable] = respuesta;
+        }
     }
-    variablesCalculadas(respuestasRaiz)
-    if(respuestas[ultimaVaribleVivienda]==null && respuestas[ultimaVaribleVivienda]!=null){
-        encolarBackup(token, forPkRaiz, respuestasRaiz);
+    if(recentModified || NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO && datosByPass.feedbackRowValidator[toPlainForPk(forPk)].autoIngresadas?.[variable]){
+        variablesCalculadas(respuestasRaiz)
+        if(respuestas[ultimaVaribleVivienda]==null && respuestas[ultimaVaribleVivienda]!=null){
+            encolarBackup(token, forPkRaiz, respuestasRaiz);
+        }
+        respuestasRaiz.$dirty = respuestasRaiz.$dirty || recentModified;
+        calcularFeedback(respuestasRaiz, forPkRaiz, {autoIngreso: true});
+        calcularVariablesBotonFormulario(forPk);
+        volcadoInicialElementosRegistrados(forPk);
+        persistirDatosByPass();
     }
-    respuestasRaiz.$dirty = respuestasRaiz.$dirty || recentModified;
-    calcularFeedback(respuestasRaiz, forPkRaiz);
-    calcularVariablesBotonFormulario(forPk);
-    volcadoInicialElementosRegistrados(forPk);
-    persistirDatosByPass();
     if(!recentModified && payload.onAlreadyExists != null){
         payload.onAlreadyExists();
     }
@@ -319,7 +326,7 @@ export function accion_borrar_visita(payload: {forPkRaiz:ForPkRaiz, index:number
 
 export function accion_agregar_formulario({forPk}: {forPk:ForPk}, _datosByPass:DatosByPass){
     var {respuestas, unidadAnalisis, respuestasAumentadas} = respuestasForPk(forPk, true, true);
-    calcularFeedbackUnidadAnalisis(datosByPass.feedbackRowValidator, estructura.formularios, respuestas, unidadAnalisis.unidad_analisis, forPk, respuestasAumentadas)
+    calcularFeedbackUnidadAnalisis(datosByPass.feedbackRowValidator, estructura.formularios, respuestas, unidadAnalisis.unidad_analisis, forPk, respuestasAumentadas, null, {})
     calcularVariablesBotonFormulario(forPk);
 }
 
@@ -336,48 +343,9 @@ export function dispatchByPass<T>(
 export const ultimaVaribleVivienda = 'NO_ESTA_DEFINIDA_AUN//TODO' as IdVariable;
 
 export const MAXCP=20;
-// TODO: Generalizar
-const OPERATIVO='etoi211';
-var dv1 = 'dv1' as IdVariable;
-var dv4 = 'dv4' as IdVariable;
-var dv5 = 'dv5' as IdVariable;
-var sp1 = 'sp1' as IdVariable;
-var sp6 = 'sp6' as IdVariable;
-var s1 = 's1' as IdVariable;
-var s2 = 's2' as IdVariable;
-var s3 = 's3' as IdVariable;
-var d4 = 'd4' as IdVariable;
-var d5c = 'd5c' as IdVariable;
-var g1 = 'g1' as IdVariable;
-var cp = 'cp' as IdVariable;
-var p1 = 'p1' as IdVariable;
-var p2 = 'p2' as IdVariable;
-var p3 = 'p3' as IdVariable;
-var p4 = 'p4' as IdVariable;
-var p9 = 'p9' as IdVariable;
-var sp6 = 'sp6' as IdVariable;
-
-export var varEspeciales:{[idVariable in IdVariable]?:{cluster4:boolean}}={
-    [dv5] :{cluster4:true},
-    [cp]  :{cluster4:true},
-    [p1]  :{cluster4:true},
-    [p2]  :{cluster4:true},
-    [p3]  :{cluster4:true},
-    [p4]  :{cluster4:true},
-    [p9]  :{cluster4:true},
-}
-
-const MAIN_FORM:IdFormulario='F:F1' as IdFormulario;
 
 /* REDUCERS */
 
-var defaultActionFormulario = function defaultActionFormulario(
-    formularioState:CasoState, 
-){
-    return deepFreeze({
-        ...formularioState
-    })
-};
 var reemplazosHabilitar:{[key:string]:string}={
     false: 'false',
     true: 'true',
@@ -393,7 +361,7 @@ var reemplazosHabilitar:{[key:string]:string}={
     "NOT": '!',
 };
 
-const helpersHabilitar={
+const helpersCasilleros={
     null2zero(posibleNull:any){
         if(posibleNull==null){
             return 0;
@@ -412,14 +380,18 @@ const helpersHabilitar={
         },
         nsnc(x:any){
             return x == -9
+        },
+        hoy(){
+            return date.today().toDmy()
         }
     }
 };
 
 type FuncionHabilitar = (valores:{[key:string]:any})=>boolean;
+type FuncionValorar = (valores:{[key:string]:any})=>any;
 var funcionesHabilitar:{[key:string]:FuncionHabilitar}={
-    'false': function(_valores){ return false },
-    'v1 < v2': function(valores){ return valores.v1 < valores.v2 },
+}
+var funcionesValorar:{[key:string]:FuncionValorar}={
 }
 
 export function miniCompiladorSQlJs(expresionCasiSQL:string){
@@ -440,34 +412,39 @@ export function miniCompiladorSQlJs(expresionCasiSQL:string){
     return cuerpo;
 }
 
-export function getFuncionHabilitar(nombreFuncionComoExpresionJs:string):FuncionHabilitar{
-    if(!funcionesHabilitar[nombreFuncionComoExpresionJs]){
-        var cuerpo = nombreFuncionComoExpresionJs;
-        try{
-            // var cuerpo = miniCompiladorSQlJs(nombreFuncionComoExpresionJs);
-            var internalFun =  new Function('valores', 'helpers', 'return '+cuerpo);
-            funcionesHabilitar[nombreFuncionComoExpresionJs] = function(valores){
-                try{
-                    var result = internalFun(valores, helpersHabilitar);
-                }catch(err){
-                    console.log('ERROR EJECUCCION EXPRESION EXTERNA ',nombreFuncionComoExpresionJs)
-                    console.log(cuerpo);
-                    console.log(valores);
-                    throw err;
+export function getFuncionCompilada<T>(conjuntoDeFunciones:{[key:string]:(valores:{[key:string]:any})=>T}){
+    return function(nombreFuncionComoExpresionJs:string){
+        if(!conjuntoDeFunciones[nombreFuncionComoExpresionJs]){
+            var cuerpo = nombreFuncionComoExpresionJs;
+            try{
+                // var cuerpo = miniCompiladorSQlJs(nombreFuncionComoExpresionJs);
+                var internalFun =  new Function('valores', 'helpers', 'return '+cuerpo);
+                conjuntoDeFunciones[nombreFuncionComoExpresionJs] = function(valores){
+                    try{
+                        var result = internalFun(valores, helpersCasilleros);
+                    }catch(err){
+                        console.log('ERROR EJECUCCION EXPRESION EXTERNA ',nombreFuncionComoExpresionJs)
+                        console.log(cuerpo);
+                        console.log(valores);
+                        throw err;
+                    }
+                    return result;
                 }
-                return result;
+            }catch(err){
+                console.log('ERROR COMPILACION EXPRESION EXTERNA ',nombreFuncionComoExpresionJs)
+                console.log(cuerpo);
+                throw err;
             }
-        }catch(err){
-            console.log('ERROR COMPILACION EXPRESION EXTERNA ',nombreFuncionComoExpresionJs)
-            console.log(cuerpo);
-            throw err;
         }
+        return conjuntoDeFunciones[nombreFuncionComoExpresionJs];
     }
-    return funcionesHabilitar[nombreFuncionComoExpresionJs];
 }
 
+export const getFuncionHabilitar = getFuncionCompilada(funcionesHabilitar);
+export const getFuncionValorar   = getFuncionCompilada(funcionesValorar);
 
-var rowValidator = getRowValidator({getFuncionHabilitar})
+
+var rowValidator = getRowValidator({getFuncionHabilitar, getFuncionValorar})
 
 ////// TODOS LOS NOMBRES DE variables o formularios o casilleros deben estar en el objeto operativo
 //// QUITARLO Y REEMPLAZARLO por buscar en estructura.unidad_analisis y estructura.formulario
@@ -547,7 +524,8 @@ export async function calcularFeedbackUnidadAnalisis(
     UA:IdUnidadAnalisis, 
     forPk:ForPk,
     respuestasAumentadas:Respuestas, // incluyen la de todos los padres y ansestros,
-    respuestasPadre?:Respuestas,
+    respuestasPadre:Respuestas|null, 
+    opts:OpcionesRowValidator,
 ){
     // recorriend UA personas y mascotas
     for(var UAincluida of defOperativo.defUA[UA].incluidas){
@@ -562,7 +540,8 @@ export async function calcularFeedbackUnidadAnalisis(
                 UAincluida, 
                 {...forPk, [pkNueva]:valorPk},
                 {...respuestasAumentadas, ...respuestasHijo, [pkNueva]:valorPk},
-                respuestas
+                respuestas,
+                opts
             );
         })
     }
@@ -573,7 +552,8 @@ export async function calcularFeedbackUnidadAnalisis(
             feedbackRowValidator[plainForPk]=
                 rowValidator(
                     formularios[formulario].estructuraRowValidator, 
-                    respuestasAumentadas
+                    respuestasAumentadas,
+                    opts
                 )
             var resumen = feedbackRowValidator[plainForPk].resumen;
             var resumenOrNull = resumen == 'vacio' ? null : resumen
@@ -601,7 +581,7 @@ export async function calcularFeedbackHojaDeRuta(){
             likeAr(conjuntoRespuestasUA).forEach((respuestas, valorPkOPosicion)=>{
                 var valorPk = numberOrStringIncIfArray(valorPkOPosicion, conjuntoRespuestasUA);
                 var forPkRaiz = {formulario, [uaDef.pk_agregada]:valorPk}
-                calcularFeedback(respuestas, forPkRaiz);
+                calcularFeedback(respuestas, forPkRaiz, {});
             })
         })
     });
@@ -611,17 +591,18 @@ export async function calcularFeedbackEncuesta(
     feedbackRowValidator:{ [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> },
     formularios:{ [nombreFormulario in IdFormulario]:InfoFormulario }, 
     forPkRaiz: ForPkRaiz, 
-    respuestas:Respuestas
+    respuestas:Respuestas, 
+    opts:OpcionesRowValidator
 ){
     var forPk:ForPk ={...forPkRaiz};
-    calcularFeedbackUnidadAnalisis(feedbackRowValidator, formularios, respuestas, defOperativo.UAprincipal, forPk, respuestas);
+    calcularFeedbackUnidadAnalisis(feedbackRowValidator, formularios, respuestas, defOperativo.UAprincipal, forPk, respuestas, null, opts);
 }
 
-function calcularFeedback(respuestas: Respuestas, forPkRaiz:ForPkRaiz){
+function calcularFeedback(respuestas: Respuestas, forPkRaiz:ForPkRaiz, opts:OpcionesRowValidator){
     if(respuestas){
         // @ts-ignore Partial
         var nuevosRows : {[x in PlainForPk]:FormStructureState<IdVariable,IdFin>}={}
-        calcularFeedbackEncuesta(nuevosRows, estructura.formularios, forPkRaiz, respuestas);
+        calcularFeedbackEncuesta(nuevosRows, estructura.formularios, forPkRaiz, respuestas, opts);
         var resumenEstado = calcularResumenVivienda(forPkRaiz, 
             // @ts-ignore sí, tiene los feedbacks de los formularios 
             nuevosRows,

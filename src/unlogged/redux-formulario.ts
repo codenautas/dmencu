@@ -146,8 +146,8 @@ type IDataConCasilleros<T> = T & {
 const casilleroVacio={salto:null, despliegue:null, aclaracion:null, ver_id:null}
 
 const opcionesSiNo: Opcion[] = [
-    {...casilleroVacio, casillero:1, tipoc:'O', nombre:'Sí', casilleros:[]},
-    {...casilleroVacio, casillero:2, tipoc:'O', nombre:'No', casilleros:[]},
+    {...casilleroVacio, casillero:1, tipoc:'O', nombre:'Sí', casilleros:[], leer:null},
+    {...casilleroVacio, casillero:2, tipoc:'O', nombre:'No', casilleros:[], leer:null},
 ]
 
 type CaracerizacionEstadoRowValidator={
@@ -189,6 +189,7 @@ function rellenarVariablesYOpciones(idFormulario:IdFormulario, estructura:Estruc
             salto:casillero.salto as IdVariable,
             saltoNsNr:'salto_ns_nc' in casillero && casillero.salto_ns_nc || null,
             funcionHabilitar:casillero.expresion_habilitar_js,
+            funcionAutoIngresar:casillero.expresion_autoingresar_js,
             calculada:
                 // @ts-ignore // TODO. Averiguar si las preguntas y filtros pueden tener unidad de análisis
                 casillero.unidad_analisis && casillero.unidad_analisis!=unidadAnalisis 

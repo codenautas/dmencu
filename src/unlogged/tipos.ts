@@ -36,7 +36,7 @@ export type FeedbackVariable = Feedback<IdVariable, IdFin>
 
 export type TipoVariables = 'texto'|'numero'|'fecha'
 
-export type Despliegue = 'calculada'|'libre'|'no_leer'|'leer'|'horizontal'
+export type Despliegue = 'horizontal'|'oculta'
 
 export type CasilleroBase = {
     tipoc:Tipoc
@@ -54,6 +54,8 @@ export type CasilleroBase = {
     casilleros?:CasillerosImplementados[]|null
     expresion_habilitar?:string
     expresion_habilitar_js?:string
+    expresion_autoingresar?:string
+    expresion_autoingresar_js?:string
 }
 
 export type Opcion=CasilleroBase & {
@@ -81,12 +83,16 @@ export type OpcionMultiple=CasilleroBase & {
     tipoc:'OM'
     var_name:IdVariable
     casilleros:[OpcionSi, OpcionNo]
+    calculada?:boolean
+    libre?:boolean
 }
 
 export type PreguntaBase = CasilleroBase & {
     tipoc:'P'
     optativo:boolean|null
     casillero:IdPregunta
+    calculada: boolean|null
+    libre: boolean|null
 }
 
 export type PreguntaSimple = PreguntaBase & {
@@ -95,8 +101,6 @@ export type PreguntaSimple = PreguntaBase & {
     longitud:string
     salto_ns_nc:IdVariable|null
     casilleros: PreguntaSimple[]
-    calculada: boolean|null
-    libre: boolean|null
 }
 
 export type PreguntaConSiNo = PreguntaBase & {
@@ -141,6 +145,8 @@ export type Filtro = CasilleroBase & {
     var_name?:null
     tipovar?:null
     primera_variable?:null
+    calculada?:null
+    libre?:null
 }
 
 export type ContenidoFormulario=Bloque|Pregunta|ConjuntoPreguntas|Filtro|BotonFormulario|Consistencia
