@@ -555,7 +555,13 @@ export async function calcularFeedbackUnidadAnalisis(
                     respuestasAumentadas,
                     opts
                 )
-            var resumen = feedbackRowValidator[plainForPk].resumen;
+            var {resumen, autoIngresadas} = feedbackRowValidator[plainForPk];
+            var varName:IdVariable;
+            if(autoIngresadas!=null){
+                for(varName in autoIngresadas){
+                    respuestas[varName] = autoIngresadas[varName];
+                }
+            }
             var resumenOrNull = resumen == 'vacio' ? null : resumen
             if(esHermano){
                 respuestas['$B.'+formulario as IdVariable] = resumenOrNull;
