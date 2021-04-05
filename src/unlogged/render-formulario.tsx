@@ -72,7 +72,7 @@ import {arrange, html} from "js-to-html";
 
 function breakeableText(text:string|null){
     if(typeof text != "string") return text;
-    return text.replace(/\//g,"/\u2063");
+    return text.replace(/\//g,"/\u2063").replace(/\/\u2063(\w)\b/g,'/$1');
 }
 
 // /*
@@ -448,7 +448,15 @@ function EncabezadoDespliegue(props:{casillero:CasilleroBase, verIdGuion?:boolea
         <div className="nombre-div">
             <div className="nombre">{breakeableText(casillero.nombre)}</div>
             {casillero.aclaracion?
-                <div className="aclaracion">{breakeableText(casillero.aclaracion)}</div>
+                <div className="aclaracion">
+                    {breakeableText(casillero.aclaracion)}
+                    {casillero.salto && casillero.tipoc=='FILTRO'?
+                        <div className="pase">
+                            <div className="pase-titulo">pase a</div>
+                            <div className="pase-destino">{casillero.salto}</div>
+                        </div>
+                    :null}        
+                </div>
             :null}
             <div los-metadatos="si">
                 <span el-metadato="variable">{casillero.var_name}</span>
@@ -664,7 +672,7 @@ function PreguntaDespliegue(props:{
 
 function FiltroDespliegue(props:{filtro:Filtro, forPk:ForPk}){
     var {filtro} = props;
-    return <Paper>
+    return <Paper className="filtro">
         <DespliegueEncabezado casillero={filtro}/>
     </Paper>
 }

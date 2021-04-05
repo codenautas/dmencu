@@ -188,7 +188,7 @@ function respuestasForPk(forPk:ForPk, conAumentadas?:boolean, agregarSiFalta?:bo
         // @ts-expect-error Sé que es raíz por cómo estoy revolviendo la pila
         respuestasRaiz ||= respuestas;
         if(conAumentadas){
-            respuestasAumentadas = {...respuestasAumentadas, ...respuestas}
+            respuestasAumentadas = {...respuestasAumentadas, ...respuestas, [uaDef.pk_agregada]:valorPkOPosicion}
         }
     }
     return {
