@@ -20,7 +20,8 @@ import {Bloque, BotonFormulario,
     Pregunta, PreguntaConOpciones, PreguntaConOpcionesMultiples, PreguntaSimple, 
     Respuestas, RespuestasRaiz, Valor, TEM, IdCarga, Carga, IdFin, InfoTarea, Tareas, Visita, IdUnidadAnalisis,
     ModoAlmacenamiento,
-    toPlainForPk
+    toPlainForPk,
+    IdCasillero
 } from "./tipos";
 import { dmTraerDatosFormulario, dispatchers, 
     gotoSincronizar,
@@ -888,17 +889,26 @@ function ConjuntoPreguntasDespliegue(props:{casillero:ConjuntoPreguntas, formula
 }
 
 function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Bloque|Formulario|ConjuntoPreguntas, formulario:Formulario, forPk:ForPk, multiple:boolean}){
-    const [mostrar, setMostrar] = React.useState(5);
-    const casillerosLength = props.bloqueOFormulario.casilleros.length;
+    const [verTodo, setVerTodo] = useState(false);
+    const [forPkActual, setForPkActual] = useState<IdCasillero|null>(null);
+    if(forPkActual != props.bloqueOFormulario.casillero){
+        setVerTodo(false)
+        setForPkActual(props.bloqueOFormulario.casillero)
+    }
     useEffect(()=>{
-        const mostrarCasilleros=()=>
-            mostrar<casillerosLength?setMostrar(mostrar+5):clearInterval(myInterval);
-        var myInterval = setInterval(mostrarCasilleros, 500);
-        return () => clearInterval(myInterval)
+        var timer:NodeJS.Timeout|null = setTimeout(()=>{
+            setVerTodo(true);
+        },250)
+        return ()=>{
+            if(timer){
+                clearTimeout(timer);
+            }
+        }
     })
-    return <div className="casilleros">{
-        props.bloqueOFormulario.casilleros.map((casillero, i)=>
-            i<mostrar?
+    return <div className="casilleros">
+        {verTodo?null:<div style={{height:"500px", textAlign:'center', verticalAlign:'middle', width:'100%', position:"fixed", backgroundColor: 'rgba(100,100,100,0.3)', fontSize:'200%'}} >cargando...</div>}
+        {props.bloqueOFormulario.casilleros.map((casillero, i)=>
+            verTodo || i < 10?
                 <Grid key={casillero.casillero} item>
                     
                     {
