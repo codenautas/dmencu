@@ -889,22 +889,25 @@ function ConjuntoPreguntasDespliegue(props:{casillero:ConjuntoPreguntas, formula
 }
 
 function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Bloque|Formulario|ConjuntoPreguntas, formulario:Formulario, forPk:ForPk, multiple:boolean}){
-    const [verTodo, setVerTodo] = useState(false);
+    var parcializable = props.bloqueOFormulario.tipoc=='F';
+    const [verTodo, setVerTodo] = useState(!parcializable);
     const [forPkActual, setForPkActual] = useState<IdCasillero|null>(null);
-    if(forPkActual != props.bloqueOFormulario.casillero){
-        setVerTodo(false)
-        setForPkActual(props.bloqueOFormulario.casillero)
-    }
-    useEffect(()=>{
-        var timer:NodeJS.Timeout|null = setTimeout(()=>{
-            setVerTodo(true);
-        },250)
-        return ()=>{
-            if(timer){
-                clearTimeout(timer);
-            }
+    if(parcializable){
+        if(forPkActual != props.bloqueOFormulario.casillero){
+            setVerTodo(false)
+            setForPkActual(props.bloqueOFormulario.casillero)
         }
-    })
+        useEffect(()=>{
+            var timer:NodeJS.Timeout|null = setTimeout(()=>{
+                setVerTodo(true);
+            },250)
+            return ()=>{
+                if(timer){
+                    clearTimeout(timer);
+                }
+            }
+        })
+    }
     return <div className="casilleros">
         {verTodo?null:<div style={{height:"500px", textAlign:'center', verticalAlign:'middle', width:'100%', position:"fixed", backgroundColor: 'rgba(100,100,100,0.3)', fontSize:'200%'}} >cargando...</div>}
         {props.bloqueOFormulario.casilleros.map((casillero, i)=>
