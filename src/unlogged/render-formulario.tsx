@@ -83,7 +83,7 @@ type ColorValues = 'primary'|'secondary'|'default'|'inherit'
 const Button = ({variant, onClick, disabled, children, className, color, size, ...other}:{
     variant?:string,
     color?:ColorValues,
-    onClick?:(event:MouseEvent)=>void,
+    onClick?:React.MouseEventHandler<HTMLButtonElement>, //  (event:MouseEvent/* <HTMLButtonElement, MouseEvent>*/)=>void,
     disabled?:boolean
     children:any,
     className?:string,
@@ -292,8 +292,8 @@ function BotonBorrar({id, variable, forPk, valorOpcion}:{id:string, variable:IdV
 function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, variable:IdVariable, forPk:ForPk, leer:boolean, conBotonBorrar:boolean}){
     const {casillero} = props;
     var dispatch = useDispatch();
-    var handleClick=(event:Event)=>{
-        var container = subirHasta(event.target, elemento=>elemento.classList.contains('pregunta') || elemento.classList.contains('multiple')) || document.getElementById('main_layout')!;
+    var handleClick:React.MouseEventHandler<HTMLButtonElement> = (event)=>{
+        var container = subirHasta(event.target as HTMLElement, elemento=>elemento.classList.contains('pregunta') || elemento.classList.contains('multiple')) || document.getElementById('main_layout')!;
         var tiene = container.getAttribute('estoy-borrando');
         container.setAttribute('estoy-borrando','NO');
         if(elementoConSennialBorrar){
@@ -1273,7 +1273,7 @@ export function DesplegarCarga(props:{
                         </TableCell>
                         <TableCell>
                             <DesplegarTem tem={respuestas.TEM}/>
-                            {respuestas.resumenEstado=="cita pactada"?
+                            {respuestas['resumenEstado' as IdVariable]=="cita pactada"?
                                 <DesplegarCitaPactada respuestas={respuestas}/>
                             :
                                 <DesplegarCitaPactadaYSeleccionadoAnteriorTem tem={respuestas.TEM}/>
