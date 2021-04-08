@@ -20,7 +20,8 @@ import {Bloque, BotonFormulario,
     Pregunta, PreguntaConOpciones, PreguntaConOpcionesMultiples, PreguntaSimple, 
     Respuestas, RespuestasRaiz, Valor, TEM, IdCarga, Carga, IdFin, InfoTarea, Tareas, Visita, IdUnidadAnalisis,
     ModoAlmacenamiento,
-    toPlainForPk
+    toPlainForPk,
+    IdCasillero
 } from "./tipos";
 import { dmTraerDatosFormulario, dispatchers, 
     gotoSincronizar,
@@ -906,19 +907,45 @@ function ConjuntoPreguntasDespliegue(props:{casillero:ConjuntoPreguntas, formula
 }
 
 function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Bloque|Formulario|ConjuntoPreguntas, formulario:Formulario, forPk:ForPk, multiple:boolean}){
-    return <div className="casilleros">{
-        props.bloqueOFormulario.casilleros.map((casillero)=>
-            <Grid key={casillero.casillero} item>
-                {
-                    casillero.tipoc == "P"?<PreguntaDespliegue pregunta={casillero} forPk={props.forPk} />:
-                    casillero.tipoc == "B"?<BloqueDespliegue bloque={casillero} formulario={props.formulario} forPk={props.forPk}/>:
-                    casillero.tipoc == "FILTRO"?<FiltroDespliegue filtro={casillero} forPk={props.forPk}/>:
-                    casillero.tipoc == "BF"?<BotonFormularioDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
-                    casillero.tipoc == "CONS"?<ConsistenciaDespliegue casillero={casillero} forPk={props.forPk}/>:
-                    casillero.tipoc == "CP"?<ConjuntoPreguntasDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
-                    <CasilleroDesconocido casillero={casillero}/>
+    var parcializable = props.bloqueOFormulario.tipoc=='F';
+    const [verTodo, setVerTodo] = useState(!parcializable);
+    const [forPkActual, setForPkActual] = useState<IdCasillero|null>(null);
+    if(parcializable){
+        if(forPkActual != props.bloqueOFormulario.casillero){
+            setVerTodo(false)
+            setForPkActual(props.bloqueOFormulario.casillero)
+        }
+        useEffect(()=>{
+            var timer:NodeJS.Timeout|null = setTimeout(()=>{
+                setVerTodo(true);
+            },250)
+            return ()=>{
+                if(timer){
+                    clearTimeout(timer);
                 }
-            </Grid>
+            }
+        })
+    }
+    return <div className="casilleros">
+        {verTodo?null:<div style={{height:"500px", textAlign:'center', verticalAlign:'middle', width:'100%', position:"fixed", backgroundColor: 'rgba(100,100,100,0.3)', fontSize:'200%'}} >cargando...</div>}
+        {props.bloqueOFormulario.casilleros.map((casillero, i)=>
+            verTodo || i < 10?
+                <Grid key={casillero.casillero} item>
+                    
+                    {
+                        casillero.tipoc == "P"?<PreguntaDespliegue pregunta={casillero} forPk={props.forPk} />:
+                        casillero.tipoc == "B"?<BloqueDespliegue bloque={casillero} formulario={props.formulario} forPk={props.forPk}/>:
+                        casillero.tipoc == "FILTRO"?<FiltroDespliegue filtro={casillero} forPk={props.forPk}/>:
+                        casillero.tipoc == "BF"?<BotonFormularioDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
+                        casillero.tipoc == "CONS"?<ConsistenciaDespliegue casillero={casillero} forPk={props.forPk}/>:
+                        casillero.tipoc == "CP"?<ConjuntoPreguntasDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
+                        <CasilleroDesconocido casillero={casillero}/>
+                    }
+                </Grid>
+            :
+                <div className="spinner-border" role="status">
+                    <span>cargando bloque...</span>
+                </div>
         )
     }</div>
 }
