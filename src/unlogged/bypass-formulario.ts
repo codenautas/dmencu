@@ -268,11 +268,14 @@ export function accion_registrar_respuesta(payload:{forPk:ForPk, variable:IdVari
         if(respuesta == ''){
             respuesta = null;
         }else if(estructura.formularios[forPk.formulario].estructuraRowValidator.variables[variable].tipo=='numero'){
-            respuesta = Number(respuesta);
+            if(respuesta != null){
+                respuesta = Number(respuesta);
+            }
         }
-        recentModified = respuestas[variable] != respuesta
+        // si es un falsy (0 == false) tengo que comparar con !==
+        recentModified = respuesta ? respuestas[variable] != respuesta : respuestas[variable] !== respuesta
         if(recentModified){
-            respuestas[variable] = respuesta;
+            respuestas[variable] = respuesta ?? null; // cambio undefined por null
         }
     }
     if(recentModified || NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO && datosByPass.feedbackRowValidator[toPlainForPk(forPk)].autoIngresadas?.[variable]){
