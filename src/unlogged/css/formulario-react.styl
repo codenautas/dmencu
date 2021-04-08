@@ -677,9 +677,12 @@ app-cache-version, #app-dm-version
       margin 6px
 
 .pase
-  display flex
-  flex-direction column
+  display inline-flex
+  flex-direction row
+  align-items center
   text-align center
+  > svg
+    display inline
 .pase-titulo
   white-space nowrap
   background-color #444
@@ -692,6 +695,7 @@ app-cache-version, #app-dm-version
 
 .boton-borrar
   width 24px
+  min-width 24px
   > button
     position relative
     left -40px
@@ -705,7 +709,7 @@ app-cache-version, #app-dm-version
     padding-right 5px
     min-width 72px
 
-[nuestro-validator=valida], [nuestro-validator=todavia_no]
+[nuestro-validator=valida], [nuestro-validator=salteada], [nuestro-validator=todavia_no]
   .opcion
     .btn.btn-outline-secondary
       border-color transparent

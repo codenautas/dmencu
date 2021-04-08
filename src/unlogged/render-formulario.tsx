@@ -339,8 +339,7 @@ function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, va
         </Button>
         {casillero.salto?
             <div className="pase">
-                <div className="pase-titulo">pase a</div>
-                <div className="pase-destino">{casillero.salto}</div>
+                <ICON.TrendingFlat /><span>{casillero.salto}</span>
             </div>
         :null}
     </Grid>
