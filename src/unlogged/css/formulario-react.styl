@@ -71,16 +71,6 @@ anchoNormal(ancho)
       font-size 90%
       color #666 !important
 
-[nuestro-bloque="LN"]
-  > .casilleros
-    .pregunta
-      > .encabezado
-        display none
-  > .casilleros:nth-child(2)
-    .pregunta
-      > .encabezado
-        display block
-
 .tareas-notas, .cita-pactada
   margin-top 10px
 
@@ -133,76 +123,6 @@ anchoNormal(ancho)
     .MuiDialog-paper
       min-width 100%
 
-@media screen and (min-width 600px)
-  [nuestro-seleccion="1"][nuestro-relevamiento="1"]
-    .bloque[es-multiple=SI]
-      > .casilleros
-        > div:nth-child(1)
-          width 45%
-        > div:nth-child(4)
-          display none
-        > div:nth-child(5)
-          display none
-        > div:nth-child(6)
-          display none
-  [nuestro-seleccion="2"][nuestro-relevamiento="1"]
-    .bloque[es-multiple=SI]
-      > .casilleros
-        > div:nth-child(5)
-          display none
-        > div:nth-child(6)
-          display none
-  [nuestro-seleccion="1"][nuestro-relevamiento="2"]
-    .bloque[es-multiple=SI]
-      > .casilleros
-        > div:nth-child(4)
-          display none
-        > div:nth-child(5)
-          display none
-  [nuestro-seleccion="2"][nuestro-relevamiento="2"]
-    .bloque[es-multiple=SI]
-      > .casilleros
-        > div:nth-child(4)
-          display none
-        > div:nth-child(6)
-          display none
-  .bloque[es-multiple=SI]
-    > .casilleros
-      flex-direction row
-      > div
-        width 24%
-      > div:nth-child(2)
-        min-width 180px
-      > div:nth-child(4)
-        min-width 155px
-      > div:nth-child(3)
-        flex-shrink 1
-        min-width 90px
-        x-width calc(24%-(25%-180px))
-        max-width 24%
-      .pregunta
-        flex-direction column
-        justify-content space-between
-        height 100%
-        > .encabezado
-          display none
-          width 100%
-          > .id-div
-            width 24px
-          > *
-            display inline
-            margin 2px
-            padding 0px
-        > .casilleros
-          width 100%
-    > .casilleros:nth-child(2)
-      .pregunta
-        > .encabezado
-          border-right 1px solid #888
-          border-left 1px solid #888
-          padding-right 4px
-          padding-left 2px
-          display block
 
 .casilleros
   display flex
@@ -250,37 +170,12 @@ anchoNormal(ancho)
   border-top 1px solid colorFondoEncabezadoBloque
   .pregunta
     margin-left 8px
-    @media print
-      margin-left 48px
-      justify-content space-between
-    @media (min-width 600px)
-      margin-left 48px
-      justify-content space-between
     border-top 0px solid transparent
+    > .casillero
+      padding-bottom 3px
 
-.pregunta
-  @media screen and (max-width 599px)
-    flex-direction column
-  display flex
-  justify-content space-between
-  border-top 1px solid colorFondoEncabezadoBloque
-  &[nuestro-tipovar="opciones"]
-    > .casilleros
-      .MuiButton-root
-        x-color blue
-  &[nuestro-tipovar="si_no"]
-    > .encabezado
-      anchoNormal 70%
-    > .casilleros
-      anchoNormal 30%
-  &[nuestro-tipovar="multiple"]
-    display block
-    > .encabezado
-      width 100%
-    > .casilleros
-      width 100%
+.pregunta, .conjuntopreguntas
   > .encabezado
-    anchoNormal 50%
     font-size 120%
     min-height 24px
     .id
@@ -295,7 +190,14 @@ anchoNormal(ancho)
     .nombre-div
       padding margenPregunta
       padding-right 0
+
+.pregunta
+  flex-direction column
+  display flex
+  justify-content space-between
+  border-top 1px solid colorFondoEncabezadoBloque
   > .casilleros
+    padding-bottom 6px
     > .campo
       display flex
       flex-direction row
@@ -341,7 +243,7 @@ anchoNormal(ancho)
           width 2px
   > .casilleros, > div .casilleros
     align-self flex-end
-    anchoNormal 50%
+    width 90%
     > .variable
       margin-bottom margenPregunta
 
@@ -354,8 +256,6 @@ anchoNormal(ancho)
       color rgba(0,0,0,0)
       background-color rgba(0,0,0,0)
     .id
-      x-color colorFondoEncabezadoBloque
-      x-background-color colorFondoIdBloque
       min-width 24px
       min-height 24px
       padding-top 2px
@@ -540,7 +440,6 @@ boton-id-div-invalido()
 
 .opcion
   display flex
-  padding 6px
   padding-left 0
   .id
     font-weight bold
@@ -552,7 +451,6 @@ boton-id-div-invalido()
 
 [modo-despliegue=relevamiento]
   .opcion
-    padding 6px
     padding-left 0
     .id
       border-radius 5px
@@ -577,6 +475,8 @@ boton-id-div-invalido()
     padding 3px
   button.MuiButton-containedSizeSmall
     padding 3px
+  margin-left 6px
+  margin-right 6px
 
 .bienvenida
   padding 12px
@@ -709,6 +609,7 @@ app-cache-version, #app-dm-version
     display flex
     flex-direction column
     border-top 0px
+    padding-bottom 0px
     > .encabezado
       width 99%
     > .casilleros
@@ -721,19 +622,6 @@ app-cache-version, #app-dm-version
       background-image none
       > .casilleros
         x-visibility hidden
-
-[nuestro-casillero=I3]
-  .multiple > .encabezado
-    min-width 50%
-    max-width 50%
-  .multiple 
-    .pregunta > .encabezado
-      min-width 20%
-      width 20%
-    .pregunta > .casilleros
-      width 90%
-      .input-campo
-        width 80%
 
 .boton-opcion-borrar
   visibility hidden
@@ -810,3 +698,14 @@ app-cache-version, #app-dm-version
     z-index 1
     background-color white
 
+.opcion
+  button.btn
+    margin 2px
+    text-align left
+    padding-right 5px
+    min-width 72px
+
+[nuestro-validator=valida], [nuestro-validator=todavia_no]
+  .opcion
+    .btn.btn-outline-secondary
+      border-color transparent

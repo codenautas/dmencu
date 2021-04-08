@@ -625,7 +625,6 @@ function PreguntaDespliegue(props:{
     return <div
         id={id}
         className="pregunta"
-        nuestro-casillero={pregunta.casillero}
         nuestro-tipovar={pregunta.tipovar||"multiple"} 
         ocultar-salteada={pregunta.despliegue?.includes('ocultar')?(pregunta.expresion_habilitar_js?'INHABILITAR':'SI'):'NO'}
     >
@@ -930,8 +929,7 @@ function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Blo
         {verTodo?null:<div style={{height:"500px", textAlign:'center', verticalAlign:'middle', width:'100%', position:"fixed", backgroundColor: 'rgba(100,100,100,0.3)', fontSize:'200%'}} >cargando...</div>}
         {props.bloqueOFormulario.casilleros.map((casillero, i)=>
             verTodo || i < 10?
-                <Grid key={casillero.casillero} item>
-                    
+                <Grid key={casillero.casillero} nuestro-casillero={casillero.casillero} item>
                     {
                         casillero.tipoc == "P"?<PreguntaDespliegue pregunta={casillero} forPk={props.forPk} />:
                         casillero.tipoc == "B"?<BloqueDespliegue bloque={casillero} formulario={props.formulario} forPk={props.forPk}/>:
