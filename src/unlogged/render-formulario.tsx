@@ -78,7 +78,7 @@ function breakeableText(text:string|null){
 
 // /*
 
-type CommonAttributes = {className?:string,style?:CSSProperties,id?:string} // CSSProperties
+type CommonAttributes = {className?:string,style?:CSSProperties,id?:string, tabIndex?:number} // CSSProperties
 type ColorValues = 'primary'|'secondary'|'default'|'inherit'
 
 const Button = ({variant, onClick, disabled, children, className, color, size, ...other}:{
@@ -554,6 +554,7 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple, forPk:ForPk, on
         {disabled?null:
             <div className="boton-confirmar-campo">
                 <Button variant={editando?"contained":'outlined'} size="small" color={editando?'primary':'default'}
+                    tabIndex={-1}
                     onClick={()=>{
                         props.onChange(NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO);
                         setEditando(false)
