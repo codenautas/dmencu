@@ -6,7 +6,7 @@ import { CasoState, EtiquetaOpts, IdUnidadAnalisis, IdVariable, LOCAL_STORAGE_ST
 import { crearEtiqueta } from "../unlogged/generador-qr";
 import * as TypedControls from "typed-controls";
 import * as likeAr from "like-ar";
-import {cargarEstructura, cargarHojaDeRuta, getEstructura, getHojaDeRuta} from "../unlogged/bypass-formulario"
+import {cargarEstructura, cargarHojaDeRuta, getEstructura, getHojaDeRuta, calcularFeedbackHojaDeRuta} from "../unlogged/bypass-formulario"
 
 const OPERATIVO = 'etoi211';
 const OPERATIVO_ACTUAL = 'etoi211';
@@ -323,7 +323,17 @@ myOwn.wScreens.abrirDirecto=async function(addrParams:myOwn.AddrParams){
     // @ts-ignore AddPrams
     var forPkRaiz = addrParams.forPkRaiz;
     try{
-        await abrirDirecto(forPkRaiz);
+        var hdr = getHojaDeRuta();
+        var reabrirDeMemoria = false;
+        if(hdr.respuestas.viviendas[forPkRaiz.vivienda]){
+            reabrirDeMemoria = await confirmPromise('Ya había abierto esa encuesta ¿quiere traerla de memoria?',{reject:false});
+        }
+        if(!reabrirDeMemoria){
+            await abrirDirecto(forPkRaiz);
+        }else{
+            getEstructura();
+            calcularFeedbackHojaDeRuta();
+        }
         // @ts-ignore desplegarFormularioActual es global
         desplegarFormularioActual({modoDemo:false, forPkRaiz, useSessionStorage:true});
     }catch(err){

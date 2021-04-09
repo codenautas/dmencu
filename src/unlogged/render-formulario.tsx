@@ -33,7 +33,7 @@ import { dmTraerDatosFormulario, dispatchers,
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux"; 
 import * as likeAr from "like-ar";
-import {serie} from "best-globals";
+import {serie, sleep} from "best-globals";
 
 import {
     AppBar, Badge, /*Button,*/ ButtonGroup, Card, Chip, CircularProgress, CssBaseline, 
@@ -1011,6 +1011,14 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
     const [mensajeDescarga, setMensajeDescarga] = useState<string|null>(null);
     const [descargaCompleta, setDescargaCompleta] = useState<boolean|null>(false);
     const [descargando, setDescargando] = useState<boolean|null>(false);
+    var cerrarDirecto = async function(){
+        close();
+        await sleep(100);
+        dispatch(dispatchers.VOLVER_HDR({}));
+        await sleep(100);
+        location.hash='';
+        location.reload();
+    }
     var botonesFormulario=[];
     if(!opciones.modoDirecto){
         botonesFormulario.push({que: 'hdr'    , abr:'HdR', label:'hoja de ruta', retroceso:0})
@@ -1046,7 +1054,7 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
                         variant="outlined"
                         onClick={async ()=>{
                             if(props.soloLectura || !dirty){
-                                close();
+                                cerrarDirecto();
                             }else{
                                 setConfirmaCerrar(true)
                             }
@@ -1070,7 +1078,7 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
                         <DialogActions>
                             <Button 
                                 onClick={()=>{
-                                    close()
+                                    cerrarDirecto()
                                 }} 
                                 color="secondary" 
                                 variant="outlined"
@@ -1102,7 +1110,7 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
                                         setDescargaCompleta(true);
                                         message+=', cerrando pestaña...';
                                         setTimeout(function(){
-                                            close()
+                                            cerrarDirecto()
                                         }, 2000)
                                     }
                                     setMensajeDescarga(message)

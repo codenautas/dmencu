@@ -106,6 +106,9 @@ export function getDirty(){
 }
 
 export function getEstructura(){
+    if(!estructura){
+        estructura = my.getLocalVar(GLOVAR_ESTRUCTURA);
+    }
     return estructura;
 }
 
