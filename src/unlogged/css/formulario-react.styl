@@ -128,13 +128,43 @@ anchoNormal(ancho)
   display flex
   flex-direction column
 
+.pregunta, .conjuntopreguntas, .bloque, .filtro, [despliegue~=vertical]
+  display flex
+  flex-direction column
+  > .encabezado
+    min-height 24px
+    .id
+      color colorFondoEncabezadoBloque
+      background-color colorFondoIdBloque
+      min-width 24px
+      width auto
+      min-height 24px
+      padding-top 2px
+      vertical-align middle
+    .nombre-div
+      padding margenPregunta
+      padding-right 0
+  > .casilleros
+    padding-bottom 6px
+    align-self flex-end
+    width 90%
+
+
+.pregunta[despliegue~=horizontal], 
+  flex-direction row
+  border-top 0px solid transparent
+  > .encabezado > .nombre-div
+    margin 0
+    margin-left 12px
+  > .casilleros
+    padding-bottom 3px
+    width auto
+
 .multiple
   border-top 0.5px solid colorFondoIdBloque
   font-size 120%
   margin-left 8px
   display flex
-  @media screen and (max-width 599px)
-    flex-direction column
   > .encabezado
     .id
       margin-right 8px
@@ -162,14 +192,11 @@ anchoNormal(ancho)
 
 .conjuntopreguntas
   border-top 1px solid colorFondoEncabezadoBloque
-  .pregunta
-    flex-direction row
-    margin-left 8px
-    border-top 0px solid transparent
-    > .casillero
-      padding-bottom 3px
+
 
 .pregunta, .conjuntopreguntas
+  flex-direction column
+  display flex
   > .encabezado
     font-size 120%
     min-height 24px
@@ -185,14 +212,14 @@ anchoNormal(ancho)
     .nombre-div
       padding margenPregunta
       padding-right 0
+  > .casilleros
+    align-self flex-end
+    width 90%
 
 .pregunta
-  flex-direction column
-  display flex
   justify-content space-between
   border-top 1px solid colorFondoEncabezadoBloque
   > .casilleros
-    padding-bottom 6px
     > .campo
       display flex
       flex-direction row
@@ -236,9 +263,7 @@ anchoNormal(ancho)
       &[nuestra-longitud="1"]
         .input-campo
           width 2px
-  > .casilleros, > div .casilleros
-    align-self flex-end
-    width 90%
+  > .casilleros, > div > .casilleros
     > .variable
       margin-bottom margenPregunta
 
@@ -676,6 +701,7 @@ app-cache-version, #app-dm-version
   flex-direction row
   align-items center
   text-align center
+  margin-right 6px
   > svg
     display inline
 .pase-titulo
