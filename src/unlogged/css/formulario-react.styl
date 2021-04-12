@@ -71,7 +71,10 @@ anchoNormal(ancho)
   flex-direction row
   min-height 3em
   align-items center
-  > .id
+  > *
+    margin 0.5em
+  > .id-div
+    margin 0
     font-size 0.9em
     align-self flex-start
     justify-self flex-start
@@ -79,11 +82,9 @@ anchoNormal(ancho)
     flex-shrink 0
     flex-grow 0
   > .nombre-div
-    margin 0.5em
     flex-grow 0
     justify-self baseline
   > .aclaracion
-    margin 0.5em
     flex-grow 1
     flex-wrap wrap
     font-size 0.8em
@@ -116,7 +117,34 @@ anchoNormal(ancho)
         text-align center
   > .contenido
     margin-left 3em
-
+    > .multiple
+      > .encabezado
+        flex-grow: 1
+    > .multiple[el-despliegue~=superior]
+      > .encabezado
+        flex-grow: 0
+    > .pregunta, > .multiple
+      flex-direction row
+      &[el-despliegue~=superior]
+        flex-direction column
+      > .encabezado
+        > *
+          margin 0.3em
+        > .id-div
+          margin 0
+          font-size 0.9em
+      > .contenido
+        margin 0.3em
+      > .pie-pregunta
+        &:before
+          content none
+  > .pie-pregunta
+    align-self center
+    &:before
+      content ""
+      display inline-block
+      height 100%
+      vertical-align middle
 
 .multiple
   border-top 0.5px solid colorFondoIdBloque
@@ -584,3 +612,12 @@ app-cache-version, #app-dm-version
   .botonformulario
     .special-button
       display none
+
+input::-webkit-outer-spin-button, input::-webkit-inner-spin-button 
+  -webkit-appearance none
+  margin 0
+
+
+/* Firefox */
+input[type=number]
+  -moz-appearance textfield

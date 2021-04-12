@@ -290,7 +290,16 @@ function BotonBorrar({id, variable, forPk, valorOpcion}:{id:string, variable:IdV
     </div>
 }
 
-function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, variable:IdVariable, forPk:ForPk, leer:boolean, conBotonBorrar:boolean}){
+function SaltoDespliegue({casillero,prefijo}:{casillero:Pregunta|Opcion|Filtro, prefijo?:string}){
+    return casillero.salto?
+        <div className="pase">
+            {prefijo?<span className="prefijo">{prefijo} </span>:null}
+            <ICON.TrendingFlat /><span>{casillero.salto}</span>
+        </div>
+    :null
+}
+
+function OpcionDespliegue(props:{casillero:Opcion, valorOpcion:number, variable:IdVariable, forPk:ForPk, leer:boolean, conBotonBorrar:boolean}){
     const {casillero} = props;
     var dispatch = useDispatch();
     var handleClick:React.MouseEventHandler<HTMLButtonElement> = (event)=>{
@@ -337,11 +346,7 @@ function OpcionDespliegue(props:{casillero:CasilleroBase, valorOpcion:number, va
                 </Grid>
             </Grid>
         </Button>
-        {casillero.salto?
-            <div className="pase">
-                <ICON.TrendingFlat /><span>{casillero.salto}</span>
-            </div>
-        :null}
+        <SaltoDespliegue casillero={casillero}/>
     </Grid>
 }
 interface IcasilleroConOpciones{
@@ -405,9 +410,9 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
         direct:true, 
         fun: registradorDeVariable(opcionM)
     })
-    return <div 
+    return <DesplegarCasillero 
         id={id}
-        className="multiple" 
+        casillero={opcionM}
     >
         <EncabezadoDespliegue 
             casillero={opcionM} 
@@ -419,7 +424,7 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
             casilleroConOpciones={opcionM} 
             forPk={props.forPk}
         />
-    </div>
+    </DesplegarCasillero>
 }
 
 function EncabezadoDespliegue(props:{casillero:CasilleroBase, verIdGuion?:boolean, leer?:boolean, forPk:ForPk}){
@@ -445,12 +450,8 @@ function EncabezadoDespliegue(props:{casillero:CasilleroBase, verIdGuion?:boolea
             <div className="nombre">{breakeableText(casillero.nombre)}</div>
             {casillero.aclaracion?
                 <div className="aclaracion">
-                    {breakeableText(casillero.aclaracion)}
                     {casillero.salto && casillero.tipoc=='FILTRO'?
-                        <div className="pase">
-                            <div className="pase-titulo">pase a</div>
-                            <div className="pase-destino">{casillero.salto}</div>
-                        </div>
+                        <SaltoDespliegue casillero={casillero} prefijo={breakeableText(casillero.aclaracion)}/>
                     :null}        
                 </div>
             :null}
@@ -579,7 +580,7 @@ function OpcionesDespliegue(
             />
         </div>:null
     ))
-    return <><Grid container direction={horizontal?"row":"column"} wrap={horizontal?"nowrap":"wrap"} es-horizontal={horizontal?'SI':'NO'}>
+    return <><div className="contenido opciones" el-despliegue={horizontal?'horizontal':'vertical'}>
         {casilleroConOpciones.casilleros.map((opcion:Opcion, i:number)=>
             <Grid key={opcion.casillero} item
                 ocultar-salteada={opcion.despliegue?.includes('ocultar')?(opcion.expresion_habilitar_js?'INHABILITAR':'SI'):'NO'}
@@ -598,7 +599,7 @@ function OpcionesDespliegue(
         {horizontal?casilleroConOpciones.casilleros.map((opcion:Opcion)=>
             desplegarOtros(opcion,true,false)
         ):null}
-    </Grid>
+    </div>
     {horizontal?casilleroConOpciones.casilleros.map((opcion:Opcion)=>
         desplegarOtros(opcion,false,true)
     ):null}
@@ -618,7 +619,7 @@ const nombreCasillero={
 }
 
 function DesplegarCasillero(props:{
-    casillero:Pregunta|Bloque|Filtro|ConjuntoPreguntas|BotonFormulario|Consistencia,
+    casillero:Pregunta|Bloque|Filtro|ConjuntoPreguntas|BotonFormulario|Consistencia|OpcionMultiple,
     id?:string,
     style?:React.CSSProperties,
     children:React.ReactNode|Element[],
@@ -688,6 +689,14 @@ function PreguntaDespliegue(props:{
                 />
             )(pregunta)
         }</div>
+        <div className="pie-pregunta">
+            <SaltoDespliegue 
+                casillero={pregunta}
+                prefijo={pregunta.tipovar=="opciones"?(
+                    pregunta.casilleros.some(opcion=>opcion.salto)?"resto de las opciones":"todas las opciones"
+                ):""}
+            />
+        </div>
     </DesplegarCasillero>
 }
 
