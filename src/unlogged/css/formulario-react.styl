@@ -1,15 +1,22 @@
 @font-face {
   font-family: 'FormFont';
-  // font-style: normal;
-  // font-weight: 400;
-  // font-display: swap;
   src: local('Roboto-Regular'), local('Roboto'), url('Roboto-Regular.ttf') format('truetype');
 }
 
 colorFondoEncabezadoBloque = #888
-margenPregunta = 16px
 colorFondoIdBloque = #DDD
 
+.x-body
+  .casillero, .encabezado, .contenido
+    border-style dashed !important
+    border-width 2px !important
+    padding 2px !important
+  .casillero
+    border-color blue !important
+  .encabezado
+    border-color magenta !important
+  .contenido
+    border-color orange !important
 
 anchoNormal(ancho)
   @media print
@@ -50,256 +57,141 @@ anchoNormal(ancho)
     background-color  blue
     color  #FFFFFF
 
-.hoja-de-ruta
-  .carga
-    margin-bottom 12px;
-    .informacion-carga
-      padding 15px
+.casillero
+  font-size 1.2rem
+  display flex
+  flex-direction column
+  &[el-despliegue~=lateral]
+    flex-direction row
+    > .contenido
+      flex-wrap wrap
 
 .encabezado
   display flex
-  .id
+  flex-direction row
+  min-height 3em
+  align-items center
+  > .id
+    font-size 0.9em
     align-self flex-start
     justify-self flex-start
     text-align center
     flex-shrink 0
-  .nombre-div
-    flex-grow 2
-    align-self flex-start
+    flex-grow 0
+  > .nombre-div
+    margin 0.5em
+    flex-grow 0
     justify-self baseline
-    .aclaracion
-      font-size 90%
-      color #666 !important
-      display inline
+  > .aclaracion
+    margin 0.5em
+    flex-grow 1
+    flex-wrap wrap
+    font-size 0.8em
+    color #666 !important
 
-.tareas-notas, .cita-pactada
-  margin-top 10px
-
-.visitas
-  .MuiTableCell-root
-    padding 8px
-  .campo
-    display flex
+.contenido
+  display flex
+  flex-direction column
+  min-height 2em
+  &[el-despliegue~=horizontal]
     flex-direction row
-    margin-bottom margenPregunta
-    .MuiButton-root
-      margin-left 5px
-    .input-campo
-      max-width calc(100% - 40px)
-      input
-        width 95%
-        background-color rgba(255,255,255,0.2)
-        border-top transparent
-        border-left transparent
-        border-right transparent
-    &[nuestra-longitud=full]
-      .input-campo
-        width 88%
-      .boton-confirmar-campo
-        width 20%
-    &[nuestra-longitud=medium]
-      .input-campo
-        width 60%
-      .boton-confirmar-campo
-        width 40%
-    &[nuestra-longitud=small]
-      .input-campo
-        width 30%
-      .boton-confirmar-campo
-        width 70%
-    &[nuestra-longitud="3"]
-      .input-campo
-        width 40px
-    &[nuestra-longitud="2"]
-      .input-campo
-        width 28px
+    > *
+      flex-wrap wrap
+  > .otros-especificar
+    margin-left 3em
+    font-size 0.8em
+    > .casillero
+      font-size 0.8em
 
-@media (min-width 600px)
-  .dialogo-notas
-    .MuiDialog-paper
-      min-width 600px
-
-@media (max-width 599px)
-  .dialogo-notas
-    .MuiDialog-paper
-      min-width 100%
-
-
-.casilleros
-  display flex
-  flex-direction column
-
-.pregunta, .conjuntopreguntas, .bloque, .filtro, [despliegue~=vertical]
-  display flex
-  flex-direction column
+.multiple, .pregunta, .conjuntopreguntas
+  font-size 1.2rem
   > .encabezado
-    min-height 24px
-    .id
-      color colorFondoEncabezadoBloque
-      background-color colorFondoIdBloque
-      min-width 24px
-      width auto
-      min-height 24px
-      padding-top 2px
-      vertical-align middle
-    .nombre-div
-      padding margenPregunta
-      padding-right 0
-  > .casilleros
-    padding-bottom 6px
-    align-self flex-end
-    width 90%
+    > .id-div
+      > .id
+        color colorFondoIdBloque
+        background-color colorFondoEncabezadoBloque
+        border-bottom-right-radius 7px
+        padding-left 0.2rem
+        padding-right 0.2rem
+        text-align center
+  > .contenido
+    margin-left 3em
 
-
-.pregunta[despliegue~=horizontal], 
-  flex-direction row
-  border-top 0px solid transparent
-  > .encabezado > .nombre-div
-    margin 0
-    margin-left 12px
-  > .casilleros
-    padding-bottom 3px
-    width auto
 
 .multiple
   border-top 0.5px solid colorFondoIdBloque
-  font-size 120%
-  margin-left 8px
-  display flex
-  > .encabezado
-    .id
-      margin-right 8px
-      color colorFondoEncabezadoBloque
-      background-color colorFondoIdBloque
-      flex-shrink 0
-      flex-grow 0
-      text-align center
-      min-width 24px
-      width auto
-      height 24px
-      padding-top 2px
-      vertical-align middle
-      border-bottom-right-radius 7px
-    min-width 50%
-    flex-shrink 1
-    @media print
-      min-width 55%
-    @media (min-width 600px)
-      min-width 62%
-  > .casilleros
-    justify-self right
-    align-self flex-end
-    min-width 33%
 
-.conjuntopreguntas
+.conjuntopreguntas, .pregunta
   border-top 1px solid colorFondoEncabezadoBloque
-
-
-.pregunta, .conjuntopreguntas
-  flex-direction column
-  display flex
-  > .encabezado
-    font-size 120%
-    min-height 24px
-    .id
-      color colorFondoEncabezadoBloque
-      background-color colorFondoIdBloque
-      min-width 24px
-      width auto
-      min-height 24px
-      padding-top 2px
-      vertical-align middle
-      border-bottom-right-radius 7px
-    .nombre-div
-      padding margenPregunta
-      padding-right 0
-  > .casilleros
-    align-self flex-end
-    width 90%
 
 .pregunta
-  justify-content space-between
-  border-top 1px solid colorFondoEncabezadoBloque
-  > .casilleros
+  // justify-content space-between
+  > .contenido
     > .campo
       display flex
       flex-direction row
-      margin-bottom margenPregunta
       .MuiButton-root
-        margin-left 5px
+        margin-left 0.4rem
       .input-campo
         display flex
-        max-width calc(100% - 40px)
+        max-width calc(100% - 2.5rem)
         input
           width 95%
-          font-size 110%
           background-color rgba(255,255,255,0.2)
           border-top transparent
           border-left transparent
           border-right transparent
       &[nuestra-longitud]
         .input-campo
-          width 200px
+          width 100%
       &[nuestra-longitud="telefono"]
         .input-campo
-          width 110px
+          width 100%
       &[nuestra-longitud="10"]
         .input-campo
-          width 110px
+          width 11ch
       &[nuestra-longitud="8"]
         .input-campo
-          width 90px
+          width 9ch
       &[nuestra-longitud="6"]
         .input-campo
-          width 70px
+          width 7ch
       &[nuestra-longitud="4"]
         .input-campo
-          width 50px
+          width 5ch
       &[nuestra-longitud="3"]
         .input-campo
-          width 40px
+          width 4ch
       &[nuestra-longitud="2"]
         .input-campo
-          width 30px
+          width 3ch
       &[nuestra-longitud="1"]
         .input-campo
-          width 2px
-  > .casilleros, > div > .casilleros
-    > .variable
-      margin-bottom margenPregunta
+          width 2ch
 
 .bloque
   > .encabezado
     background colorFondoEncabezadoBloque
-    font-size 100%
-    min-height 24px
-    .id-div
+    > .id-div
       color rgba(0,0,0,0)
       background-color rgba(0,0,0,0)
-    .id
-      min-width 24px
-      min-height 24px
-      padding-top 2px
-      vertical-align middle
-      border-bottom-right-radius 7px
-    .nombre-div
-      margin 8px
+    > .nombre-div
       text-align center
       color colorFondoIdBloque
-      .aclaracion
-        color colorFondoIdBloque !important
+    > .aclaracion
+      color colorFondoIdBloque !important
 
 .seccion-boton-formulario
   justify-content right
   > div
-    margin-top 8px
-    margin-bottom 8px
+    margin-top 0.5rem
+    margin-bottom 0.5rem
 
 .consistencia
   .id
     color #AAA
-    padding-right 16px
-  padding 16px
+    padding-right 1rem
+  padding 1rem
   font-weight bold
   background-color #FFA
 
@@ -311,9 +203,10 @@ anchoNormal(ancho)
     display none !important
 
 .id-div
-  height 36px
-  min-width 36px
-  margin-right 8px
+  height 2em
+  min-width 2em
+  margin-right 0.5rem
+  align-self self-start
 
 .pregunta
   .pregunta > .encabezado > .id-div
@@ -323,13 +216,13 @@ boton-id-div-invalido()
   .id-div
     .id
       opacity 70%
-    height 36px
-    min-width 36px
+    height 2.25rem
+    min-width 2.25rem
     outline  1px solid blue
     background-image url("../img/borrar-valor.png")
     background-position bottom
-    background-size 36px
-    border-radius 4px
+    background-size 2.25rem
+    border-radius 0.25rem
     flex-shrink 0
     flex-grow 0
 
@@ -433,88 +326,69 @@ boton-id-div-invalido()
     [el-metadato=variable]
       padding-left 4px
       padding-right 4px
-      min-width 16px
+      min-width 1rem
       border 1px solid gray
 
 .confirma-borrado
-  padding 8px
+  padding 0.5rem
   .confirma-botones
     display flex
     > *
-      margin 8px
+      margin 0.5rem
 
 .formulario
-  > .casilleros
-    background-color #EEE
+  background-color #EEE
 
-.tem-domicilio
-  font-size 110%
-  color #000
 .atributo-par
   margin-right 2px
   .atributo-nombre
     color #555
   *
     margin-right 2px
-.observaciones
-  font-size 95%
 
 .opcion
   display flex
   padding-left 0
   .id
     font-weight bold
-    margin 4px
+    margin 0.25rem
   .opcion-texto
     font-size 120%
-    margin 6px
-    margin-top 4px
+    margin 0.38rem
+    margin-top 0.25rem
 
 [modo-despliegue=relevamiento]
   .opcion
     padding-left 0
     .id
-      border-radius 5px
+      border-radius 0.3rem
       color transparent
       border 1px solid #555
       font-weight bold
-      margin 4px
-      margin-left 8px
-      margin-top 12px
-      height 10px
-      width 10px
+      margin 0.25rem
+      margin-left 0.5rem
+      margin-top 0.75rem
+      height 0.6rem
+      width 0.6rem
     [opcion-seleccionada="SI"]
       .id
         background-color #555
 
 .boton-confirmar-campo
   .MuiButton-root
-    min-width 28px
+    min-width 1.80rem
   .MuiButton-label
-    width 26px
+    width 1.75rem
   button.MuiButton-outlinedSizeSmall
-    padding 3px
+    padding 0.2rem
   button.MuiButton-containedSizeSmall
-    padding 3px
-  margin-left 6px
-  margin-right 6px
+    padding 0.2rem
+  margin-left 0.4rem
+  margin-right 0.4rem
 
 .bienvenida
-  padding 12px
+  padding 0.75rem
   max-width 760px
-
-[nuestro-bloque="LN"]
-  @media print
-    display none
-  @media (min-width 600px)
-    display none
-
-.informacion-carga
-  display flex
-  justify-content: space-between
-  font-size 120%
-  .fecha
-    font-weight bold
 
 .espacio-final-formulario
   min-height 250px
@@ -578,11 +452,11 @@ app-cache-version, #app-dm-version
     background-color #7A8DE8
 
 .nuestro-dialogo
-  padding 8px
+  padding 0.5rem
 
 .seccion-boton-formulario
   svg
-    margin-left 8px
+    margin-left 0.5rem
 
 .my-grid
   .menu-item
@@ -617,33 +491,6 @@ app-cache-version, #app-dm-version
   font-weight: bold
   background-color: #FB8
 
-.formulario-consulta-resultados
-  padding 15px
-  max-width 800px
-  margin-top 75px //ajustado para /VER
-  .fields-container
-    margin 15px 0 15px
-    max-width 600px
-
-.casillerHijo 
-  > .pregunta
-    display flex
-    flex-direction column
-    border-top 0px
-    padding-bottom 0px
-    > .encabezado
-      width 99%
-    > .casilleros
-      width 99%
-    .nombre-div
-      padding-top 0
-      padding-bottom 0
-      font-size 80%
-    &[nuestro-validator=salteada]
-      background-image none
-      > .casilleros
-        x-visibility hidden
-
 .boton-opcion-borrar
   visibility hidden
 
@@ -662,12 +509,12 @@ app-cache-version, #app-dm-version
       visibility visible
 
 .btn.boton-opcion-seleccion
-  min-width 72px
+  min-width 4.5rem
   display inline-flex
   padding 0px
-  margin 4px
+  margin 0.25rem
   text-align left
-  padding-right 5px
+  padding-right 0.3rem
 
 .formulario, .hoja-de-ruta
   .btn
@@ -690,21 +537,14 @@ app-cache-version, #app-dm-version
     line-height 0.9
     font-size 90%
   span 
-    margin-left 6px  
-
-.filtro
-  .pase
-    display inline-flex
-    flex-direction row
-    > *
-      margin 6px
+    margin-left 0.4rem
 
 .pase
   display inline-flex
   flex-direction row
   align-items center
   text-align center
-  margin-right 6px
+  margin-right 0.4rem
   > svg
     display inline
 .pase-titulo
@@ -712,30 +552,35 @@ app-cache-version, #app-dm-version
   background-color #444
   color #EEE
   font-size 70%
-  padding-left 2px
-  padding-right 2px
+  padding-left 0.1rem
+  padding-right 0.1rem
   line-height 0.8
-  border-radius 5px
+  border-radius 0.3rem
 
 .boton-borrar
-  width 24px
-  min-width 24px
+  width 1.5rem
+  min-width 1.5rem
   > button
     position relative
-    left -40px
+    left -2.5rem
+    width 3rem
+    justify-content center
+    padding-left 0.3rem
     z-index 1
     background-color white
 
 .opcion
   button.btn
-    margin 2px
+    margin 0.1rem
     text-align left
-    padding-right 5px
+    padding-right 0.3rem
 
 [nuestro-validator=valida], [nuestro-validator=salteada], [nuestro-validator=todavia_no]
   .opcion
     .btn.btn-outline-secondary
       border-color transparent
 
-.special-button
-  display:none
+.formulario 
+  .botonformulario
+    .special-button
+      display none

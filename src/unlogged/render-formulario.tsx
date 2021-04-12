@@ -415,14 +415,10 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
             leer={opcionM.leer!==false} 
             forPk={props.forPk}
         />
-        <div className="casilleros">
-            <Grid container direction="column">
-                <SiNoDespliegue 
-                    casilleroConOpciones={opcionM} 
-                    forPk={props.forPk}
-                />
-            </Grid>
-        </div>
+        <SiNoDespliegue 
+            casilleroConOpciones={opcionM} 
+            forPk={props.forPk}
+        />
     </div>
 }
 
@@ -576,7 +572,7 @@ function OpcionesDespliegue(
 ){
     const desplegarOtros = (opcion:Opcion, verHorizontal:boolean, verVertical:boolean) => opcion.casilleros.map((subPregunta:Pregunta)=>(
         verHorizontal && subPregunta.despliegue=="horizontal" || verVertical && subPregunta.despliegue!="horizontal"?
-        <div className="casillerHijo" key={subPregunta.casillero}>
+        <div className="otros-especificar" key={subPregunta.casillero}>
             <PreguntaDespliegue 
                 pregunta={subPregunta} 
                 forPk={forPk} 
@@ -609,6 +605,31 @@ function OpcionesDespliegue(
     </>
 }
 
+const nombreCasillero={
+    F: 'formulario',
+    B: 'bloque',
+    P: 'pregunta',
+    CP: 'conjuntopreguntas',
+    O: 'opcion',
+    OM: 'multiple',
+    FILTRO: 'filtro',
+    CONS: 'consistencia',
+    BF: 'botonformulario',
+}
+
+function DesplegarCasillero(props:{
+    casillero:Pregunta|Bloque|Filtro|ConjuntoPreguntas|BotonFormulario|Consistencia,
+    id?:string,
+    style?:React.CSSProperties,
+    children:React.ReactNode|Element[],
+}){
+    return <div 
+        className={`casillero ${nombreCasillero[props.casillero.tipoc]}`}
+        id={props.id}
+        style={props.style}
+    >{props.children}</div>
+}
+
 function PreguntaDespliegue(props:{
     pregunta:Pregunta, 
     forPk:ForPk, 
@@ -622,9 +643,9 @@ function PreguntaDespliegue(props:{
         direct:true, 
         fun: registradorDeVariable(pregunta)
     })
-    return <div
+    return <DesplegarCasillero
         id={id}
-        className="pregunta"
+        casillero={pregunta}
         nuestro-tipovar={pregunta.tipovar||"multiple"} 
         ocultar-salteada={pregunta.despliegue?.includes('ocultar')?(pregunta.expresion_habilitar_js?'INHABILITAR':'SI'):'NO'}
     >
@@ -633,7 +654,7 @@ function PreguntaDespliegue(props:{
             leer={pregunta.leer!==false}  
             forPk={props.forPk}
         />
-        <div className="casilleros">{
+        <div className="contenido">{
             pregunta.tipovar=="si_no"?<Grid container>
                 <SiNoDespliegue 
                     casilleroConOpciones={pregunta} 
@@ -667,14 +688,14 @@ function PreguntaDespliegue(props:{
                 />
             )(pregunta)
         }</div>
-    </div>
+    </DesplegarCasillero>
 }
 
 function FiltroDespliegue(props:{filtro:Filtro, forPk:ForPk}){
     var {filtro} = props;
-    return <Paper className="filtro">
+    return <DesplegarCasillero casillero={filtro}>
         <DespliegueEncabezado casillero={filtro}/>
-    </Paper>
+    </DesplegarCasillero>
 }
 
 function ConsistenciaDespliegue(props:{casillero:Consistencia, forPk:ForPk}){
@@ -683,13 +704,13 @@ function ConsistenciaDespliegue(props:{casillero:Consistencia, forPk:ForPk}){
     var {modoDespliegue} = useSelectorVivienda(forPk);
     var id = `consistencia-${casillero.casillero}`;
     registrarElemento({id, style:'display', fun:(r:Respuestas)=>habilitador(r) || modoDespliegue=='metadatos'?'block':'none'})
-    return <div 
+    return <DesplegarCasillero 
         id={id}
+        casillero={casillero}
         style={{display:'none'}}
-        className="consistencia" 
     >
         <EncabezadoDespliegue casillero={casillero} leer={false} forPk={forPk}/>
-    </div>
+    </DesplegarCasillero>
 }
 
 function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:Formulario, forPk:ForPk}){
@@ -851,7 +872,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
             */
         ])
     }
-    return <div>
+    return <DesplegarCasillero casillero={casillero}>
         <div id={idSeccion}>
         </div>
         <Button className="special-button" id={idButton}
@@ -872,7 +893,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
             <Button color="secondary" onClick={()=>confirmarForzarIr && ir(confirmarForzarIr)}>forzar</Button>
             <Button color="primary" variant="contained" onClick={()=>setConfirmarForzarIr(null)}>Entendido</Button>
         </Dialog>
-    </div>
+    </DesplegarCasillero>
 }
 
 function CasilleroDesconocido(props:{casillero:CasilleroBase}){
@@ -899,10 +920,10 @@ function ConjuntoPreguntasDespliegue(props:{casillero:ConjuntoPreguntas, formula
     let {casillero, forPk} = props;
     let modoDespliegue = "normal";
     let habilitado = true;
-    return habilitado || modoDespliegue=='metadatos'?<div className="conjuntopreguntas" nuestro-bloque={casillero.casillero}>
+    return habilitado || modoDespliegue=='metadatos'?<DesplegarCasillero casillero={casillero}>
         <EncabezadoDespliegue casillero={casillero} forPk={forPk}/>
         <DesplegarContenidoInternoBloqueOFormulario bloqueOFormulario={casillero} formulario={props.formulario} forPk={forPk} multiple={false}/>
-    </div>:null;
+    </DesplegarCasillero>:null;
 }
 
 function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Bloque|Formulario|ConjuntoPreguntas, formulario:Formulario, forPk:ForPk, multiple:boolean}){
@@ -925,21 +946,19 @@ function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Blo
             }
         })
     }
-    return <div className="casilleros">
+    return <div className="contenido">
         {verTodo?null:<div style={{height:"500px", textAlign:'center', verticalAlign:'middle', width:'100%', position:"fixed", backgroundColor: 'rgba(100,100,100,0.3)', fontSize:'200%'}} >cargando...</div>}
         {props.bloqueOFormulario.casilleros.map((casillero, i)=>
             verTodo || i < 10?
-                <Grid key={casillero.casillero} nuestro-casillero={casillero.casillero} item>
-                    {
-                        casillero.tipoc == "P"?<PreguntaDespliegue pregunta={casillero} forPk={props.forPk} />:
-                        casillero.tipoc == "B"?<BloqueDespliegue bloque={casillero} formulario={props.formulario} forPk={props.forPk}/>:
-                        casillero.tipoc == "FILTRO"?<FiltroDespliegue filtro={casillero} forPk={props.forPk}/>:
-                        casillero.tipoc == "BF"?<BotonFormularioDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
-                        casillero.tipoc == "CONS"?<ConsistenciaDespliegue casillero={casillero} forPk={props.forPk}/>:
-                        casillero.tipoc == "CP"?<ConjuntoPreguntasDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
-                        <CasilleroDesconocido casillero={casillero}/>
-                    }
-                </Grid>
+                (
+                    casillero.tipoc == "P"?<PreguntaDespliegue pregunta={casillero} forPk={props.forPk} />:
+                    casillero.tipoc == "B"?<BloqueDespliegue bloque={casillero} formulario={props.formulario} forPk={props.forPk}/>:
+                    casillero.tipoc == "FILTRO"?<FiltroDespliegue filtro={casillero} forPk={props.forPk}/>:
+                    casillero.tipoc == "BF"?<BotonFormularioDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
+                    casillero.tipoc == "CONS"?<ConsistenciaDespliegue casillero={casillero} forPk={props.forPk}/>:
+                    casillero.tipoc == "CP"?<ConjuntoPreguntasDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
+                    <CasilleroDesconocido casillero={casillero}/>
+                )
             :
                 <div className="spinner-border" role="status">
                     <span>cargando bloque...</span>
@@ -969,12 +988,12 @@ function BloqueDespliegue(props:{bloque:Bloque, formulario:Formulario, forPk:For
         style:'display',
         fun: (respuestas:Respuestas)=> habilitador(respuestas) || modoDespliegue=='metadatos'?'unset':'none'
     })
-    return <div className="bloque" nuestro-bloque={bloque.casillero} es-multiple={multiple?'SI':'NO'} id={id}>
+    return <DesplegarCasillero casillero={bloque} nuestro-bloque={bloque.casillero} es-multiple={multiple?'SI':'NO'} id={id}>
         <EncabezadoDespliegue casillero={bloque} forPk={forPk}/>
         {lista.map(({key, forPk, multiple})=>
             <DesplegarContenidoInternoBloqueOFormulario key={key} bloqueOFormulario={bloque} formulario={props.formulario} forPk={forPk} multiple={multiple}/>
         )}
-    </div>;
+    </DesplegarCasillero>;
 }
 
 const FormularioEncabezado = DespliegueEncabezado;
@@ -991,6 +1010,10 @@ function FastSettup(){
         dispatch(dispatchers.MODO_DESPLIEGUE({modoDespliegue}));
         setOpen(false)
     }
+    const cambiarLetra = (tamannio:number)=>{
+        var root = document.documentElement;
+        root.style.fontSize=tamannio+"px";
+    }
     return <>
         <Button onClick={handleClick}>
             <ICON.Settings/>
@@ -999,6 +1022,12 @@ function FastSettup(){
             <MenuItem onClick={()=>cambiar("relevamiento")}>normal</MenuItem>
             <MenuItem onClick={()=>cambiar("PDF"         )}>PDF para relevamiento</MenuItem>
             <MenuItem onClick={()=>cambiar("metadatos"   )}>revisar metadatos</MenuItem>
+            <Divider/>
+            <MenuItem onClick={()=>cambiarLetra(12  )}>letra chica </MenuItem>
+            <MenuItem onClick={()=>cambiarLetra(14  )}>letra normal</MenuItem>
+            <MenuItem onClick={()=>cambiarLetra(16  )}>letra grande</MenuItem>
+            <MenuItem onClick={()=>cambiarLetra(20  )}>letra enorme</MenuItem>
+            <MenuItem onClick={()=>cambiarLetra(24  )}>letra gigante</MenuItem>
         </Menu>
     </>;
 }
@@ -1017,7 +1046,9 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
         await sleep(100);
         dispatch(dispatchers.VOLVER_HDR({}));
         await sleep(100);
-        location.hash='';
+        var hash=new URLSearchParams(location.hash?.replace(/^\#/,''));
+        hash.set('autoproced','false')
+        location.hash=hash.toString();
         location.reload();
     }
     var botonesFormulario=[];
