@@ -84,6 +84,7 @@ export type OpcionNo=Opcion & {
 
 export type OpcionMultiple=CasilleroBase & {
     tipoc:'OM'
+    tipovar:'opciones'
     var_name:IdVariable
     casilleros:[OpcionSi, OpcionNo]
     calculada?:boolean
@@ -351,6 +352,7 @@ export type CasoState={
         bienvenido:boolean
         modoDirecto:boolean
         modoBorrarRespuesta:IdVariable|null
+        conCampoOpciones:boolean
     }, 
     modo:{ // no se persiste
         demo:boolean

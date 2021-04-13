@@ -77,8 +77,10 @@ export type OnUpdate<T> = (data:T)=>void
 
 export type InputTypes = 'date'|'number'|'tel'|'text';
 
-export function adaptarTipoVarCasillero(casilleroDataType:TipoVariables):InputTypes{
-    const adapter:{[key in TipoVariables]:InputTypes} = {
+export function adaptarTipoVarCasillero(casilleroDataType:TipoVariables|'opciones'|'si_no'):InputTypes{
+    const adapter:{[key in TipoVariables|'opciones'|'si_no']:InputTypes} = {
+        'opciones':'number',
+        'si_no': 'number',
         'numero': 'number',
         'texto': 'text',
         'fecha': 'text'

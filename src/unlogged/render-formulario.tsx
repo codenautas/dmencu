@@ -21,7 +21,8 @@ import {Bloque, BotonFormulario,
     Respuestas, RespuestasRaiz, Valor, TEM, IdCarga, Carga, IdFin, InfoTarea, Tareas, Visita, IdUnidadAnalisis,
     ModoAlmacenamiento,
     toPlainForPk,
-    IdCasillero
+    IdCasillero,
+    PreguntaConSiNo
 } from "./tipos";
 import { dmTraerDatosFormulario, dispatchers, 
     gotoSincronizar,
@@ -36,7 +37,7 @@ import * as likeAr from "like-ar";
 import {serie, sleep} from "best-globals";
 
 import {
-    AppBar, Badge, /*Button,*/ ButtonGroup, Card, Chip, CircularProgress, CssBaseline, 
+    AppBar, Badge, /*Button,*/ ButtonGroup, Card, Chip, CircularProgress, CssBaseline, Checkbox, 
     Dialog, DialogActions, DialogContent, DialogContentText, 
     DialogTitle, Divider, Fab, /*Grid,*/ IconButton, InputBase, 
     Link, List, ListItem, ListItemIcon, ListItemText, Drawer, 
@@ -361,7 +362,7 @@ function SiNoDespliegue(props:{casilleroConOpciones:IcasilleroConOpciones, forPk
         casilleroConOpciones={props.casilleroConOpciones} 
         forPk={props.forPk} 
         leer={false}
-        despliegueContenido={props.casilleroConOpciones.despliegueContenido??'vertical'}
+        despliegueContenido={props.casilleroConOpciones.despliegueContenido??'horizontal'}
     />
 }
 
@@ -431,7 +432,8 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
 type CasilleroEncabezable = Formulario|Bloque|Filtro|ConjuntoPreguntas|Pregunta|OpcionMultiple|PreguntaSimple|Consistencia
 
 function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?:boolean, leer?:boolean, forPk:ForPk}){
-    var {casillero} = props;
+    var {casillero, forPk} = props;
+    var conCampoOpciones = useSelector((state:CasoState)=>state.opciones.conCampoOpciones)
     var ver_id = casillero.ver_id ?? casillero.casillero;
     // @ts-ignore no está en todos los casilleros pero acá para el despliegue de metadatos no importa
     var calculada = casillero.calculada;
@@ -442,12 +444,15 @@ function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?
         <div id={casillero.var_name || undefined} className="id-div" title={`${casillero.casillero} - ${casillero.var_name}`}
             onClick={()=>{
                 // TODO. Ver qué hacemos cuando se toca el ID de la pregutna
-                dispatchByPass(accion_id_pregunta, {pregunta: casillero.casillero as IdPregunta, forPk:props.forPk});
+                dispatchByPass(accion_id_pregunta, {pregunta: casillero.casillero as IdPregunta, forPk});
             }}
         >
             <div className="id">
                 {ver_id}
             </div>
+            {conCampoOpciones && (casillero.tipovar=="si_no"||casillero.tipovar=="opciones")?
+                <Campo disabled={false} pregunta={casillero} forPk={forPk} mini={true}/>
+            :null}
         </div>
         <div className="nombre-div">
             <div className="nombre">{breakeableText(casillero.nombre)}</div>
@@ -514,23 +519,29 @@ function calcularNuestraLongitud(longitud:string |null){
     return longitud;
 }
 
-function Campo(props:{disabled:boolean, pregunta:PreguntaSimple, forPk:ForPk, onChange:(valor:Valor|typeof NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO)=>void}){
-    var {pregunta, disabled } = props;
+function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpciones|PreguntaConSiNo|OpcionMultiple, forPk:ForPk, mini?:boolean}){
+    var {pregunta, disabled, mini } = props;
+    const longitud = mini ? pregunta.casilleros.reduce((acum, o)=>Math.max(o.casillero.toString().length, acum), 0) : 
+        // @ts-ignore mini es para los otros
+        pregunta.longitud;
     // var [valor, setValor] = useState(props.valor);
     var [editando, setEditando] = useState(false);
     // useEffect(() => {
     //     setValor(props.valor)
     // }, [props.valor]);
     const inputProps = {
-        maxLength: pregunta.longitud,
+        maxLength: longitud,
     };
-    var nuestraLongitud = calcularNuestraLongitud(pregunta.longitud)
+    const onChange=(nuevoValor:Valor|typeof NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO)=>
+        dispatchByPass(accion_registrar_respuesta, {forPk:props.forPk, variable:pregunta.var_name, respuesta:nuevoValor})
+    ;
+    var nuestraLongitud = calcularNuestraLongitud(longitud)
     return <div className="campo" nuestra-longitud={nuestraLongitud}>
-        <BotonBorrar
+        {mini?null:<BotonBorrar
             id={`borrar-abierta-${pregunta.var_name}`}
             variable={pregunta.var_name}
             forPk={props.forPk}
-        />
+        />}
         <div className="input-campo">
             <TextField 
                 disabled={disabled}
@@ -541,17 +552,17 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple, forPk:ForPk, on
                 type={pregunta.despliegueTipoInput??adaptarTipoVarCasillero(pregunta.tipovar)}
                 onFocus={(_event)=>setEditando(true)}
                 onBlur={(_event, valor)=>{
-                    props.onChange(valor);
+                    onChange(valor);
                     setEditando(false)
                 }}
             />
         </div>
-        {disabled?null:
+        {disabled || mini?null:
             <div className="boton-confirmar-campo">
                 <Button variant={editando?"contained":'outlined'} size="small" color={editando?'primary':'default'}
                     tabIndex={-1}
                     onClick={()=>{
-                        props.onChange(NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO);
+                        onChange(NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO);
                         setEditando(false)
                     }}
                 ><ICON.Check/></Button>
@@ -687,9 +698,6 @@ function PreguntaDespliegue(props:{
                     disabled={preguntaSimple.calculada?true:false}
                     pregunta={preguntaSimple}
                     forPk={props.forPk}
-                    onChange={(nuevoValor)=>
-                        dispatchByPass(accion_registrar_respuesta, {forPk:props.forPk, variable:preguntaSimple.var_name, respuesta:nuevoValor})
-                    }
                 />
             )(pregunta)
         }</div>
@@ -1033,6 +1041,7 @@ function FastSettup(){
         dispatch(dispatchers.MODO_DESPLIEGUE({modoDespliegue}));
         setOpen(false)
     }
+    const opciones = useSelector((state:CasoState)=>state.opciones)
     return <>
         <Button onClick={handleClick}>
             <ICON.Settings/>
@@ -1047,6 +1056,10 @@ function FastSettup(){
             <MenuLetra tamannio={16} denominacion = "normal"/>
             <MenuLetra tamannio={19} denominacion = "grande"/>
             <MenuLetra tamannio={22} denominacion = "enorme"/>
+            <Divider/>
+            <MenuItem><Checkbox checked={opciones.conCampoOpciones} onChange={
+                ()=>dispatch(dispatchers.SET_OPCION({opcion:'conCampoOpciones', valor:!opciones.conCampoOpciones}))
+            } inputProps={{ 'aria-label': 'primary checkbox' }}/>campo opciones</MenuItem>
         </Menu>
     </>;
 }
