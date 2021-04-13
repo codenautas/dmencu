@@ -72,7 +72,7 @@ import {
 import {arrange, html} from "js-to-html";
 
 function breakeableText(text:string|null){
-    if(typeof text != "string") return text;
+    if(typeof text != "string") return undefined;
     return text.replace(/\//g,"/\u2063").replace(/\/\u2063(\w)\b/g,'/$1');
 }
 
@@ -242,7 +242,7 @@ function takeElementOrDefault<V,K extends string,KO extends string>(k:K, object:
     : defaultValue
 }
 
-function DespliegueEncabezado(props:{casillero:CasilleroBase, leer?:boolean}){
+function DespliegueEncabezado(props:{casillero:CasilleroEncabezable, leer?:boolean}){
     const forPkNull={} as ForPk;
     return <EncabezadoDespliegue casillero={props.casillero} leer={props.leer} forPk={forPkNull}/>;
     /*
@@ -351,7 +351,7 @@ function OpcionDespliegue(props:{casillero:Opcion, valorOpcion:number, variable:
 }
 interface IcasilleroConOpciones{
     var_name:IdVariable,
-    despliegue:Despliegue|null,
+    despliegueContenido:'vertical'|'horizontal'|null,
     casilleros:Opcion[]
 }
 
@@ -361,7 +361,7 @@ function SiNoDespliegue(props:{casilleroConOpciones:IcasilleroConOpciones, forPk
         casilleroConOpciones={props.casilleroConOpciones} 
         forPk={props.forPk} 
         leer={false}
-        horizontal={!props.casilleroConOpciones.despliegue?.includes('vertical')}
+        despliegueContenido={props.casilleroConOpciones.despliegueContenido??'vertical'}
     />
 }
 
@@ -413,6 +413,7 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
     return <DesplegarCasillero 
         id={id}
         casillero={opcionM}
+        despliegueEncabezado='lateral'
     >
         <EncabezadoDespliegue 
             casillero={opcionM} 
@@ -427,7 +428,9 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
     </DesplegarCasillero>
 }
 
-function EncabezadoDespliegue(props:{casillero:CasilleroBase, verIdGuion?:boolean, leer?:boolean, forPk:ForPk}){
+type CasilleroEncabezable = Formulario|Bloque|Filtro|ConjuntoPreguntas|Pregunta|OpcionMultiple|PreguntaSimple|Consistencia
+
+function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?:boolean, leer?:boolean, forPk:ForPk}){
     var {casillero} = props;
     var ver_id = casillero.ver_id ?? casillero.casillero;
     // @ts-ignore no está en todos los casilleros pero acá para el despliegue de metadatos no importa
@@ -464,7 +467,7 @@ function EncabezadoDespliegue(props:{casillero:CasilleroBase, verIdGuion?:boolea
                     casillero.optativo?<span el-metadato="optativa">optativa</span>:null
                 }
                 {calculada?<span el-metadato="calculada">calculada</span>:null}
-                {casillero.despliegue?.includes('oculta')?<span el-metadato="oculta">oculta</span>:null}
+                {casillero.despliegueOculta?<span el-metadato="oculta">oculta</span>:null}
                 {casillero.expresion_habilitar?<span el-metadato="expresion_habilitar">habilita: {casillero.expresion_habilitar}</span>:null}
                 {   //@ts-ignore altunos casilleros no tienen especial, no importa, es solo para poner los metadatos
                     casillero.especial?.autoing?<span el-metadato="expresion_autoing">autoing: {casillero.especial?.autoing}</span>:null
@@ -535,12 +538,7 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple, forPk:ForPk, on
                 //var-length={pregunta.longitud} 
                 fullWidth={true}
                 inputProps={inputProps}
-                type={pregunta.despliegue?.includes('telefono')?'tel':adaptarTipoVarCasillero(pregunta.tipovar)}
-                // onChange={(event)=>{
-                //     let value = event.target.value || null;
-                //     value = pregunta.despliegue?.includes('entero') && value?value.replace('.',''):value
-                //     setValor(value)
-                // }}
+                type={pregunta.despliegueTipoInput??adaptarTipoVarCasillero(pregunta.tipovar)}
                 onFocus={(_event)=>setEditando(true)}
                 onBlur={(_event, valor)=>{
                     props.onChange(valor);
@@ -568,42 +566,44 @@ interface IcasilleroConOpciones{
 }
 
 function OpcionesDespliegue(
-    {casilleroConOpciones, forPk,  leer, horizontal}:
-    {casilleroConOpciones:IcasilleroConOpciones, forPk:ForPk, leer:boolean, horizontal:boolean}
+    {casilleroConOpciones, forPk,  leer, despliegueContenido}:
+    {casilleroConOpciones:IcasilleroConOpciones, forPk:ForPk, leer:boolean, despliegueContenido:'vertical'|'horizontal'}
 ){
-    const desplegarOtros = (opcion:Opcion, verHorizontal:boolean, verVertical:boolean) => opcion.casilleros.map((subPregunta:Pregunta)=>(
-        verHorizontal && subPregunta.despliegue=="horizontal" || verVertical && subPregunta.despliegue!="horizontal"?
+    const desplegarOtros = (opcion:Opcion, soloParaDespliegue:'vertical'|'horizontal'|null) => opcion.casilleros.map((subPregunta:Pregunta)=>(
+        soloParaDespliegue == null || soloParaDespliegue == subPregunta.despliegueContenido ?
         <div className="otros-especificar" key={subPregunta.casillero}>
             <PreguntaDespliegue 
                 pregunta={subPregunta} 
                 forPk={forPk} 
+                despliegueEncabezado='superior'
             />
         </div>:null
     ))
-    return <><div className="contenido opciones" el-despliegue={horizontal?'horizontal':'vertical'}>
-        {casilleroConOpciones.casilleros.map((opcion:Opcion, i:number)=>
-            <Grid key={opcion.casillero} item
-                ocultar-salteada={opcion.despliegue?.includes('ocultar')?(opcion.expresion_habilitar_js?'INHABILITAR':'SI'):'NO'}
-            >
-                <OpcionDespliegue 
-                    casillero={opcion} 
-                    variable={casilleroConOpciones.var_name} 
-                    valorOpcion={opcion.casillero}
-                    forPk={forPk} 
-                    leer={leer}
-                    conBotonBorrar={i==0 || !horizontal}
-                />
-                {horizontal?null:desplegarOtros(opcion,true,true)}
-            </Grid>
-        )}
-        {horizontal?casilleroConOpciones.casilleros.map((opcion:Opcion)=>
-            desplegarOtros(opcion,true,false)
+    return <div className="contenido">
+            <div className="opciones" despliegue-contenido={despliegueContenido??'vertical'}>
+            {casilleroConOpciones.casilleros.map((opcion:Opcion, i:number)=>
+                <Grid key={opcion.casillero} item
+                    ocultar-salteada={opcion.despliegueOculta?(opcion.expresion_habilitar_js?'INHABILITAR':'SI'):'NO'}
+                >
+                    <OpcionDespliegue 
+                        casillero={opcion} 
+                        variable={casilleroConOpciones.var_name} 
+                        valorOpcion={opcion.casillero}
+                        forPk={forPk} 
+                        leer={leer}
+                        conBotonBorrar={i==0 || despliegueContenido!='horizontal'}
+                    />
+                    {despliegueContenido=='horizontal'?null:desplegarOtros(opcion,null)}
+                </Grid>
+            )}
+            {despliegueContenido=='horizontal'?casilleroConOpciones.casilleros.map((opcion:Opcion)=>
+                desplegarOtros(opcion,'horizontal')
+            ):null}
+        </div>
+        {despliegueContenido=='horizontal'?casilleroConOpciones.casilleros.map((opcion:Opcion)=>
+            desplegarOtros(opcion,'vertical')
         ):null}
     </div>
-    {horizontal?casilleroConOpciones.casilleros.map((opcion:Opcion)=>
-        desplegarOtros(opcion,false,true)
-    ):null}
-    </>
 }
 
 const nombreCasillero={
@@ -622,18 +622,21 @@ function DesplegarCasillero(props:{
     casillero:Pregunta|Bloque|Filtro|ConjuntoPreguntas|BotonFormulario|Consistencia|OpcionMultiple,
     id?:string,
     style?:React.CSSProperties,
+    despliegueEncabezado?:'lateral'|'superior'
     children:React.ReactNode|Element[],
 }){
     return <div 
         className={`casillero ${nombreCasillero[props.casillero.tipoc]}`}
         id={props.id}
         style={props.style}
+        despliegue-encabezado={props.casillero.despliegueEncabezado??props.despliegueEncabezado??'superior'}
     >{props.children}</div>
 }
 
 function PreguntaDespliegue(props:{
     pregunta:Pregunta, 
     forPk:ForPk, 
+    despliegueEncabezado:'lateral'|'superior'
 }){
     var {pregunta} = props;
     var dispatch=useDispatch();
@@ -648,7 +651,8 @@ function PreguntaDespliegue(props:{
         id={id}
         casillero={pregunta}
         nuestro-tipovar={pregunta.tipovar||"multiple"} 
-        ocultar-salteada={pregunta.despliegue?.includes('ocultar')?(pregunta.expresion_habilitar_js?'INHABILITAR':'SI'):'NO'}
+        ocultar-salteada={pregunta.despliegueOculta?(pregunta.expresion_habilitar_js?'INHABILITAR':'SI'):'NO'}
+        despliegueEncabezado={props.despliegueEncabezado}
     >
         <EncabezadoDespliegue 
             casillero={pregunta} 
@@ -667,7 +671,7 @@ function PreguntaDespliegue(props:{
                     casilleroConOpciones={pregunta} 
                     forPk={props.forPk} 
                     leer={!!pregunta.leer}
-                    horizontal={!!pregunta.despliegue?.includes('horizontal')}
+                    despliegueContenido={pregunta.despliegueContenido??'vertical'}
                 />:
             pregunta.tipovar==null?
                 (pregunta.casilleros as OpcionMultiple[]).map((opcionMultiple)=>
@@ -836,12 +840,12 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
             class:"seccion-boton-formulario" , 
             $attrs:{
                 "nuestro-validator":defBoton.actual?'actual':defBoton.previo?'valida':'todavia_no',
-                "ocultar-salteada":casillero.despliegue?.includes('ocultar')?(casillero.expresion_habilitar_js?'INHABILITAR':'SI'):'NO',
+                "ocultar-salteada":casillero.despliegueOculta?(casillero.expresion_habilitar_js?'INHABILITAR':'SI'):'NO',
                 "tiene-valor":"NO",
                 "def-button":JSON.stringify(defBoton)
             }
         }, [
-            casillero.aclaracion || html.div({class:"aclaracion"}, [breakeableText(casillero.aclaracion)]),
+            casillero.aclaracion || html.div({class:"aclaracion"}, [breakeableText(casillero.aclaracion)??null]),
             html.div([
                 Button2({
                     id:`boton-formulario-${sufijoIdElemento}`, 
@@ -909,7 +913,7 @@ function CasilleroDesconocido(props:{casillero:CasilleroBase}){
     var classes = useStyles();
     return <Paper className={classes.errorCasillero}>
         <Typography>Tipo de casillero no implementado: "{props.casillero.tipoc}" para "{props.casillero.casillero}"</Typography>
-        <DespliegueEncabezado casillero={props.casillero}/>
+        <DespliegueEncabezado casillero={props.casillero as CasilleroEncabezable}/>
     </Paper>
 }
 
@@ -960,7 +964,7 @@ function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Blo
         {props.bloqueOFormulario.casilleros.map((casillero, i)=>
             verTodo || i < 10?
                 (
-                    casillero.tipoc == "P"?<PreguntaDespliegue pregunta={casillero} forPk={props.forPk} />:
+                    casillero.tipoc == "P"?<PreguntaDespliegue pregunta={casillero} forPk={props.forPk} despliegueEncabezado={casillero.despliegueEncabezado??(props.bloqueOFormulario.tipoc=='CP'?'lateral':'superior')}/>:
                     casillero.tipoc == "B"?<BloqueDespliegue bloque={casillero} formulario={props.formulario} forPk={props.forPk}/>:
                     casillero.tipoc == "FILTRO"?<FiltroDespliegue filtro={casillero} forPk={props.forPk}/>:
                     casillero.tipoc == "BF"?<BotonFormularioDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
@@ -1007,6 +1011,16 @@ function BloqueDespliegue(props:{bloque:Bloque, formulario:Formulario, forPk:For
 
 const FormularioEncabezado = DespliegueEncabezado;
 
+function MenuLetra(props:{tamannio:number, denominacion:string}){
+    const cambiarLetra = (tamannio:number)=>{
+        var root = document.documentElement;
+        root.style.fontSize=tamannio+"px";
+    }
+    return <MenuItem
+        onClick={()=>cambiarLetra(props.tamannio)} style={{fontSize:props.tamannio+'px'}}
+    >letra {props.denominacion}</MenuItem>
+}
+
 function FastSettup(){
     const [anchorEl, setAnchorEl] = React.useState(null);
     const [open, setOpen] = React.useState(false);
@@ -1019,10 +1033,6 @@ function FastSettup(){
         dispatch(dispatchers.MODO_DESPLIEGUE({modoDespliegue}));
         setOpen(false)
     }
-    const cambiarLetra = (tamannio:number)=>{
-        var root = document.documentElement;
-        root.style.fontSize=tamannio+"px";
-    }
     return <>
         <Button onClick={handleClick}>
             <ICON.Settings/>
@@ -1032,11 +1042,11 @@ function FastSettup(){
             <MenuItem onClick={()=>cambiar("PDF"         )}>PDF para relevamiento</MenuItem>
             <MenuItem onClick={()=>cambiar("metadatos"   )}>revisar metadatos</MenuItem>
             <Divider/>
-            <MenuItem onClick={()=>cambiarLetra(12  )}>letra chica </MenuItem>
-            <MenuItem onClick={()=>cambiarLetra(14  )}>letra normal</MenuItem>
-            <MenuItem onClick={()=>cambiarLetra(16  )}>letra grande</MenuItem>
-            <MenuItem onClick={()=>cambiarLetra(20  )}>letra enorme</MenuItem>
-            <MenuItem onClick={()=>cambiarLetra(24  )}>letra gigante</MenuItem>
+            <MenuLetra tamannio={12} denominacion = "muy chica"/>
+            <MenuLetra tamannio={14} denominacion = "chica"/>
+            <MenuLetra tamannio={16} denominacion = "normal"/>
+            <MenuLetra tamannio={19} denominacion = "grande"/>
+            <MenuLetra tamannio={22} denominacion = "enorme"/>
         </Menu>
     </>;
 }
@@ -1053,7 +1063,7 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
     var cerrarDirecto = async function(){
         close();
         await sleep(100);
-        dispatch(dispatchers.VOLVER_HDR({}));
+        // dispatch(dispatchers.VOLVER_HDR({}));
         await sleep(100);
         var hash=new URLSearchParams(location.hash?.replace(/^\#/,''));
         hash.set('autoproced','false')

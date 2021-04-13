@@ -143,11 +143,13 @@ type IDataConCasilleros<T> = T & {
     casilleros:readonly IDataConCasilleros<T>[]
 }
 
-const casilleroVacio={salto:null, despliegue:null, aclaracion:null, ver_id:null}
+const casilleroVacio={salto:null, despliegue:null, aclaracion:null, ver_id:null, casilleros:[], leer:null,
+    despliegueEncabezado:null, despliegueContenido:null, despliegueOculta:null, despliegueTipoInput:null
+}
 
 const opcionesSiNo: Opcion[] = [
-    {...casilleroVacio, casillero:1, tipoc:'O', nombre:'Sí', casilleros:[], leer:null},
-    {...casilleroVacio, casillero:2, tipoc:'O', nombre:'No', casilleros:[], leer:null},
+    {...casilleroVacio, casillero:1, tipoc:'O', nombre:'Sí'},
+    {...casilleroVacio, casillero:2, tipoc:'O', nombre:'No'},
 ]
 
 type CaracerizacionEstadoRowValidator={
@@ -155,9 +157,14 @@ type CaracerizacionEstadoRowValidator={
     conValor:boolean|null, // null = unknown
 }
 
-function aplanarLaCurva<T extends {tipoc:string}>(casillerosData:IDataSeparada<T>):IDataConCasilleros<T|Opcion>{
+function aplanarLaCurva<T extends {tipoc:string, despliegue?:string}>(casillerosData:IDataSeparada<T>):IDataConCasilleros<T|Opcion>{
+    var data = casillerosData.data
     return {
-        ...casillerosData.data,
+        ...data,
+        despliegueContenido: data.despliegue?.includes('horizontal')?'horizontal':data.despliegue?.includes('vertical')?'vertical':null,
+        despliegueEncabezado: data.despliegue?.includes('lateral')?'lateral':data.despliegue?.includes('superior')?'superior':null,
+        despliegueOculta: data.despliegue?.includes('ocultar')??null,
+        despliegueTipoInput: data.despliegue?.includes('telefono')?'tel':null,
         casilleros: !casillerosData.childs.length && casillerosData.data.tipoc=='OM' ? opcionesSiNo :
              casillerosData.childs.map(casillero=>aplanarLaCurva(casillero))
     }

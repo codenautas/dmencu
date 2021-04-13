@@ -55,9 +55,11 @@ function recuperarDatosByPass(){
     }else{
         recuperado = my.getSessionVar(GLOVAR_DATOSBYPASS)
     }
-    recuperado.feedbackRowValidator={} as DatosByPass["feedbackRowValidator"];
-    datosByPass = {...recuperado, modoAlmacenamiento}
-    calcularFeedbackHojaDeRuta();
+    if(recuperado){
+        recuperado.feedbackRowValidator={} as DatosByPass["feedbackRowValidator"];
+        datosByPass = {...recuperado, modoAlmacenamiento}
+        calcularFeedbackHojaDeRuta();
+    }
 }
 
 export function cargarHojaDeRuta(nuevoPaquete:{hojaDeRuta:HojaDeRuta, modoAlmacenamiento:ModoAlmacenamiento, dirty?:boolean}){

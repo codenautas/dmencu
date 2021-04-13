@@ -61,7 +61,7 @@ anchoNormal(ancho)
   font-size 1.2rem
   display flex
   flex-direction column
-  &[el-despliegue~=lateral]
+  &[despliegue-encabezado=lateral]
     flex-direction row
     > .contenido
       flex-wrap wrap
@@ -90,11 +90,11 @@ anchoNormal(ancho)
     font-size 0.8em
     color #666 !important
 
-.contenido
+.contenido, .opciones
   display flex
   flex-direction column
   min-height 2em
-  &[el-despliegue~=horizontal]
+  &[despliegue-contenido=horizontal]
     flex-direction row
     > *
       flex-wrap wrap
@@ -124,9 +124,6 @@ anchoNormal(ancho)
       > .encabezado
         flex-grow: 0
     > .pregunta, > .multiple
-      flex-direction row
-      &[el-despliegue~=superior]
-        flex-direction column
       > .encabezado
         > *
           margin 0.3em
@@ -586,8 +583,8 @@ app-cache-version, #app-dm-version
   border-radius 0.3rem
 
 .boton-borrar
-  width 1.5rem
-  min-width 1.5rem
+  width 0.5rem
+  min-width 0.5rem
   > button
     position relative
     left -2.5rem

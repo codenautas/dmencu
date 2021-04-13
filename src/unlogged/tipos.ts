@@ -44,7 +44,10 @@ export type CasilleroBase = {
     nombre:string
     salto:IdDestino|IdFin|null
     ver_id:string|null
-    despliegue:Despliegue|null
+    despliegueEncabezado:'lateral'|'superior'|null
+    despliegueContenido:'vertical'|'horizontal'|null
+    despliegueTipoInput:'tel'|null
+    despliegueOculta:boolean|null
     leer:boolean|null
     aclaracion:string|null
     primera_variable?:IdVariable|null
