@@ -263,7 +263,12 @@ export function accion_id_pregunta(_payload:{pregunta: IdPregunta, forPk: ForPk}
 
 export const NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO = Symbol('NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO')
 
-export function accion_registrar_respuesta(payload:{forPk:ForPk, variable:IdVariable, respuesta:Valor|typeof NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO, onAlreadyExists?:()=>void}, _datosByPass:DatosByPass){
+export function accion_registrar_respuesta(payload:{
+    forPk:ForPk, 
+    variable:IdVariable, 
+    respuesta:Valor|typeof NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO, 
+    onAlreadyExists?:()=>void
+}, _datosByPass:DatosByPass){
     let token = 'AVERIGUAR TODO'
     let { forPk, respuesta, variable } = payload;
     var {respuestas, respuestasRaiz, forPkRaiz}  = respuestasForPk(forPk);
@@ -283,20 +288,20 @@ export function accion_registrar_respuesta(payload:{forPk:ForPk, variable:IdVari
             respuestas[variable] = respuesta ?? null; // cambio undefined por null
         }
     }
-    if(recentModified || NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO && datosByPass.feedbackRowValidator[toPlainForPk(forPk)].autoIngresadas?.[variable]){
+    var feedbackRow = datosByPass.feedbackRowValidator[toPlainForPk(forPk)];
+    if(recentModified || NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO && feedbackRow.autoIngresadas?.[variable]){
         variablesCalculadas(respuestasRaiz)
         if(respuestas[ultimaVaribleVivienda]==null && respuestas[ultimaVaribleVivienda]!=null){
             encolarBackup(token, forPkRaiz, respuestasRaiz);
         }
         respuestasRaiz.$dirty = respuestasRaiz.$dirty || recentModified;
         calcularFeedback(respuestasRaiz, forPkRaiz, {autoIngreso: true});
+        feedbackRow = datosByPass.feedbackRowValidator[toPlainForPk(forPk)];
         calcularVariablesBotonFormulario(forPk);
         volcadoInicialElementosRegistrados(forPk);
         persistirDatosByPass();
     }
-    if(!recentModified && payload.onAlreadyExists != null){
-        payload.onAlreadyExists();
-    }
+    return {recentModified, siguienteVariable:feedbackRow.feedback[variable].siguiente};
 }
 
 export function accion_registrar_nota(payload:{forPkRaiz:ForPkRaiz, tarea:IdTarea, nota:string|null}, _datosByPass:DatosByPass){
@@ -338,11 +343,11 @@ export function accion_agregar_formulario({forPk}: {forPk:ForPk}, _datosByPass:D
     calcularVariablesBotonFormulario(forPk);
 }
 
-export function dispatchByPass<T>(
-    fun:(payload:T, datos:typeof datosByPass)=>void,
+export function dispatchByPass<T, R>(
+    fun:(payload:T, datos:typeof datosByPass)=>R,
     payload:T
 ){
-    fun(payload, datosByPass);
+    return fun(payload, datosByPass);
 }
 
 //////////////////////////////////////////////////////////////////////////

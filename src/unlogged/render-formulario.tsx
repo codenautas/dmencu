@@ -77,6 +77,17 @@ function breakeableText(text:string|null){
     return text.replace(/\//g,"/\u2063").replace(/\/\u2063(\w)\b/g,'/$1');
 }
 
+var lastKeyPressed:string|number|undefined;
+
+window.addEventListener('load', ()=>{
+    window.addEventListener('keydown', (ev:KeyboardEvent)=>{
+        lastKeyPressed = ev.key || ev.keyCode;
+    })
+    window.addEventListener('click', ()=>{
+        lastKeyPressed = undefined;
+    })
+})
+
 // /*
 
 type CommonAttributes = {className?:string,style?:CSSProperties,id?:string, tabIndex?:number} // CSSProperties
@@ -115,6 +126,7 @@ const Button2 = ({variant, onClick, disabled, children, className, color, size, 
 
 
 const TextField = (props:{
+    id:string,
     disabled?:boolean,
     className?:string,
     autoFocus?:boolean,
@@ -130,6 +142,7 @@ const TextField = (props:{
     onFocus?:(event:any)=>void,
     onBlur?:(event:any, valor:any)=>void,
 })=><input
+    id={props.id}
     disabled={props.disabled}
     className={props.className}
     autoFocus={props.autoFocus}
@@ -311,14 +324,13 @@ function OpcionDespliegue(props:{casillero:Opcion, valorOpcion:number, variable:
             elementoConSennialBorrar.setAttribute('estoy-borrando','NO');
             elementoConSennialBorrar = null;
         }
-        dispatchByPass(accion_registrar_respuesta, {respuesta:props.valorOpcion, variable:props.variable, forPk:props.forPk,
-            onAlreadyExists:()=>{
-                container.setAttribute('estoy-borrando',tiene=='SI'?'NO':'SI');
-                if(tiene!='SI'){
-                    elementoConSennialBorrar=container;
-                }
+        var {recentModified} = dispatchByPass(accion_registrar_respuesta, {respuesta:props.valorOpcion, variable:props.variable, forPk:props.forPk});
+        if(!recentModified){
+            container.setAttribute('estoy-borrando',tiene=='SI'?'NO':'SI');
+            if(tiene!='SI'){
+                elementoConSennialBorrar=container;
             }
-        })
+        }
     };
     return <Grid className="opcion"> 
         {props.conBotonBorrar?<BotonBorrar
@@ -445,7 +457,7 @@ function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?
         className="encabezado" 
         debe-leer={props.leer?'SI':'NO'} 
     >
-        <div id={casillero.var_name || undefined} className="id-div" title={`${casillero.casillero} - ${casillero.var_name}`}
+        <div id={`id-div-${casillero.var_name||casillero.casillero}`} className="id-div" title={`${casillero.casillero} - ${casillero.var_name}`}
             onClick={()=>{
                 // TODO. Ver qué hacemos cuando se toca el ID de la pregutna
                 dispatchByPass(accion_id_pregunta, {pregunta: casillero.casillero as IdPregunta, forPk});
@@ -454,7 +466,7 @@ function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?
             <div className="id">
                 {ver_id}
             </div>
-            <Campo disabled={false} pregunta={casillero} forPk={forPk} mini={true} hidden={!(conCampoOpciones && (casillero.tipovar=="si_no"||casillero.tipovar=="opciones"))}/>
+            {(casillero.tipovar=="si_no"||casillero.tipovar=="opciones")?<Campo disabled={false} pregunta={casillero} forPk={forPk} mini={true} hidden={!conCampoOpciones}/>:null}
         </div>
         <div className="nombre-div">
             <div className="nombre">{breakeableText(casillero.nombre)}</div>
@@ -534,9 +546,46 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpcio
     const inputProps = {
         maxLength: longitud,
     };
-    const onChange=(nuevoValor:Valor|typeof NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO)=>
-        dispatchByPass(accion_registrar_respuesta, {forPk:props.forPk, variable:pregunta.var_name, respuesta:nuevoValor})
-    ;
+    const onChange=(nuevoValor:Valor|typeof NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO)=>{
+        var {siguienteVariable} = dispatchByPass(accion_registrar_respuesta, {forPk:props.forPk, variable:pregunta.var_name, respuesta:nuevoValor});
+        if(siguienteVariable && (lastKeyPressed == 13 || lastKeyPressed == "Enter" )){
+            lastKeyPressed = undefined;
+            var elementoSiguienteVariable = document.getElementById(`var-${siguienteVariable}`);
+            var elemento = elementoSiguienteVariable;
+            var MARGEN_SCROLL = 64;
+            var altoPantalla = window.innerHeight - MARGEN_SCROLL;
+            var elementoEntero:HTMLElement|null = elemento; // es el elemento que va a entar entero en pantalla, define el bottom
+            var rectElementoEntero:ReturnType<typeof myOwn.getRect>|null = null;
+            var elementoSuperior:HTMLElement|null = null; // es el elemento que va a mostrarse desde arriba aunque no entre entero, define el top
+            var rectElementoSuperior:ReturnType<typeof myOwn.getRect>|null = null;
+            while(elemento != null){
+                if(elementoSuperior == null && elemento.clientHeight < altoPantalla){
+                    elementoEntero = elemento;
+                }else{
+                    if(rectElementoEntero == null){
+                        elementoSuperior = elementoEntero
+                        rectElementoEntero = myOwn.getRect(elementoEntero!)
+                        rectElementoSuperior = rectElementoEntero;
+                    }
+                    var rect = myOwn.getRect(elemento);
+                    if(rectElementoEntero.top + rectElementoEntero.height - rect.top < altoPantalla){
+                        elementoSuperior = elemento;
+                        rectElementoSuperior = rect;
+                    }else{
+                        elemento = null;
+                    }
+                }
+                elemento = elemento?.parentElement ?? null;
+            }
+            if(elementoSuperior == null){
+                elementoSuperior = elementoEntero;
+            }
+            if(elementoEntero != null){
+                window.scrollTo({top: rectElementoSuperior!.top -MARGEN_SCROLL , left:0, behavior:'smooth'});
+                elementoSiguienteVariable?.focus();
+            }
+        }
+    };
     var nuestraLongitud = calcularNuestraLongitud(longitud)
     return <div className="campo" nuestra-longitud={nuestraLongitud} style={props.hidden?{visibility:'hidden'}:undefined}>
         {mini?null:<BotonBorrar
@@ -546,6 +595,7 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpcio
         />}
         <div className="input-campo">
             <TextField 
+                id={`var-${pregunta.var_name}`}
                 disabled={disabled}
                 className="variable" 
                 //var-length={pregunta.longitud} 
@@ -1484,175 +1534,6 @@ export function DesplegarNotasYVisitas(props:{tareas:Tareas, forPkRaiz:ForPkRaiz
                 >
                     <ICON.Create/>
                 </Button>
-                <Dialog
-                    open={dialogoNotas}
-                    onClose={handleCloseDialogNotas}
-                    aria-labelledby="alert-dialog-title"
-                    aria-describedby="alert-dialog-description"
-                    className="dialogo-notas"
-                >
-                    <DialogTitle id="alert-dialog-title-obs">{titulo}</DialogTitle>
-                    <DialogContent>
-                        <div className="notas">
-                            <TextField 
-                                fullWidth={true}
-                                value={nota || ''} 
-                                label="Notas"
-                                type="text"
-                                onChange={(event)=>{
-                                    let value = event.target.value || null;
-                                    setNota(value)
-                                    miTarea!=null && dispatchByPass(accion_registrar_nota, {
-                                        forPkRaiz,
-                                        tarea: miTarea,
-                                        nota: value
-                                    });
-                                }}
-                            />
-                        </div>
-                        <Grid container spacing={1} className="visitas" style={{marginTop:"20px"}}>
-                            <Grid item xs={2} sm={1}>
-                                vis
-                            </Grid>
-                            <Grid item xs={5} sm={3}>
-                                fecha
-                            </Grid>
-                            <Grid item xs={3} sm={2}>
-                                hora
-                            </Grid>
-                            <Hidden only="xs">
-                                {obsTitle}
-                            </Hidden>
-                            <Grid item xs={2} sm={2}>
-                                <Button disabled={editando!=null} onClick={()=>{
-                                    dispatchByPass(accion_agregar_visita,{
-                                        forPkRaiz,
-                                        observaciones: null
-                                    });
-                                    setAdding(visitas.length-1);
-                                }} color="primary" variant="outlined">
-                                    <ICON.Add/>
-                                </Button>
-                            </Grid>
-                            {visitas? //por si ya hay algo sincronizado
-                                visitas.map((visita, index)=>
-                                    <Grow in={true}>
-                                        <Grid container spacing={1} key={"visita_" + index.toString()} style={{marginTop:"20px"}}>
-                                            <Grid item xs={2} sm={1}>
-                                                {(index + 1).toString()}
-                                            </Grid>
-                                            <Grid item xs={6} sm={3}>
-                                                {miIdPer==visita.idper?
-                                                    <TextField
-                                                        value={visita.fecha || ''} 
-                                                        fullWidth={true}
-                                                        type="date"
-                                                        onFocus={()=>setEditando(index)}
-                                                        onBlur={()=>setEditando(null)}
-                                                        onChange={(event)=>{
-                                                            let value = event.target.value || null;
-                                                            dispatchByPass(accion_modificar_visita,{
-                                                                forPkRaiz,
-                                                                index,
-                                                                opcion:"fecha",
-                                                                valor: value
-                                                            });
-                                                        }}
-                                                    />
-                                                :
-                                                    visita.fecha
-                                                }
-                                            </Grid>
-                                            <Grid item xs={4} sm={2}>
-                                                {miIdPer==visita.idper?
-                                                    <TextField 
-                                                        fullWidth={true}
-                                                        value={visita.hora || ''} 
-                                                        type="time"
-                                                        onFocus={()=>setEditando(index)}
-                                                        onBlur={()=>setEditando(null)}
-                                                        onChange={(event)=>{
-                                                            let value = event.target.value || null;
-                                                            dispatchByPass(accion_modificar_visita,{
-                                                                forPkRaiz,
-                                                                index,
-                                                                opcion:"hora",
-                                                                valor: value
-                                                            });
-                                                        }}
-                                                    />
-                                                :
-                                                    visita.hora
-                                                }
-                                            </Grid>
-                                            <Grid item xs={10} sm={4}>
-                                                {miIdPer==visita.idper?
-                                                    <div className="campo" nuestra-longitud="full">
-                                                        <div className="input-campo">
-                                                            <TextField 
-                                                                fullWidth={true}
-                                                                autoFocus={adding==index}
-                                                                value={visita.observaciones || ''} 
-                                                                type="text"
-                                                                multiline
-                                                                onFocus={()=>setEditando(index)}
-                                                                onBlur={()=>setEditando(null)}
-                                                                onChange={(event)=>{
-                                                                    let value = event.target.value || null;
-                                                                    dispatchByPass(accion_modificar_visita,{
-                                                                        forPkRaiz,
-                                                                        index,
-                                                                        opcion:"observaciones",
-                                                                        valor: value
-                                                                    });
-                                                                }}
-                                                            />
-                                                        </div>
-                                                        <div className="boton-confirmar-campo">
-                                                            <Button 
-                                                                variant={editando==index?"contained":'outlined'}
-                                                                size="small" 
-                                                                color={editando==index?'primary':'default'}>
-                                                                <ICON.Check/>
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                :
-                                                    visita.observaciones
-                                                }
-                                            </Grid>
-                                            <Grid item xs={2} sm={2}>
-                                                {miIdPer==visita.idper?
-                                                    <Button
-                                                        disabled={editando!=null}
-                                                        size="small"
-                                                        variant="outlined"
-                                                        color="secondary"
-                                                        onClick={()=>{
-                                                            dispatchByPass(accion_borrar_visita, {forPkRaiz, index: index})
-                                                        }}
-                                                    >
-                                                        <ICON.DeleteOutline/>
-                                                    </Button>
-                                                :
-                                                    null
-                                                }
-                                                
-                                            </Grid>
-                                        </Grid>
-                                    </Grow>
-                                )
-                            :
-                                null
-                            }
-                        </Grid>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={handleCloseDialogNotas} color="primary" variant="contained" disabled={editando!=null}>
-                            OK
-                        </Button>
-                    </DialogActions>
-                </Dialog>
             </div>
         ).array()}
     </div>
@@ -1758,6 +1639,14 @@ export function BienvenidaDespliegue(props:{modo:CasoState["modo"]}){
     </Paper>
 }
 
+//CONTROL DE PESTAÑAS
+var allOpenedTabs:{[x:string]:number}={};
+var infoOpenedTabs={
+    allOpenedTabs,
+    myId:'calculando...',
+    otherTabsNames:''
+}
+
 export function OpenedTabs(){
     const [tabs, setTabs] = useState(infoOpenedTabs.otherTabsNames);
     var {modoDirecto} = useSelector((state:CasoState)=>({modoDirecto:state.opciones.modoDirecto}));
@@ -1785,91 +1674,6 @@ export function AppDmEncu(){
     }
 }
 
-export function ConsultaResultados(){
-    var [etiqueta, setEtiqueta] = useState<string|null>(null);
-    var [etiquetaValida, setEtiquetaValida] = useState<boolean>(false);
-    var [documento, setDocumento] = useState<string|null>(null);
-    var [resultadoConsulta, setResultadoConsulta] = useState<string|null>(null);
-    var imageStyles = {
-        height: '32px',
-        verticalAlign: 'bottom',
-        marginRight: '10px'
-    }
-    return <>
-        <AppBar position="fixed" color='primary'>
-            <Toolbar>
-                <img style={imageStyles}src="./img/logos-gcbs-blanco-150x57.png"/>
-                <img style={imageStyles}src="./img/img-logo-dgeyc_blanco.png"/>
-                <Typography variant="h6">
-                    Ver resultado
-                </Typography>
-            </Toolbar>
-        </AppBar>
-        <main>
-            <Paper className="formulario-consulta-resultados">
-                <Typography variant="h6">
-                    Ingrese etiqueta y numero de documento
-                </Typography>
-                <Grid container className="fields-container">
-                    <TextField 
-                        autoFocus={true}
-                        error={!!etiqueta && !etiquetaValida}
-                        helperText={(!!etiqueta && !etiquetaValida?"Numero de etiqueta incorrecto":null)||undefined}
-                        fullWidth={true}
-                        value={etiqueta || ''} 
-                        label="Etiqueta"
-                        type="text"
-                        onChange={(event)=>{
-                            setEtiquetaValida(true);
-                            let value = event.target.value || null;
-                            if(value){
-                                value = value.replace(/[\+\*\.# _\/,]/g,'-');
-                                if(!/-/.test(value) && value.length>4){
-                                    value=value.substr(0,4)+'-'+value.substr(4);
-                                }
-                            }
-                            setEtiqueta(value)
-                        }}
-                        onBlur={(_event)=>{
-                            setEtiquetaValida(controlarCodigoDV2(etiqueta||''));
-                        }}
-                    />
-                    <TextField 
-                        fullWidth={true}
-                        label="N° documento"
-                        type="tel"
-                        value={documento || null}
-                        onChange={(event)=>{
-                            let value = event.target.value || null;
-                            setDocumento(value)
-                            
-                        }}
-                    />
-                 </Grid>
-                <Button 
-                    variant="contained"
-                    color="primary"
-                    disabled={!(etiqueta && documento)}
-                    onClick={async ()=>{
-                        //ts-ignore Si el botón está habilitado existen la etiqueta y el documento
-                        setResultadoConsulta('buscando...')
-                        let result = await consultarEtiqueta(etiqueta!, documento!);
-                        setResultadoConsulta(result)
-                    }}
-                >
-                    Consultar
-                </Button>
-                <div className='espacio-final-formulario'>
-                    {resultadoConsulta?.split(/\r?\n|%0A/).map(parrafo=>
-                        <p>{parrafo}</p>
-                    )}
-                </div>
-            </Paper>
-            
-        </main>
-    </>
-}
-
 export async function desplegarFormularioActual(opts:{modoDemo:boolean, modoAlmacenamiento:ModoAlmacenamiento, forPkRaiz?:ForPkRaiz}){
     // traer los metadatos en una "estructura"
     // traer los datos de localStorage
@@ -1885,13 +1689,6 @@ export async function desplegarFormularioActual(opts:{modoDemo:boolean, modoAlma
     )
 }
 
-export async function desplegarFormularioConsultaResultados(){
-    ReactDOM.render(
-        <ConsultaResultados/>,
-        document.getElementById('main_layout')
-    )
-}
-
 if(typeof window !== 'undefined'){
     // @ts-ignore para hacerlo
     window.desplegarFormularioActual = desplegarFormularioActual;
@@ -1900,13 +1697,6 @@ if(typeof window !== 'undefined'){
     // window.desplegarHojaDeRuta = desplegarHojaDeRuta;
 }
 
-//CONTROL DE PESTAÑAS
-var allOpenedTabs:{[x:string]:number}={};
-var infoOpenedTabs={
-    allOpenedTabs,
-    myId:'calculando...',
-    otherTabsNames:''
-}
 
 function loadInstance(){
     var bc = new BroadcastChannel('contador');

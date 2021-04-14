@@ -45,6 +45,7 @@ async function sincronizarDatos(state:CasoState|null){
             modoDespliegue: "relevamiento",
             modoDirecto: false,
             modoBorrarRespuesta: null,
+            conCampoOpciones: false,
         }
         //@ts-ignore
         state.feedbackRowValidator={};
