@@ -334,6 +334,7 @@ function OpcionDespliegue(props:{casillero:Opcion, valorOpcion:number, variable:
             variant="outlined"
             className="boton-opcion boton-opcion-seleccion"
             onClick={handleClick}
+            tabIndex={-1}
         >
             <Grid container wrap="nowrap">
                 <Grid className="id">
