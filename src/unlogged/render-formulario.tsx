@@ -1327,7 +1327,7 @@ function FormularioDespliegue(props:{forPk:ForPk}){
                 </Toolbar>
             </AppBar>
             <main>
-                <Paper className="formulario" modo-despliegue={modoDespliegue}>
+                <Paper className="formulario" modo-despliegue={modoDespliegue} ver-num-opciones={opciones.conCampoOpciones?'SI':'NO'}>
                     {modo.demo?<div>
                         <Typography component="span">Modo de despliegue:</Typography>
                         <ButtonGroup>
