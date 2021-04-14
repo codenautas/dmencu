@@ -393,12 +393,15 @@ function registradorDeVariable(pregunta:Pregunta|OpcionMultiple){
         if(pregunta.var_name){
             var opciones:HTMLButtonElement[] = Array.prototype.slice.call(elemento.querySelectorAll(`.boton-opcion[mi-variable="${pregunta.var_name}"]`),0);
             var elementoOpcion:HTMLButtonElement;
-            for(var elementoOpcion of opciones){
+            for(elementoOpcion of opciones){
                 var valorOpcion = elementoOpcion.getAttribute('valor-opcion');
                 setAttrDistinto(elementoOpcion, 'opcion-seleccionada', valorOpcion == valorActual ? "SI": "NO")
             }
-            var elementoInput:HTMLInputElement|null = elemento.querySelector('.variable');
-            if(elementoInput) setValorDistinto(elementoInput, 'value', valorActual == null ? '' : valorActual.toString());
+            var elementosInput:HTMLInputElement[] = Array.prototype.slice.call(elemento.querySelectorAll('.variable'));
+            var elementoInput:HTMLInputElement;
+            for(elementoInput of elementosInput){
+                setValorDistinto(elementoInput, 'value', valorActual == null ? '' : valorActual.toString());
+            }
         }
     }
 }
@@ -450,9 +453,7 @@ function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?
             <div className="id">
                 {ver_id}
             </div>
-            {conCampoOpciones && (casillero.tipovar=="si_no"||casillero.tipovar=="opciones")?
-                <Campo disabled={false} pregunta={casillero} forPk={forPk} mini={true}/>
-            :null}
+            <Campo disabled={false} pregunta={casillero} forPk={forPk} mini={true} hidden={!(conCampoOpciones && (casillero.tipovar=="si_no"||casillero.tipovar=="opciones"))}/>
         </div>
         <div className="nombre-div">
             <div className="nombre">{breakeableText(casillero.nombre)}</div>
@@ -519,7 +520,7 @@ function calcularNuestraLongitud(longitud:string |null){
     return longitud;
 }
 
-function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpciones|PreguntaConSiNo|OpcionMultiple, forPk:ForPk, mini?:boolean}){
+function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpciones|PreguntaConSiNo|OpcionMultiple, forPk:ForPk, mini?:boolean, hidden?:boolean}){
     var {pregunta, disabled, mini } = props;
     const longitud = mini ? pregunta.casilleros.reduce((acum, o)=>Math.max(o.casillero.toString().length, acum), 0) : 
         // @ts-ignore mini es para los otros
@@ -536,7 +537,7 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpcio
         dispatchByPass(accion_registrar_respuesta, {forPk:props.forPk, variable:pregunta.var_name, respuesta:nuevoValor})
     ;
     var nuestraLongitud = calcularNuestraLongitud(longitud)
-    return <div className="campo" nuestra-longitud={nuestraLongitud}>
+    return <div className="campo" nuestra-longitud={nuestraLongitud} style={props.hidden?{visibility:'hidden'}:undefined}>
         {mini?null:<BotonBorrar
             id={`borrar-abierta-${pregunta.var_name}`}
             variable={pregunta.var_name}
@@ -1079,9 +1080,9 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
         // dispatch(dispatchers.VOLVER_HDR({}));
         await sleep(100);
         var hash=new URLSearchParams(location.hash?.replace(/^\#/,''));
-        hash.set('autoproced','false')
+        hash.delete('autoproced')
         location.hash=hash.toString();
-        location.reload();
+        // location.reload();
     }
     var botonesFormulario=[];
     if(!opciones.modoDirecto){

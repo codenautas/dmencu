@@ -326,7 +326,7 @@ myOwn.wScreens.abrirDirecto=async function(addrParams:myOwn.AddrParams){
         var hdr = getHojaDeRuta();
         var reabrirDeMemoria = false;
         if(hdr?.respuestas?.viviendas?.[forPkRaiz.vivienda]){
-            reabrirDeMemoria = await confirmPromise('Ya había abierto esa encuesta ¿quiere traerla de memoria?');
+            reabrirDeMemoria = await confirmPromise('Ya había abierto esa encuesta ¿quiere traerla de memoria?',{rejectFalse:false});
         }
         if(!reabrirDeMemoria){
             await abrirDirecto(forPkRaiz);
