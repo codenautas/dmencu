@@ -22,7 +22,8 @@ import {Bloque, BotonFormulario,
     ModoAlmacenamiento,
     toPlainForPk,
     IdCasillero,
-    PreguntaConSiNo
+    PreguntaConSiNo,
+    Texto
 } from "./tipos";
 import { dmTraerDatosFormulario, dispatchers, 
     gotoSincronizar,
@@ -445,7 +446,7 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
     </DesplegarCasillero>
 }
 
-type CasilleroEncabezable = Formulario|Bloque|Filtro|ConjuntoPreguntas|Pregunta|OpcionMultiple|PreguntaSimple|Consistencia
+type CasilleroEncabezable = Formulario|Bloque|Filtro|ConjuntoPreguntas|Pregunta|OpcionMultiple|PreguntaSimple|Consistencia|Texto
 
 function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?:boolean, leer?:boolean, forPk:ForPk}){
     var {casillero, forPk} = props;
@@ -679,10 +680,11 @@ const nombreCasillero={
     FILTRO: 'filtro',
     CONS: 'consistencia',
     BF: 'botonformulario',
+    TEXTO: 'aclaracionsuperior',
 }
 
 function DesplegarCasillero(props:{
-    casillero:Pregunta|Bloque|Filtro|ConjuntoPreguntas|BotonFormulario|Consistencia|OpcionMultiple,
+    casillero:Pregunta|Bloque|Filtro|ConjuntoPreguntas|BotonFormulario|Consistencia|OpcionMultiple|Texto,
     id?:string,
     style?:React.CSSProperties,
     despliegueEncabezado?:'lateral'|'superior'
@@ -764,6 +766,21 @@ function PreguntaDespliegue(props:{
     </DesplegarCasillero>
 }
 
+function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
+    var {casillero, forPk} = props;
+    var habilitador = casillero.expresion_habilitar_js?getFuncionHabilitar(casillero.expresion_habilitar_js):()=>true;
+    var {modoDespliegue} = useSelectorVivienda(forPk);
+    var id = `texto-${casillero.casillero}`;
+    registrarElemento({id, style:'display', fun:(r:Respuestas)=>habilitador(r) || modoDespliegue=='metadatos'?'block':'none'})
+    return <DesplegarCasillero 
+        id={id}
+        casillero={casillero}
+        style={{display:'none'}}
+    >
+        <EncabezadoDespliegue casillero={casillero} leer={false} forPk={forPk}/>
+    </DesplegarCasillero>
+}
+
 function FiltroDespliegue(props:{filtro:Filtro, forPk:ForPk}){
     var {filtro} = props;
     return <DesplegarCasillero casillero={filtro}>
@@ -785,6 +802,7 @@ function ConsistenciaDespliegue(props:{casillero:Consistencia, forPk:ForPk}){
         <EncabezadoDespliegue casillero={casillero} leer={false} forPk={forPk}/>
     </DesplegarCasillero>
 }
+
 
 function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:Formulario, forPk:ForPk}){
     var {casillero, forPk} = props;
@@ -1030,6 +1048,7 @@ function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Blo
                     casillero.tipoc == "BF"?<BotonFormularioDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
                     casillero.tipoc == "CONS"?<ConsistenciaDespliegue casillero={casillero} forPk={props.forPk}/>:
                     casillero.tipoc == "CP"?<ConjuntoPreguntasDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
+                    casillero.tipoc == "TEXTO"?<TextoDespliegue casillero={casillero} forPk={props.forPk}/>:
                     <CasilleroDesconocido casillero={casillero}/>
                 )
             :

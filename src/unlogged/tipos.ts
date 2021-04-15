@@ -22,13 +22,14 @@ export type IdFormulario = 'F1'|'F2'|'etc...'
 export type IdUnidadAnalisis = 'viviendas'|'hogares'|'personas'
 export type IdBotonFormulario = 'BF:F1'|'BF:F2'|'etc...'
 export type IdConsistencia = 'CONS1'|'CONS2'|'etc...'
+export type IdTexto = 'D30_REF'|'MES_REF'|'SEM_REF'|'etc...'
 export type IdFiltro = 'FILTRO1' | 'FILTRO2' | 'etc...'
 export type IdCasillero = IdVariable | IdPregunta | IdBloque | IdFormulario | IdFiltro | IdOpcion
 export type IdFin = never // TODO: poder poner 'FIN'
 export type IdDestino = IdPregunta | IdBloque | IdFin | IdFiltro 
 export type Valor = string|number|Date|null;
 export type TipocDestinos = 'P'|'CP'|'B'|'FILTRO'|'BF'
-export type Tipoc = TipocDestinos | 'F'|'O'|'OM'|'CONS'
+export type Tipoc = TipocDestinos | 'F'|'O'|'OM'|'CONS' |'TEXTO'
 
 export type IdTarea = 'encu'|'recu'|'supe';
 
@@ -153,7 +154,7 @@ export type Filtro = CasilleroBase & {
     libre?:null
 }
 
-export type ContenidoFormulario=Bloque|Pregunta|ConjuntoPreguntas|Filtro|BotonFormulario|Consistencia
+export type ContenidoFormulario=Bloque|Pregunta|ConjuntoPreguntas|Filtro|BotonFormulario|Consistencia|Texto
 
 export type Bloque = CasilleroBase & {
     tipoc:'B'
@@ -171,7 +172,13 @@ export type Consistencia = CasilleroBase & {
     tipovar?:null
     primera_variable?:null
 }
-
+export type Texto = CasilleroBase & {
+    tipoc:'TEXTO'
+    casillero:IdTexto
+    var_name?:null
+    tipovar?:null
+    primera_variable?:null
+}
 export type BotonFormulario = CasilleroBase & {
     tipoc:'BF'
     casillero:IdBotonFormulario
@@ -192,7 +199,7 @@ export type Formulario = CasilleroBase & {
     unidad_analisis:IdUnidadAnalisis
 }
 
-export type CasillerosImplementados=Formulario|Bloque|Filtro|ConjuntoPreguntas|Pregunta|OpcionMultiple|Opcion|BotonFormulario|Consistencia
+export type CasillerosImplementados=Formulario|Bloque|Filtro|ConjuntoPreguntas|Pregunta|OpcionMultiple|Opcion|BotonFormulario|Consistencia|Texto
 
 export type CampoPkRaiz = 'vivienda'|'etc...';
 
