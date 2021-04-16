@@ -1036,23 +1036,25 @@ function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Blo
     }
     return <div className="contenido">
         {verTodo?null:<div style={{height:"500px", textAlign:'center', verticalAlign:'middle', width:'100%', position:"fixed", backgroundColor: 'rgba(100,100,100,0.3)', fontSize:'200%'}} >cargando...</div>}
-        {props.bloqueOFormulario.casilleros.map((casillero, i)=>
-            verTodo || i < 10?
+        {props.bloqueOFormulario.casilleros.map((casillero, i)=>{
+            var key = casillero.tipoc+'-'+casillero.casillero+'-'+i;
+            return (verTodo || i < 10?
                 (
-                    casillero.tipoc == "P"?<PreguntaDespliegue pregunta={casillero} forPk={props.forPk} despliegueEncabezado={casillero.despliegueEncabezado??(props.bloqueOFormulario.tipoc=='CP'?'lateral':'superior')}/>:
-                    casillero.tipoc == "B"?<BloqueDespliegue bloque={casillero} formulario={props.formulario} forPk={props.forPk}/>:
-                    casillero.tipoc == "FILTRO"?<FiltroDespliegue filtro={casillero} forPk={props.forPk}/>:
-                    casillero.tipoc == "BF"?<BotonFormularioDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
-                    casillero.tipoc == "CONS"?<ConsistenciaDespliegue casillero={casillero} forPk={props.forPk}/>:
-                    casillero.tipoc == "CP"?<ConjuntoPreguntasDespliegue casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
-                    casillero.tipoc == "TEXTO"?<TextoDespliegue casillero={casillero} forPk={props.forPk}/>:
+                    casillero.tipoc == "P"?<PreguntaDespliegue key={key} pregunta={casillero} forPk={props.forPk} despliegueEncabezado={casillero.despliegueEncabezado??(props.bloqueOFormulario.tipoc=='CP'?'lateral':'superior')}/>:
+                    casillero.tipoc == "B"?<BloqueDespliegue key={key} bloque={casillero} formulario={props.formulario} forPk={props.forPk}/>:
+                    casillero.tipoc == "FILTRO"?<FiltroDespliegue key={key} filtro={casillero} forPk={props.forPk}/>:
+                    casillero.tipoc == "BF"?<BotonFormularioDespliegue key={key} casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
+                    casillero.tipoc == "CONS"?<ConsistenciaDespliegue key={key} casillero={casillero} forPk={props.forPk}/>:
+                    casillero.tipoc == "CP"?<ConjuntoPreguntasDespliegue key={key} casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
+                    casillero.tipoc == "TEXTO"?<TextoDespliegue key={key} casillero={casillero} forPk={props.forPk}/>:
                     <CasilleroDesconocido casillero={casillero}/>
                 )
             :
                 <div className="spinner-border" role="status">
                     <span>cargando bloque...</span>
                 </div>
-        )
+            )
+        })
     }</div>
 }
 

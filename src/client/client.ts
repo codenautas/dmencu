@@ -324,6 +324,11 @@ myOwn.wScreens.abrirDirecto=async function(addrParams:myOwn.AddrParams){
     // @ts-ignore AddPrams
     var forPkRaiz = addrParams.forPkRaiz;
     try{
+        var estructura = getEstructura();
+        if(!estructura){
+            estructura = await traerEstructura({operativo:OPERATIVO})
+            cargarEstructura(estructura);
+        }
         var hdr = getHojaDeRuta();
         var reabrirDeMemoria = false;
         if(hdr?.respuestas?.viviendas?.[forPkRaiz.vivienda]){
