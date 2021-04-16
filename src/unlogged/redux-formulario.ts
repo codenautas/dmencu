@@ -372,6 +372,7 @@ export async function dmTraerDatosFormulario(opts:{modoDemo:boolean, modoAlmacen
                 modoDespliegue:'relevamiento',
                 modoDirecto:false,
                 conCampoOpciones:false,
+                saltoAutomatico:false, 
                 bienvenido:true,
                 modoBorrarRespuesta:null,
             } as CasoState["opciones"], // poner los valores por defecto más abajo

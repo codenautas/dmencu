@@ -78,14 +78,16 @@ function breakeableText(text:string|null){
     return text.replace(/\//g,"/\u2063").replace(/\/\u2063(\w)\b/g,'/$1');
 }
 
-var lastKeyPressed:string|number|undefined;
+var debeSaltar:boolean = false;
 
 window.addEventListener('load', ()=>{
+    /*
     window.addEventListener('keydown', (ev:KeyboardEvent)=>{
-        lastKeyPressed = ev.key || ev.keyCode;
+        debeSaltar = ev.key == 'Enter' || ev.keyCode == 13;
     })
+    */
     window.addEventListener('click', ()=>{
-        lastKeyPressed = undefined;
+        debeSaltar = false;
     })
 })
 
@@ -142,6 +144,7 @@ const TextField = (props:{
     onChange?:(event:any)=>void,
     onFocus?:(event:any)=>void,
     onBlur?:(event:any, valor:any)=>void,
+    onKeyDown?:(event:KeyboardEvent)=>void
 })=><input
     id={props.id}
     disabled={props.disabled}
@@ -152,6 +155,7 @@ const TextField = (props:{
     onChange={props.onChange}
     onFocus={props.onFocus}
     onBlur={(evt)=>props.onBlur?.(evt, evt.target.value)}
+    onKeyDown={props.onKeyDown}
     placeholder={props.label}
 />;
 
@@ -317,7 +321,7 @@ function SaltoDespliegue({casillero,prefijo}:{casillero:Pregunta|Opcion|Filtro, 
 function OpcionDespliegue(props:{casillero:Opcion, valorOpcion:number, variable:IdVariable, forPk:ForPk, leer:boolean, conBotonBorrar:boolean}){
     const {casillero} = props;
     var dispatch = useDispatch();
-    var handleClick:React.MouseEventHandler<HTMLButtonElement> = (event)=>{
+    var handleClick:React.MouseEventHandler<HTMLButtonElement> = async (event)=>{
         var container = subirHasta(event.target as HTMLElement, elemento=>elemento.classList.contains('pregunta') || elemento.classList.contains('multiple')) || document.getElementById('main_layout')!;
         var tiene = container.getAttribute('estoy-borrando');
         container.setAttribute('estoy-borrando','NO');
@@ -325,11 +329,23 @@ function OpcionDespliegue(props:{casillero:Opcion, valorOpcion:number, variable:
             elementoConSennialBorrar.setAttribute('estoy-borrando','NO');
             elementoConSennialBorrar = null;
         }
-        var {recentModified} = dispatchByPass(accion_registrar_respuesta, {respuesta:props.valorOpcion, variable:props.variable, forPk:props.forPk});
+        var {recentModified, siguienteVariable} = dispatchByPass(accion_registrar_respuesta, {respuesta:props.valorOpcion, variable:props.variable, forPk:props.forPk});
         if(!recentModified){
             container.setAttribute('estoy-borrando',tiene=='SI'?'NO':'SI');
             if(tiene!='SI'){
                 elementoConSennialBorrar=container;
+            }
+        }else{
+            if(siguienteVariable){
+                var botonStyle = (event.target as HTMLElement)?.style;
+                if(botonStyle) botonStyle.color = 'green';
+                await sleep(100);
+                if(botonStyle) botonStyle.color = 'blue';
+                await sleep(100);
+                if(botonStyle) botonStyle.color = 'green';
+                await sleep(100);
+                if(botonStyle) botonStyle.color = 'unset';
+                saltoAlProximo(siguienteVariable);
             }
         }
     };
@@ -534,6 +550,44 @@ function calcularNuestraLongitud(longitud:string |null){
     return longitud;
 }
 
+function saltoAlProximo(siguienteVariable:IdVariable){
+    debeSaltar = false;
+    var elementoSiguienteVariable = document.getElementById(`var-${siguienteVariable}`);
+    var elemento = elementoSiguienteVariable;
+    var MARGEN_SCROLL = 64;
+    var altoPantalla = window.innerHeight - MARGEN_SCROLL;
+    var elementoEntero:HTMLElement|null = elemento; // es el elemento que va a entar entero en pantalla, define el bottom
+    var rectElementoEntero:ReturnType<typeof myOwn.getRect>|null = null;
+    var elementoSuperior:HTMLElement|null = null; // es el elemento que va a mostrarse desde arriba aunque no entre entero, define el top
+    var rectElementoSuperior:ReturnType<typeof myOwn.getRect>|null = null;
+    while(elemento != null){
+        if(elementoSuperior == null && elemento.clientHeight < altoPantalla){
+            elementoEntero = elemento;
+        }else{
+            if(rectElementoEntero == null){
+                elementoSuperior = elementoEntero
+                rectElementoEntero = myOwn.getRect(elementoEntero!)
+                rectElementoSuperior = rectElementoEntero;
+            }
+            var rect = myOwn.getRect(elemento);
+            if(rectElementoEntero.top + rectElementoEntero.height - rect.top < altoPantalla){
+                elementoSuperior = elemento;
+                rectElementoSuperior = rect;
+            }else{
+                elemento = null;
+            }
+        }
+        elemento = elemento?.parentElement ?? null;
+    }
+    if(elementoSuperior == null){
+        elementoSuperior = elementoEntero;
+    }
+    if(elementoEntero != null){
+        window.scrollTo({top: rectElementoSuperior!.top -MARGEN_SCROLL , left:0, behavior:'smooth'});
+        elementoSiguienteVariable?.focus();
+    }
+}
+
 function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpciones|PreguntaConSiNo|OpcionMultiple, forPk:ForPk, mini?:boolean, hidden?:boolean}){
     var {pregunta, disabled, mini } = props;
     const longitud = mini ? pregunta.casilleros.reduce((acum, o)=>Math.max(o.casillero.toString().length, acum), 0) : 
@@ -549,42 +603,8 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpcio
     };
     const onChange=(nuevoValor:Valor|typeof NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO)=>{
         var {siguienteVariable} = dispatchByPass(accion_registrar_respuesta, {forPk:props.forPk, variable:pregunta.var_name, respuesta:nuevoValor});
-        if(siguienteVariable && (lastKeyPressed == 13 || lastKeyPressed == "Enter" )){
-            lastKeyPressed = undefined;
-            var elementoSiguienteVariable = document.getElementById(`var-${siguienteVariable}`);
-            var elemento = elementoSiguienteVariable;
-            var MARGEN_SCROLL = 64;
-            var altoPantalla = window.innerHeight - MARGEN_SCROLL;
-            var elementoEntero:HTMLElement|null = elemento; // es el elemento que va a entar entero en pantalla, define el bottom
-            var rectElementoEntero:ReturnType<typeof myOwn.getRect>|null = null;
-            var elementoSuperior:HTMLElement|null = null; // es el elemento que va a mostrarse desde arriba aunque no entre entero, define el top
-            var rectElementoSuperior:ReturnType<typeof myOwn.getRect>|null = null;
-            while(elemento != null){
-                if(elementoSuperior == null && elemento.clientHeight < altoPantalla){
-                    elementoEntero = elemento;
-                }else{
-                    if(rectElementoEntero == null){
-                        elementoSuperior = elementoEntero
-                        rectElementoEntero = myOwn.getRect(elementoEntero!)
-                        rectElementoSuperior = rectElementoEntero;
-                    }
-                    var rect = myOwn.getRect(elemento);
-                    if(rectElementoEntero.top + rectElementoEntero.height - rect.top < altoPantalla){
-                        elementoSuperior = elemento;
-                        rectElementoSuperior = rect;
-                    }else{
-                        elemento = null;
-                    }
-                }
-                elemento = elemento?.parentElement ?? null;
-            }
-            if(elementoSuperior == null){
-                elementoSuperior = elementoEntero;
-            }
-            if(elementoEntero != null){
-                window.scrollTo({top: rectElementoSuperior!.top -MARGEN_SCROLL , left:0, behavior:'smooth'});
-                elementoSiguienteVariable?.focus();
-            }
+        if(siguienteVariable && debeSaltar){
+            saltoAlProximo(siguienteVariable);
         }
     };
     var nuestraLongitud = calcularNuestraLongitud(longitud)
@@ -603,8 +623,18 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpcio
                 fullWidth={true}
                 inputProps={inputProps}
                 type={pregunta.despliegueTipoInput??adaptarTipoVarCasillero(pregunta.tipovar)}
+                onKeyDown={(event:KeyboardEvent)=>{
+                    debeSaltar = event.key == 'Enter' || event.keyCode == 13;
+                    if(debeSaltar && event.target instanceof HTMLElement){
+                        event.target.blur();
+                        event.preventDefault();
+                    }
+                }}
                 onFocus={(_event)=>setEditando(true)}
-                onBlur={(_event, valor)=>{
+                onBlur={(event, valor)=>{
+                    if(event?.relatedTarget?.getAttribute('boton-confirmar')){
+                        debeSaltar = true;
+                    }
                     onChange(valor);
                     setEditando(false)
                 }}
@@ -613,6 +643,7 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpcio
         {disabled || mini?null:
             <div className="boton-confirmar-campo">
                 <Button variant={editando?"contained":'outlined'} size="small" color={editando?'primary':'default'}
+                    boton-confirmar={pregunta.var_name}
                     tabIndex={-1}
                     onClick={()=>{
                         onChange(NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO);
@@ -1130,6 +1161,9 @@ function FastSettup(){
             <MenuItem><label><Checkbox checked={opciones.conCampoOpciones} onChange={
                 ()=>dispatch(dispatchers.SET_OPCION({opcion:'conCampoOpciones', valor:!opciones.conCampoOpciones}))
             } inputProps={{ 'aria-label': 'primary checkbox' }}/>campo opciones</label></MenuItem>
+            <MenuItem><label><Checkbox checked={opciones.saltoAutomatico} onChange={
+                ()=>dispatch(dispatchers.SET_OPCION({opcion:'saltoAutomatico', valor:!opciones.saltoAutomatico}))
+            } inputProps={{ 'aria-label': 'primary checkbox' }}/>salto automático</label></MenuItem>
         </Menu>
     </>;
 }

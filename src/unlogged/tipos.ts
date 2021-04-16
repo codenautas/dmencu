@@ -360,6 +360,7 @@ export type CasoState={
         modoDirecto:boolean
         modoBorrarRespuesta:IdVariable|null
         conCampoOpciones:boolean
+        saltoAutomatico:boolean
     }, 
     modo:{ // no se persiste
         demo:boolean
