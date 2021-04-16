@@ -82,6 +82,8 @@ export function adaptarTipoVarCasillero(casilleroDataType:TipoVariables|'opcione
         'opciones':'number',
         'si_no': 'number',
         'numero': 'number',
+        'hora': 'number',
+        'horas': 'number',
         'texto': 'text',
         'fecha': 'text'
     }

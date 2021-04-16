@@ -35,7 +35,7 @@ export type IdTarea = 'encu'|'recu'|'supe';
 
 export type FeedbackVariable = Feedback<IdVariable, IdFin>
 
-export type TipoVariables = 'texto'|'numero'|'fecha'
+export type TipoVariables = 'texto'|'numero'|'fecha'|'horas'
 
 export type Despliegue = 'horizontal'|'oculta'
 

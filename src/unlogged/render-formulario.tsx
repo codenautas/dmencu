@@ -321,6 +321,7 @@ function SaltoDespliegue({casillero,prefijo}:{casillero:Pregunta|Opcion|Filtro, 
 function OpcionDespliegue(props:{casillero:Opcion, valorOpcion:number, variable:IdVariable, forPk:ForPk, leer:boolean, conBotonBorrar:boolean}){
     const {casillero} = props;
     var dispatch = useDispatch();
+    var saltoAutomatico = useSelector((state:CasoState)=>state.opciones.saltoAutomatico);
     var handleClick:React.MouseEventHandler<HTMLButtonElement> = async (event)=>{
         var container = subirHasta(event.target as HTMLElement, elemento=>elemento.classList.contains('pregunta') || elemento.classList.contains('multiple')) || document.getElementById('main_layout')!;
         var tiene = container.getAttribute('estoy-borrando');
@@ -336,7 +337,7 @@ function OpcionDespliegue(props:{casillero:Opcion, valorOpcion:number, variable:
                 elementoConSennialBorrar=container;
             }
         }else{
-            if(siguienteVariable){
+            if(siguienteVariable && saltoAutomatico){
                 var botonStyle = (event.target as HTMLElement)?.style;
                 if(botonStyle) botonStyle.color = 'green';
                 await sleep(100);
@@ -555,7 +556,7 @@ function saltoAlProximo(siguienteVariable:IdVariable){
     var elementoSiguienteVariable = document.getElementById(`var-${siguienteVariable}`);
     var elemento = elementoSiguienteVariable;
     var MARGEN_SCROLL = 64;
-    var altoPantalla = window.innerHeight - MARGEN_SCROLL;
+    var altoPantalla = window.innerHeight*0.7 - MARGEN_SCROLL;
     var elementoEntero:HTMLElement|null = elemento; // es el elemento que va a entar entero en pantalla, define el bottom
     var rectElementoEntero:ReturnType<typeof myOwn.getRect>|null = null;
     var elementoSuperior:HTMLElement|null = null; // es el elemento que va a mostrarse desde arriba aunque no entre entero, define el top
@@ -590,6 +591,7 @@ function saltoAlProximo(siguienteVariable:IdVariable){
 
 function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpciones|PreguntaConSiNo|OpcionMultiple, forPk:ForPk, mini?:boolean, hidden?:boolean}){
     var {pregunta, disabled, mini } = props;
+    var {saltoAutomatico, conCampoOpciones} = useSelector((state:CasoState)=>state.opciones);
     const longitud = mini ? pregunta.casilleros.reduce((acum, o)=>Math.max(o.casillero.toString().length, acum), 0) : 
         // @ts-ignore mini es para los otros
         pregunta.longitud;
@@ -624,9 +626,12 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpcio
                 inputProps={inputProps}
                 type={pregunta.despliegueTipoInput??adaptarTipoVarCasillero(pregunta.tipovar)}
                 onKeyDown={(event:KeyboardEvent)=>{
-                    debeSaltar = event.key == 'Enter' || event.keyCode == 13;
-                    if(debeSaltar && event.target instanceof HTMLElement){
-                        event.target.blur();
+                    var esEnter = (event.key == 'Enter' || event.keyCode == 13)
+                    debeSaltar = esEnter && (saltoAutomatico || conCampoOpciones);
+                    if(esEnter){
+                        if(event.target instanceof HTMLElement){
+                            event.target.blur();
+                        }
                         event.preventDefault();
                     }
                 }}
