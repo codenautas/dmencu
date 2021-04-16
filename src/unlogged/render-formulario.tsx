@@ -551,9 +551,9 @@ function calcularNuestraLongitud(longitud:string |null){
     return longitud;
 }
 
-function saltoAlProximo(siguienteVariable:IdVariable){
+function calcularElementoEnfocado(idVariable:IdVariable){
     debeSaltar = false;
-    var elementoSiguienteVariable = document.getElementById(`var-${siguienteVariable}`);
+    var elementoSiguienteVariable = document.getElementById(`var-${idVariable}`);
     var elemento = elementoSiguienteVariable;
     var MARGEN_SCROLL = 64;
     var altoPantalla = window.innerHeight*0.7 - MARGEN_SCROLL;
@@ -583,10 +583,33 @@ function saltoAlProximo(siguienteVariable:IdVariable){
     if(elementoSuperior == null){
         elementoSuperior = elementoEntero;
     }
-    if(elementoEntero != null){
-        window.scrollTo({top: rectElementoSuperior!.top -MARGEN_SCROLL , left:0, behavior:'smooth'});
-        elementoSiguienteVariable?.focus();
+    var result:{
+        elementoInputVariable?:HTMLElement|null
+        top?:number|null
+        enfocado?:boolean|null
+        desenfoque?:string|null
+    } = {};
+    if(elementoEntero != null && rectElementoEntero != null){
+        result.elementoInputVariable = elementoSiguienteVariable;
+        var top = rectElementoSuperior!.top - MARGEN_SCROLL;
+        result.top=top;
+        if(top<document.documentElement.scrollTop){
+            result.desenfoque='arriba';
+        }else if(rectElementoEntero.top+rectElementoEntero.height > document.documentElement.scrollTop + altoPantalla){
+            result.desenfoque='abajo';
+        }else{
+            result.enfocado=true
+        }
     }
+    return result;
+}
+
+function saltoAlProximo(siguienteVariable:IdVariable){
+    var {top, enfocado, elementoInputVariable} = calcularElementoEnfocado(siguienteVariable);
+    if(top != null && !enfocado){
+        window.scrollTo({top, left:0, behavior:'smooth'});
+    }
+    elementoInputVariable?.focus();
 }
 
 function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpciones|PreguntaConSiNo|OpcionMultiple, forPk:ForPk, mini?:boolean, hidden?:boolean}){
@@ -1400,6 +1423,20 @@ function FormularioDespliegue(props:{forPk:ForPk}){
                     <DesplegarContenidoInternoBloqueOFormulario bloqueOFormulario={formulario} formulario={formulario} forPk={forPk} multiple={false}/>
                     <BotonVolverEnDiv id="boton-volver-2"/>
                 </Paper>
+                <Fab id='fab-activo-arriba' color="primary" aria-label="add">
+                    <ICON.KeyboardArrowUp />
+                </Fab>
+                <Fab id='fab-error-arriba' variant="extended" color="secondary" aria-label="edit">
+                    <ICON.Navigation />
+                    Error
+                </Fab>                
+                <Fab id='fab-activo-abajo' color="primary" aria-label="add">
+                    <ICON.KeyboardArrowDown />
+                </Fab>
+                <Fab id='fab-error-abajo' variant="extended" color="secondary" aria-label="edit">
+                    <ICON.NavigationDown />
+                    Error
+                </Fab>                
                 <div className='espacio-final-formulario'></div>
                 {opciones.modoBorrarRespuesta && opciones.forPk?<DesplegarConfirmarBorrarRespuesta forPk={opciones.forPk} variableBorrar={opciones.modoBorrarRespuesta}/>:null}
             </main>
