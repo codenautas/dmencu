@@ -353,8 +353,8 @@ function OpcionDespliegue(props:{casillero:Opcion, valorOpcion:number, variable:
                 <Grid className="id">
                     {casillero.ver_id || casillero.casillero}
                 </Grid>
-                <Grid className="opcion-texto" debe-leer={casillero.leer?'SI':casillero.leer===false?'NO':props.leer?'SI':'NO'}>
-                    <Typography>{breakeableText(casillero.nombre)}</Typography>
+                <Grid className="opcion-texto">
+                    <Typography debe-leer={casillero.leer?'SI':casillero.leer===false?'NO':props.leer?'SI':'NO'}>{breakeableText(casillero.nombre)}</Typography>
                     {casillero.aclaracion?
                         <Typography >{breakeableText(casillero.aclaracion)}</Typography>
                     :null}
@@ -660,12 +660,9 @@ function OpcionesDespliegue(
                     {despliegueContenido=='horizontal'?null:desplegarOtros(opcion,null)}
                 </Grid>
             )}
-            {despliegueContenido=='horizontal'?casilleroConOpciones.casilleros.map((opcion:Opcion)=>
-                desplegarOtros(opcion,'horizontal')
-            ):null}
         </div>
         {despliegueContenido=='horizontal'?casilleroConOpciones.casilleros.map((opcion:Opcion)=>
-            desplegarOtros(opcion,'vertical')
+            desplegarOtros(opcion,null)
         ):null}
     </div>
 }
@@ -1128,9 +1125,9 @@ function FastSettup(){
             <MenuLetra tamannio={19} denominacion = "grande"/>
             <MenuLetra tamannio={22} denominacion = "enorme"/>
             <Divider/>
-            <MenuItem><Checkbox checked={opciones.conCampoOpciones} onChange={
+            <MenuItem><label><Checkbox checked={opciones.conCampoOpciones} onChange={
                 ()=>dispatch(dispatchers.SET_OPCION({opcion:'conCampoOpciones', valor:!opciones.conCampoOpciones}))
-            } inputProps={{ 'aria-label': 'primary checkbox' }}/>campo opciones</MenuItem>
+            } inputProps={{ 'aria-label': 'primary checkbox' }}/>campo opciones</label></MenuItem>
         </Menu>
     </>;
 }

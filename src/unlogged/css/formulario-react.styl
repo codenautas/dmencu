@@ -70,7 +70,6 @@ anchoNormal(ancho)
   display flex
   flex-direction row
   min-height 3em
-  align-items center
   > *
     margin 0.5em
   > .id-div
@@ -90,6 +89,11 @@ anchoNormal(ancho)
     font-size 0.8em
     color #666 !important
 
+.multiple
+  .contenido, .opciones
+    > .otros-especificar
+      margin-left 0
+
 .contenido, .opciones
   display flex
   flex-direction column
@@ -99,10 +103,8 @@ anchoNormal(ancho)
     > *
       flex-wrap wrap
   > .otros-especificar
-    margin-left 3em
+    margin-left 48px
     font-size 0.8em
-    > .casillero
-      font-size 0.8em
 
 .multiple, .pregunta, .conjuntopreguntas
   font-size 1.2rem
@@ -115,12 +117,15 @@ anchoNormal(ancho)
         padding-left 0.2rem
         padding-right 0.2rem
         text-align center
+  &[despliegue-encabezado~=lateral]
+    > .contenido
+      margin-left 0.5em
   > .contenido
     margin-left 3em
     > .multiple
       > .encabezado
         flex-grow: 1
-    > .multiple[el-despliegue~=superior]
+    > .multiple[despliegue-encabezado~=superior]
       > .encabezado
         flex-grow: 0
     > .pregunta, > .multiple
@@ -643,3 +648,7 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button
 /* Firefox */
 input[type=number]
   -moz-appearance textfield
+
+.input-campo
+  > input
+    font-size 1.1rem
