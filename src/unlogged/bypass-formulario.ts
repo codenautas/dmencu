@@ -253,20 +253,26 @@ export function calcularElementoEnfocado(idVariable:IdVariable){
     var elementoSuperior:HTMLElement|null = null; // es el elemento que va a mostrarse desde arriba aunque no entre entero, define el top
     var rectElementoSuperior:ReturnType<typeof myOwn.getRect>|null = null;
     while(elemento != null){
-        if(elementoSuperior == null && elemento.clientHeight < altoPantalla){
-            elementoEntero = elemento;
-        }else{
-            if(rectElementoEntero == null){
-                elementoSuperior = elementoEntero
-                rectElementoEntero = myOwn.getRect(elementoEntero!)
-                rectElementoSuperior = rectElementoEntero;
-            }
-            var rect = myOwn.getRect(elemento);
-            if(rectElementoEntero.top + rectElementoEntero.height - rect.top < altoPantalla){
-                elementoSuperior = elemento;
-                rectElementoSuperior = rect;
+        if(elemento.classList.contains('variable') 
+        || elemento.classList.contains('multiple') 
+        || elemento.classList.contains('pregunta') 
+        || elemento.classList.contains('conjuntopreguntas') 
+        ){
+            if(elementoSuperior == null && elemento.clientHeight < altoPantalla){
+                elementoEntero = elemento;
             }else{
-                elemento = null;
+                if(rectElementoEntero == null){
+                    elementoSuperior = elementoEntero
+                    rectElementoEntero = myOwn.getRect(elementoEntero!)
+                    rectElementoSuperior = rectElementoEntero;
+                }
+                var rect = myOwn.getRect(elemento);
+                if(rectElementoEntero.top + rectElementoEntero.height - rect.top < altoPantalla){
+                    elementoSuperior = elemento;
+                    rectElementoSuperior = rect;
+                }else{
+                    elemento = null;
+                }
             }
         }
         elemento = elemento?.parentElement ?? null;
@@ -281,9 +287,12 @@ export function calcularElementoEnfocado(idVariable:IdVariable){
         enfocado?:boolean|null
         desenfoque?:string|null
     } = {};
-    if(elementoEntero != null && rectElementoEntero != null){
+    if(elementoEntero != null){
+        if(rectElementoEntero == null){
+            rectElementoEntero = myOwn.getRect(elementoEntero)
+        }
         result.elementoInputVariable = elementoSiguienteVariable;
-        var top = rectElementoSuperior!.top - MARGEN_SCROLL;
+        var top = (rectElementoSuperior??rectElementoEntero).top - MARGEN_SCROLL;
         result.top = top;
         result.bottom = rectElementoEntero.top+rectElementoEntero.height;
         if(top<document.documentElement.scrollTop){

@@ -347,7 +347,7 @@ function OpcionDespliegue(props:{casillero:Opcion, valorOpcion:number, variable:
                 await sleep(100);
                 if(botonStyle) botonStyle.color = 'green';
                 await sleep(100);
-                if(botonStyle) botonStyle.color = 'unset';
+                if(botonStyle) botonStyle.color = '';
                 enfocarElementoDeVariable(siguienteVariable);
             }
         }
