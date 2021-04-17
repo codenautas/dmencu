@@ -206,6 +206,7 @@ function respuestasForPk(forPk:ForPk, conAumentadas?:boolean, agregarSiFalta?:bo
 export function volcadoInicialElementosRegistrados(forPkRaiz:ForPkRaiz){
     var {respuestasAumentadas} = respuestasForPk(forPkRaiz, true)
     var registroElementos = registroElementosGlobal;
+    var rowValidator =  datosByPass.feedbackRowValidator[toPlainForPk(forPkRaiz)];
     for(var id in registroElementos){
         var def = registroElementos[id];
         if(def.elemento){
@@ -220,7 +221,7 @@ export function volcadoInicialElementosRegistrados(forPkRaiz:ForPkRaiz){
             // console.log('BUSCANDO el elemento registrado ',id,'no está en el DOM')
             continue;
         }
-        var value = def.fun(respuestasAumentadas, datosByPass.feedbackRowValidator[toPlainForPk(forPkRaiz)], def.elemento, datosByPass.feedbackRowValidator);
+        var value = def.fun(respuestasAumentadas, rowValidator, def.elemento, datosByPass.feedbackRowValidator);
         if('prop' in def){
             setValorDistinto(def.elemento, def.prop, value)
         }
@@ -231,6 +232,69 @@ export function volcadoInicialElementosRegistrados(forPkRaiz:ForPkRaiz){
             setValorDistinto(def.elemento.style, def.style, value)
         }
     }
+    if(rowValidator.actual){
+        var {top, bottom} = calcularElementoEnfocado(rowValidator.actual);
+        if(top != null && bottom !=null){
+            // @ts-ignore
+            document.getElementById('fab-activo-arriba').elTopVisibilizar = top;
+            // @ts-ignore
+            document.getElementById('fab-activo-abajo').elBottomVisibilizar = bottom;
+        }
+    }
+}
+
+export function calcularElementoEnfocado(idVariable:IdVariable){
+    var elementoSiguienteVariable = document.getElementById(`var-${idVariable}`);
+    var elemento = elementoSiguienteVariable;
+    var MARGEN_SCROLL = 64;
+    var altoPantalla = window.innerHeight*0.7 - MARGEN_SCROLL;
+    var elementoEntero:HTMLElement|null = elemento; // es el elemento que va a entar entero en pantalla, define el bottom
+    var rectElementoEntero:ReturnType<typeof myOwn.getRect>|null = null;
+    var elementoSuperior:HTMLElement|null = null; // es el elemento que va a mostrarse desde arriba aunque no entre entero, define el top
+    var rectElementoSuperior:ReturnType<typeof myOwn.getRect>|null = null;
+    while(elemento != null){
+        if(elementoSuperior == null && elemento.clientHeight < altoPantalla){
+            elementoEntero = elemento;
+        }else{
+            if(rectElementoEntero == null){
+                elementoSuperior = elementoEntero
+                rectElementoEntero = myOwn.getRect(elementoEntero!)
+                rectElementoSuperior = rectElementoEntero;
+            }
+            var rect = myOwn.getRect(elemento);
+            if(rectElementoEntero.top + rectElementoEntero.height - rect.top < altoPantalla){
+                elementoSuperior = elemento;
+                rectElementoSuperior = rect;
+            }else{
+                elemento = null;
+            }
+        }
+        elemento = elemento?.parentElement ?? null;
+    }
+    if(elementoSuperior == null){
+        elementoSuperior = elementoEntero;
+    }
+    var result:{
+        elementoInputVariable?:HTMLElement|null
+        top?:number|null
+        bottom?:number|null
+        enfocado?:boolean|null
+        desenfoque?:string|null
+    } = {};
+    if(elementoEntero != null && rectElementoEntero != null){
+        result.elementoInputVariable = elementoSiguienteVariable;
+        var top = rectElementoSuperior!.top - MARGEN_SCROLL;
+        result.top = top;
+        result.bottom = rectElementoEntero.top+rectElementoEntero.height;
+        if(top<document.documentElement.scrollTop){
+            result.desenfoque='arriba';
+        }else if(rectElementoEntero.top+rectElementoEntero.height > document.documentElement.scrollTop + altoPantalla){
+            result.desenfoque='abajo';
+        }else{
+            result.enfocado=true
+        }
+    }
+    return result;
 }
 
 export function setAttrDistinto<N extends string>(
@@ -261,20 +325,20 @@ function calcularVariablesBotonFormulario(_forPk:ForPk){
 export function accion_id_pregunta(_payload:{pregunta: IdPregunta, forPk: ForPk}, _datosByPass:DatosByPass){
 }
 
-export const NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO = Symbol('NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO')
+export const NO_CAMBIAR__SOLO_TRAER_STATUS = Symbol('NO_CAMBIAR_SOLO_TRAER_STATUS')
+export const NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO = Symbol('NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO')
 
 export function accion_registrar_respuesta(payload:{
     forPk:ForPk, 
-    variable:IdVariable, 
-    respuesta:Valor|typeof NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO, 
-    onAlreadyExists?:()=>void
+    variable:IdVariable|typeof NO_CAMBIAR__SOLO_TRAER_STATUS, 
+    respuesta:Valor|typeof NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO
 }, _datosByPass:DatosByPass){
     let token = 'AVERIGUAR TODO'
     let { forPk, respuesta, variable } = payload;
     var {respuestas, respuestasRaiz, forPkRaiz}  = respuestasForPk(forPk);
     var unidad_analisis = estructura.formularios[forPk.formulario];
     var recentModified = false;
-    if(respuesta !== NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO){
+    if(respuesta !== NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO && variable != NO_CAMBIAR__SOLO_TRAER_STATUS){
         if(respuesta == ''){
             respuesta = null;
         }else if(estructura.formularios[forPk.formulario].estructuraRowValidator.variables[variable].tipo=='numero'){
@@ -289,7 +353,8 @@ export function accion_registrar_respuesta(payload:{
         }
     }
     var feedbackRow = datosByPass.feedbackRowValidator[toPlainForPk(forPk)];
-    if(recentModified || NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO && feedbackRow.autoIngresadas?.[variable]){
+    var siguienteVariable:IdVariable|null|undefined;
+    if(variable != NO_CAMBIAR__SOLO_TRAER_STATUS && (recentModified || NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO && feedbackRow.autoIngresadas?.[variable])){
         variablesCalculadas(respuestasRaiz)
         if(respuestas[ultimaVaribleVivienda]==null && respuestas[ultimaVaribleVivienda]!=null){
             encolarBackup(token, forPkRaiz, respuestasRaiz);
@@ -300,8 +365,9 @@ export function accion_registrar_respuesta(payload:{
         calcularVariablesBotonFormulario(forPk);
         volcadoInicialElementosRegistrados(forPk);
         persistirDatosByPass();
+        siguienteVariable = feedbackRow.feedback[variable].siguiente;
     }
-    return {recentModified, siguienteVariable:feedbackRow.feedback[variable].siguiente};
+    return {recentModified, siguienteVariable, variableActual: feedbackRow.actual};
 }
 
 export function accion_registrar_nota(payload:{forPkRaiz:ForPkRaiz, tarea:IdTarea, nota:string|null}, _datosByPass:DatosByPass){

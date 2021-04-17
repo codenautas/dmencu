@@ -61,6 +61,7 @@ import {
     defOperativo,
     volcadoInicialElementosRegistrados,
     numberOrStringIncIfArray, 
+    calcularElementoEnfocado,
     accion_registrar_respuesta,
     accion_id_pregunta,
     accion_agregar_visita,
@@ -68,7 +69,8 @@ import {
     accion_agregar_formulario,
     accion_modificar_visita,
     accion_borrar_visita,
-    NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO
+    NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO,
+    NO_CAMBIAR__SOLO_TRAER_STATUS
 } from "./bypass-formulario"
 
 import {arrange, html} from "js-to-html";
@@ -346,7 +348,7 @@ function OpcionDespliegue(props:{casillero:Opcion, valorOpcion:number, variable:
                 if(botonStyle) botonStyle.color = 'green';
                 await sleep(100);
                 if(botonStyle) botonStyle.color = 'unset';
-                saltoAlProximo(siguienteVariable);
+                enfocarElementoDeVariable(siguienteVariable);
             }
         }
     };
@@ -551,60 +553,8 @@ function calcularNuestraLongitud(longitud:string |null){
     return longitud;
 }
 
-function calcularElementoEnfocado(idVariable:IdVariable){
+function enfocarElementoDeVariable(siguienteVariable:IdVariable){
     debeSaltar = false;
-    var elementoSiguienteVariable = document.getElementById(`var-${idVariable}`);
-    var elemento = elementoSiguienteVariable;
-    var MARGEN_SCROLL = 64;
-    var altoPantalla = window.innerHeight*0.7 - MARGEN_SCROLL;
-    var elementoEntero:HTMLElement|null = elemento; // es el elemento que va a entar entero en pantalla, define el bottom
-    var rectElementoEntero:ReturnType<typeof myOwn.getRect>|null = null;
-    var elementoSuperior:HTMLElement|null = null; // es el elemento que va a mostrarse desde arriba aunque no entre entero, define el top
-    var rectElementoSuperior:ReturnType<typeof myOwn.getRect>|null = null;
-    while(elemento != null){
-        if(elementoSuperior == null && elemento.clientHeight < altoPantalla){
-            elementoEntero = elemento;
-        }else{
-            if(rectElementoEntero == null){
-                elementoSuperior = elementoEntero
-                rectElementoEntero = myOwn.getRect(elementoEntero!)
-                rectElementoSuperior = rectElementoEntero;
-            }
-            var rect = myOwn.getRect(elemento);
-            if(rectElementoEntero.top + rectElementoEntero.height - rect.top < altoPantalla){
-                elementoSuperior = elemento;
-                rectElementoSuperior = rect;
-            }else{
-                elemento = null;
-            }
-        }
-        elemento = elemento?.parentElement ?? null;
-    }
-    if(elementoSuperior == null){
-        elementoSuperior = elementoEntero;
-    }
-    var result:{
-        elementoInputVariable?:HTMLElement|null
-        top?:number|null
-        enfocado?:boolean|null
-        desenfoque?:string|null
-    } = {};
-    if(elementoEntero != null && rectElementoEntero != null){
-        result.elementoInputVariable = elementoSiguienteVariable;
-        var top = rectElementoSuperior!.top - MARGEN_SCROLL;
-        result.top=top;
-        if(top<document.documentElement.scrollTop){
-            result.desenfoque='arriba';
-        }else if(rectElementoEntero.top+rectElementoEntero.height > document.documentElement.scrollTop + altoPantalla){
-            result.desenfoque='abajo';
-        }else{
-            result.enfocado=true
-        }
-    }
-    return result;
-}
-
-function saltoAlProximo(siguienteVariable:IdVariable){
     var {top, enfocado, elementoInputVariable} = calcularElementoEnfocado(siguienteVariable);
     if(top != null && !enfocado){
         window.scrollTo({top, left:0, behavior:'smooth'});
@@ -626,10 +576,10 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpcio
     const inputProps = {
         maxLength: longitud,
     };
-    const onChange=(nuevoValor:Valor|typeof NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO)=>{
+    const onChange=(nuevoValor:Valor|typeof NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO)=>{
         var {siguienteVariable} = dispatchByPass(accion_registrar_respuesta, {forPk:props.forPk, variable:pregunta.var_name, respuesta:nuevoValor});
         if(siguienteVariable && debeSaltar){
-            saltoAlProximo(siguienteVariable);
+            enfocarElementoDeVariable(siguienteVariable);
         }
     };
     var nuestraLongitud = calcularNuestraLongitud(longitud)
@@ -674,7 +624,7 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpcio
                     boton-confirmar={pregunta.var_name}
                     tabIndex={-1}
                     onClick={()=>{
-                        onChange(NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO);
+                        onChange(NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO);
                         setEditando(false)
                     }}
                 ><ICON.Check/></Button>
@@ -1379,6 +1329,27 @@ function FormularioDespliegue(props:{forPk:ForPk}){
     var {soloLectura} = useSelector((state:CasoState)=>({soloLectura:state.datos.soloLectura}));
     const dispatch = useDispatch();
     useEffect(()=>{
+        var controlScroll=()=>{
+            var arriba = document.getElementById('fab-activo-arriba')!;
+            setValorDistinto(arriba.style, 'visibility',
+                // @ts-ignore
+                arriba.elTopVisibilizar !=null && arriba.elTopVisibilizar + 10 
+                < document.documentElement.scrollTop ? 'visible' : 'hidden'
+            );
+            var abajo = document.getElementById('fab-activo-abajo')!;
+            setValorDistinto(abajo.style, 'visibility', 
+                // @ts-ignore
+                abajo.elBottomVisibilizar != null && abajo.elBottomVisibilizar - 20
+                > document.documentElement.scrollTop + window.innerHeight * 0.7 ? 'visible' : 'hidden'
+            );
+        }
+        window.addEventListener('scroll', controlScroll);
+        controlScroll();
+        return ()=>{
+            window.removeEventListener('scroll', controlScroll);
+        }
+    })
+    useEffect(()=>{
         volcadoInicialElementosRegistrados(props.forPk);
     },[toPlainForPk(props.forPk)])
     // TODO Volver a poner el movimiento a la actual
@@ -1393,6 +1364,12 @@ function FormularioDespliegue(props:{forPk:ForPk}){
             scrollToTop()
         }
     }, [formulario]);
+    var onClickSaltarActual = ()=>{
+        var {variableActual} = dispatchByPass(accion_registrar_respuesta, {respuesta:null, variable:NO_CAMBIAR__SOLO_TRAER_STATUS, forPk:props.forPk});
+        if(variableActual){
+            enfocarElementoDeVariable(variableActual)
+        }
+    }
     var listaModos:ModoDespliegue[]=['metadatos','relevamiento','PDF'];
     ['boton-volver-1', 'boton-volver-2'].forEach(id=>{
         registrarElemento({id, attr:'resumen-estado', fun:(_:Respuestas, feedbackForm: FormStructureState<IdVariable,IdFin>)=>(
@@ -1423,16 +1400,16 @@ function FormularioDespliegue(props:{forPk:ForPk}){
                     <DesplegarContenidoInternoBloqueOFormulario bloqueOFormulario={formulario} formulario={formulario} forPk={forPk} multiple={false}/>
                     <BotonVolverEnDiv id="boton-volver-2"/>
                 </Paper>
-                <Fab id='fab-activo-arriba' color="primary" aria-label="add">
+                <Fab id='fab-activo-arriba' color="primary" aria-label="add" onClick={onClickSaltarActual}>
                     <ICON.KeyboardArrowUp />
+                </Fab>
+                <Fab id='fab-activo-abajo' color="primary" aria-label="add" onClick={onClickSaltarActual}>
+                    <ICON.KeyboardArrowDown />
                 </Fab>
                 <Fab id='fab-error-arriba' variant="extended" color="secondary" aria-label="edit">
                     <ICON.Navigation />
                     Error
                 </Fab>                
-                <Fab id='fab-activo-abajo' color="primary" aria-label="add">
-                    <ICON.KeyboardArrowDown />
-                </Fab>
                 <Fab id='fab-error-abajo' variant="extended" color="secondary" aria-label="edit">
                     <ICON.NavigationDown />
                     Error
