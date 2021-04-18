@@ -244,8 +244,9 @@ export function volcadoInicialElementosRegistrados(forPkRaiz:ForPkRaiz){
 }
 
 export function calcularElementoEnfocado(idVariable:IdVariable){
-    var elementoSiguienteVariable = document.getElementById(`var-${idVariable}`);
-    var elemento = elementoSiguienteVariable;
+    var elementoVariableAEnfocar = document.getElementById(`var-${idVariable}`)
+        ||document.getElementById(`seccion-boton-formulario-${idVariable}`);
+    var elemento = elementoVariableAEnfocar;
     var MARGEN_SCROLL = 64;
     var altoPantalla = window.innerHeight*0.7 - MARGEN_SCROLL;
     var elementoEntero:HTMLElement|null = elemento; // es el elemento que va a entar entero en pantalla, define el bottom
@@ -257,6 +258,8 @@ export function calcularElementoEnfocado(idVariable:IdVariable){
         || elemento.classList.contains('multiple') 
         || elemento.classList.contains('pregunta') 
         || elemento.classList.contains('conjuntopreguntas') 
+        || elemento.classList.contains('seccion-boton-formulario') 
+        || elemento.classList.contains('botonformulario') 
         ){
             if(elementoSuperior == null && elemento.clientHeight < altoPantalla){
                 elementoEntero = elemento;
@@ -291,7 +294,7 @@ export function calcularElementoEnfocado(idVariable:IdVariable){
         if(rectElementoEntero == null){
             rectElementoEntero = myOwn.getRect(elementoEntero)
         }
-        result.elementoInputVariable = elementoSiguienteVariable;
+        result.elementoInputVariable = elementoVariableAEnfocar;
         var top = (rectElementoSuperior??rectElementoEntero).top - MARGEN_SCROLL;
         result.top = top;
         result.bottom = rectElementoEntero.top+rectElementoEntero.height;

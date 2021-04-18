@@ -845,7 +845,8 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
         {forPk:ForPk, num:false, actual:boolean, previo:true, unico:true})
         & {esConfirmar?:true, esAgregar?:true};
     var nuevoCampoPk = defOperativo.defUA[formularioAAbrir.unidad_analisis].pk;
-    var idSeccion=`seccion-boton-formulario-${casillero.casillero}-${toPlainForPk(forPk)}`;
+    var var_name='$B.'+casillero.salto;
+    var idSeccion=`seccion-boton-formulario-${var_name}`;
     var idButton=`special-button-${idSeccion}`;
     registrarElemento<HTMLDivElement>({
         id:idSeccion, 
@@ -932,6 +933,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
             casillero.aclaracion || html.div({class:"aclaracion"}, [breakeableText(casillero.aclaracion)??null]),
             html.div([
                 Button2({
+                    // id:`var-${idVariable}`,
                     id:`boton-formulario-${sufijoIdElemento}`, 
                     variant:"outlined",
                     color:"inherit",
