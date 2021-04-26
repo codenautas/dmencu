@@ -697,6 +697,7 @@ function DesplegarCasillero(props:{
     children:React.ReactNode|Element[],
 }){
     return <div 
+        key={`${props.casillero.tipoc}-${props.id||props.casillero.casillero}`}
         className={`casillero ${nombreCasillero[props.casillero.tipoc]}`}
         id={props.id}
         style={props.style}
@@ -995,12 +996,15 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     </DesplegarCasillero>
 }
 
-function CasilleroDesconocido(props:{casillero:CasilleroBase}){
-    var classes = useStyles();
-    return <Paper className={classes.errorCasillero}>
+function CasilleroDesconocido(props:{casillero:CasilleroBase, forPk:ForPk}){
+    return <DesplegarCasillero 
+        id={`casillerodesconocido-${props.casillero.casillero}`}
+        casillero={props.casillero as Bloque}
+        style={{display:'none'}}
+    >
         <Typography>Tipo de casillero no implementado: "{props.casillero.tipoc}" para "{props.casillero.casillero}"</Typography>
-        <DespliegueEncabezado casillero={props.casillero as CasilleroEncabezable}/>
-    </Paper>
+        <EncabezadoDespliegue casillero={props.casillero as CasilleroEncabezable} leer={false} forPk={props.forPk}/>
+    </DesplegarCasillero>
 }
 
 function useSelectorVivienda(forPk:ForPk){
@@ -1045,11 +1049,17 @@ function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Blo
             }
         })
     }
+    const limiteNoVerTodo = 3;
+    useEffect(()=>{
+        if(props.bloqueOFormulario.tipoc=='F'){
+            volcadoInicialElementosRegistrados(props.forPk);
+        }
+    },[toPlainForPk(props.forPk),verTodo])
     return <div className="contenido">
         {verTodo?null:<div style={{height:"500px", textAlign:'center', verticalAlign:'middle', width:'100%', position:"fixed", backgroundColor: 'rgba(100,100,100,0.3)', fontSize:'200%'}} >cargando...</div>}
         {props.bloqueOFormulario.casilleros.map((casillero, i)=>{
             var key = casillero.tipoc+'-'+casillero.casillero+'-'+i;
-            return (verTodo || i < 10?
+            return (verTodo || i < limiteNoVerTodo?
                 (
                     casillero.tipoc == "P"?<PreguntaDespliegue key={key} pregunta={casillero} forPk={props.forPk} despliegueEncabezado={casillero.despliegueEncabezado??(props.bloqueOFormulario.tipoc=='CP'?'lateral':'superior')}/>:
                     casillero.tipoc == "B"?<BloqueDespliegue key={key} bloque={casillero} formulario={props.formulario} forPk={props.forPk}/>:
@@ -1058,12 +1068,13 @@ function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Blo
                     casillero.tipoc == "CONS"?<ConsistenciaDespliegue key={key} casillero={casillero} forPk={props.forPk}/>:
                     casillero.tipoc == "CP"?<ConjuntoPreguntasDespliegue key={key} casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
                     casillero.tipoc == "TEXTO"?<TextoDespliegue key={key} casillero={casillero} forPk={props.forPk}/>:
-                    <CasilleroDesconocido casillero={casillero}/>
+                    <CasilleroDesconocido key={key} casillero={casillero} forPk={props.forPk}/>
                 )
-            :
-                <div className="spinner-border" role="status">
+            :i==limiteNoVerTodo?
+                <div key='$spinner' className="spinner-border" role="status">
                     <span>cargando bloque...</span>
                 </div>
+            :null
             )
         })
     }</div>
@@ -1351,9 +1362,6 @@ function FormularioDespliegue(props:{forPk:ForPk}){
             window.removeEventListener('scroll', controlScroll);
         }
     })
-    useEffect(()=>{
-        volcadoInicialElementosRegistrados(props.forPk);
-    },[toPlainForPk(props.forPk)])
     // TODO Volver a poner el movimiento a la actual
     var actual:any
     var completo:any
