@@ -21,7 +21,7 @@ import { Variable } from "operativos";
 
 import { Opcion as RowValidatorOpcion } from "row-validator";
 
-export const OPERATIVO = 'eseco211';
+export const OPERATIVO = 'etoi211';
 
 var my=myOwn;
 

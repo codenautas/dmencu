@@ -889,7 +889,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                     listaDeBotonesAbrir = [{forPk, num:false, unico:true, actual:esVarActual, previo:true}]
                 }
                 var todosLosBotones = likeAr(listaDeBotonesAbrir).map(defBoton=>
-                    botonFormulario(defBoton, feedbackAll[toPlainForPk(defBoton.forPk)]??{resumen:'vacio'})
+                    botonFormulario(defBoton, feedbackAll[toPlainForPk(defBoton.forPk)]??{resumen:'vacio'}, respuestasAumentadas)
                 ).array();
                 arrange(document.getElementById(idSeccion)!, todosLosBotones);
             }catch(err){
@@ -916,7 +916,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
         }
         if(confirmarForzarIr){setConfirmarForzarIr(false)}
     };
-    var botonFormulario = (defBoton:DefinicionFormularioAbrir, feedbackForm:FormStructureState<IdVariable,IdFin>)=>{
+    var botonFormulario = (defBoton:DefinicionFormularioAbrir, feedbackForm:FormStructureState<IdVariable,IdFin>, respuestasAumentadas:Respuestas)=>{
         var forPk:ForPk = defBoton.forPk;
         var sufijoIdElemento = toPlainForPk(forPk)+(defBoton.esConfirmar?'-listo':'');
         var id = `div-boton-formulario-${sufijoIdElemento}`;
@@ -959,6 +959,11 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                         ])
                     ]
                 }),
+                (defBoton.num>0 && !defBoton.esAgregar && !defBoton.esConfirmar?
+                    html.span((casillero.especial?.camposResumen??[defBoton.num.toString()]).map(
+                        (campo:string)=>respuestasAumentadas[formularioAAbrir.unidad_analisis][defBoton.num-1][campo]
+                    ).join(', ') )
+                :null)
                 // html.div({class:'inline-dialog', $attrs:{"inline-dialog-open": confirmarForzarIr == defBoton.num?'visible':'hidden'}},[                ])
             ])
             /*
