@@ -25,6 +25,9 @@ import {Bloque, BotonFormulario,
     PreguntaConSiNo,
     Texto
 } from "./tipos";
+import{ 
+    setCalcularVariables
+} from "./bypass-formulario"
 import { dmTraerDatosFormulario, dispatchers, 
     gotoSincronizar,
     gotoCampo,
@@ -1778,8 +1781,6 @@ export async function desplegarFormularioActual(opts:{modoDemo:boolean, modoAlma
 if(typeof window !== 'undefined'){
     // @ts-ignore para hacerlo
     window.desplegarFormularioActual = desplegarFormularioActual;
-    // @ts-ignore para hacerlo
-    window.desplegarFormularioConsultaResultados = desplegarFormularioConsultaResultados;
     // window.desplegarHojaDeRuta = desplegarHojaDeRuta;
 }
 
@@ -1815,6 +1816,22 @@ function loadInstance(){
     })
     //mostrarQuienesSomos();
 }
+
+setCalcularVariables((respuestasRaiz:RespuestasRaiz)=>{
+    for(var respuestasHogar of respuestasRaiz.hogares){
+        if(!respuestasHogar.personas || respuestasHogar.personas.length==0 || respuestasHogar.personas[0].sexo == null){
+            if(respuestasHogar.los_nombres){
+                if(!respuestasHogar.personas){
+                    respuestasHogar.personas=[];
+                }
+                respuestasHogar.los_nombres.split(',').forEach((nombre, i)=>{
+                    respuestasHogar.personas[i] = respuestasHogar.personas[i] || {};
+                    respuestasHogar.personas[i].nombre = nombre.trim();
+                })
+            }
+        }
+    }
+})
 
 window.addEventListener('load', function(){
     loadInstance()

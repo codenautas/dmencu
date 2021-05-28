@@ -23,6 +23,13 @@ const GLOVAR_DATOSBYPASS='datosbypass';
 const GLOVAR_MODOBYPASS='modobypass';
 const GLOVAR_ESTRUCTURA='estructura';
 
+var especiales = {} as {
+    calcularVariables?:(respuestasRaiz:RespuestasRaiz)=>void
+}
+export function setCalcularVariables(calcularVariables:(respuestasRaiz:RespuestasRaiz)=>void){
+    especiales.calcularVariables = calcularVariables
+}
+
 type DatosByPass = {
     hojaDeRuta:HojaDeRuta
     feedbackRowValidator:{  // no se persiste
@@ -604,8 +611,10 @@ function encolarBackup(token:string|undefined, forPkRaiz:ForPkRaiz, respuestasRa
     backupPendiente = backupPendiente.then(enviarBackup)
 }
 
-function variablesCalculadas(_respuestasRaiz: Respuestas){
-    return; 
+function variablesCalculadas(respuestasRaiz: RespuestasRaiz){
+    if(especiales.calcularVariables){
+        especiales.calcularVariables(respuestasRaiz);
+    }
 }
 
 export async function calcularFeedbackUnidadAnalisis(
