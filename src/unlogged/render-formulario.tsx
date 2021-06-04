@@ -414,7 +414,7 @@ function registradorDeVariable(pregunta:Pregunta|OpcionMultiple){
         if(pregunta.tipovar){
             estado=feedbackVar?.estado!;
         }else{
-            var feedbackMulti = pregunta.casilleros.reduce((pv, om)=>{
+            var feedbackMulti = pregunta.casilleros.filter(c=>c.var_name!=null).reduce((pv, om)=>{
                 var fb=feedbackRow?.[om.var_name!]!
                 return {
                     tieneActual: pv.tieneActual || fb.estado=='actual',
@@ -749,12 +749,20 @@ function PreguntaDespliegue(props:{
                     despliegueContenido={pregunta.despliegueContenido??'vertical'}
                 />:
             pregunta.tipovar==null?
-                (pregunta.casilleros as OpcionMultiple[]).map((opcionMultiple)=>
-                    <OpcionMultipleDespliegue
-                        key={opcionMultiple.casillero} 
-                        opcionM={opcionMultiple} 
-                        forPk={props.forPk} 
-                    />
+                (pregunta.casilleros as (OpcionMultiple|Consistencia)[]).map((opcionMultiple)=>
+                    opcionMultiple.tipoc=='OM'?                
+
+                        <OpcionMultipleDespliegue
+                            key={opcionMultiple.casillero} 
+                            opcionM={opcionMultiple} 
+                            forPk={props.forPk} 
+                        />
+                    : //las consistencias pueden ser hermanas de OM
+                        <ConsistenciaDespliegue
+                            key={opcionMultiple.casillero}
+                            casillero={opcionMultiple}
+                            forPk={props.forPk}
+                        />    
                 )
             :
             ((preguntaSimple:PreguntaSimple)=>
@@ -1818,7 +1826,7 @@ function loadInstance(){
 }
 
 setCalcularVariables((respuestasRaiz:RespuestasRaiz)=>{
-    for(var respuestasHogar of respuestasRaiz.hogares){
+    for(var respuestasHogar of respuestasRaiz.hogares||[]){
         if(!respuestasHogar.personas || respuestasHogar.personas.length==0 || respuestasHogar.personas[0].sexo == null){
             if(respuestasHogar.los_nombres){
                 if(!respuestasHogar.personas){
