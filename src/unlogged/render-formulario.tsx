@@ -790,6 +790,13 @@ function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
     var {modoDespliegue} = useSelectorVivienda(forPk);
     var id = `texto-${casillero.casillero}`;
     registrarElemento({id, style:'display', fun:(r:Respuestas)=>habilitador(r) || modoDespliegue=='metadatos'?'block':'none'})
+    if(casillero.casillero=='ResFor' as IdCasillero){
+        registrarElemento({id, direct:true, fun:(r:Respuestas, _feedbackForm: FormStructureState<IdVariable,IdFin>, elemento:T)=>{
+            elemento.style.display='';
+            elemento.textContent = "estoy por poner el stringify";
+            elemento.textContent = JSON.stringify(r);
+        }})
+    }
     return <DesplegarCasillero 
         id={id}
         casillero={casillero}
