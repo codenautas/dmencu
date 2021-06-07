@@ -126,7 +126,8 @@ type ElementosRegistrables = HTMLDivElement|HTMLButtonElement|HTMLInputElement;
 type DirectFunction<T, Result> = (respuestasAumentadas:Respuestas, feedbackForm: FormStructureState<IdVariable,IdFin>, elemento:T,
     feedbackAll:{
         [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> // resultado del rowValidator para estado.forPk
-    }
+    },
+    estructura:Estructura
 ) => Result
 
 type RegistroElemento<T extends ElementosRegistrables> = {
@@ -228,7 +229,7 @@ export function volcadoInicialElementosRegistrados(forPkRaiz:ForPkRaiz){
             // console.log('BUSCANDO el elemento registrado ',id,'no está en el DOM')
             continue;
         }
-        var value = def.fun(respuestasAumentadas, rowValidator, def.elemento, datosByPass.feedbackRowValidator);
+        var value = def.fun(respuestasAumentadas, rowValidator, def.elemento, datosByPass.feedbackRowValidator, estructura);
         if('prop' in def){
             setValorDistinto(def.elemento, def.prop, value)
         }

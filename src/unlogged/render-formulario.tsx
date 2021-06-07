@@ -23,7 +23,7 @@ import {Bloque, BotonFormulario,
     toPlainForPk,
     IdCasillero,
     PreguntaConSiNo,
-    Texto
+    Texto, Estructura
 } from "./tipos";
 import{ 
     setCalcularVariables
@@ -791,10 +791,27 @@ function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
     var id = `texto-${casillero.casillero}`;
     registrarElemento({id, style:'display', fun:(r:Respuestas)=>habilitador(r) || modoDespliegue=='metadatos'?'block':'none'})
     if(casillero.casillero=='ResFor' as IdCasillero){
-        registrarElemento({id, direct:true, fun:(r:Respuestas, _feedbackForm: FormStructureState<IdVariable,IdFin>, elemento:T)=>{
+        registrarElemento({id, direct:true, fun:(r:Respuestas, _feedbackForm: FormStructureState<IdVariable,IdFin>, elemento:HTMLDivElement, _:any, estructura:Estructura)=>{
             elemento.style.display='';
-            elemento.textContent = "estoy por poner el stringify";
-            elemento.textContent = JSON.stringify(r);
+            if(r["entreav" as IdVariable] == null){
+                elemento.textContent = "relevamiento sin empezar";
+            }else{
+                var {unidad_analisis} = estructura.formularios[forPk.formulario].casilleros;
+                var uaDef = estructura.unidades_analisis[unidad_analisis];
+                elemento.textContent = "vamos viendo";
+                var div=html.div(likeAr(uaDef.hijas).map(uaHija=>(
+                    html.div({class:'ua-hijas'},[
+                        html.div((uaHija!).pk_agregada),
+                        html.div(
+                            r[(uaHija!).unidad_analisis].map((_r, i)=>
+                                html.button((uaHija!).pk_agregada+": "+(i+1))
+                            )
+                        )
+                    ])
+                )).array()).create();
+                elemento.innerHTML="";
+                elemento.appendChild(div);
+            }
         }})
     }
     return <DesplegarCasillero 
