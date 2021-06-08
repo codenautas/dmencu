@@ -76,7 +76,7 @@ import {
     NO_CAMBIAR__SOLO_TRAER_STATUS
 } from "./bypass-formulario"
 
-import {arrange, html} from "js-to-html";
+import {arrange, html, HtmlTag} from "js-to-html";
 
 function breakeableText(text:string|null){
     if(typeof text != "string") return undefined;
@@ -784,6 +784,25 @@ function PreguntaDespliegue(props:{
     </DesplegarCasillero>
 }
 
+function botonesDelFormulario(r:Respuestas, unidad_analisis:IdUnidadAnalisis, estructura:Estructura):HtmlTag<HTMLDivElement>{
+    var uaDef = estructura.unidades_analisis[unidad_analisis];
+    var x = likeAr(uaDef.hijas).map(uaHija=>(
+        uaHija == null ? null :
+        html.div({class:'ua-hijas'},[
+            html.div(uaHija.unidad_analisis),
+            html.div(
+                likeAr(r[uaHija.unidad_analisis]||[]).map((respuestasHija, i)=>
+                    html.div([
+                        html.button((uaHija!).pk_agregada+": "+(Number(i)+1)),
+                        botonesDelFormulario(respuestasHija, uaHija.unidad_analisis, estructura)
+                    ])
+                ).array()
+            )
+        ])
+    )).array().map(x=>x == null ? null : x);
+    return html.div(x);
+}
+
 function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
     var {casillero, forPk} = props;
     var habilitador = casillero.expresion_habilitar_js?getFuncionHabilitar(casillero.expresion_habilitar_js):()=>true;
@@ -796,23 +815,10 @@ function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
             if(r["entreav" as IdVariable] == null){
                 elemento.textContent = "relevamiento sin empezar";
             }else{
-                var {unidad_analisis} = estructura.formularios[forPk.formulario].casilleros;
-                var uaDef = estructura.unidades_analisis[unidad_analisis];
                 elemento.textContent = "relevamiento empezado";
-                var x = likeAr(uaDef.hijas).map(uaHija=>(
-                    uaHija == null ? null :
-                    html.div({class:'ua-hijas'},[
-                        html.div(uaHija.unidad_analisis),
-                        html.div(
-                            likeAr(r[uaHija.unidad_analisis]||[]).map((_r, i)=>
-                                html.button((uaHija!).pk_agregada+": "+(Number(i)+1))
-                            ).array()
-                        )
-                    ])
-                )).array().map(x=>x == null ? null : x);
-                var div=html.div(x).create();
+                var {unidad_analisis} = estructura.formularios[forPk.formulario].casilleros;
                 elemento.innerHTML="";
-                elemento.appendChild(div);
+                elemento.appendChild(botonesDelFormulario(r, unidad_analisis, estructura).create());
             }
         }})
     }
