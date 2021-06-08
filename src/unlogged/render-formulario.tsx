@@ -18,7 +18,7 @@ import {Bloque, BotonFormulario,
     ModoDespliegue,
     Opcion, OpcionMultiple, OpcionNo, OpcionSi, PlainForPk, 
     Pregunta, PreguntaConOpciones, PreguntaConOpcionesMultiples, PreguntaSimple, 
-    Respuestas, RespuestasRaiz, Valor, TEM, IdCarga, Carga, IdFin, InfoTarea, Tareas, Visita, IdUnidadAnalisis,
+    Respuestas, RespuestasRaiz, Valor, TEM, IdCarga, Carga, IdFin, InfoTarea, Tareas, Visita, IdUnidadAnalisis, UnidadAnalisis,
     ModoAlmacenamiento,
     toPlainForPk,
     IdCasillero,
@@ -798,17 +798,19 @@ function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
             }else{
                 var {unidad_analisis} = estructura.formularios[forPk.formulario].casilleros;
                 var uaDef = estructura.unidades_analisis[unidad_analisis];
-                elemento.textContent = "vamos viendo";
-                var div=html.div(likeAr(uaDef.hijas).map(uaHija=>(
+                elemento.textContent = "relevamiento empezado";
+                var x = likeAr(uaDef.hijas).map(uaHija=>(
+                    uaHija == null ? null :
                     html.div({class:'ua-hijas'},[
-                        html.div((uaHija!).pk_agregada),
+                        html.div(uaHija.unidad_analisis),
                         html.div(
-                            r[(uaHija!).unidad_analisis].map((_r, i)=>
-                                html.button((uaHija!).pk_agregada+": "+(i+1))
-                            )
+                            likeAr(r[uaHija.unidad_analisis]||[]).map((_r, i)=>
+                                html.button((uaHija!).pk_agregada+": "+(Number(i)+1))
+                            ).array()
                         )
                     ])
-                )).array()).create();
+                )).array().map(x=>x == null ? null : x);
+                var div=html.div(x).create();
                 elemento.innerHTML="";
                 elemento.appendChild(div);
             }
@@ -994,9 +996,9 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                         ])
                     ]
                 }),
-                (defBoton.num>0 && !defBoton.esAgregar && !defBoton.esConfirmar?
+                (defBoton.num !== false && !defBoton.esAgregar && !defBoton.esConfirmar?
                     html.span((casillero.especial?.camposResumen??[defBoton.num.toString()]).map(
-                        (campo:string)=>respuestasAumentadas[formularioAAbrir.unidad_analisis][defBoton.num-1][campo]
+                        (campo:string)=>respuestasAumentadas[formularioAAbrir.unidad_analisis][defBoton.num-1][campo as IdVariable]
                     ).join(', ') )
                 :null)
                 // html.div({class:'inline-dialog', $attrs:{"inline-dialog-open": confirmarForzarIr == defBoton.num?'visible':'hidden'}},[                ])

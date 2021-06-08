@@ -1,4 +1,4 @@
-import { strict as likeAr } from "like-ar";
+import { strict as likeAr, beingArray } from "like-ar";
 
 import { getRowValidator, Structure, Opcion as RowValidatorOpcion, FormStructureState, OpcionesRowValidator } from "row-validator";
 
@@ -685,7 +685,7 @@ export async function calcularFeedbackHojaDeRuta(){
     likeAr(estructura.unidades_analisis).filter(uaDef=>!uaDef.padre).forEach(uaDef=>{
         likeAr(estructura.formularios).filter(f=>f.casilleros.unidad_analisis == uaDef.unidad_analisis).forEach((_defF, formulario)=>{
             var conjuntoRespuestasUA = datosByPass.hojaDeRuta.respuestas[uaDef.unidad_analisis]
-            likeAr(conjuntoRespuestasUA).forEach((respuestas, valorPkOPosicion)=>{
+            beingArray(conjuntoRespuestasUA).forEach((respuestas, valorPkOPosicion)=>{
                 var valorPk = numberOrStringIncIfArray(valorPkOPosicion, conjuntoRespuestasUA);
                 var forPkRaiz = {formulario, [uaDef.pk_agregada]:valorPk}
                 calcularFeedback(respuestas, forPkRaiz, {});
