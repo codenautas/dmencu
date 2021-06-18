@@ -37,7 +37,7 @@ import { dmTraerDatosFormulario, dispatchers,
 } from "./redux-formulario";
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux"; 
-import * as likeAr from "like-ar";
+import { strict as likeAr, beingArray } from "like-ar";
 import {serie, sleep} from "best-globals";
 
 import {
@@ -784,19 +784,38 @@ function PreguntaDespliegue(props:{
     </DesplegarCasillero>
 }
 
-function botonesDelFormulario(r:Respuestas, unidad_analisis:IdUnidadAnalisis, estructura:Estructura):HtmlTag<HTMLDivElement>{
+function botonesDelFormulario(r:Respuestas, unidad_analisis:IdUnidadAnalisis, estructura:Estructura, forPkPadre:ForPk, feedbackAll:{[formulario in PlainForPk]:FormStructureState<IdVariable,IdFin>}):HtmlTag<HTMLDivElement>{
     var uaDef = estructura.unidades_analisis[unidad_analisis];
     var x = likeAr(uaDef.hijas).map(uaHija=>(
         uaHija == null ? null :
         html.div({class:'ua-hijas'},[
             html.div(uaHija.unidad_analisis),
             html.div(
-                likeAr(r[uaHija.unidad_analisis]||[]).map((respuestasHija, i)=>
-                    html.div([
-                        html.button((uaHija!).pk_agregada+": "+(Number(i)+1)),
-                        botonesDelFormulario(respuestasHija, uaHija.unidad_analisis, estructura)
+                likeAr(r[uaHija.unidad_analisis]||[]).map((respuestasHija, i)=>{
+                    var num = Number(i)+1
+                    var forPkHijaParcial = {...forPkPadre, [uaHija.pk_agregada]: num};
+                    return html.div([
+                        ...likeAr(estructura.formularios)
+                        .filter(formDef=>formDef.casilleros.unidad_analisis == uaHija.unidad_analisis )
+                        .map((_formDef, formulario)=>{
+                            var forPk = {...forPkHijaParcial, formulario};
+                            var feedbackForm = feedbackAll[toPlainForPk(forPk)];
+                            return feedbackForm ? html.div([
+                                // html.button((uaHija!).pk_agregada+" ok: "+(Number(i)+1)),
+                                botonFormularioConResumen(
+                                    {forPk, num, actual:false, previo:false}, 
+                                    feedbackForm, 
+                                    r,
+                                    {despliegueOculta:false, expresion_habilitar_js:'', nombre:formulario, aclaracion:null, salto:formulario},
+                                    forPkPadre,
+                                    "boton-ir-resumen-formulario",
+                                    estructura.formularios[formulario].casilleros
+                                )
+                            ]) : null
+                        }).array().map(x=>x == null ? null : x),
+                        botonesDelFormulario(respuestasHija, uaHija.unidad_analisis, estructura, forPkHijaParcial, feedbackAll)
                     ])
-                ).array()
+                }).array().map(x=>x == null ? null : x)
             )
         ])
     )).array().map(x=>x == null ? null : x);
@@ -809,18 +828,27 @@ function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
     var {modoDespliegue} = useSelectorVivienda(forPk);
     var id = `texto-${casillero.casillero}`;
     registrarElemento({id, style:'display', fun:(r:Respuestas)=>habilitador(r) || modoDespliegue=='metadatos'?'block':'none'})
-    if(casillero.casillero=='ResFor' as IdCasillero){
-        registrarElemento({id, direct:true, fun:(r:Respuestas, _feedbackForm: FormStructureState<IdVariable,IdFin>, elemento:HTMLDivElement, _:any, estructura:Estructura)=>{
-            elemento.style.display='';
-            if(r["entreav" as IdVariable] == null){
-                elemento.textContent = "relevamiento sin empezar";
-            }else{
-                elemento.textContent = "relevamiento empezado";
-                var {unidad_analisis} = estructura.formularios[forPk.formulario].casilleros;
-                elemento.innerHTML="";
-                elemento.appendChild(botonesDelFormulario(r, unidad_analisis, estructura).create());
+    var esResumenFormulario = casillero.casillero=='ResFor' as IdCasillero;
+    if(esResumenFormulario){
+        registrarElemento({id, direct:true, 
+            fun:(
+                r:Respuestas, 
+                _feedbackForm: FormStructureState<IdVariable,IdFin>, 
+                elemento:HTMLDivElement, 
+                feedbackAll:{[formulario in PlainForPk]:FormStructureState<IdVariable,IdFin>}, 
+                estructura:Estructura
+            )=>{
+                elemento.style.display='';
+                if(r["entreav" as IdVariable] == null){
+                    elemento.textContent = "relevamiento sin empezar";
+                }else{
+                    elemento.textContent = "relevamiento empezado";
+                    var {unidad_analisis} = estructura.formularios[forPk.formulario].casilleros;
+                    elemento.innerHTML="";
+                    elemento.appendChild(botonesDelFormulario(r, unidad_analisis, estructura, forPk, feedbackAll).create());
+                }
             }
-        }})
+        })
     }
     return <DesplegarCasillero 
         id={id}
@@ -828,6 +856,8 @@ function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
         style={{display:'none'}}
     >
         <EncabezadoDespliegue casillero={casillero} leer={false} forPk={forPk}/>
+        (esResumenFormulario?<button id="boton-ir-resumen-formulario" style={{display:'none'}}>ir</button>:null)
+
     </DesplegarCasillero>
 }
 
@@ -851,6 +881,83 @@ function ConsistenciaDespliegue(props:{casillero:Consistencia, forPk:ForPk}){
     >
         <EncabezadoDespliegue casillero={casillero} leer={false} forPk={forPk}/>
     </DesplegarCasillero>
+}
+
+type DefinicionFormularioAbrir=
+({forPk:ForPk, num:number, actual:boolean, previo:boolean} | 
+{forPk:ForPk, num:number, actual:boolean, previo:false, esAgregar:true} | 
+{forPk:ForPk, num:number, actual:boolean, previo:false, esConfirmar:true} | 
+{forPk:ForPk, num:false, actual:boolean, previo:true, unico:true})
+& {esConfirmar?:true, esAgregar?:true};
+
+var botonFormularioConResumen = (
+    defBoton:DefinicionFormularioAbrir, 
+    feedbackForm:FormStructureState<IdVariable,IdFin>, 
+    respuestasAumentadas:Respuestas,
+    casillero:{despliegueOculta?:boolean|null, expresion_habilitar_js?:string, aclaracion:string|null, expresion_habilitar?:string, nombre?:string, salto:string|null, especial?:any},
+    forPkPadre: ForPk,
+    idButton:string,
+    formularioAAbrir:Formulario
+)=>{
+    var forPk:ForPk = defBoton.forPk;
+    var sufijoIdElemento = toPlainForPk(forPk)+(defBoton.esConfirmar?'-listo':'');
+    var id = `div-boton-formulario-${sufijoIdElemento}`;
+    var estado = feedbackForm.resumen;
+    return html.div({
+        id, 
+        class:"seccion-boton-formulario" , 
+        $attrs:{
+            "nuestro-validator":defBoton.actual?'actual':defBoton.previo?'valida':'todavia_no',
+            "ocultar-salteada":casillero.despliegueOculta?(casillero.expresion_habilitar_js?'INHABILITAR':'SI'):'NO',
+            "tiene-valor":"NO",
+            "def-button":JSON.stringify(defBoton)
+        }
+    }, [
+        casillero.aclaracion || html.div({class:"aclaracion"}, [breakeableText(casillero.aclaracion)??null]),
+        html.div([
+            Button2({
+                // id:`var-${idVariable}`,
+                id:`boton-formulario-${sufijoIdElemento}`, 
+                variant:"outlined",
+                color:"inherit",
+                onClick:()=>{
+                    if(defBoton.esConfirmar){
+                        if(defBoton.num){
+                            dispatchByPass(accion_registrar_respuesta,{forPk:forPkPadre, variable:casillero.expresion_habilitar as IdVariable, respuesta:defBoton.num});
+                        }
+                    }else{
+                        var button = document.getElementById(idButton)! as HTMLButtonElement;
+                        button.setAttribute('def-button', JSON.stringify(defBoton));
+                        button.click();
+                    }
+                },
+                $attrs:{
+                    "resumen-estado":estado!='vacio'?estado: defBoton.actual?'actual':defBoton.previo?estado:'todavia_no',
+                }
+                , children:[
+                    (defBoton.esAgregar?'agregar':defBoton.esConfirmar?'Listo':casillero.nombre + ' ' + (defBoton.num||'')),
+                    html.svg({class:"MuiSvgIcon-root", focusable:false, viewbox:"0 0 24 24", "aria-hidden":"true"},[
+                        html.path({d:(defBoton.esAgregar?materialIoIconsSvgPath.Add:defBoton.esConfirmar?materialIoIconsSvgPath.Check:casillero.salto?materialIoIconsSvgPath.Forward:materialIoIconsSvgPath.ExitToApp)})
+                    ])
+                ]
+            }),
+            (defBoton.num !== false && !defBoton.esAgregar && !defBoton.esConfirmar?
+                html.span((casillero.especial?.camposResumen??[defBoton.num.toString()]).map(
+                    (campo:string)=>respuestasAumentadas[formularioAAbrir.unidad_analisis][defBoton.num-1][campo as IdVariable]
+                ).join(', ') )
+            :null)
+            // html.div({class:'inline-dialog', $attrs:{"inline-dialog-open": confirmarForzarIr == defBoton.num?'visible':'hidden'}},[                ])
+        ])
+        /*
+            {defBoton.esAgregar?<> <span>  </span> <Button
+                variant="outlined"
+                color="inherit"
+                onClick={()=>{
+                }}
+            ><ICON.Check/></Button></>:null}
+        </div>
+        */
+    ])
 }
 
 
@@ -882,12 +989,6 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     var dispatch = useDispatch();
     var [confirmarForzarIr, setConfirmarForzarIr] = useState<DefinicionFormularioAbrir|false|null>(null);
     var multipleFormularios=formularioAAbrir.unidad_analisis != props.formulario.unidad_analisis;
-    type DefinicionFormularioAbrir=
-        ({forPk:ForPk, num:number, actual:boolean, previo:boolean} | 
-        {forPk:ForPk, num:number, actual:boolean, previo:false, esAgregar:true} | 
-        {forPk:ForPk, num:number, actual:boolean, previo:false, esConfirmar:true} | 
-        {forPk:ForPk, num:false, actual:boolean, previo:true, unico:true})
-        & {esConfirmar?:true, esAgregar?:true};
     var nuevoCampoPk = defOperativo.defUA[formularioAAbrir.unidad_analisis].pk;
     var var_name='$B.'+casillero.salto;
     var idSeccion=`seccion-boton-formulario-${var_name}`;
@@ -931,8 +1032,10 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                     let forPk={...props.forPk, formulario:idFormularioDestino};
                     listaDeBotonesAbrir = [{forPk, num:false, unico:true, actual:esVarActual, previo:true}]
                 }
-                var todosLosBotones = likeAr(listaDeBotonesAbrir).map(defBoton=>
-                    botonFormulario(defBoton, feedbackAll[toPlainForPk(defBoton.forPk)]??{resumen:'vacio'}, respuestasAumentadas)
+                var todosLosBotones = beingArray(listaDeBotonesAbrir).map(defBoton=>
+                    botonFormularioConResumen(defBoton, feedbackAll[toPlainForPk(defBoton.forPk)]??{resumen:'vacio'}, respuestasAumentadas,
+                        casillero, props.forPk, idButton, formularioAAbrir
+                    )
                 ).array();
                 arrange(document.getElementById(idSeccion)!, todosLosBotones);
             }catch(err){
@@ -959,67 +1062,6 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
         }
         if(confirmarForzarIr){setConfirmarForzarIr(false)}
     };
-    var botonFormulario = (defBoton:DefinicionFormularioAbrir, feedbackForm:FormStructureState<IdVariable,IdFin>, respuestasAumentadas:Respuestas)=>{
-        var forPk:ForPk = defBoton.forPk;
-        var sufijoIdElemento = toPlainForPk(forPk)+(defBoton.esConfirmar?'-listo':'');
-        var id = `div-boton-formulario-${sufijoIdElemento}`;
-        var estado = feedbackForm.resumen;
-        return html.div({
-            id, 
-            class:"seccion-boton-formulario" , 
-            $attrs:{
-                "nuestro-validator":defBoton.actual?'actual':defBoton.previo?'valida':'todavia_no',
-                "ocultar-salteada":casillero.despliegueOculta?(casillero.expresion_habilitar_js?'INHABILITAR':'SI'):'NO',
-                "tiene-valor":"NO",
-                "def-button":JSON.stringify(defBoton)
-            }
-        }, [
-            casillero.aclaracion || html.div({class:"aclaracion"}, [breakeableText(casillero.aclaracion)??null]),
-            html.div([
-                Button2({
-                    // id:`var-${idVariable}`,
-                    id:`boton-formulario-${sufijoIdElemento}`, 
-                    variant:"outlined",
-                    color:"inherit",
-                    onClick:()=>{
-                        if(defBoton.esConfirmar){
-                            if(defBoton.num){
-                                dispatchByPass(accion_registrar_respuesta,{forPk:props.forPk, variable:casillero.expresion_habilitar as IdVariable, respuesta:defBoton.num});
-                            }
-                        }else{
-                            var button = document.getElementById(idButton)! as HTMLButtonElement;
-                            button.setAttribute('def-button', JSON.stringify(defBoton));
-                            button.click();
-                        }
-                    },
-                    $attrs:{
-                        "resumen-estado":estado!='vacio'?estado: defBoton.actual?'actual':defBoton.previo?estado:'todavia_no',
-                    }
-                    , children:[
-                        (defBoton.esAgregar?'agregar':defBoton.esConfirmar?'Listo':casillero.nombre + ' ' + (defBoton.num||'')),
-                        html.svg({class:"MuiSvgIcon-root", focusable:false, viewbox:"0 0 24 24", "aria-hidden":"true"},[
-                            html.path({d:(defBoton.esAgregar?materialIoIconsSvgPath.Add:defBoton.esConfirmar?materialIoIconsSvgPath.Check:casillero.salto?materialIoIconsSvgPath.Forward:materialIoIconsSvgPath.ExitToApp)})
-                        ])
-                    ]
-                }),
-                (defBoton.num !== false && !defBoton.esAgregar && !defBoton.esConfirmar?
-                    html.span((casillero.especial?.camposResumen??[defBoton.num.toString()]).map(
-                        (campo:string)=>respuestasAumentadas[formularioAAbrir.unidad_analisis][defBoton.num-1][campo as IdVariable]
-                    ).join(', ') )
-                :null)
-                // html.div({class:'inline-dialog', $attrs:{"inline-dialog-open": confirmarForzarIr == defBoton.num?'visible':'hidden'}},[                ])
-            ])
-            /*
-                {defBoton.esAgregar?<> <span>  </span> <Button
-                    variant="outlined"
-                    color="inherit"
-                    onClick={()=>{
-                    }}
-                ><ICON.Check/></Button></>:null}
-            </div>
-            */
-        ])
-    }
     return <DesplegarCasillero casillero={casillero}>
         <div id={idSeccion}>
         </div>
@@ -1543,7 +1585,7 @@ export function DesplegarCarga(props:{
                 </TableRow>
             </TableHead>
             <TableBody>
-                {likeAr(hojaDeRuta.respuestas.viviendas).filter((respuestas:RespuestasRaiz, _numVivienda:number)=>!!respuestas).map((respuestas:RespuestasRaiz, numVivienda:number)=>
+                {beingArray(hojaDeRuta.respuestas.viviendas).filter((respuestas:RespuestasRaiz, _numVivienda:number)=>!!respuestas).map((respuestas:RespuestasRaiz, numVivienda:number)=>
                     <TableRow key={numVivienda}>
                         <TableCell>
                             {numVivienda}
