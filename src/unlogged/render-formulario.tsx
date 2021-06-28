@@ -794,7 +794,7 @@ function botonesDelFormulario(r:Respuestas, unidad_analisis:IdUnidadAnalisis, es
                 likeAr(r[uaHija.unidad_analisis]||[]).map((respuestasHija, i)=>{
                     var num = Number(i)+1
                     var forPkHijaParcial = {...forPkPadre, [uaHija.pk_agregada]: num};
-                    return html.div([
+                    return html.div({class:'numerador-ua'}, [html.div(num.toString()), html.div([
                         ...likeAr(estructura.formularios)
                         .filter(formDef=>formDef.casilleros.unidad_analisis == uaHija.unidad_analisis )
                         .map((_formDef, formulario)=>{
@@ -814,7 +814,7 @@ function botonesDelFormulario(r:Respuestas, unidad_analisis:IdUnidadAnalisis, es
                             ]) : null
                         }).array().map(x=>x == null ? null : x),
                         botonesDelFormulario(respuestasHija, uaHija.unidad_analisis, estructura, forPkHijaParcial, feedbackAll)
-                    ])
+                    ])])
                 }).array().map(x=>x == null ? null : x)
             )
         ])
@@ -824,6 +824,7 @@ function botonesDelFormulario(r:Respuestas, unidad_analisis:IdUnidadAnalisis, es
 
 function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
     var {casillero, forPk} = props;
+    var dispatch = useDispatch();
     var habilitador = casillero.expresion_habilitar_js?getFuncionHabilitar(casillero.expresion_habilitar_js):()=>true;
     var {modoDespliegue} = useSelectorVivienda(forPk);
     var id = `texto-${casillero.casillero}`;
@@ -850,13 +851,24 @@ function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
             }
         })
     }
+    var ir = (defBoton:DefinicionFormularioAbrir)=>{
+        // var nuevaForPk={...forPk, formulario:idFormularioDestino};
+        // nuevaForPk[nuevoCampoPk] = defBoton.num
+        dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:defBoton.forPk, apilarVuelta:true}));
+    }
     return <DesplegarCasillero 
-        id={id}
+        id={`${id}-externo`}
         casillero={casillero}
-        style={{display:'none'}}
     >
-        <EncabezadoDespliegue casillero={casillero} leer={false} forPk={forPk}/>
-        (esResumenFormulario?<button id="boton-ir-resumen-formulario" style={{display:'none'}}>ir</button>:null)
+        <EncabezadoDespliegue casillero={casillero} leer={false} forPk={forPk} style={{display:'none'}}/>
+        <div id={id} style={{display:'none'}}></div>
+        {esResumenFormulario?
+        <Button className="special-button" id="boton-ir-resumen-formulario"
+            onClick={(event)=>{
+                ir(JSON.parse((event.target! as unknown as HTMLButtonElement).getAttribute('def-button')!))
+            }}
+        >ir (interno)</Button>
+        :null}
 
     </DesplegarCasillero>
 }

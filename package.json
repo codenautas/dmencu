@@ -49,7 +49,7 @@
     "typescript": "^4.3.2"
   },
   "engines": {
-    "node": ">= 12.0.0"
+    "node": ">= 14.17.0"
   },
   "scripts": {
     "prepublish": "npm run build",
