@@ -9,6 +9,7 @@ login:
     allowHttpLogin: true
 devel:
   forceShowAsEditable: false
+  useFileDevelopment: true
 client-setup:
   skin: ""
   lang: es

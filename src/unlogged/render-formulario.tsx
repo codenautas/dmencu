@@ -78,9 +78,15 @@ import {
 
 import {arrange, html, HtmlTag} from "js-to-html";
 
-function breakeableText(text:string|null){
+function breakeableText(text:string|null):string|undefined;
+function breakeableText(text:string|null, diccionario?:{[clave:string]:React.ReactNode}){
     if(typeof text != "string") return undefined;
-    return text.replace(/\//g,"/\u2063").replace(/\/\u2063(\w)\b/g,'/$1');
+    text = text.replace(/\//g,"/\u2063").replace(/\/\u2063(\w)\b/g,'/$1');
+    var text = text.replace(/___*/g,(todo)=>`[${todo}]`).replace(/\@\w+\@/g,(todo)=>`[${todo}]`);
+    if(!diccionario || true) return text;
+    /*
+    return <span>{partes.map((parte:string, i:number) => <span style={i%2==1?{textDecoration:"underline"}:{}}> {parte+" "} </span>)}</span>
+    */
 }
 
 var debeSaltar:boolean = false;
@@ -253,6 +259,8 @@ var useStyles = makeStyles((_theme: Theme) =>
     })
 );
 
+var diccionario = {}
+
 /*
 // const takeElementOrDefault<K, T extends [K in], D>()
 function isIn<V, T>(k:keyof T, object:T): object[k] is V{
@@ -376,9 +384,9 @@ function OpcionDespliegue(props:{casillero:Opcion, valorOpcion:number, variable:
                     {casillero.ver_id || casillero.casillero}
                 </Grid>
                 <Grid className="opcion-texto">
-                    <Typography debe-leer={casillero.leer?'SI':casillero.leer===false?'NO':props.leer?'SI':'NO'}>{breakeableText(casillero.nombre)}</Typography>
+                    <Typography debe-leer={casillero.leer?'SI':casillero.leer===false?'NO':props.leer?'SI':'NO'}>{breakeableText(casillero.nombre, diccionario)}</Typography>
                     {casillero.aclaracion?
-                        <Typography >{breakeableText(casillero.aclaracion)}</Typography>
+                        <Typography >{breakeableText(casillero.aclaracion, diccionario)}</Typography>
                     :null}
                 </Grid>
             </Grid>
@@ -492,7 +500,7 @@ function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?
             {(casillero.tipovar=="si_no"||casillero.tipovar=="opciones")?<Campo disabled={false} pregunta={casillero} forPk={forPk} mini={true} hidden={!conCampoOpciones}/>:null}
         </div>
         <div className="nombre-div">
-            <div className="nombre">{breakeableText(casillero.nombre)}</div>
+            <div className="nombre">{breakeableText(casillero.nombre,diccionario)}</div>
             {casillero.aclaracion?
                 <div className="aclaracion">
                     {casillero.salto && casillero.tipoc=='FILTRO'?
