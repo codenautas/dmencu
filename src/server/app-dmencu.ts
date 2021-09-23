@@ -218,9 +218,9 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             { type: 'js', module: 'memoize-one',  file:'memoize-one.js' },
             { type: 'js', module: 'qrcode', modPath: '../build', file: 'qrcode.js'},
             ...super.clientIncludes(req, opts).filter(m=>m.file!='formularios.css')
-                .filter(m=>logged || 
-                                //m.file!='operativos.js' &&
-                                m.file!='meta-enc.js'
+                .filter(m=>logged || true
+                                //&& m.file!='operativos.js' 
+                                //&& m.file!='meta-enc.js'
                                 //&& m.file!='datos-ext.js'
                                 //&& m.file!='consistencias.js'
                                 && m.file!='var-cal.js'
@@ -327,7 +327,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                 }
             }
             menu = [ ...menu, 
-                {menuType:'menu', name:'laboratorio', menuContent}
+                // {menuType:'menu', name:'laboratorio', menuContent}
             ]
         }
         if(context.puede?.campo?.editar){

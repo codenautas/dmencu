@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "outDir": "../../dist/unlogged",
+        "outDir": "../../dist/unlogged/unlogged",
         "moduleResolution": "node",
         "inlineSourceMap": true,
         "inlineSources": true,
