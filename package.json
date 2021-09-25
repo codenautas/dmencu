@@ -35,7 +35,7 @@
   "dependencias provisorias: las que se pongan en dependencias ponerlas acá y sacarlas juntas": {},
   "devDependencies": {
     "@types/mocha": "^9.0.0",
-    "@types/node": "^16.9.6",
+    "@types/node": "^16.10.1",
     "@types/qrcode": "^1.4.1",
     "@types/react": "^17.0.24",
     "@types/react-dom": "^17.0.9",
@@ -75,5 +75,18 @@
     "stability": "extending",
     "type": "app",
     "ecmaVersion": 6
+  },
+  "mixin-patch": {
+    "patch": false,
+    "copy": [
+      {
+        "from": "src/client",
+        "to": "dist/client/client"
+      },
+      {
+        "from": "src/unlogged",
+        "to": "dist/unlogged/unlogged"
+      }
+    ]
   }
 }
