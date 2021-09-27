@@ -86,6 +86,10 @@
       {
         "from": "src/unlogged",
         "to": "dist/unlogged/unlogged"
+      },
+      {
+        "from": "src/unlogged",
+        "to": "dist/client/unlogged"
       }
     ]
   }
