@@ -13,7 +13,7 @@
   "dependencies": {
     "@material-ui/core": "~4.12.3",
     "ajax-best-promise": "^0.3.7",
-    "backend-plus": "^1.11.8",
+    "backend-plus": "^1.11.13",
     "best-globals": "^0.10.32",
     "dialog-promise": "^0.9.12",
     "js-to-html": "^1.2.0",
