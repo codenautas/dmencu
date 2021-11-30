@@ -580,20 +580,20 @@ function num(num:number|string|null):number{
 type Backups={
     idActual:number,
     token:string|undefined,
-    casos:{idBackup:number, forPkRaiz:ForPkRaiz, respuestasRaiz:Respuestas}[]
+    tem:{idBackup:number, forPkRaiz:ForPkRaiz, respuestasRaiz:Respuestas}[]
 }
 
 var backupPendiente = Promise.resolve();
 
 async function enviarBackup(){
     var backups:Backups = my.getLocalVar('backups');
-    var {token, casos} = backups;
-    if(casos.length){
+    var {token, tem} = backups;
+    if(tem.length){
         try{
-            await my.ajax.dm_backup({token, casos})
+            await my.ajax.dm_backup({token, tem})
             // tengo que levantarlo de nuevo porque acá hay una interrupción del flujo
             var backupsALimpiar:Backups = my.getLocalVar('backups');
-            backupsALimpiar.casos=backupsALimpiar.casos.filter(caso=>caso.idBackup>backups.idActual)
+            backupsALimpiar.tem=backupsALimpiar.tem.filter(caso=>caso.idBackup>backups.idActual)
             my.setLocalVar('backups', backupsALimpiar);
         }catch(err){
             console.log('no se pudo hacer backup', err);
@@ -604,11 +604,11 @@ async function enviarBackup(){
 function encolarBackup(token:string|undefined, forPkRaiz:ForPkRaiz, respuestasRaiz:Respuestas){
     var backups:Backups = my.existsLocalVar('backups')?my.getLocalVar('backups'):{
         idActual:0,
-        casos:[]
+        tem:[]
     };
     backups.idActual+=1;
     backups.token=token;
-    backups.casos.push({idBackup:backups.idActual, forPkRaiz, respuestasRaiz});
+    backups.tem.push({idBackup:backups.idActual, forPkRaiz, respuestasRaiz});
     my.setLocalVar('backups',backups);
     backupPendiente = backupPendiente.then(enviarBackup)
 }

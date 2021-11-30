@@ -2,7 +2,7 @@
 
 import {TableDefinition, TableContext} from "./types-dmencu";
 
-export function casos(context:TableContext, opts:any):TableDefinition {
+export function tem(context:TableContext, opts:any):TableDefinition {
     var opts=opts||{};
     var recepcion=opts.recepcion?'_recepcion':'';
     var be=context.be;
@@ -42,19 +42,6 @@ export function casos(context:TableContext, opts:any):TableDefinition {
             {name:'etiqueta'             , typeName:'text'    , editable: false  },
             {name:'relevador'            , typeName:'text'    , editable: false , inTable: false  },
             {name:'tipos_inconsist'      , typeName:'text'    , editable: false  },
-            {name:'nombre_sel'           , typeName:'text'    , editable: false , inTable: false},
-            {name:'sp1'                  , typeName:'bigint'  , editable: false , inTable: false},
-            {name:'sp2_cel'              , typeName:'text'    , editable: false , inTable: false},
-            {name:'sp3_tel'              , typeName:'text'    , editable: false , inTable: false},
-            {name:'sp4_fecha'            , typeName:'text'    , editable: false , inTable: false},
-            {name:'sp5_hora'             , typeName:'text'    , editable: false , inTable: false},
-            {name:'sp6'                  , typeName:'bigint'  , editable: false , inTable: false},
-            {name:'seleccionado'         , typeName:'bigint'  , editable: false  },
-            {name:'cita'                 , typeName:'text'    , editable: puedeEditar },
-            {name:'sexo_sel'             , typeName:'bigint'  , editable: false  },
-            {name:'edad_sel'             , typeName:'bigint'  , editable: false  },
-            {name:'cant_p'               , typeName:'bigint'  , editable: false  },
-            {name:'fecha_rel'            , typeName:'date'    , editable: false  },
             {name:'codcalle'             , typeName:'integer' , editable: false  },
             {name:'nomcalle'             , typeName:'text'    , editable: false  },
             {name:'nrocatastral'         , typeName:'integer' , editable: false  },
@@ -68,8 +55,6 @@ export function casos(context:TableContext, opts:any):TableDefinition {
             //{name: "verificar"       , typeName:'boolean', editable:true, inTable:false, clientSide:'verificarCaso'},
             //{name: "finalizar_campo" , typeName:'boolean', editable:true, inTable:false, clientSide:'finalizarCampo'}, //fin_de_campo
             //{name: "procesamiento"   , typeName:'boolean', editable:true, inTable:false, clientSide:'pasarAProcesamiento', label: 'pasar a procesamiento'}, //procesamiento
-            {name:'tipo_domicilio'       , typeName:'integer' , editable: false  },
-            {name:'zona'                 , typeName:'text'    , editable: puedeEditar  },
             {name:'fexp'                 , typeName:'integer' , editable: false  },
             {name:'areaup'               , typeName:'text'    , editable: false  },
             {name:'codpos'               , typeName:'integer' , editable: false  },
@@ -106,11 +91,7 @@ export function casos(context:TableContext, opts:any):TableDefinition {
             {name:'semana'               , typeName:'integer' , editable: false  ,visible: false  },
             {name:'periodicidad'         , typeName:'text'    , editable: false  ,visible: false  },
             //solo tem 
-            {name:'enc_original'         , typeName:'text'    , editable: false  },
             {name:'json_encuesta'        , typeName:'jsonb'   , editable: false  },
-            {name:'rea'                  , typeName:'bigint'  , editable: false  },
-            {name:'rea_anterior'         , typeName:'bigint'  , editable: false  },
-            {name:'norea'                , typeName:'text'    , editable: false  },
             {name:"json_backup"          , typeName:'jsonb'   , editable: false, visible:false},
             {name:"h4"                   , typeName:'text'    , editable: false  },
             {name:"hospital"             , typeName:'text'    , editable: false  },
@@ -150,15 +131,6 @@ export function casos(context:TableContext, opts:any):TableDefinition {
                 (select
                     ${def.fields.filter(f=>f.inTable==undefined && !f.clientSide).map(f=>'t.'+q(f.name)).join(',')}
                     , tt.cargado, tt.cargado_dm, tt.habilitada, tt.asignado as relevador
-                    --,(json_encuesta->>'c6')::date as fecha_rel
-                    --,json_encuesta->>'c5' etiqueta
-                    ,json_encuesta->>'p12' nombre_sel
-                    ,(json_encuesta->>'sp1')::bigint sp1
-                    ,json_encuesta->>'sp2' sp2_cel
-                    ,json_encuesta->>'sp3' sp3_tel 
-                    ,json_encuesta->>'sp4' sp4_fecha 
-                    ,json_encuesta->>'sp5' sp5_hora 
-                    ,(json_encuesta->>'sp6')::bigint  sp6
                     , tt.notas
                     ${opts.recepcion? columnasNoRea.map(v=>'\n     , '+ v.expr +' as '+ v.name).join('') :''}
                     from tem t left join tareas_tem tt on t.operativo=tt.operativo and t.enc=tt.enc and tt.tarea='rel'

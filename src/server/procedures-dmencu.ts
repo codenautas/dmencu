@@ -91,7 +91,7 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
             'asignado', asignado
         )) as tareas,
         min(fecha_asignacion) as fecha_asignacion
-        from casos t left join tareas_casos tt using (operativo, enc)
+        from tem t left join tareas_tem tt using (operativo, enc)
         where ${quotedCondViv}
         group by t.enc, t.json_encuesta, t.resumen_estado, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area, tt.visitas
     )
@@ -422,7 +422,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
                 throw new Error('HAY DATOS. NO SE PUEDE INICIAR EL PASAJE');
             }
             let resultJson = await context.client.query(
-                `SELECT operativo, enc id_caso, json_encuesta datos_caso from casos WHERE operativo=$1`,
+                `SELECT operativo, enc id_caso, json_encuesta datos_caso from tem WHERE operativo=$1`,
                 [OPERATIVO]
             ).fetchAll();
             var procedureGuardar = be.procedure.caso_guardar;
@@ -461,7 +461,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
             //GENERALIZAR
             var soloLectura = !!(await context.client.query(
                 `select *
-                    from tareas_casos
+                    from tareas_tem
                     where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm is not null`
                 ,
                 [OPERATIVO, parameters.enc, "rel"]
@@ -487,11 +487,13 @@ export const ProceduresDmEncu : ProcedureDef[] = [
             //GENERALIZAR
             var soloLectura = !!(await context.client.query(
                 `select *
-                    from tareas_casos
+                    from tareas_tem
                     where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm is not null`
                 ,
                 [OPERATIVO, parameters.forPkRaiz.vivienda, "rel"]
             ).fetchOneRowIfExists()).rowCount;
+            console.log(getHdrQuery(condviv))
+            console.log(OPERATIVO,parameters.forPkRaiz.vivienda)
             var {row} = await context.client.query(getHdrQuery(condviv),[OPERATIVO,parameters.forPkRaiz.vivienda]).fetchUniqueRow();
             return {
                 hojaDeRuta:row,
@@ -538,7 +540,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
                     for(let tarea in tareas){
                         var puedoGuardarEnTEM=true;
                         var queryTareasTem = await context.client.query(
-                            `update tareas_casos
+                            `update tareas_tem
                                 set cargado_dm=null, notas = $4, visitas = $5
                                 where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm = ${context.be.db.quoteLiteral(token!)}
                                 returning 'ok'`
@@ -552,7 +554,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
                         //GENERALIZAR
                         if(tarea == 'rel' && puedoGuardarEnTEM){
                             await context.client.query(
-                                `update casos
+                                `update tem
                                     set json_encuesta = $3, resumen_estado=$4
                                     where operativo= $1 and enc = $2
                                     returning 'ok'`
@@ -569,7 +571,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
             var {row} = await context.client.query(getHdrQuery(condviv),[OPERATIVO,context.user.idper]).fetchUniqueRow();
             // console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxx',getHdrQuery(condviv));
             await context.client.query(
-                `update tareas_casos tt
+                `update tareas_tem tt
                     set  cargado_dm=$3::text
                     where ${condviv} `
                 ,
@@ -594,7 +596,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
                 //GENERALIZAR
                 var result = await context.client.query(
                     `select *
-                        from tareas_casos
+                        from tareas_tem
                         where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm is not null`
                     ,
                     [OPERATIVO, idCaso, "rel"]
@@ -603,7 +605,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
                     throw new Error('La encuesta que intenta guardar ha sido cargada por un encuestador.')
                 }
                 await context.client.query(
-                    `update casos
+                    `update tem
                         set json_encuesta = $3, resumen_estado=$4
                         where operativo= $1 and enc = $2
                         returning 'ok'`
@@ -618,7 +620,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
         action:'dm_backup',
         parameters:[
             {name:'token'         , typeName:'text'},
-            {name:'casos'         , typeName:'jsonb'},
+            {name:'tem'         , typeName:'jsonb'},
         ],
         unlogged:true,
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
@@ -633,10 +635,10 @@ export const ProceduresDmEncu : ProcedureDef[] = [
                     return {ok:'ok:N/T'};
                 }
             }
-            if(parameters.casos){
-                await Promise.all(parameters.casos.map(async ({vivienda,idCaso}:{vivienda:{respuestas:object},idCaso:string})=>{
+            if(parameters.tem){
+                await Promise.all(parameters.tem.map(async ({vivienda,idCaso}:{vivienda:{respuestas:object},idCaso:string})=>{
                     await context.client.query(
-                        `update casos
+                        `update tem
                             set json_backup = $3
                             where operativo= $1 and enc = $2 and json_backup is distinct from $4
                             returning 'ok'`
@@ -738,7 +740,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             var tem = await context.client.query(
                 `select * 
-                    from casos
+                    from tem
                     where etiqueta = $1`,
                 [parameters.etiqueta]
             ).fetchOneRowIfExists();
@@ -882,7 +884,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
                     (json_encuesta->>'e2')::text as nombre, pagina_texto
                         from  etiquetas e
                         left join resultados_test rt using (resultado)
-                        left join casos t using(etiqueta)
+                        left join tem t using(etiqueta)
                         where e.etiqueta =$1 and (t.json_encuesta->>'e7')::text = $2 and resultado is not null
             `,
                 [parameters.etiqueta, parameters.numero_documento]

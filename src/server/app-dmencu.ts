@@ -13,7 +13,7 @@ import * as yazl from "yazl";
 import { NextFunction } from "express-serve-static-core";
 import * as likeAr from "like-ar";
 
-//import { casos               } from "./table-casos";
+//import { tem               } from "./table-tem";
 import { roles               } from "./table-roles";
 import { personal            } from "./table-personal";
 import { recepcionistas      } from "./table-recepcionistas";
@@ -26,7 +26,7 @@ import { parametros          } from "./table-parametros";
 import { roles_subordinados  } from "./table-roles_subordinados";
 
 import {no_rea               } from "./table-no_rea";
-import {casos                  } from "./table-casos";
+import {tem                  } from "./table-tem";
 import {tem_recepcion        } from "./table-tem_recepcion";
 import {semanas              } from "./table-semanas";
 import { planchas            } from './table-planchas';
@@ -45,7 +45,7 @@ import { personas            } from './table-personas';
 import { personas_extendida  } from './table-personas_extendida';
 import { personas_extendida_onda_anterior  } from './table-personas_extendida_onda_anterior';
 import { tareas              } from './table-tareas';
-import { tareas_casos          } from './table-tareas_casos';
+import { tareas_tem          } from './table-tareas_tem';
 import { tareas_areas        } from './table-tareas_areas';
 import { mis_tareas          } from './table-mis_tareas';
 import { mis_tareas_tem      } from './table-mis_tareas_tem';
@@ -264,7 +264,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
         var be=this;
         return `CASE ${be.caches.tableContent.no_rea.map(x=>
             ` WHEN json_encuesta ->> ${be.db.quoteLiteral(x.variable)} = ${be.db.quoteLiteral(x.valor)} THEN ${be.db.quoteLiteral(x[campoNecesario])}`
-        ).join('')} ELSE NULL END`
+        ).join('')} WHEN TRUE THEN NULL END`
     }
     getContext(req:Request):Context{
         var be = this;
@@ -426,7 +426,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             , roles_subordinados
             , no_rea
             , semanas
-            , tem: casos
+            , tem: tem
             , tem_recepcion
             , parametros
             , planchas
@@ -445,7 +445,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             , personas_extendida_onda_anterior
             , tareas
             , resultados_tarea
-            , tareas_tem: tareas_casos
+            , tareas_tem: tareas_tem
             , tareas_areas
             , mis_tareas
             , mis_tareas_tem

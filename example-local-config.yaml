@@ -3,6 +3,12 @@ db:
   password: 39ddkan3a__xfhfheu..33!!
 log:
   req: false
+  db:
+    on-demand: true
+install:
+  table-data-dir: 
+    - ../dmencu-data/metadatos_etoi
+    - ../dmencu-data/ejemplos_etoi
 login:
   plus:
     secret: 39djjfnvvjas..33.3.33
