@@ -66,6 +66,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
         this.caches.tableContent = this.caches.tableContent || {};
         this.caches.tableContent.no_rea=[]
         this.caches.tableContent.no_rea_groups=[]
+        this.metaEncIncluirCasillerosSaltoREL = false;
     }
     async getProcedures(){
         var procedimientoAReemplazar=["caso_guardar","caso_traer"];
@@ -158,6 +159,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
     async postConfig(){
         await super.postConfig();
         var be=this;
+        be.metaEncIncluirCasillerosSaltoREL = false;
         await be.inTransaction(null, async function(client:pg.Client){
             var qPermisos=`
             SELECT jsonb_object_agg(r.rol,jsonb_build_object('superuser',r.superuser,'puede',(
@@ -490,6 +492,9 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                 }
             })
         })
+        // be.appendToTableDefinition('casilleros',function(tableDef, context){
+        //     tableDef.constraints = tableDef.constraints.filter(c=>c.consName!='casilleros salto REL')
+        // })
         // be.appendToTableDefinition('usuarios', function (tableDef,context) {
         //     tableDef.fields.splice(2,0,
         //         {name:'idper', typeName:'text'}
