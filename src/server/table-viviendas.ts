@@ -10,7 +10,6 @@ export function viviendas(context:TableContext, opts:{extendida:boolean}):TableD
          {name: "areaup"         , editable:false, typeName:'text'   , inTable:false}
         , {name: "id_marco"      , editable:false, typeName:'bigint' , inTable:false}
         , {name: "estrato_ing"   , editable:false, typeName:"integer", inTable:false}
-        , {name: "tipo_domicilio", editable:false, typeName:"integer", inTable:false}
         , {name: "edad_sel_rango", editable:false, typeName:"integer", inTable:false}
         , {name: "cod_no_rea"    , editable:false, typeName:"text"   , inTable:false}
         , {name: "dominio"       , editable:false, typeName:"integer", inTable:false} 
@@ -598,7 +597,6 @@ export function viviendas(context:TableContext, opts:{extendida:boolean}):TableD
                 , resultado
                 , etiqueta
                 , observaciones
-                , tipo_domicilio 
                 , areaup
                 , id_marco
                 , estrato_ing  

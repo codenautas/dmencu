@@ -7,8 +7,7 @@ export function personas(context:TableContext, opts:{extendida:boolean, onda_ant
     opts=opts||{};
     var puedeEditar = context.forDump || context.user.rol==='admin';
     var fieldsExtendida=opts.extendida?[        
-          {name: "tipo_domicilio", editable:false, typeName:"integer", inTable:false}
-        , {name: "cluster"       , editable:false, typeName:"integer" }
+         {name: "cluster"       , editable:false, typeName:"integer" }
         , {name: "area"          , editable:false, typeName:'integer', inTable:false}
         , {name: "areaup"        , editable:false, typeName:'text'   , inTable:false}
         , {name: "id_marco"      , editable:false, typeName:'bigint' , inTable:false}
@@ -80,7 +79,6 @@ export function personas(context:TableContext, opts:{extendida:boolean, onda_ant
         "isReferable": true,
         from: `(
             select t.operativo, t.enc
-                , t.tipo_domicilio
                 , t.cluster
                 , t.area, t.areaup, t.id_marco, t.estrato_ing
                 , t.nrocomuna

@@ -93,7 +93,7 @@ export function areas(context:TableContext):TableDefinition {
                         ).join('')}
                         from ( select operativo, enc, cluster, nrocomuna, clase, 
                                 json_encuesta, resumen_estado, etiqueta, --habilitada, 
-                                relevador, rea_m, rea, norea, cant_p, seleccionado, sexo_sel, edad_sel, fecha_rel, tipo_domicilio, area, dominio, zona
+                                relevador, rea_m, rea, norea, cant_p, seleccionado, sexo_sel, edad_sel, fecha_rel, area, dominio, zona
                                 json_backup, hospital
                             , tt.habilitada, tt.cargado_dm
                             , ${be.sqlNoreaCase('grupo')} as gru_no_rea from tem t left join tareas_tem tt using(operativo,enc) where t.area=a.area and tt.tarea='rel') tem

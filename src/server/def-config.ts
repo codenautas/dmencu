@@ -8,10 +8,8 @@ db:
   host: localhost
   database: dmencu_db
   schema: base
-  user: tedede_php
   search_path: 
   - base
-  - encu
   - comun
 install:
   dump:
@@ -50,14 +48,13 @@ install:
       - upd_operacion_area_tem_trg.sql
       - sincronizacion_tem.sql
 login:
-  infoFieldList: [usu_usu, usu_rol, usu_rol as rol, usu_rol_secundario, idper]
+  infoFieldList: [usuario, rol, idper]
   table: usuarios
-  userFieldName: usu_usu
-  passFieldName: usu_clave
-  rolFieldName: usu_rol
-  activeClausule: usu_activo
-  lockedClausule: not usu_activo
-  schema: encu
+  userFieldName: usuario
+  passFieldName: md5clave
+  rolFieldName: rol
+  activeClausule: activo
+  lockedClausule: not activo
   plus:
     maxAge-5-sec: 5000    
     maxAge: 864000000

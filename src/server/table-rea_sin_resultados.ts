@@ -40,7 +40,7 @@ export function rea_sin_resultados(context:TableContext):TableDefinition {
                 select t.enc, e.etiqueta,
                 t.area, t.nrocomuna, t.nomcalle as calle, t.nrocatastral as nrocat, t.piso, t.departamento dto,
                 tt.asignado as relevador, a.recepcionista,
-                t.cluster, t.tipo_domicilio as tipo_informe,
+                t.cluster, 
                 t.rea_m,
                 json_encuesta->>'p12' nombre_sel,
                 (json_encuesta->>'e1')::text as apellido,

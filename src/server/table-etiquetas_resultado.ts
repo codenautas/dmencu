@@ -57,7 +57,7 @@ export function etiquetas_resultado(context:TableContext, opts:null|{all:boolean
         ],
         sql:{
             from:`(
-                select e.*, t.cluster, t.tipo_domicilio as tipo_informe,
+                select e.*, t.cluster, 
                 (json_encuesta->>'e1')::text as apellido,
                 (json_encuesta->>'e2')::text as nombre,
                 case when ((json_encuesta->>'e3')) = '1' then 'DNI'

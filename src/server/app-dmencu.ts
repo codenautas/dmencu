@@ -453,16 +453,16 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             , control_campo
             , control_resumen
             , control_campo_zona: context=>control_campo(context, 
-                {nombre:'control_campo_comuna', title:'control campo x zona solo cemento', camposCorte:[{name:'zona', typeName:'text'}], filtroWhere:'tipo_domicilio=1' }
+                {nombre:'control_campo_comuna', title:'control campo x zona solo cemento', camposCorte:[{name:'zona', typeName:'text'}], filtroWhere:'true' }
             )
             , control_campo_comuna: context=>control_campo(context, 
-                {nombre:'control_campo_comuna', title:'control campo x comuna solo cemento', camposCorte:[{name:'zona', typeName:'text'},{name:'nrocomuna', typeName:'integer'}], filtroWhere:'tipo_domicilio=1' }
+                {nombre:'control_campo_comuna', title:'control campo x comuna solo cemento', camposCorte:[{name:'zona', typeName:'text'},{name:'nrocomuna', typeName:'integer'}], filtroWhere:'true' }
             )
             , control_campo_area: context=>control_campo(context, 
                 {nombre:'control_campo_comuna', title:'control campo x area', camposCorte:[{name:'zona', typeName:'text'},{name:'nrocomuna', typeName:'integer'},{name:'area', typeName:'integer'},{name:'participacion_a', typeName:'text'},{name:'clase_a', typeName:'text'}]}
             )
             , control_campo_participacion: context=>control_campo(context, 
-                {nombre:'control_campo_comuna', title:'control campo x participacion', camposCorte:[{name:'tipo_domicilio', typeName:'bigint'},{name:'participacion', typeName:'bigint'}]}
+                {nombre:'control_campo_comuna', title:'control campo x participacion', camposCorte:[{name:'participacion', typeName:'bigint'}]}
             ),
             rea_sin_resultados
             , etiquetas_duplicadas

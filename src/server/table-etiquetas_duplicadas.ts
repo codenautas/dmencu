@@ -16,7 +16,6 @@ export function etiquetas_duplicadas(context:TableContext):TableDefinition {
             { name:'area'                 , typeName:'integer'      },
             { name:'relevador'            , typeName:'text'         },
             { name:'recepcionista'        , typeName:'text'         },
-            { name:'tipo_domicilio'       , typeName:'integer'      },
             { name:'c6'                   , typeName:'text'         },
             { name:'apellido'             , typeName:'text'         },
             { name:'nombre'               , typeName:'text'         },
@@ -27,7 +26,7 @@ export function etiquetas_duplicadas(context:TableContext):TableDefinition {
             from:`(
                 select t.etiqueta, t.enc, t.area, tt.asignado as relevador, tt.cargado, a.recepcionista,
                 (json_encuesta->>'c6')::text as c6,
-                t.cluster, t.tipo_domicilio,
+                t.cluster,
                 (json_encuesta->>'e1')::text as apellido,
                 (json_encuesta->>'e2')::text as nombre,
                 coalesce(nomcalle||' ','')||coalesce(nrocatastral||' ','')||coalesce(piso||' ','')||coalesce(departamento,'')  domicilio
