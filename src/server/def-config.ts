@@ -4,6 +4,7 @@ server:
   base-url: /dmencu
   session-store: memory
 db:
+  user: dmencu_admin
   motor: postgresql
   host: localhost
   database: dmencu_db
@@ -14,7 +15,7 @@ db:
 install:
   dump:
     db:
-      owner: tedede_owner
+      owner: dmencu_owner
       apply-generic-user-replaces: true
     admin-can-create-tables: true
     enances: inline
