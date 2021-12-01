@@ -554,11 +554,12 @@ export var defOperativo = {
     defUA:{
         hogares  :{ pk: 'hogar'  , incluidas:['personas'], idsFor:['F:A1', 'F:S1']  },
         personas :{ pk: 'persona', incluidas:[]          , idsFor:['F:S1_P', 'F:I1']},
-        viviendas:{ pk: false    , incluidas:['hogares'] , idsFor:['F:RE', 'F:VI']  }
+        viviendas:{ pk: false    , incluidas:['hogares'] , idsFor:['F:RE']  },
+        visitas  :{ pk: 'visita' , incluidas:[]          , idsFor:['F:VI']  },
     } as unknown as {[i in IdUnidadAnalisis]:{pk:IdVariable, incluidas:IdUnidadAnalisis[], idsFor:IdFormulario[]}},
     defFor:{
         'F:RE':{arbolUA:[]},
-        'F:VI':{arbolUA:[]},
+        'F:VI':{arbolUA:['visitas']},
         'F:S1':{arbolUA:['hogares']},
         'F:A1':{hermano:true, arbolUA:['hogares']},
         'F:S1_P':{arbolUA:['hogares', 'personas']},
