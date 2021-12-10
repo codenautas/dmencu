@@ -654,7 +654,7 @@ export async function calcularFeedbackUnidadAnalisis(
             var plainForPk:PlainForPk = toPlainForPk({...forPk, formulario})
             feedbackRowValidator[plainForPk]=
                 rowValidator(
-                    formularios[formulario].estructuraRowValidator, 
+                    {marcaFin:'fin', ...formularios[formulario].estructuraRowValidator}, 
                     respuestasAumentadas,
                     opts
                 )
