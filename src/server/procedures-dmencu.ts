@@ -168,6 +168,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
         ],
         resultOk:'desplegarFormulario',
         coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters){
+            var be = context.be;
             var result = await context.client.query(
                 `select casilleros_jerarquizados($1) as formularios, 
                     ${jsono(`select unidad_analisis, padre, pk_agregada, '{}'::jsonb as hijas from unidad_analisis`, 'unidad_analisis')} as unidades_analisis
@@ -185,7 +186,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
             likeAr(result.row.unidades_analisis).forEach((ua, idUa)=>
                 completarUA(ua, idUa as IdUnidadAnalisis, result.row.unidades_analisis)
             )
-            return result.row;
+            return {timestamp: be.timestampEstructura, ...result.row};
         }
     },
     {
@@ -499,7 +500,8 @@ export const ProceduresDmEncu : ProcedureDef[] = [
                 hojaDeRuta:row,
                 soloLectura,
                 idPer:context.user.idper,
-                cargas:likeAr.createIndex(row.cargas.map(carga=>({...carga, fecha:carga.fecha?date.iso(carga.fecha).toDmy():null})), 'carga')
+                cargas:likeAr.createIndex(row.cargas.map(carga=>({...carga, fecha:carga.fecha?date.iso(carga.fecha).toDmy():null})), 'carga'),
+                timestampEstructura:be.timestampEstructura
             };
         }
     },

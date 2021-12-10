@@ -56,11 +56,12 @@ async function sincronizarDatos(state:CasoState|null){
 }
 
 async function abrirDirecto(forPkRaiz:ForPkRaiz){
-    if(!getEstructura() || my.config.config.devel){
-        var estructura = await traerEstructura({operativo:OPERATIVO})
+    var estructura = getEstructura();
+    var carga = await my.ajax.dm_forpkraiz_cargar({forPkRaiz}) as {hojaDeRuta:HojaDeRuta, timestampEstructura:number};
+    if(!estructura || (estructura.timestamp??0) < carga.timestampEstructura/* || my.config.config.devel*/){
+        estructura = await traerEstructura({operativo:OPERATIVO})
         cargarEstructura(estructura);
     }
-    var carga = await my.ajax.dm_forpkraiz_cargar({forPkRaiz}) as {hojaDeRuta:HojaDeRuta};
     if(!carga.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!]){
         throw new Error(`No se encuentra la vivienda ${forPkRaiz.vivienda!}`);
     }

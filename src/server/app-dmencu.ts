@@ -67,11 +67,27 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
         this.caches.tableContent.no_rea=[]
         this.caches.tableContent.no_rea_groups=[]
         this.metaEncIncluirCasillerosSaltoREL = false;
+        this.timestampEstructura = new Date().getTime();
     }
     async getProcedures(){
+        var be = this;
         var procedimientoAReemplazar=["caso_guardar","caso_traer"];
         var parentProc = await super.getProcedures();
         parentProc = parentProc.filter((procedure:any) => !procedimientoAReemplazar.includes(procedure.action));
+        parentProc = parentProc.map(procDef=>{
+            if(procDef.action == 'table_record_save' || procDef.action == 'table_record_delete'){
+                var coreFunctionInterno = procDef.coreFunction;
+                procDef.coreFunction = async function(context, parameters){
+                    var result = await coreFunctionInterno(context, parameters)
+                    if(parameters.table == 'casilleros'){
+                        be.timestampEstructura = new Date().getTime();
+                        console.log('se tocó la estructura', be.timestampEstructura)
+                    }
+                    return result;
+                }
+            }
+            return procDef;
+        })
         return parentProc.concat(ProceduresDmEncu);
     }
     async checkDatabaseStructure(_client:Client){

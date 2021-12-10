@@ -340,6 +340,7 @@ export type Estructura = {
         [idUnidadAnalisis in IdUnidadAnalisis]: UnidadAnalisis
     }
     tareas:TareasEstructura
+    timestamp:number
 }
 
 export type CasoState={
