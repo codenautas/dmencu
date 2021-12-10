@@ -552,10 +552,10 @@ export var defOperativo = {
     esNorea:(respuestas:Respuestas)=>respuestas['entrea' as IdVariable]!=1,
     UAprincipal:'viviendas' as IdUnidadAnalisis,
     defUA:{
-        hogares  :{ pk: 'hogar'  , incluidas:['personas'], idsFor:['F:A1', 'F:S1']  },
-        personas :{ pk: 'persona', incluidas:[]          , idsFor:['F:S1_P', 'F:I1']},
-        viviendas:{ pk: false    , incluidas:['hogares'] , idsFor:['F:RE']  },
-        visitas  :{ pk: 'visita' , incluidas:[]          , idsFor:['F:VI']  },
+        hogares  :{ pk: 'hogar'  , incluidas:['personas']           , idsFor:['F:A1', 'F:S1']  },
+        personas :{ pk: 'persona', incluidas:[]                     , idsFor:['F:S1_P', 'F:I1']},
+        viviendas:{ pk: false    , incluidas:['hogares', 'visitas'] , idsFor:['F:RE']  },
+        visitas  :{ pk: 'visita' , incluidas:[]                     , idsFor:['F:VI']  },
     } as unknown as {[i in IdUnidadAnalisis]:{pk:IdVariable, incluidas:IdUnidadAnalisis[], idsFor:IdFormulario[]}},
     defFor:{
         'F:RE':{arbolUA:[]},
