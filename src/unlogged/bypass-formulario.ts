@@ -85,9 +85,15 @@ export function cargarHojaDeRuta(nuevoPaquete:{hojaDeRuta:HojaDeRuta, modoAlmace
 
 export function cargarEstructura(estructuraACargar:Estructura){
     estructura = estructuraACargar;
+    defOperativo.UAprincipal = likeAr(estructura.unidades_analisis).find(ua=>!!ua.principal)?.unidad_analisis!
+    defOperativo.defFor = likeAr(estructura.formularios).map(f=>({hermano: f.casilleros.hermano})).plain()
+    defOperativo.defUA = likeAr(estructura.unidades_analisis).map((uaDef, ua)=>({
+        pk:uaDef.pk_agregada, 
+        incluidas: likeAr(uaDef.hijas).keys(),
+        idsFor: likeAr(estructura.formularios).filter(f=>f.casilleros.unidad_analisis == ua).keys()
+    })).plain()
     my.setLocalVar(GLOVAR_ESTRUCTURA, estructura);
 }
-
 
 export function getHojaDeRuta(){
     if(!datosByPass.hojaDeRuta){
@@ -550,6 +556,10 @@ var rowValidator = getRowValidator({getFuncionHabilitar, getFuncionValorar})
 export var defOperativo = {
     esVacio:(respuestas:Respuestas)=>JSON.stringify(respuestas)=='{}',
     esNorea:(respuestas:Respuestas)=>respuestas['entrea' as IdVariable]!=1,
+    UAprincipal:'' as IdUnidadAnalisis,
+    defUA:{} as {[i in IdUnidadAnalisis]:{pk:IdVariable, incluidas:IdUnidadAnalisis[], idsFor:IdFormulario[]}},
+    defFor:{} as {[f in IdFormulario]:{/*arbolUA:IdUnidadAnalisis[], */ hermano?:true}}
+    /*
     UAprincipal:'viviendas' as IdUnidadAnalisis,
     defUA:{
         hogares  :{ pk: 'hogar'  , incluidas:['personas']           , idsFor:['F:A1', 'F:S1']  },
@@ -565,6 +575,7 @@ export var defOperativo = {
         'F:S1_P':{arbolUA:['hogares', 'personas']},
         'F:I1':{arbolUA:['hogares', 'personas']}
     } as unknown as {[f in IdFormulario]:{arbolUA:IdUnidadAnalisis[], hermano?:true}}
+    */
 }
 ///// ABAJO de esta línea no puede haber otros nombres de variables o formularios o casilleros en general
 

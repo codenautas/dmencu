@@ -176,6 +176,24 @@ export const ProceduresDmEncu : ProcedureDef[] = [
                 [parameters.operativo]
             ).fetchUniqueRow();
             likeAr(result.row.formularios).forEach(f=>compilarExpresiones(f));
+            // Hermanos son los formularios que están implantados en otro formulario de la misma UA. Por ejemplo el A1 en el S1
+            var resultHermanos = await context.client.query(`
+select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero boton, bf.casillero, bf.padre, fp.casillero, fp.unidad_analisis
+  from casilleros o left join casilleros bf
+    on bf.tipoc='BF'
+	and bf.casillero = 'BF_'||o.casillero
+	and bf.operativo = o.operativo
+	left join casilleros fp
+	  on fp.id_casillero = bf.padre
+	  and fp.operativo = bf.operativo
+  where o.tipoc = 'F'
+    and o.unidad_analisis = fp.unidad_analisis
+	and o.operativo = $1`,
+                [parameters.operativo]
+            ).fetchAll();
+            resultHermanos.rows.forEach(row=>{
+                result.row.formularios[row.id_formulario].data.hermano = true;
+            })
             function completarUA(ua:UnidadAnalisis, idUa:IdUnidadAnalisis, uAs:{[k in IdUnidadAnalisis]: UnidadAnalisis}){
                 if(ua.padre){
                     uAs[ua.padre].hijas[idUa] = ua;

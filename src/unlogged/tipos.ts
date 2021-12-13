@@ -196,6 +196,7 @@ export type Formulario = CasilleroBase & {
     casilleros:ContenidoFormulario[]
     var_name?:null
     tipovar?:null
+    hermano?:true
     unidad_analisis:IdUnidadAnalisis
 }
 

@@ -58,7 +58,7 @@ async function sincronizarDatos(state:CasoState|null){
 async function abrirDirecto(forPkRaiz:ForPkRaiz){
     var estructura = getEstructura();
     var carga = await my.ajax.dm_forpkraiz_cargar({forPkRaiz}) as {hojaDeRuta:HojaDeRuta, timestampEstructura:number};
-    if(!estructura || (estructura.timestamp??0) < carga.timestampEstructura/* || my.config.config.devel*/){
+    if(!estructura || (estructura.timestamp??0) < carga.timestampEstructura || my.config.config.devel){
         estructura = await traerEstructura({operativo:OPERATIVO})
         cargarEstructura(estructura);
     }
