@@ -15,6 +15,7 @@ export type ModoAlmacenamiento = 'session'| // cuando sea para una sola pestaña
                                  'local'    // para todo el dispositivo, se usa al cargar hojas de ruta entres
 
 export type IdOpcion = number
+export type IdOperativo = 'etoi211'|'eah2022'|'etc...'
 export type IdVariable = 'v1'|'v2'|'v3'|'etc...'
 export type IdPregunta = 'P1'|'P2'|'etc...'
 export type IdBloque = 'B1'|'B2'|'etc...'

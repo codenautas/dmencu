@@ -498,10 +498,12 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
     {
         action:'dm_forpkraiz_cargar',
         parameters:[
+            {name:'operativo'         , typeName:'text'},
             {name:'forPkRaiz'         , typeName:'jsonb'},
         ],
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             var be=context.be;
+            var operativo = parameters.operativo;
             var condviv= ` t.operativo= $1 and t.enc =$2`;
             //GENERALIZAR
             var soloLectura = !!(await context.client.query(
@@ -509,11 +511,11 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     from tareas_tem
                     where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm is not null`
                 ,
-                [OPERATIVO, parameters.forPkRaiz.vivienda, "rel"]
+                [operativo, parameters.forPkRaiz.vivienda, "rel"]
             ).fetchOneRowIfExists()).rowCount;
             console.log(getHdrQuery(condviv))
-            console.log(OPERATIVO,parameters.forPkRaiz.vivienda)
-            var {row} = await context.client.query(getHdrQuery(condviv),[OPERATIVO,parameters.forPkRaiz.vivienda]).fetchUniqueRow();
+            console.log(operativo,parameters.forPkRaiz.vivienda)
+            var {row} = await context.client.query(getHdrQuery(condviv),[operativo,parameters.forPkRaiz.vivienda]).fetchUniqueRow();
             return {
                 hojaDeRuta:row,
                 soloLectura,
@@ -526,6 +528,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
     {
         action:'dm_sincronizar',
         parameters:[
+            // FALTA DECIDIR DE DÓNDE SE SACA OPERATIVO
             {name:'datos'       , typeName:'jsonb'},
         ],
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
@@ -599,6 +602,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             ).execute();
             return {
                 ...row,
+                operativo: OPERATIVO, 
                 token,
                 num_sincro,
                 idper:context.user.idper,

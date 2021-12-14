@@ -21,8 +21,6 @@ import { Variable } from "operativos";
 
 import { Opcion as RowValidatorOpcion } from "row-validator";
 
-export const OPERATIVO = 'etoi211';
-
 var my=myOwn;
 
 var reducers={
@@ -360,9 +358,9 @@ export async function traerEstructura(params:{operativo: string}){
     return estructura;
 }
 
-export async function dmTraerDatosFormulario(opts:{modoDemo:boolean, modoAlmacenamiento:ModoAlmacenamiento, forPkRaiz?:ForPkRaiz}){
+export async function dmTraerDatosFormulario(opts:{operativo:IdOperativo, modoDemo:boolean, modoAlmacenamiento:ModoAlmacenamiento, forPkRaiz?:ForPkRaiz}){
     var useSessionStorage = opts.modoAlmacenamiento == 'session';
-    var estructura = await traerEstructura({ operativo: OPERATIVO });
+    var estructura = await traerEstructura({ operativo: opts.operativo });
     var loadState = async function loadState():Promise<CasoState>{
         var casoState:CasoState|null = useSessionStorage?my.getSessionVar(LOCAL_STORAGE_STATE_NAME):my.getLocalVar(LOCAL_STORAGE_STATE_NAME);
         var initialState = {

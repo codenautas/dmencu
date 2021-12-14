@@ -1865,7 +1865,7 @@ export function AppDmEncu(){
     }
 }
 
-export async function desplegarFormularioActual(opts:{modoDemo:boolean, modoAlmacenamiento:ModoAlmacenamiento, forPkRaiz?:ForPkRaiz}){
+export async function desplegarFormularioActual(opts:{operativo:IdOperativo, modoDemo:boolean, modoAlmacenamiento:ModoAlmacenamiento, forPkRaiz?:ForPkRaiz}){
     // traer los metadatos en una "estructura"
     // traer los datos de localStorage
     // verificar el main Layout

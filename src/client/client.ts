@@ -1,15 +1,12 @@
 import {html, HtmlTag} from "js-to-html";
 import {dmTraerDatosFormulario, traerEstructura, replaceSpecialWords} from "../unlogged/redux-formulario";
 import { CasoState, EtiquetaOpts, IdUnidadAnalisis, IdVariable, LOCAL_STORAGE_STATE_NAME,  
-    ForPkRaiz, HojaDeRuta, IdFormulario
+    ForPkRaiz, HojaDeRuta, IdFormulario, IdOperativo
 } from "../unlogged/tipos";
 import { crearEtiqueta } from "../unlogged/generador-qr";
 import * as TypedControls from "typed-controls";
 import * as likeAr from "like-ar";
 import {cargarEstructura, cargarHojaDeRuta, getEstructura, getHojaDeRuta, calcularFeedbackHojaDeRuta} from "../unlogged/bypass-formulario"
-
-const OPERATIVO = 'etoi211';
-const OPERATIVO_ACTUAL = 'etoi211';
 
 async function traerHdr(opts:{modoDemo:boolean}){
     await dmTraerDatosFormulario({...opts, modoAlmacenamiento:'local'});
@@ -17,14 +14,14 @@ async function traerHdr(opts:{modoDemo:boolean}){
     location.reload();   
 }
 
-
 function htmlNumero(num:number){
     return html.span({class:'numero'},''+(num??''))
 }
 
 async function sincronizarDatos(state:CasoState|null){
     var datos = await my.ajax.dm_sincronizar({datos:state?.datos||null});
-    var estructura = await traerEstructura({operativo:OPERATIVO})
+    var operativo = datos.operativo;
+    var estructura = await traerEstructura({operativo})
     cargarEstructura(estructura);
     // @ts-ignore
     cargarHojaDeRuta(datos.hojaDeRuta);
@@ -55,11 +52,11 @@ async function sincronizarDatos(state:CasoState|null){
     return datos;
 }
 
-async function abrirDirecto(forPkRaiz:ForPkRaiz){
+async function abrirDirecto(operativo:IdOperativo, forPkRaiz:ForPkRaiz){
     var estructura = getEstructura();
-    var carga = await my.ajax.dm_forpkraiz_cargar({forPkRaiz}) as {hojaDeRuta:HojaDeRuta, timestampEstructura:number};
+    var carga = await my.ajax.dm_forpkraiz_cargar({operativo, forPkRaiz}) as {hojaDeRuta:HojaDeRuta, timestampEstructura:number};
     if(!estructura || (estructura.timestamp??0) < carga.timestampEstructura || my.config.config.devel){
-        estructura = await traerEstructura({operativo:OPERATIVO})
+        estructura = await traerEstructura({operativo})
         cargarEstructura(estructura);
     }
     if(!carga.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!]){
@@ -70,12 +67,14 @@ async function abrirDirecto(forPkRaiz:ForPkRaiz){
 
 myOwn.wScreens.abrir_encuesta={
     parameters:[
+        {name:'operativo', typeName:'text', defaultValue:'etoi211'},
         {name:'encuesta', typeName:'integer', defaultValue:130031}
     ],
     mainAction:(params, _divResult)=>{
         // GENERALIZAR:
         // @ts-ignore
-        return myOwn.wScreens.abrirDirecto({forPkRaiz:{formulario:"F:RE" as IdFormulario, vivienda:params.encuesta}})
+        var {operativo, encuesta} = params;
+        return myOwn.wScreens.abrirDirecto({operativo, forPkRaiz:{formulario:"F:RE" as IdFormulario, vivienda:encuesta}})
     }
 }
 
@@ -136,32 +135,6 @@ myOwn.wScreens.sincronizar_dm=async function(){
         }
     }
 };
-
-myOwn.wScreens.proc.result.qrs_traer = async (result:{etiquetas:EtiquetaOpts[]}, divResult:HTMLDivElement)=>{
-    var planchas=html.div({class:"planchas"}).create();
-    // var etiquetas:HtmlTag<HTMLDivElement>[]=[];
-    var etiquetas:HTMLDivElement[]=[];
-    divResult.appendChild(planchas);
-    var planchaAnterior='';
-    var cerrarPlancha=function(){
-        planchas.appendChild(html.div({class:'pre-plancha'}, [
-            html.div("PLANCHA "+planchaAnterior+" - Dirección General de Estadística y Censos - "+ OPERATIVO_ACTUAL)
-        ]).create());
-        planchas.appendChild(html.div({class:'plancha'},etiquetas).create());
-        etiquetas=[];
-    }
-    for(let etiqueta of result.etiquetas){
-        let etiquetaDiv = await crearEtiqueta(etiqueta, 128);
-        if(planchaAnterior!=etiqueta.plancha){
-            if(planchaAnterior){
-                cerrarPlancha();
-            }
-            planchaAnterior=etiqueta.plancha;
-        }
-        etiquetas.push(etiquetaDiv);
-    }
-    cerrarPlancha();
-}
 
 function mostrarDatosPersona(hayDatos:boolean, datos:any, divResult:HTMLDivElement){
     //TODO: EVALUAR SI CONVIENE TRAERLO DE LA BASE
@@ -324,11 +297,11 @@ myOwn.wScreens.resultados_ver = async ()=>{
 
 myOwn.wScreens.abrirDirecto=async function(addrParams:myOwn.AddrParams){
     // @ts-ignore AddPrams
-    var forPkRaiz = addrParams.forPkRaiz;
+    var {forPkRaiz, operativo} = addrParams;
     try{
         var estructura = getEstructura();
         if(!estructura){
-            estructura = await traerEstructura({operativo:OPERATIVO})
+            estructura = await traerEstructura({operativo})
             cargarEstructura(estructura);
         }
         var hdr = getHojaDeRuta();
@@ -337,13 +310,13 @@ myOwn.wScreens.abrirDirecto=async function(addrParams:myOwn.AddrParams){
             reabrirDeMemoria = await confirmPromise('Ya había abierto esa encuesta ¿quiere traerla de memoria?',{rejectFalse:false});
         }
         if(!reabrirDeMemoria){
-            await abrirDirecto(forPkRaiz);
+            await abrirDirecto(operativo, forPkRaiz);
         }else{
             getEstructura();
             calcularFeedbackHojaDeRuta();
         }
         // @ts-ignore desplegarFormularioActual es global
-        desplegarFormularioActual({modoDemo:false, forPkRaiz, useSessionStorage:true});
+        desplegarFormularioActual({operativo, modoDemo:false, forPkRaiz, useSessionStorage:true});
     }catch(err){
         alertPromise(err.message)
     }
