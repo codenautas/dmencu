@@ -82,7 +82,7 @@ function breakeableText(text:string|null):string|undefined;
 function breakeableText(text:string|null, diccionario?:{[clave:string]:React.ReactNode}){
     if(typeof text != "string") return undefined;
     text = text.replace(/\//g,"/\u2063").replace(/\/\u2063(\w)\b/g,'/$1');
-    var text = text.replace(/___*/g,(todo)=>`[${todo}]`).replace(/\@\w+\@/g,(todo)=>`[${todo}]`);
+    text = text.replace(/___*/g,(todo)=>`[${todo}]`).replace(/\@\w+\@/g,(todo)=>`[${todo}]`);
     if(!diccionario || true) return text;
     /*
     return <span>{partes.map((parte:string, i:number) => <span style={i%2==1?{textDecoration:"underline"}:{}}> {parte+" "} </span>)}</span>

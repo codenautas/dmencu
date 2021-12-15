@@ -6,7 +6,8 @@ import { CasoState, EtiquetaOpts, IdUnidadAnalisis, IdVariable, LOCAL_STORAGE_ST
 import { crearEtiqueta } from "../unlogged/generador-qr";
 import * as TypedControls from "typed-controls";
 import * as likeAr from "like-ar";
-import {cargarEstructura, cargarHojaDeRuta, getEstructura, getHojaDeRuta, calcularFeedbackHojaDeRuta} from "../unlogged/bypass-formulario"
+import {getEstructura, getHojaDeRuta, calcularFeedbackHojaDeRuta} from "../unlogged/bypass-formulario"
+import {cargarEstructura, cargarHojaDeRuta} from "../unlogged/abrir-formulario"
 
 async function traerHdr(opts:{modoDemo:boolean}){
     await dmTraerDatosFormulario({...opts, modoAlmacenamiento:'local'});
@@ -74,6 +75,7 @@ myOwn.wScreens.abrir_encuesta={
         // GENERALIZAR:
         // @ts-ignore
         var {operativo, encuesta} = params;
+        // @ts-ignore
         return myOwn.wScreens.abrirDirecto({operativo, forPkRaiz:{formulario:"F:RE" as IdFormulario, vivienda:encuesta}})
     }
 }
@@ -304,7 +306,7 @@ myOwn.wScreens.abrirDirecto=async function(addrParams:myOwn.AddrParams){
             estructura = await traerEstructura({operativo})
             cargarEstructura(estructura);
         }
-        var hdr = getHojaDeRuta();
+        var hdr:any = null;
         var reabrirDeMemoria = false;
         if(hdr?.respuestas?.viviendas?.[forPkRaiz.vivienda]){
             reabrirDeMemoria = await confirmPromise('Ya había abierto esa encuesta ¿quiere traerla de memoria?',{rejectFalse:false});

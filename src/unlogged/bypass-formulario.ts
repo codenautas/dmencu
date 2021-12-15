@@ -4,11 +4,11 @@ import { getRowValidator, Structure, Opcion as RowValidatorOpcion, FormStructure
 
 import { date } from "best-globals";
 
-import { CasilleroBase, CasillerosImplementados, CasoState, 
-    DatosVivienda, EstadoCarga, EstructuraRowValidator, Estructura, 
-    FeedbackVariable, Formulario, ForPk, ForPkRaiz,
+import {
+    Estructura, 
+    ForPk, ForPkRaiz,
     HojaDeRuta,  
-    IdCarga, IdCasillero, IdDestino, IdFin, IdFormulario, IdPregunta, IdTarea, IdVariable, 
+    IdFin, IdFormulario, IdPregunta, IdTarea, IdVariable, 
     IdUnidadAnalisis,
     InfoFormulario, 
     ModoDespliegue, 
@@ -19,10 +19,6 @@ import { CasilleroBase, CasillerosImplementados, CasoState,
     UnidadAnalisis
 } from "./tipos";
 
-const GLOVAR_DATOSBYPASS='datosbypass';
-const GLOVAR_MODOBYPASS='modobypass';
-const GLOVAR_ESTRUCTURA='estructura';
-
 var especiales = {} as {
     calcularVariables?:(respuestasRaiz:RespuestasRaiz)=>void
 }
@@ -30,13 +26,16 @@ export function setCalcularVariables(calcularVariables:(respuestasRaiz:Respuesta
     especiales.calcularVariables = calcularVariables
 }
 
-type DatosByPass = {
+export type DatosByPassPersistibles = {
     hojaDeRuta:HojaDeRuta
+    modoAlmacenamiento:ModoAlmacenamiento
+}
+
+type DatosByPass = DatosByPassPersistibles & {
     feedbackRowValidator:{  // no se persiste
         [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> // resultado del rowValidator para estado.forPk
     }
     dirty:boolean
-    modoAlmacenamiento:ModoAlmacenamiento
 };
 
 var datosByPass = {} as DatosByPass
@@ -44,60 +43,48 @@ var datosByPass = {} as DatosByPass
 //@ts-ignore arranca en blanco
 var estructura:Estructura = null as Estructura;
 
-function persistirDatosByPass(){
-    var {modoAlmacenamiento, feedbackRowValidator, ...persistentes} = datosByPass
-    if(modoAlmacenamiento=='local'){
-        my.setLocalVar(GLOVAR_DATOSBYPASS, persistentes)
-    }else{
-        my.setSessionVar(GLOVAR_DATOSBYPASS, persistentes)
-    }
-    my.setSessionVar(GLOVAR_MODOBYPASS, modoAlmacenamiento)
+let persistirDatosByPass:(dbpp:DatosByPassPersistibles)=>void = ()=>{
+    throw new Error('persistirDatosByPass SIN DEFINIR')
 }
 
-function recuperarDatosByPass(){
-    var recuperado:DatosByPass;
-    var modoAlmacenamiento = my.getSessionVar(GLOVAR_MODOBYPASS) as ModoAlmacenamiento;
-    if(modoAlmacenamiento=='local'){
-        recuperado = my.getLocalVar(GLOVAR_DATOSBYPASS)
-    }else{
-        recuperado = my.getSessionVar(GLOVAR_DATOSBYPASS)
-    }
-    if(recuperado){
-        recuperado.feedbackRowValidator={} as DatosByPass["feedbackRowValidator"];
-        datosByPass = {...recuperado, modoAlmacenamiento}
-        calcularFeedbackHojaDeRuta();
-    }
+export function setPersistirDatosByPass(persistirDatosByPassFun:typeof persistirDatosByPass){
+    persistirDatosByPass = persistirDatosByPassFun;
 }
 
-export function cargarHojaDeRuta(nuevoPaquete:{hojaDeRuta:HojaDeRuta, modoAlmacenamiento:ModoAlmacenamiento, dirty?:boolean}){
-    var modoActual = my.getSessionVar(GLOVAR_MODOBYPASS);
-    if(modoActual && nuevoPaquete.modoAlmacenamiento!=modoActual){
-        throw new Error('No se pueden mezclar modos de apertura de encuestas, directo y por hoja de ruta para MD ('+modoActual+', '+nuevoPaquete.modoAlmacenamiento+')');
-    }
-    datosByPass = {
-        ...nuevoPaquete, 
-        feedbackRowValidator: {} as DatosByPass["feedbackRowValidator"],
-        dirty: nuevoPaquete.dirty??false
-    }
-    calcularFeedbackHojaDeRuta();
-    persistirDatosByPass();
+export function setEncolarBackup(
+    encolarBackupFun:(token:string|undefined, forPkRaiz:ForPkRaiz, respuestasRaiz:Respuestas)=>void
+){
+    encolarBackup = encolarBackupFun
 }
 
-export function cargarEstructura(estructuraACargar:Estructura){
+let encolarBackup:(token:string|undefined, forPkRaiz:ForPkRaiz, respuestasRaiz:Respuestas)=>void = ()=>{
+    throw new Error("SIN ESPECIFICAR encolarBackup")
+}
+
+export function setEstructura(estructuraACargar:Estructura){
     estructura = estructuraACargar;
     defOperativo.UAprincipal = likeAr(estructura.unidades_analisis).find(ua=>!!ua.principal)?.unidad_analisis!
     defOperativo.defFor = likeAr(estructura.formularios).map(f=>({hermano: f.casilleros.hermano})).plain()
     defOperativo.defUA = likeAr(estructura.unidades_analisis).map((uaDef, ua)=>({
-        pk:uaDef.pk_agregada, 
+        pk:uaDef.pk_agregada as IdVariable, 
         incluidas: likeAr(uaDef.hijas).keys(),
         idsFor: likeAr(estructura.formularios).filter(f=>f.casilleros.unidad_analisis == ua).keys()
     })).plain()
-    my.setLocalVar(GLOVAR_ESTRUCTURA, estructura);
+    return estructura; 
+}
+
+export function setDatosByPass(dbpp:DatosByPassPersistibles & {dirty?:boolean}){
+    datosByPass = {
+        dirty:false,
+        ...dbpp,
+        feedbackRowValidator:{} as DatosByPass["feedbackRowValidator"]
+    }
+    calcularFeedbackHojaDeRuta();
 }
 
 export function getHojaDeRuta(){
     if(!datosByPass.hojaDeRuta){
-        recuperarDatosByPass();
+        throw new Error("NO HAY HDR definida")
     }
     return datosByPass.hojaDeRuta;
 }
@@ -121,9 +108,6 @@ export function getDirty(){
 }
 
 export function getEstructura(){
-    if(!estructura){
-        estructura = my.getLocalVar(GLOVAR_ESTRUCTURA);
-    }
     return estructura;
 }
 
@@ -379,7 +363,7 @@ export function accion_registrar_respuesta(payload:{
         }
     }
     var feedbackRow = datosByPass.feedbackRowValidator[toPlainForPk(forPk)];
-    var siguienteVariable:IdVariable|null|undefined;
+    var siguienteVariable:IdVariable|IdFin|null|undefined;
     if(variable != NO_CAMBIAR__SOLO_TRAER_STATUS && (recentModified || NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO && feedbackRow.autoIngresadas?.[variable])){
         variablesCalculadas(respuestasRaiz)
         if(respuestas[ultimaVaribleVivienda]==null && respuestas[ultimaVaribleVivienda]!=null){
@@ -390,7 +374,7 @@ export function accion_registrar_respuesta(payload:{
         feedbackRow = datosByPass.feedbackRowValidator[toPlainForPk(forPk)];
         calcularVariablesBotonFormulario(forPk);
         volcadoInicialElementosRegistrados(forPk);
-        persistirDatosByPass();
+        persistirDatosByPass(datosByPass);
         siguienteVariable = feedbackRow.feedback[variable].siguiente;
     }
     return {recentModified, siguienteVariable, variableActual: feedbackRow.actual};
@@ -587,42 +571,6 @@ function num(num:number|string|null):number{
     if(isNaN(num-0)) return 0;
     //@ts-ignore la gracia es meter num cuando es string
     return num-0;
-}
-
-type Backups={
-    idActual:number,
-    token:string|undefined,
-    tem:{idBackup:number, forPkRaiz:ForPkRaiz, respuestasRaiz:Respuestas}[]
-}
-
-var backupPendiente = Promise.resolve();
-
-async function enviarBackup(){
-    var backups:Backups = my.getLocalVar('backups');
-    var {token, tem} = backups;
-    if(tem.length){
-        try{
-            await my.ajax.dm_backup({token, tem})
-            // tengo que levantarlo de nuevo porque acá hay una interrupción del flujo
-            var backupsALimpiar:Backups = my.getLocalVar('backups');
-            backupsALimpiar.tem=backupsALimpiar.tem.filter(caso=>caso.idBackup>backups.idActual)
-            my.setLocalVar('backups', backupsALimpiar);
-        }catch(err){
-            console.log('no se pudo hacer backup', err);
-        }
-    }
-}
-
-function encolarBackup(token:string|undefined, forPkRaiz:ForPkRaiz, respuestasRaiz:Respuestas){
-    var backups:Backups = my.existsLocalVar('backups')?my.getLocalVar('backups'):{
-        idActual:0,
-        tem:[]
-    };
-    backups.idActual+=1;
-    backups.token=token;
-    backups.tem.push({idBackup:backups.idActual, forPkRaiz, respuestasRaiz});
-    my.setLocalVar('backups',backups);
-    backupPendiente = backupPendiente.then(enviarBackup)
 }
 
 function variablesCalculadas(respuestasRaiz: RespuestasRaiz){

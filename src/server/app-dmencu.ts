@@ -246,6 +246,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             { type: 'js', src: 'redux-formulario.js' },
             { type: 'js', src: 'render-general.js' },
             { type: 'js', src: 'render-formulario.js' },
+            { type: 'js', src: 'abrir-formulario.js' },
             { type: 'js', src: 'client/service-worker.js' },
             { type: 'css', file: 'menu.css' },
             { type: 'css', file: 'formulario-react.css' },
