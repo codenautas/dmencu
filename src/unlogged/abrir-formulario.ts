@@ -62,9 +62,6 @@ export function cargarHojaDeRuta(nuevoPaquete:{hojaDeRuta:HojaDeRuta, modoAlmace
         dirty: nuevoPaquete.dirty??false
     }
     setDatosByPass(datosByPass);
-    /* innecesario se acaba de abrir o levantar:
-        persistirDatosByPass();
-    */
 }
 
 export function cargarEstructura(estructuraACargar:Estructura){

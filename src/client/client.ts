@@ -53,30 +53,30 @@ async function sincronizarDatos(state:CasoState|null){
     return datos;
 }
 
-async function abrirDirecto(operativo:IdOperativo, forPkRaiz:ForPkRaiz){
-    var estructura = getEstructura();
-    var carga = await my.ajax.dm_forpkraiz_cargar({operativo, forPkRaiz}) as {hojaDeRuta:HojaDeRuta, timestampEstructura:number};
-    if(!estructura || (estructura.timestamp??0) < carga.timestampEstructura || my.config.config.devel){
-        estructura = await traerEstructura({operativo})
-        cargarEstructura(estructura);
-    }
-    if(!carga.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!]){
-        throw new Error(`No se encuentra la vivienda ${forPkRaiz.vivienda!}`);
-    }
-    cargarHojaDeRuta({...carga, modoAlmacenamiento:'session'});
-}
-
 myOwn.wScreens.abrir_encuesta={
     parameters:[
-        {name:'operativo', typeName:'text', defaultValue:'etoi211'},
-        {name:'encuesta', typeName:'integer', defaultValue:130031}
+        {name:'operativo' , typeName:'text', defaultValue:'etoi211'},
+        {name:'formulario', typeName:'text', defaultValue:'F:RE'},
+        {name:'encuesta'  , typeName:'integer', defaultValue:130031}
     ],
-    mainAction:(params, _divResult)=>{
-        // GENERALIZAR:
+    autoproced:true,
+    mainAction:async (params)=>{
+        // antes: abrirDirecto
+        var {operativo, encuesta, formulario} = params;
+        let forPkRaiz:ForPkRaiz = {formulario, vivienda:encuesta}
+        var estructura = getEstructura();
+        // TODO: EN UN DM ESTO SE TRAE DEL LOCALSTORAGE
+        var carga = await my.ajax.dm_forpkraiz_cargar({operativo, forPkRaiz}) as {hojaDeRuta:HojaDeRuta, timestampEstructura:number};
+        if(!estructura || (estructura.timestamp??0) < carga.timestampEstructura || my.config.config.devel){
+            estructura = await traerEstructura({operativo})
+            cargarEstructura(estructura);
+        }
+        if(!carga.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!]){
+            throw new Error(`No se encuentra la vivienda ${forPkRaiz.vivienda!}`);
+        }
+        cargarHojaDeRuta({...carga, modoAlmacenamiento:'session'});
         // @ts-ignore
-        var {operativo, encuesta} = params;
-        // @ts-ignore
-        return myOwn.wScreens.abrirDirecto({operativo, forPkRaiz:{formulario:"F:RE" as IdFormulario, vivienda:encuesta}})
+        desplegarFormularioActual({operativo, modoDemo:false, forPkRaiz, useSessionStorage:true});
     }
 }
 
@@ -297,40 +297,12 @@ myOwn.wScreens.resultados_ver = async ()=>{
     }
 }
 
-myOwn.wScreens.abrirDirecto=async function(addrParams:myOwn.AddrParams){
-    // @ts-ignore AddPrams
-    var {forPkRaiz, operativo} = addrParams;
-    try{
-        var estructura = getEstructura();
-        if(!estructura){
-            estructura = await traerEstructura({operativo})
-            cargarEstructura(estructura);
-        }
-        var hdr:any = null;
-        var reabrirDeMemoria = false;
-        if(hdr?.respuestas?.viviendas?.[forPkRaiz.vivienda]){
-            reabrirDeMemoria = await confirmPromise('Ya había abierto esa encuesta ¿quiere traerla de memoria?',{rejectFalse:false});
-        }
-        if(!reabrirDeMemoria){
-            await abrirDirecto(operativo, forPkRaiz);
-        }else{
-            getEstructura();
-            calcularFeedbackHojaDeRuta();
-        }
-        // @ts-ignore desplegarFormularioActual es global
-        desplegarFormularioActual({operativo, modoDemo:false, forPkRaiz, useSessionStorage:true});
-    }catch(err){
-        alertPromise(err.message)
-    }
-};
-
 var crearBotonVer = (depot:myOwn.Depot, fieldName:string, label:'abrir'|'ver')=>{
-    //var openButton = my.createForkeableButton({w:'abrirDirecto',enc:depot.row.enc},{label})
     var openButton = html.button({class:'open-dm-button'},label).create();
     depot.rowControls[fieldName].innerHTML='';
     depot.rowControls[fieldName].appendChild(openButton);
     openButton.onclick = async function(){
-        var urlAndWindowName = 'menu#w=abrirDirecto&enc='+depot.row.enc;
+        var urlAndWindowName = 'menu#w=abrir_encuesta&formulario=F:RE&encuesta='+depot.row.enc;
         window.open(urlAndWindowName,urlAndWindowName);
     }
 }
