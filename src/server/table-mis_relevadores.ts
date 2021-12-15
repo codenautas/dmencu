@@ -25,7 +25,7 @@ export function mis_relevadores(context:TableContext):TableDefinition {
             {name:'carga_1'                 , typeName:'integer' , editable:false  , aggregate:'sum'},
             {name:'carga_2'                 , typeName:'integer' , editable:false  , aggregate:'sum'},
             {name:'carga_3'                 , typeName:'integer' , editable:false  , aggregate:'sum'},
-            {name:'reas_m'                  , typeName:'integer' , editable:false  , aggregate:'sum'},
+            {name:'reas'                    , typeName:'integer' , editable:false  , aggregate:'sum'},
             {name:'no_reas'                 , typeName:'integer' , editable:false  , aggregate:'sum'},
             {name:'incompletas'             , typeName:'integer' , editable:false  , aggregate:'sum'},
             {name:'vacias'                  , typeName:'integer' , editable:false  , aggregate:'sum'},
@@ -46,11 +46,11 @@ export function mis_relevadores(context:TableContext):TableDefinition {
                                 sum(case when tt.fecha_asignacion = current_date + interval '1 day' then 1 else null end) as carga_1,
                                 sum(case when tt.fecha_asignacion = current_date + interval '2 day' then 1 else null end) as carga_2,
                                 sum(case when tt.fecha_asignacion = current_date + interval '3 day' then 1 else null end) as carga_3,
-                                sum(case when t.rea_m = 1 then 1 else null end) as reas_m,
+                                sum(case when t.rea = 1 then 1 else null end) as reas,
                                 sum(case when t.resumen_estado = 'no rea' then 1 else null end) as no_reas,
                                 sum(case when t.resumen_estado in ('incompleta', 'con problemas') then 1 else null end) as incompletas,
                                 sum(case when t.resumen_estado in ('vacia') then 1 else null end) as vacias,
-                                sum(case when tt.fecha_asignacion is not null and t.rea_m = 1 then 1 else null end)*1.0 / nullif(count(distinct tt.fecha_asignacion),0) as reas_dia
+                                sum(case when tt.fecha_asignacion is not null and t.rea = 1 then 1 else null end)*1.0 / nullif(count(distinct tt.fecha_asignacion),0) as reas_dia
                             from tem t inner join areas a using (area) inner join tareas_tem tt on (t.operativo=tt.operativo and  t.enc=tt.enc and 'rel'=tt.tarea)
                             where tt.asignado = u.idper
                     ) t left join lateral (

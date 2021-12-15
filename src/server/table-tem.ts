@@ -16,7 +16,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
     ];
     var columnasSoloTem=[
           'enc_original'   , 'json_encuesta'   , 'rea'     , 'norea'  , 'json_backup'
-        , 'h4'             , 'hospital'        , 'x'       , 'y'      , 'dist_m'     , 'fexp'
+        , 'h4'             , 'x'       , 'y'      , 'fexp'
     ];
     var def: TableDefinition= {
         name:`tem${recepcion}`,
@@ -34,23 +34,19 @@ export function tem(context:TableContext, opts:any):TableDefinition {
             {name: "cluster"      , typeName:'integer'        , editable: false, isName:true},
             {name:'area'                 , typeName:'integer' , editable: false  },
             {name:'zona'                 , typeName:'text'    , editable: false  },
-            {name:'rea_m'                , typeName:'integer' , editable: false  },
             {name:'rea'                  , typeName:'integer' , editable: false  },
             {name:'norea'                , typeName:'integer' , editable: false  },
             {name:'cant_p'               , typeName:'integer' , editable: false  },
             {name:'seleccionado'         , typeName:'integer' , editable: false  },
-            {name:'sexo_sel'             , typeName:'integer' , editable: false  },
-            {name:'edad_sel'             , typeName:'integer' , editable: false  },
-            {name:'fecha_rel'            , typeName:'date'    , editable: false  },
+//            {name:'sexo_sel'             , typeName:'integer' , editable: false  },
+//            {name:'edad_sel'             , typeName:'integer' , editable: false  },
             {name:'cita'                 , typeName:'text'    , editable: false  },
             {name:'cod_no_rea'           , typeName:'text'    , editable: false , inTable:false  },
             {name:'gru_no_rea'           , typeName:'text'    , editable: false , inTable:false  },
             {name:'habilitada'           , typeName:'boolean' , editable: false , inTable: false  },
             {name:'cargado'              , typeName:'boolean' , editable: false , inTable: false  },
             {name:'resumen_estado'       , typeName:'text'    , editable: false  },
-            {name:'etiqueta'             , typeName:'text'    , editable: false  },
             {name:'relevador'            , typeName:'text'    , editable: false , inTable: false  },
-            {name:'tipos_inconsist'      , typeName:'text'    , editable: false  },
             {name:'codcalle'             , typeName:'integer' , editable: false  },
             {name:'nomcalle'             , typeName:'text'    , editable: false  },
             {name:'nrocatastral'         , typeName:'integer' , editable: false  },
@@ -103,10 +99,8 @@ export function tem(context:TableContext, opts:any):TableDefinition {
             {name:'json_encuesta'        , typeName:'jsonb'   , editable: false  },
             {name:"json_backup"          , typeName:'jsonb'   , editable: false, visible:false},
             {name:"h4"                   , typeName:'text'    , editable: false  },
-            {name:"hospital"             , typeName:'text'    , editable: false  },
             {name:"x"                    , typeName:'decimal' , editable: false  },
             {name:"y"                    , typeName:'decimal' , editable: false  },
-            {name:"dist_m"               , typeName:'decimal' , editable: false  },
             {name:'notas'                , typeName:'text'    , editable: false, inTable:false},
             //{ name: "modificado"   , label:'modificado'        , typeName: 'timestamp'},
             //{name:'obs_sup'        , typeName:'text' , editable: isSupervisor     },

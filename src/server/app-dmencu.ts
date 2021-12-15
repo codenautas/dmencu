@@ -13,7 +13,6 @@ import * as yazl from "yazl";
 import { NextFunction } from "express-serve-static-core";
 import * as likeAr from "like-ar";
 
-//import { tem               } from "./table-tem";
 import { roles               } from "./table-roles";
 import { personal            } from "./table-personal";
 import { recepcionistas      } from "./table-recepcionistas";
@@ -39,11 +38,6 @@ import { operaciones         } from './table-operaciones';
 import { comunas             } from './table-comunas';
 import { areas               } from './table-areas';
 import { sincronizaciones    } from './table-sincronizaciones';
-import { viviendas           } from './table-viviendas';
-import { viviendas_extendida } from './table-viviendas_extendida';
-import { personas            } from './table-personas';
-import { personas_extendida  } from './table-personas_extendida';
-import { personas_extendida_onda_anterior  } from './table-personas_extendida_onda_anterior';
 import { tareas              } from './table-tareas';
 import { tareas_tem          } from './table-tareas_tem';
 import { tareas_areas        } from './table-tareas_areas';
@@ -53,8 +47,6 @@ import { mis_tareas_areas    } from './table-mis_tareas_areas';
 import { resultados_tarea    } from './table-resultados_tarea';
 import { control_campo       } from './table-control_campo';
 import { control_resumen     } from './table-control_resumen';
-import { rea_sin_resultados  } from './table-rea_sin_resultados';
-import { etiquetas_duplicadas} from './table-etiquetas_duplicadas';
 
 import {defConfig} from "./def-config"
 
@@ -319,6 +311,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                 {menuType:'abrir_encuesta', name:'abrir_encuesta'},
             )
         }
+        /*
         if(context.puede?.lab_resultado?.editar || context.puede?.lab_resultado?.ver){
             let menuContent=[];
             if(context.puede?.lab_resultado?.editar && !context.superuser){
@@ -348,6 +341,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                 // {menuType:'menu', name:'laboratorio', menuContent}
             ]
         }
+        */
         if(context.puede?.campo?.editar){
             menu.push(
                 {menuType:'menu', name:'recepcion', label:'recepción' ,menuContent:[
@@ -370,8 +364,6 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                     {menuType:'table', name:'comuna' , table:'control_campo_comuna'},
                     {menuType:'table', name:'área'   , table:'control_campo_area'  },
                     {menuType:'table', name:'participacion'        , table:'control_campo_participacion'  },
-                    {menuType:'table', name:'rea_sin_resultados'   , table:'rea_sin_resultados'  },
-                    {menuType:'table', name:'etiquetas_duplicadas' , table:'etiquetas_duplicadas'  },
                 ]},            
             )
         }else if(context.user.rol=='comunicacion'){
@@ -393,12 +385,12 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
         if(context.superuser){
             menu = [ ...menu,
                 {menuType:'menu', name:'configurar', menuContent:[
-                    {menuType:'menu', name:'etiquetas', menuContent:[
+                    /*{menuType:'menu', name:'etiquetas', menuContent:[
                         {menuType:'table', name:'planchas'},
                         {menuType:'table', name:'etiquetas'},
                         {menuType:'table', name:'resultados_test'},
                         {menuType:'proc', name:'imprimir', proc:'qrs_traer'},
-                    ]},
+                    ]},*/
                     {menuType:'menu', name:'muestra', label:'muestra', menuContent:[
                         {menuType:'table', name:'tem', label: 'TEM'} ,
                         {menuType:'table', name:'tareas'},
@@ -454,11 +446,6 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             , comunas
             , areas
             , sincronizaciones
-            , viviendas
-            , viviendas_extendida
-            , personas
-            , personas_extendida
-            , personas_extendida_onda_anterior
             , tareas
             , resultados_tarea
             , tareas_tem: tareas_tem
@@ -480,8 +467,6 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             , control_campo_participacion: context=>control_campo(context, 
                 {nombre:'control_campo_comuna', title:'control campo x participacion', camposCorte:[{name:'participacion', typeName:'bigint'}]}
             ),
-            rea_sin_resultados
-            , etiquetas_duplicadas
         }
         be.appendToTableDefinition('consistencias',function(tableDef, context){
             tableDef.fields.forEach(function(field){
