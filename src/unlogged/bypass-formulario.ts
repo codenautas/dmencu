@@ -43,12 +43,18 @@ var datosByPass = {} as DatosByPass
 //@ts-ignore arranca en blanco
 var estructura:Estructura = null as Estructura;
 
-let persistirDatosByPass:(dbpp:DatosByPassPersistibles)=>void = ()=>{
+let persistirDatosByPassInterno:(dbpp:DatosByPassPersistibles)=>Promise<any> = ()=>{
     throw new Error('persistirDatosByPass SIN DEFINIR')
 }
 
 export function setPersistirDatosByPass(persistirDatosByPassFun:typeof persistirDatosByPass){
-    persistirDatosByPass = persistirDatosByPassFun;
+    persistirDatosByPassInterno = persistirDatosByPassFun;
+}
+
+async function persistirDatosByPass(dbpp:DatosByPassPersistibles){
+    await persistirDatosByPassInterno(dbpp);
+    datosByPass.dirty = false
+    refrescarMarcaDirty();
 }
 
 export function setEncolarBackup(
@@ -338,6 +344,15 @@ export function accion_id_pregunta(_payload:{pregunta: IdPregunta, forPk: ForPk}
 export const NO_CAMBIAR__SOLO_TRAER_STATUS = Symbol('NO_CAMBIAR_SOLO_TRAER_STATUS')
 export const NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO = Symbol('NO_CAMBIAR_VERIFICAR_SI_ES_NECESARIO')
 
+function refrescarMarcaDirty(){
+    var botonGrabar = document.getElementById("save-button") as HTMLButtonElement;
+    if(botonGrabar){
+        if(botonGrabar.disabled !== !datosByPass.dirty){
+            botonGrabar.disabled = !datosByPass.dirty;
+        }
+    }
+}
+
 export function accion_registrar_respuesta(payload:{
     forPk:ForPk, 
     variable:IdVariable|typeof NO_CAMBIAR__SOLO_TRAER_STATUS, 
@@ -371,12 +386,7 @@ export function accion_registrar_respuesta(payload:{
         }
         datosByPass.dirty = datosByPass.dirty || recentModified;
         respuestasRaiz.$dirty = respuestasRaiz.$dirty || recentModified;
-        var botonGrabar = document.getElementById("save-button") as HTMLButtonElement;
-        if(botonGrabar){
-            if(botonGrabar.disabled !== !datosByPass.dirty){
-                botonGrabar.disabled = !datosByPass.dirty;
-            }
-        }
+        refrescarMarcaDirty();
         calcularFeedback(respuestasRaiz, forPkRaiz, {autoIngreso: true});
         feedbackRow = datosByPass.feedbackRowValidator[toPlainForPk(forPk)];
         calcularVariablesBotonFormulario(forPk);
