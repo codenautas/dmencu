@@ -110,6 +110,16 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
 `
 }
 
+const getUAPrincipal = async (client:Client, operativo:string)=>
+    (await client.query(
+        `select unidad_analisis
+            from unidad_analisis
+            where operativo= $1 and principal
+        `
+        ,
+        [operativo]
+    ).fetchUniqueValue()).value
+
 var funcionesConocidas:{[k in string]:boolean} = {}
 
 var compiler = new ExpresionParser.Compiler({
@@ -534,8 +544,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             var be=context.be;
             var {operativo, persistentes} = parameters;
-            //GENERALIZAR UA PRINCIPAL
-            const UA_PRINCIPAL = 'viviendas'
+            const UA_PRINCIPAL = await getUAPrincipal(context.client, operativo);
             await Promise.all(likeAr(persistentes.hojaDeRuta.respuestas[UA_PRINCIPAL]).map(async (respuestasUAPrincipal,idEnc)=>{
                 await context.client.query(
                     `update tem
