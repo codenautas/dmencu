@@ -546,6 +546,9 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             var {operativo, persistentes} = parameters;
             const UA_PRINCIPAL = await getUAPrincipal(context.client, operativo);
             await Promise.all(likeAr(persistentes.hojaDeRuta.respuestas[UA_PRINCIPAL]).map(async (respuestasUAPrincipal,idEnc)=>{
+                if(respuestasUAPrincipal.s1a1_obs == '!prueba de error al grabar!'){
+                    throw new Error('DIO PRUEBA DE ERROR AL GRABAR');
+                }
                 await context.client.query(
                     `update tem
                         set json_encuesta = $3 --, resumen_estado=$4

@@ -1507,6 +1507,7 @@ function FormularioDespliegue(props:{forPk:ForPk}){
                 <Toolbar>
                     <BarraDeNavegacion forPk={forPk} soloLectura={soloLectura || false} modoDirecto={opciones.modoDirecto}/>
                 </Toolbar>
+                <div id="mini-console"></div>
             </AppBar>
             <main>
                 <Paper className="formulario" modo-despliegue={modoDespliegue} ver-num-opciones={opciones.conCampoOpciones?'SI':'NO'}>
