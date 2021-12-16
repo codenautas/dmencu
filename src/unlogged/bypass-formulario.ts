@@ -369,7 +369,14 @@ export function accion_registrar_respuesta(payload:{
         if(respuestas[ultimaVaribleVivienda]==null && respuestas[ultimaVaribleVivienda]!=null){
             encolarBackup(token, forPkRaiz, respuestasRaiz);
         }
+        datosByPass.dirty = datosByPass.dirty || recentModified;
         respuestasRaiz.$dirty = respuestasRaiz.$dirty || recentModified;
+        var botonGrabar = document.getElementById("save-button") as HTMLButtonElement;
+        if(botonGrabar){
+            if(botonGrabar.disabled !== !datosByPass.dirty){
+                botonGrabar.disabled = !datosByPass.dirty;
+            }
+        }
         calcularFeedback(respuestasRaiz, forPkRaiz, {autoIngreso: true});
         feedbackRow = datosByPass.feedbackRowValidator[toPlainForPk(forPk)];
         calcularVariablesBotonFormulario(forPk);
