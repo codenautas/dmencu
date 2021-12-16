@@ -28,7 +28,7 @@ const GLOVAR_MODOBYPASS='modobypass';
 const GLOVAR_ESTRUCTURA='estructura';
 
 setPersistirDatosByPass(
-    function persistirDatosByPass(persistentes:DatosByPassPersistibles){
+    function persistirEnMemoria(persistentes:DatosByPassPersistibles){
         var {modoAlmacenamiento} = persistentes
         if(modoAlmacenamiento=='local'){
             my.setLocalVar(GLOVAR_DATOSBYPASS, persistentes)

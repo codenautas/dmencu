@@ -526,6 +526,30 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         }
     },
     {
+        action:'dm_forpkraiz_descargar',
+        parameters:[
+            {name:'operativo'         , typeName:'text'},
+            {name:'persistentes'      , typeName:'jsonb'},
+        ],
+        coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
+            var be=context.be;
+            var {operativo, persistentes} = parameters;
+            //GENERALIZAR UA PRINCIPAL
+            const UA_PRINCIPAL = 'viviendas'
+            await Promise.all(likeAr(persistentes.hojaDeRuta.respuestas[UA_PRINCIPAL]).map(async (respuestasUAPrincipal,idEnc)=>{
+                await context.client.query(
+                    `update tem
+                        set json_encuesta = $3 --, resumen_estado=$4
+                        where operativo= $1 and enc = $2
+                        returning 'ok'`
+                    ,
+                    [operativo, idEnc, respuestasUAPrincipal/*, vivienda.resumenEstado*/]
+                ).fetchUniqueRow();
+            }).array());
+            return 'ok'
+        }
+    },
+    {
         action:'dm_sincronizar',
         parameters:[
             // FALTA DECIDIR DE DÓNDE SE SACA OPERATIVO

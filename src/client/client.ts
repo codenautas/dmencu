@@ -71,13 +71,11 @@ myOwn.wScreens.abrir_encuesta={
             estructura = await traerEstructura({operativo})
             cargarEstructura(estructura);
         }
-        // agregar acá:
-        // setPersistirDatosByPass(
-        //     async function persistirDatosByPass(persistentes:DatosByPassPersistibles){
-        //         await my.ajax.dm_forpkraiz_descargar({operativo, persistentes});
-        //     }
-        // )
-        ////////
+        setPersistirDatosByPass(
+            async function persistirDatosByPassEnBaseDeDatos(persistentes:DatosByPassPersistibles){
+                await my.ajax.dm_forpkraiz_descargar({operativo, persistentes});
+            }
+        )
         if(!carga.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!]){
             throw new Error(`No se encuentra la vivienda ${forPkRaiz.vivienda!}`);
         }
