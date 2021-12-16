@@ -6,7 +6,7 @@ import { CasoState, EtiquetaOpts, IdUnidadAnalisis, IdVariable, LOCAL_STORAGE_ST
 import { crearEtiqueta } from "../unlogged/generador-qr";
 import * as TypedControls from "typed-controls";
 import * as likeAr from "like-ar";
-import {getEstructura, getHojaDeRuta, calcularFeedbackHojaDeRuta} from "../unlogged/bypass-formulario"
+import {getEstructura, getHojaDeRuta, setPersistirDatosByPass, DatosByPassPersistibles, calcularFeedbackHojaDeRuta} from "../unlogged/bypass-formulario"
 import {cargarEstructura, cargarHojaDeRuta} from "../unlogged/abrir-formulario"
 
 async function traerHdr(opts:{modoDemo:boolean}){
@@ -71,6 +71,13 @@ myOwn.wScreens.abrir_encuesta={
             estructura = await traerEstructura({operativo})
             cargarEstructura(estructura);
         }
+        // agregar acá:
+        // setPersistirDatosByPass(
+        //     async function persistirDatosByPass(persistentes:DatosByPassPersistibles){
+        //         await my.ajax.dm_forpkraiz_descargar({operativo, persistentes});
+        //     }
+        // )
+        ////////
         if(!carga.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!]){
             throw new Error(`No se encuentra la vivienda ${forPkRaiz.vivienda!}`);
         }
