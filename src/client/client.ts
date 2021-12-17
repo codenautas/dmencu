@@ -123,6 +123,7 @@ myOwn.wScreens.sincronizar_dm=async function(){
                 // await traerHdr({modoDemo:false});
             }catch(err){
                 alertPromise(err.message)
+                throw err
             }finally{
                 downloadButton.disabled=false;
             }

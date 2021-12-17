@@ -299,123 +299,97 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
     }
     getMenu(context:Context){
         let menu:MenuInfoBase[] = [];
-        if((context.puede?.encuestas.relevar || "TODO: CORREGIR, POR AHORA TODOS PUEDEN") && this.config['client-setup'].para_dm){
-            if(this.config['client-setup'].ambiente=='demo' || this.config['client-setup'].ambiente=='test' || this.config['client-setup'].ambiente=='capa'){
-                menu.push({menuType:'demo', name:'demo', selectedByDefault:true})
-            }else{
-                menu.push({menuType:'path', name:'relevamiento', path:'/campo'})
-            }
-            menu.push(
-                {menuType:'sincronizar_dm', name:'sincronizar'},
-            );
-            menu.push(
-                {menuType:'abrir_encuesta', name:'abrir_encuesta'},
-            )
-        }
-        /*
-        if(context.puede?.lab_resultado?.editar || context.puede?.lab_resultado?.ver){
-            let menuContent=[];
-            if(context.puede?.lab_resultado?.editar && !context.superuser){
-                menuContent.push(
-                    {menuType:'proc', name:'laboratorio_ingresar' , label:'recepción muestra'}
-                )
-                menuContent.push(
-                    {menuType:'proc', name:'resultado_cargar'    , label:'carga resultado'}
-                )
-            }
-            if(context.puede?.lab_resultado?.ver){
-                menuContent.push(
-                    {menuType:'resultados_ver', name:'resultados_ver',  label:'ver resultados'},
-                )
-            }
-            if(context.puede?.lab_resultado?.editar){
-                if(!context.superuser){
-                    menuContent.push(
-                        {menuType:'proc', name:'resultado_rectificar', label:'rectificar resultado'},
-                    )
-                    menuContent.push(
-                        {menuType:'table', name:'usuarios'}
-                    )
+        if(this.config.server.policy=='web'){
+            if(context.puede?.encuestas.relevar){
+                if(this.config['client-setup'].ambiente=='demo' || this.config['client-setup'].ambiente=='test' || this.config['client-setup'].ambiente=='capa'){
+                    menu.push({menuType:'demo', name:'demo', selectedByDefault:true})
+                }else{
+                    menu.push({menuType:'path', name:'relevamiento', path:'/campo'})
                 }
+                menu.push(
+                    {menuType:'sincronizar_dm', name:'sincronizar'},
+                );
             }
-            menu = [ ...menu, 
-                // {menuType:'menu', name:'laboratorio', menuContent}
-            ]
-        }
-        */
-        if(context.puede?.campo?.editar){
-            menu.push(
-                {menuType:'menu', name:'recepcion', label:'recepción' ,menuContent:[
-                    //{menuType:'carga_recepcionista', name:'cargar'},
-                    {menuType:'table', name:'mis_areas', table:'areas', ff:{recepcionista:context.user.idper}},
-                    {menuType:'table', name:'mis_relevadores'},
-                    {menuType:'table', name:'areas'},
-                    {menuType:'table', name:'tem_recepcion', label:'TEM'},
-                ]},            
-            )
-        }
-        console.log("context user", context.user)
-        if(context.superuser){
-            menu.push(
-                {menuType:'menu', name:'control', menuContent:[
-                    //{menuType:'carga_recepcionista', name:'cargar'},
-                    {menuType:'table', name:'resumen', table:'control_resumen', selectedByDefault:true},
-                    {menuType:'table', name:'dominio', table:'control_campo'},
-                    {menuType:'table', name:'zona'   , table:'control_campo_zona'  },
-                    {menuType:'table', name:'comuna' , table:'control_campo_comuna'},
-                    {menuType:'table', name:'área'   , table:'control_campo_area'  },
-                    {menuType:'table', name:'participacion'        , table:'control_campo_participacion'  },
-                ]},            
-            )
-        }else if(context.user.rol=='comunicacion'){
-            menu.push(
-                {menuType:'menu', name:'control', menuContent:[
-                    {menuType:'table', name:'rea_sin_resultados' , table:'rea_sin_resultados'  },
-                ]},            
-            )
-        }
-        if(context.puede?.citas?.programar){
-            //menu.push(
-            //    {menuType:'menu', name:'citas' ,menuContent:[
-            //        //{menuType:'carga_recepcionista', name:'cargar'},
-            //        {menuType:'table', name:'mis_areas', table:'areas', ff:{recepcionista:context.user.idper}}, //REVISAR CONDICION de búsqueda
-            //        {menuType:'table', name:'areas'},
-            //    ]},            
-            //)
-        }
-        if(context.superuser){
-            menu = [ ...menu,
-                {menuType:'menu', name:'configurar', menuContent:[
-                    /*{menuType:'menu', name:'etiquetas', menuContent:[
-                        {menuType:'table', name:'planchas'},
-                        {menuType:'table', name:'etiquetas'},
-                        {menuType:'table', name:'resultados_test'},
-                        {menuType:'proc', name:'imprimir', proc:'qrs_traer'},
-                    ]},*/
-                    {menuType:'menu', name:'muestra', label:'muestra', menuContent:[
-                        {menuType:'table', name:'tem', label: 'TEM'} ,
-                        {menuType:'table', name:'tareas'},
-                        {menuType:'table', name:'resultados_tarea'},
-                    // {menuType:'table', name:'personal_rol'},
+        }else{
+            if(context.puede?.campo?.editar){
+                menu.push(
+                    {menuType:'abrir_encuesta', name:'abrir_encuesta'},
+                )
+                menu.push(
+                    {menuType:'menu', name:'recepcion', label:'recepción' ,menuContent:[
+                        //{menuType:'carga_recepcionista', name:'cargar'},
+                        {menuType:'table', name:'mis_areas', table:'areas', ff:{recepcionista:context.user.idper}},
+                        {menuType:'table', name:'mis_relevadores'},
+                        {menuType:'table', name:'areas'},
+                        {menuType:'table', name:'tem_recepcion', label:'TEM'},
+                    ]},            
+                )
+            }
+            console.log("context user", context.user)
+            if(context.superuser){
+                menu.push(
+                    {menuType:'menu', name:'control', menuContent:[
+                        //{menuType:'carga_recepcionista', name:'cargar'},
+                        {menuType:'table', name:'resumen', table:'control_resumen', selectedByDefault:true},
+                        {menuType:'table', name:'dominio', table:'control_campo'},
+                        {menuType:'table', name:'zona'   , table:'control_campo_zona'  },
+                        {menuType:'table', name:'comuna' , table:'control_campo_comuna'},
+                        {menuType:'table', name:'área'   , table:'control_campo_area'  },
+                        {menuType:'table', name:'participacion'        , table:'control_campo_participacion'  },
+                    ]},            
+                )
+            }else if(context.user.rol=='comunicacion'){
+                menu.push(
+                    {menuType:'menu', name:'control', menuContent:[
+                        {menuType:'table', name:'rea_sin_resultados' , table:'rea_sin_resultados'  },
+                    ]},            
+                )
+            }
+            if(context.puede?.citas?.programar){
+                //menu.push(
+                //    {menuType:'menu', name:'citas' ,menuContent:[
+                //        //{menuType:'carga_recepcionista', name:'cargar'},
+                //        {menuType:'table', name:'mis_areas', table:'areas', ff:{recepcionista:context.user.idper}}, //REVISAR CONDICION de búsqueda
+                //        {menuType:'table', name:'areas'},
+                //    ]},            
+                //)
+            }
+            if(context.superuser){
+                menu = [ ...menu,
+                    {menuType:'menu', name:'configurar', menuContent:[
+                        /*{menuType:'menu', name:'etiquetas', menuContent:[
+                            {menuType:'table', name:'planchas'},
+                            {menuType:'table', name:'etiquetas'},
+                            {menuType:'table', name:'resultados_test'},
+                            {menuType:'proc', name:'imprimir', proc:'qrs_traer'},
+                        ]},*/
+                        {menuType:'menu', name:'muestra', label:'muestra', menuContent:[
+                            {menuType:'table', name:'tem', label: 'TEM'} ,
+                            {menuType:'table', name:'tareas'},
+                            {menuType:'table', name:'resultados_tarea'},
+                        // {menuType:'table', name:'personal_rol'},
+                            ]},
+                        {menuType:'menu', name:'metadatos', menuContent:[
+                            {menuType:'table', name:'operativos'},
+                            {menuType:'table', name:'formularios' , table:'casilleros_principales'},
+                            {menuType:'table', name:'plano'       , table:'casilleros'},
+                            {menuType:'table', name:'tipoc'       , label:'tipos de celdas'},
+                            {menuType:'table', name:'tipoc_tipoc' , label:'inclusiones de celdas'},
                         ]},
-                    {menuType:'menu', name:'metadatos', menuContent:[
-                        {menuType:'table', name:'operativos'},
-                        {menuType:'table', name:'formularios' , table:'casilleros_principales'},
-                        {menuType:'table', name:'plano'       , table:'casilleros'},
-                        {menuType:'table', name:'tipoc'       , label:'tipos de celdas'},
-                        {menuType:'table', name:'tipoc_tipoc' , label:'inclusiones de celdas'},
+                        {menuType:'table', name:'parametros'},
                     ]},
-                    {menuType:'table', name:'parametros'},
-                ]},
-                {menuType:'menu', name:'usuarios', menuContent:[
-                    {menuType:'table', name:'usuarios', selectedByDefault:true},
-                    {menuType:'table', name:'roles'},
-                    {menuType:'table', name:'permisos'},
-                    {menuType:'table', name:'roles_permisos'},
-                ]},
-                // {menuType:'proc', name:'generate_tabledef', proc:'tabledef_generate', label:'generar tablas'  },
-            ]
+                    {menuType:'menu', name:'usuarios', menuContent:[
+                        {menuType:'table', name:'usuarios', selectedByDefault:true},
+                        {menuType:'table', name:'roles'},
+                        {menuType:'table', name:'permisos'},
+                        {menuType:'table', name:'roles_permisos'},
+                    ]},
+                    // {menuType:'proc', name:'generate_tabledef', proc:'tabledef_generate', label:'generar tablas'  },
+                ]
+            }
         }
+        
+        
         return {menu};
     }
     prepareGetTables(){

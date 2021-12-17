@@ -1,0 +1,12 @@
+#set BACKEND_PLUS_LOCAL_CONFIG=nombre_de_archivo
+db:
+  password: laMismaPasswordQueLocalConfig
+  port: 5432 #elMismoPuertoQueLocalconfig
+server:
+  port: 3333 #otroPuerto
+  policy: web
+devel:
+  delay: 0
+log:
+  db:
+    on-demand: true

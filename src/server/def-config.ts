@@ -90,5 +90,4 @@ client-setup:
   deviceWidthForMobile: device-width
   user-scalable: no
   grid-buffer: wsql
-  para_dm: true
 `
