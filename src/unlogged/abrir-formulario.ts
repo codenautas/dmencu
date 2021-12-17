@@ -23,12 +23,12 @@ import { DatosByPassPersistibles,
     setDatosByPass, setEncolarBackup, setEstructura, setPersistirDatosByPass 
 } from "./bypass-formulario"
 
-const GLOVAR_DATOSBYPASS='datosbypass';
-const GLOVAR_MODOBYPASS='modobypass';
-const GLOVAR_ESTRUCTURA='estructura';
+export const GLOVAR_DATOSBYPASS='datosbypass';
+export const GLOVAR_MODOBYPASS='modobypass';
+export const GLOVAR_ESTRUCTURA='estructura';
 
 setPersistirDatosByPass(
-    function persistirEnMemoria(persistentes:DatosByPassPersistibles){
+    async function persistirEnMemoria(persistentes:DatosByPassPersistibles){
         var {modoAlmacenamiento} = persistentes
         if(modoAlmacenamiento=='local'){
             my.setLocalVar(GLOVAR_DATOSBYPASS, persistentes)
@@ -39,7 +39,7 @@ setPersistirDatosByPass(
     }
 )
 
-function recuperarDatosByPass(){
+export function recuperarDatosByPass(){
     var recuperado:DatosByPassPersistibles;
     var modoAlmacenamiento = my.getSessionVar(GLOVAR_MODOBYPASS) as ModoAlmacenamiento;
     if(modoAlmacenamiento=='local'){
@@ -50,6 +50,7 @@ function recuperarDatosByPass(){
     if(recuperado){
         setDatosByPass({...recuperado, modoAlmacenamiento})
     }
+    return
 }
 
 export function cargarHojaDeRuta(nuevoPaquete:{hojaDeRuta:HojaDeRuta, modoAlmacenamiento:ModoAlmacenamiento, dirty?:boolean}){

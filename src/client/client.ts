@@ -7,10 +7,15 @@ import { crearEtiqueta } from "../unlogged/generador-qr";
 import * as TypedControls from "typed-controls";
 import * as likeAr from "like-ar";
 import {getEstructura, getHojaDeRuta, setPersistirDatosByPass, DatosByPassPersistibles, calcularFeedbackHojaDeRuta} from "../unlogged/bypass-formulario"
-import {cargarEstructura, cargarHojaDeRuta} from "../unlogged/abrir-formulario"
+import {cargarEstructura, cargarHojaDeRuta, GLOVAR_DATOSBYPASS, GLOVAR_MODOBYPASS} from "../unlogged/abrir-formulario"
+
+export const OPERATIVO = 'etoi211';
+
+//TODO GENERALIZAR
+
 
 async function traerHdr(opts:{modoDemo:boolean}){
-    await dmTraerDatosFormulario({...opts, modoAlmacenamiento:'local'});
+    await dmTraerDatosFormulario({...opts, modoAlmacenamiento:'local', operativo:OPERATIVO});
     history.replaceState(null, '', `${location.origin+location.pathname}/../campo`);
     location.reload();   
 }
@@ -20,12 +25,23 @@ function htmlNumero(num:number){
 }
 
 async function sincronizarDatos(state:CasoState|null){
-    var datos = await my.ajax.dm_sincronizar({datos:state?.datos||null});
+    var datos = await my.ajax.dm_sincronizar({persistentes:state?.datos||null});
     var operativo = datos.operativo;
     var estructura = await traerEstructura({operativo})
     cargarEstructura(estructura);
     // @ts-ignore
-    cargarHojaDeRuta(datos.hojaDeRuta);
+    cargarHojaDeRuta({hojaDeRuta:datos, cargas:{} ,modoAlmacenamiento:'local',dirty:false});
+    var persistirEnMemoria = async (persistentes:DatosByPassPersistibles) => {
+        var {modoAlmacenamiento} = persistentes
+            if(modoAlmacenamiento=='local'){
+                my.setLocalVar(GLOVAR_DATOSBYPASS, persistentes)
+            }else{
+                my.setSessionVar(GLOVAR_DATOSBYPASS, persistentes)
+            }
+            my.setSessionVar(GLOVAR_MODOBYPASS, modoAlmacenamiento)
+    }
+    setPersistirDatosByPass(persistirEnMemoria)
+    persistirEnMemoria({hojaDeRuta: datos, modoAlmacenamiento:'local'});
     if(state==null){
         //@ts-ignore
         state={};
@@ -50,6 +66,7 @@ async function sincronizarDatos(state:CasoState|null){
         state.feedbackRowValidator={};
         my.setLocalVar(LOCAL_STORAGE_STATE_NAME, state);
     }
+    
     return datos;
 }
 

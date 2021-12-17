@@ -3,7 +3,10 @@ import {html}  from 'js-to-html';
 import * as AjaxBestPromise from "ajax-best-promise";
 import {LOCAL_STORAGE_STATE_NAME} from "../unlogged/tipos";
 //import {CACHE_NAME} from "service-worker";
-import { desplegarFormularioActual, desplegarFormularioConsultaResultados } from './render-formulario';
+import { desplegarFormularioActual } from './render-formulario';
+
+export const OPERATIVO = 'etoi211';
+
 
 function siExisteId(id: string, hacer: (arg0: HTMLElement) => void){
     var elemento = document.getElementById(id);
@@ -95,15 +98,13 @@ window.addEventListener('load', async function(){
             }catch(err){
                 console.log("error al buscar version.", err)
             }finally{
-                desplegarFormularioActual({modoDemo:false});
+                desplegarFormularioActual({operativo:OPERATIVO, modoDemo:false, modoAlmacenamiento:'local'});
             }
         }else{
             console.log('serviceWorkers no soportados')
             setMessage('Service workers no soportados por el navegador. La aplicación no funcionará sin conexión a internet. ','danger')
-            desplegarFormularioActual({modoDemo:false});    
+            desplegarFormularioActual({operativo:OPERATIVO, modoDemo:false, modoAlmacenamiento:'local'});
         }
-    }else if(location.pathname.endsWith('/consulta')){
-        desplegarFormularioConsultaResultados();
     }
 })
 

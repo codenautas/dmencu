@@ -26,6 +26,7 @@ const OPERATIVO = 'etoi211';
 const OPERATIVO_ETIQUETAS = 'etoi211';
 const formPrincipal = 'F:F1';
 const MAIN_TABLENAME ='viviendas';
+const TAREA_ENCUESTADOR = 'encu';
 
 /*definición de estructura completa, cuando exista ing-enc hay que ponerlo ahí*/ 
 type EstructuraTabla={tableName:string, pkFields:{fieldName:string}[], childTables:EstructuraTabla[]};
@@ -84,7 +85,7 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
         ) as tem, t.area,
         tt.visitas,
         --TODO: GENERALIZAR
-        jsonb_object_agg(coalesce(tarea,'rel'),jsonb_build_object(
+        jsonb_object_agg(coalesce(tarea,${sqlTools.quoteLiteral(TAREA_ENCUESTADOR)}),jsonb_build_object(
             'tarea', tarea,
             'notas', notas,
             'fecha_asignacion', fecha_asignacion,
@@ -493,7 +494,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     from tareas_tem
                     where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm is not null`
                 ,
-                [OPERATIVO, parameters.enc, "rel"]
+                [OPERATIVO, parameters.enc, TAREA_ENCUESTADOR]
             ).fetchOneRowIfExists()).rowCount;
             var {row} = await context.client.query(getHdrQuery(condviv),[OPERATIVO,parameters.enc]).fetchUniqueRow();
             return {
@@ -521,7 +522,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     from tareas_tem
                     where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm is not null`
                 ,
-                [operativo, parameters.forPkRaiz.vivienda, "rel"]
+                [operativo, parameters.forPkRaiz.vivienda, TAREA_ENCUESTADOR]
             ).fetchOneRowIfExists()).rowCount;
             console.log(getHdrQuery(condviv))
             console.log(operativo,parameters.forPkRaiz.vivienda)
@@ -565,14 +566,15 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         action:'dm_sincronizar',
         parameters:[
             // FALTA DECIDIR DE DÓNDE SE SACA OPERATIVO
-            {name:'datos'       , typeName:'jsonb'},
+            {name:'persistentes'       , typeName:'jsonb'},
         ],
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             var be=context.be;
+            var {persistentes} = parameters;
             ///////////// ojojojojojojo
-           // context.user.idper='11';
+            // context.user.idper='11';
             var num_sincro:number=0;
-            var token:string|null=parameters.datos?.token;
+            var token:string|null=persistentes?.token;
             if(!token){
                 token = (await be.procedure.token_get.coreFunction(context, {
                     useragent: context.session.req.useragent, 
@@ -583,7 +585,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 INSERT INTO sincronizaciones (token, usuario, datos)
                     VALUES ($1,$2,$3) 
                     RETURNING sincro
-                `, [token, context.username, parameters.datos]
+                `, [token, context.username, persistentes]
             ).fetchUniqueValue();
             num_sincro=value;
             var condviv= `
@@ -593,9 +595,10 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         and tt.habilitada
                         and (tt.cargado_dm is null or tt.cargado_dm = ${context.be.db.quoteLiteral(token)})
             `
-            if(parameters.datos){
-                await Promise.all(likeAr(parameters.datos.hdr).map(async (vivienda:any, idCaso:number)=>{
-                    var tareas = vivienda.tareas;
+            const UA_PRINCIPAL = await getUAPrincipal(context.client, OPERATIVO);
+            if(persistentes){
+                await Promise.all(likeAr(persistentes.hojaDeRuta.respuestas[UA_PRINCIPAL]).map(async (respuestasUAPrincipal, idEnc)=>{
+                    var tareas = respuestasUAPrincipal.tareas;
                     for(let tarea in tareas){
                         var puedoGuardarEnTEM=true;
                         var queryTareasTem = await context.client.query(
@@ -604,29 +607,31 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                                 where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm = ${context.be.db.quoteLiteral(token!)}
                                 returning 'ok'`
                             ,
-                            [OPERATIVO, idCaso, tarea, tareas[tarea].notas, JSON.stringify(vivienda.visitas || [])]
+                            [OPERATIVO, idEnc, tarea, tareas[tarea].notas, JSON.stringify(respuestasUAPrincipal.visitas || [])]
                         ).fetchOneRowIfExists();
                         if(queryTareasTem.rowCount==0){
                             var puedoGuardarEnTEM=false;
-                            await fs.appendFile('local-recibido-sin-token.txt', JSON.stringify({now:new Date(),user:context.username,idCaso,vivienda, tarea, tareas})+'\n\n', 'utf8');
+                            await fs.appendFile('local-recibido-sin-token.txt', JSON.stringify({now:new Date(),user:context.username,idCaso: idEnc,vivienda: respuestasUAPrincipal, tarea, tareas})+'\n\n', 'utf8');
                         }
                         //GENERALIZAR
-                        if(tarea == 'rel' && puedoGuardarEnTEM){
+                        if(tarea == TAREA_ENCUESTADOR && puedoGuardarEnTEM){
                             await context.client.query(
                                 `update tem
-                                    set json_encuesta = $3, resumen_estado=$4
+                                    set json_encuesta = $3 --, resumen_estado=$4
                                     where operativo= $1 and enc = $2
                                     returning 'ok'`
                                 ,
-                                [OPERATIVO, idCaso, vivienda.respuestas, vivienda.resumenEstado]
+                                [OPERATIVO, idEnc, respuestasUAPrincipal.respuestas/*, vivienda.resumenEstado*/]
                             ).fetchUniqueRow();
                         }
                         if(!puedoGuardarEnTEM){
-                            await fs.appendFile('local-recibido-sin-token.txt', JSON.stringify({now:new Date(),user:context.username,idCaso,vivienda})+'\n\n', 'utf8');
+                            await fs.appendFile('local-recibido-sin-token.txt', JSON.stringify({now:new Date(),user:context.username,idCaso: idEnc,vivienda: respuestasUAPrincipal})+'\n\n', 'utf8');
                         }
                     }
                 }).array());
             }
+            console.log("condviv: ", condviv);
+            console.log("query: ", getHdrQuery(condviv));
             var {row} = await context.client.query(getHdrQuery(condviv),[OPERATIVO,context.user.idper]).fetchUniqueRow();
             // console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxx',getHdrQuery(condviv));
             await context.client.query(
@@ -659,7 +664,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         from tareas_tem
                         where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm is not null`
                     ,
-                    [OPERATIVO, idCaso, "rel"]
+                    [OPERATIVO, idCaso, TAREA_ENCUESTADOR]
                 ).fetchOneRowIfExists();
                 if(result.rowCount){
                     throw new Error('La encuesta que intenta guardar ha sido cargada por un encuestador.')
