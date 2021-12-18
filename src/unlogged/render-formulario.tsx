@@ -107,14 +107,18 @@ window.addEventListener('load', ()=>{
 type CommonAttributes = {className?:string,style?:CSSProperties,id?:string, tabIndex?:number} // CSSProperties
 type ColorValues = 'primary'|'secondary'|'default'|'inherit'
 
-const Button = ({variant, onClick, disabled, children, className, color, size, ...other}:{
+const Button = ({variant, onClick, disabled, children, className, color, size, 
+        disableElevation, disableFocusRipple, disableRipple, fullWidth, 
+        ...other
+    }:{
     variant?:string,
     color?:ColorValues,
     onClick?:React.MouseEventHandler<HTMLButtonElement>, //  (event:MouseEvent/* <HTMLButtonElement, MouseEvent>*/)=>void,
     disabled?:boolean
     children:any,
     className?:string,
-    size?:'small'
+    size?:'small',
+    disableElevation?:any, disableFocusRipple?:any, disableRipple?:any,
 } & CommonAttributes)=><button 
     {...other}
     className={`btn btn${variant=='contained'?'':'-'+(variant=='outlined'?'outline':variant)}-${(color=='default' || color=='inherit'?'secondary':color=='secondary'?'danger':color)||'secondary'} ${className||''} ${size=='small'?'btn-sm':''}`}
@@ -1273,7 +1277,6 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
     const dispatch = useDispatch();
     const forPk = props.forPk;
     const {opciones} = useSelectorVivienda(forPk);
-    var dirty = getDirty();
     const [confirmaCerrar, setConfirmaCerrar] = useState<boolean|null>(false);
     const [mensajeDescarga, setMensajeDescarga] = useState<string|null>(null);
     const [descargaCompleta, setDescargaCompleta] = useState<boolean|null>(false);
@@ -1322,7 +1325,7 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
                         color="inherit"
                         variant="outlined"
                         onClick={async ()=>{
-                            if(props.soloLectura || !dirty){
+                            if(props.soloLectura || !getDirty()){
                                 cerrarDirecto();
                             }else{
                                 setConfirmaCerrar(true)
@@ -1368,8 +1371,10 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
                     </Dialog>
                     {!props.soloLectura?
                             <Button
+                                id={"save-button"}
                                 color="inherit"
                                 variant="outlined"
+                                disabled={true}
                                 onClick={async ()=>{
                                     setMensajeDescarga('descargando, por favor espere...');
                                     setDescargando(true);
@@ -1502,6 +1507,7 @@ function FormularioDespliegue(props:{forPk:ForPk}){
                 <Toolbar>
                     <BarraDeNavegacion forPk={forPk} soloLectura={soloLectura || false} modoDirecto={opciones.modoDirecto}/>
                 </Toolbar>
+                <div id="mini-console"></div>
             </AppBar>
             <main>
                 <Paper className="formulario" modo-despliegue={modoDespliegue} ver-num-opciones={opciones.conCampoOpciones?'SI':'NO'}>
