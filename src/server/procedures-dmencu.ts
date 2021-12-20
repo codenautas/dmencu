@@ -215,7 +215,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             likeAr(result.row.unidades_analisis).forEach((ua, idUa)=>
                 completarUA(ua, idUa as IdUnidadAnalisis, result.row.unidades_analisis)
             )
-            return {timestamp: be.timestampEstructura, ...result.row};
+            return {timestamp: be.timestampEstructura, ...result.row, operativo:parameters.operativo};
         }
     },
     {
@@ -354,9 +354,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 datos_json.personas=personas_con_pk;
             }
             var queries = sqlTools.structuredData.sqlWrite(datos_json, struct_dmencu);
-            //console.log("#############",queries);
-
-             return await queries.reduce(function(promise, query){
+            return await queries.reduce(function(promise, query){
                 return promise.then(function() {
                     return client.query(query).execute().then(function(result){
                         return 'ok';
@@ -524,8 +522,6 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 ,
                 [operativo, parameters.forPkRaiz.vivienda, TAREA_ENCUESTADOR]
             ).fetchOneRowIfExists()).rowCount;
-            console.log(getHdrQuery(condviv))
-            console.log(operativo,parameters.forPkRaiz.vivienda)
             var {row} = await context.client.query(getHdrQuery(condviv),[operativo,parameters.forPkRaiz.vivienda]).fetchUniqueRow();
             return {
                 hojaDeRuta:row,

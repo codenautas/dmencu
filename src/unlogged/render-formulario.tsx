@@ -1894,6 +1894,9 @@ if(typeof window !== 'undefined'){
 
 
 function loadInstance(){
+    if(typeof BroadcastChannel === 'undefined'){
+        return;
+    }
     var bc = new BroadcastChannel('contador');
     var myId=String.fromCodePoint(100+Math.floor(Math.random()*1000))+Math.floor(Math.random()*100)//+'-'+new Date().getTime();
     allOpenedTabs[myId]=1;

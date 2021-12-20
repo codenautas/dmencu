@@ -343,6 +343,7 @@ export type Estructura = {
     }
     tareas:TareasEstructura
     timestamp:number
+    operativo:IdOperativo
 }
 
 export type CasoState={

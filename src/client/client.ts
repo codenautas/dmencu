@@ -72,7 +72,7 @@ async function sincronizarDatos(state:CasoState|null){
 
 myOwn.wScreens.abrir_encuesta={
     parameters:[
-        {name:'operativo' , typeName:'text', defaultValue:'etoi211'},
+        {name:'operativo' , typeName:'text', defaultValue:'etoi211', references:'operativos'},
         {name:'formulario', typeName:'text', defaultValue:'F:RE'},
         {name:'encuesta'  , typeName:'integer', defaultValue:130031}
     ],
@@ -84,7 +84,7 @@ myOwn.wScreens.abrir_encuesta={
         var estructura = getEstructura();
         // TODO: EN UN DM ESTO SE TRAE DEL LOCALSTORAGE
         var carga = await my.ajax.dm_forpkraiz_cargar({operativo, forPkRaiz}) as {hojaDeRuta:HojaDeRuta, timestampEstructura:number};
-        if(!estructura || (estructura.timestamp??0) < carga.timestampEstructura || my.config.config.devel){
+        if(!estructura || (estructura.timestamp??0) < carga.timestampEstructura || estructura.operativo != operativo || my.config.config.devel){
             estructura = await traerEstructura({operativo})
             cargarEstructura(estructura);
         }

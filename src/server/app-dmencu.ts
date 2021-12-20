@@ -219,6 +219,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             menuedResources = menuedResources.concat(opts.extraFiles);
         }
         return [
+            // { type: 'js', src: 'consola-errores.js' },
             { type: 'js', module: 'react', modPath: 'umd', fileDevelopment:'react.development.js', file:'react.production.min.js' },
             { type: 'js', module: 'react-dom', modPath: 'umd', fileDevelopment:'react-dom.development.js', file:'react-dom.production.min.js' },
             { type: 'js', module: '@material-ui/core', modPath: 'umd', fileDevelopment:'material-ui.development.js', file:'material-ui.production.min.js' },

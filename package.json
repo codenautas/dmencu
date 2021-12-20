@@ -1,7 +1,7 @@
 {
   "name": "dmencu",
   "description": "DM Encu - Encuestas en dispositivo móvil",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "author": "Codenautas <codenautas@googlegroups.com>",
   "license": "MIT",
@@ -12,7 +12,7 @@
   ],
   "dependencies": {
     "@material-ui/core": "~4.12.3",
-    "backend-plus": "^1.14.2",
+    "backend-plus": "^1.14.3",
     "memoize-one": "^6.0.0",
     "meta-enc": "^1.4.2",
     "procesamiento": "^1.0.9",
@@ -27,7 +27,7 @@
   "dependencias provisorias: las que se pongan en dependencias ponerlas acá y sacarlas juntas": {},
   "devDependencies": {
     "@types/mocha": "^9.0.0",
-    "@types/node": "^17.0.0",
+    "@types/node": "^17.0.1",
     "@types/qrcode": "^1.4.2",
     "@types/react": "^17.0.37",
     "@types/react-dom": "^17.0.11",
