@@ -391,7 +391,7 @@ export function accion_registrar_respuesta(payload:{
         feedbackRow = datosByPass.feedbackRowValidator[toPlainForPk(forPk)];
         calcularVariablesBotonFormulario(forPk);
         volcadoInicialElementosRegistrados(forPk);
-        persistirDatosByPass(datosByPass);
+        persistirDatosByPass(datosByPass); // OJO ASYNC DESCONTROLADA
         siguienteVariable = feedbackRow.feedback[variable].siguiente;
     }
     return {recentModified, siguienteVariable, variableActual: feedbackRow.actual};
@@ -596,7 +596,7 @@ function variablesCalculadas(respuestasRaiz: RespuestasRaiz){
     }
 }
 
-export async function calcularFeedbackUnidadAnalisis(
+export function calcularFeedbackUnidadAnalisis(
     feedbackRowValidator:{ [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> },
     formularios:{ [nombreFormulario in IdFormulario]:InfoFormulario }, 
     respuestas:Respuestas, 
@@ -659,7 +659,7 @@ export function numberOrStringIncIfArray(numberOrString:number|string, object:ob
     return Number(numberOrString)+(object instanceof Array?1:0);
 }
 
-export async function calcularFeedbackHojaDeRuta(){
+export function calcularFeedbackHojaDeRuta(){
     likeAr(estructura.unidades_analisis).filter(uaDef=>!uaDef.padre).forEach(uaDef=>{
         likeAr(estructura.formularios).filter(f=>f.casilleros.unidad_analisis == uaDef.unidad_analisis).forEach((_defF, formulario)=>{
             var conjuntoRespuestasUA = datosByPass.hojaDeRuta.respuestas[uaDef.unidad_analisis]
@@ -672,7 +672,7 @@ export async function calcularFeedbackHojaDeRuta(){
     });
 }
 
-export async function calcularFeedbackEncuesta(
+export function calcularFeedbackEncuesta(
     feedbackRowValidator:{ [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> },
     formularios:{ [nombreFormulario in IdFormulario]:InfoFormulario }, 
     forPkRaiz: ForPkRaiz, 
