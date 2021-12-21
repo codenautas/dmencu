@@ -2,12 +2,13 @@ import { createStore } from "redux";
 import { CasilleroBase, CasillerosImplementados, CasoState, 
     DatosVivienda, EstadoCarga, EstructuraRowValidator, 
     FeedbackVariable, Formulario, ForPk, ForPkRaiz, 
-    IdCarga, IdCasillero, IdDestino, IdFin, IdFormulario, IdTarea, IdVariable, 
+    IdCarga, IdCasillero, IdDestino, IdFin, IdFormulario, IdTarea, IdVariable, IdOperativo, 
     IdUnidadAnalisis,
     InfoFormulario, 
     ModoDespliegue, 
     Opcion, PlainForPk, Respuestas, ResumenEstado,
     Tareas, TareasEstructura, TEM, Visita,
+    toPlainForPk,
     LOCAL_STORAGE_STATE_NAME
 } from "./tipos";
 import { deepFreeze, datetime } from "best-globals";
@@ -23,6 +24,15 @@ import { Opcion as RowValidatorOpcion } from "row-validator";
 
 var my=myOwn;
 
+function forPkToUrl(forPk:ForPk|null, pilaForPk:ForPk[]){
+    var addrParams=myOwn.UriSearchToObject(location.hash||location.search||'');
+    myOwn.replaceAddrParams({
+        ...addrParams, 
+        state_forPk:toPlainForPk(forPk), 
+        state_pilaForPk:pilaForPk.map(toPlainForPk).join('|')
+    });
+}
+
 var reducers={
     MODO_DESPLIEGUE: (payload: {modoDespliegue:ModoDespliegue}) => 
         function(state: CasoState){
@@ -36,25 +46,31 @@ var reducers={
         },
     CAMBIAR_FORMULARIO: (payload: {forPk:ForPk, apilarVuelta:boolean}) => 
         function(state: CasoState){
+            var forPk = payload.forPk;
+            var pilaForPk = payload.apilarVuelta?(
+                state.opciones.forPk==null?[]:[...state.opciones.pilaForPk, state.opciones.forPk]
+            ):state.opciones.pilaForPk;
+            forPkToUrl(forPk, pilaForPk);
             return {
                 ...state,
                 opciones:{
                     ...state.opciones,
-                    forPk: payload.forPk,
-                    ...(payload.apilarVuelta?{
-                        pilaForPk: state.opciones.forPk==null?[]:[...state.opciones.pilaForPk, state.opciones.forPk]
-                    }:{})
+                    forPk,
+                    pilaForPk
                 }
             }
         },
     VOLVER_DE_FORMULARIO: ({magnitudRetroceso}: {magnitudRetroceso:number}) => 
         function(state: CasoState){
+            var forPk = state.opciones.pilaForPk[state.opciones.pilaForPk.length-magnitudRetroceso]||null;
+            var pilaForPk = state.opciones.pilaForPk.slice(0,state.opciones.pilaForPk.length-magnitudRetroceso);
+            forPkToUrl(forPk, pilaForPk);
             return {
                 ...state,
                 opciones:{
                     ...state.opciones,
-                    forPk: state.opciones.pilaForPk[state.opciones.pilaForPk.length-magnitudRetroceso]||null,
-                    pilaForPk: state.opciones.pilaForPk.slice(0,state.opciones.pilaForPk.length-magnitudRetroceso)
+                    forPk,
+                    pilaForPk
                 }
             }
         },
@@ -76,12 +92,15 @@ var reducers={
         },
     VOLVER_HDR: (_payload: {}) => 
         function(state: CasoState){
+            var forPk = null;
+            var pilaForPk:ForPk[] = [];
+            forPkToUrl(forPk, pilaForPk);
             return {
                 ...state,
                 opciones:{
                     ...state.opciones,
-                    forPk: null,
-                    pilaForPk: []
+                    forPk,
+                    pilaForPk
                 }
             }
         },
@@ -395,6 +414,13 @@ export async function dmTraerDatosFormulario(opts:{operativo:IdOperativo, modoDe
             initialState.opciones.forPk=opts.forPkRaiz;
             initialState.opciones.modoDirecto=!!opts.forPkRaiz;
             initialState.opciones.pilaForPk=[];
+        }
+        var addrParams=myOwn.UriSearchToObject(location.hash||location.search||'');
+        if(addrParams.state_forPk){
+            initialState.opciones.forPk=JSON.parse(addrParams.state_forPk);
+        }
+        if(addrParams.state_pilaForPk){
+            initialState.opciones.pilaForPk=addrParams.state_pilaForPk.split('|').map(j=>JSON.parse(j));
         }
         return initialState;
     }
