@@ -405,12 +405,12 @@ interface IcasilleroConOpciones{
 }
 
 
-function SiNoDespliegue(props:{casilleroConOpciones:IcasilleroConOpciones, forPk:ForPk}){
+function SiNoDespliegue(props:{casilleroConOpciones:IcasilleroConOpciones, forPk:ForPk, despliegueContenido:'vertical'|'horizontal'}){
     return <OpcionesDespliegue 
         casilleroConOpciones={props.casilleroConOpciones} 
         forPk={props.forPk} 
         leer={false}
-        despliegueContenido={props.casilleroConOpciones.despliegueContenido??'horizontal'}
+        despliegueContenido={props.despliegueContenido}
     />
 }
 
@@ -476,6 +476,7 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
         <SiNoDespliegue 
             casilleroConOpciones={opcionM} 
             forPk={props.forPk}
+            despliegueContenido={props.opcionM.despliegueContenido??'horizontal'}
         />
     </DesplegarCasillero>
 }
@@ -751,6 +752,7 @@ function PreguntaDespliegue(props:{
                 <SiNoDespliegue 
                     casilleroConOpciones={pregunta} 
                     forPk={props.forPk} 
+                    despliegueContenido={props.pregunta.despliegueContenido??'vertical'}
                 />
             </Grid>:
             pregunta.tipovar=="opciones" ?
