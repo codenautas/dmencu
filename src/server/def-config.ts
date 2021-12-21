@@ -81,11 +81,10 @@ login:
     lockedFail: el usuario se encuentra bloqueado
     inactiveFail: es usuario está marcado como inactivo
 client-setup:
-  title: etoi211
+  title: SIEH 2.0
   cursors: true
   lang: es
   menu: true
-  operativo: etoi211
   background-img: ../img/background-test.png
   deviceWidthForMobile: device-width
   user-scalable: no

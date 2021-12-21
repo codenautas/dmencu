@@ -41,6 +41,7 @@ export type TipoVariables = 'texto'|'numero'|'fecha'|'horas'
 export type Despliegue = 'horizontal'|'oculta'
 
 export type CasilleroBase = {
+    id_casillero?:string
     tipoc:Tipoc
     casillero:IdCasillero
     nombre:string

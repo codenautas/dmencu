@@ -456,7 +456,7 @@ function registradorDeVariable(pregunta:Pregunta|OpcionMultiple){
 
 function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
     const {opcionM} = props;
-    var id = `opcionM-${opcionM.casillero}`;
+    var id = `opcionM-${opcionM.id_casillero}`;
     registrarElemento({
         id, 
         direct:true, 
@@ -659,7 +659,7 @@ function OpcionesDespliegue(
 ){
     const desplegarOtros = (opcion:Opcion, soloParaDespliegue:'vertical'|'horizontal'|null) => opcion.casilleros.map((subPregunta:Pregunta)=>(
         soloParaDespliegue == null || soloParaDespliegue == subPregunta.despliegueContenido ?
-        <div className="otros-especificar" key={subPregunta.casillero}>
+        <div className="otros-especificar" key={subPregunta.id_casillero}>
             <PreguntaDespliegue 
                 pregunta={subPregunta} 
                 forPk={forPk} 
@@ -670,7 +670,7 @@ function OpcionesDespliegue(
     return <div className="contenido">
             <div className="opciones" despliegue-contenido={despliegueContenido??'vertical'}>
             {casilleroConOpciones.casilleros.map((opcion:Opcion, i:number)=>
-                <Grid key={opcion.casillero} item
+                <Grid key={opcion.id_casillero} item
                     ocultar-salteada={opcion.despliegueOculta?(opcion.expresion_habilitar_js?'INHABILITAR':'SI'):'NO'}
                 >
                     <OpcionDespliegue 
@@ -712,7 +712,7 @@ function DesplegarCasillero(props:{
     children:React.ReactNode|Element[],
 }){
     return <div 
-        key={`${props.casillero.tipoc}-${props.id||props.casillero.casillero}`}
+        key={`${props.casillero.tipoc}-${props.id||props.casillero.id_casillero}`}
         className={`casillero ${nombreCasillero[props.casillero.tipoc]}`}
         id={props.id}
         style={props.style}
@@ -728,7 +728,7 @@ function PreguntaDespliegue(props:{
     var {pregunta} = props;
     var dispatch=useDispatch();
     var estado:EstadoVariable;
-    var id = `pregunta-${pregunta.casillero}`
+    var id = `pregunta-${pregunta.id_casillero}`
     registrarElemento({
         id, 
         direct:true, 
@@ -765,13 +765,13 @@ function PreguntaDespliegue(props:{
                     opcionMultiple.tipoc=='OM'?                
 
                         <OpcionMultipleDespliegue
-                            key={opcionMultiple.casillero} 
+                            key={opcionMultiple.id_casillero} 
                             opcionM={opcionMultiple} 
                             forPk={props.forPk} 
                         />
                     : //las consistencias pueden ser hermanas de OM
                         <ConsistenciaDespliegue
-                            key={opcionMultiple.casillero}
+                            key={opcionMultiple.id_casillero}
                             casillero={opcionMultiple}
                             forPk={props.forPk}
                         />    
@@ -839,9 +839,9 @@ function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
     var dispatch = useDispatch();
     var habilitador = casillero.expresion_habilitar_js?getFuncionHabilitar(casillero.expresion_habilitar_js):()=>true;
     var {modoDespliegue} = useSelectorVivienda(forPk);
-    var id = `texto-${casillero.casillero}`;
+    var id = `texto-${casillero.id_casillero}`;
     registrarElemento({id, style:'display', fun:(r:Respuestas)=>habilitador(r) || modoDespliegue=='metadatos'?'block':'none'})
-    var esResumenFormulario = casillero.casillero=='ResFor' as IdCasillero;
+    var esResumenFormulario = casillero.casillero=='ResFor' as IdCasillero; // TODO: Cambia esto que está jarcodeado.
     if(esResumenFormulario){
         registrarElemento({id, direct:true, 
             fun:(
@@ -896,7 +896,7 @@ function ConsistenciaDespliegue(props:{casillero:Consistencia, forPk:ForPk}){
     var {casillero, forPk} = props;
     var habilitador = casillero.expresion_habilitar_js?getFuncionHabilitar(casillero.expresion_habilitar_js):()=>true;
     var {modoDespliegue} = useSelectorVivienda(forPk);
-    var id = `consistencia-${casillero.casillero}`;
+    var id = `consistencia-${casillero.id_casillero}`;
     registrarElemento({id, style:'display', fun:(r:Respuestas)=>habilitador(r) || modoDespliegue=='metadatos'?'block':'none'})
     return <DesplegarCasillero 
         id={id}
@@ -1112,7 +1112,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
 
 function CasilleroDesconocido(props:{casillero:CasilleroBase, forPk:ForPk}){
     return <DesplegarCasillero 
-        id={`casillerodesconocido-${props.casillero.casillero}`}
+        id={`casillerodesconocido-${props.casillero.id_casillero}`}
         casillero={props.casillero as Bloque}
         style={{display:'none'}}
     >
@@ -1172,7 +1172,7 @@ function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Blo
     return <div className="contenido">
         {verTodo?null:<div style={{height:"500px", textAlign:'center', verticalAlign:'middle', width:'100%', position:"fixed", backgroundColor: 'rgba(100,100,100,0.3)', fontSize:'200%'}} >cargando...</div>}
         {props.bloqueOFormulario.casilleros.map((casillero, i)=>{
-            var key = casillero.tipoc+'-'+casillero.casillero+'-'+i;
+            var key = casillero.tipoc+'-'+casillero.id_casillero+'-'+i;
             return (verTodo || i < limiteNoVerTodo?
                 (
                     casillero.tipoc == "P"?<PreguntaDespliegue key={key} pregunta={casillero} forPk={props.forPk} despliegueEncabezado={casillero.despliegueEncabezado??(props.bloqueOFormulario.tipoc=='CP'?'lateral':'superior')}/>:
@@ -1209,13 +1209,13 @@ function BloqueDespliegue(props:{bloque:Bloque, formulario:Formulario, forPk:For
         //     {forPk:{...forPk, persona:i+1}, key:i+1, multiple:true}
         // ))
     }
-    var id = `bloque-${bloque.casillero}`;
+    var id = `bloque-${bloque.id_casillero}`;
     registrarElemento({
         id,
         style:'display',
         fun: (respuestas:Respuestas)=> habilitador(respuestas) || modoDespliegue=='metadatos'?'unset':'none'
     })
-    return <DesplegarCasillero casillero={bloque} nuestro-bloque={bloque.casillero} es-multiple={multiple?'SI':'NO'} id={id}>
+    return <DesplegarCasillero casillero={bloque} nuestro-bloque={bloque.id_casillero} es-multiple={multiple?'SI':'NO'} id={id}>
         <EncabezadoDespliegue casillero={bloque} forPk={forPk}/>
         {lista.map(({key, forPk, multiple})=>
             <DesplegarContenidoInternoBloqueOFormulario key={key} bloqueOFormulario={bloque} formulario={props.formulario} forPk={forPk} multiple={multiple}/>
