@@ -593,7 +593,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             `
             const UA_PRINCIPAL = await getUAPrincipal(context.client, OPERATIVO);
             if(persistentes){
-                await Promise.all(likeAr(persistentes.hojaDeRuta.respuestas[UA_PRINCIPAL]).map(async (respuestasUAPrincipal, idEnc)=>{
+                await Promise.all(likeAr(persistentes.respuestas[UA_PRINCIPAL]).map(async (respuestasUAPrincipal, idEnc)=>{
                     var tareas = respuestasUAPrincipal.tareas;
                     for(let tarea in tareas){
                         var puedoGuardarEnTEM=true;
