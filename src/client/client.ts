@@ -6,8 +6,8 @@ import { CasoState, EtiquetaOpts, IdUnidadAnalisis, IdVariable, LOCAL_STORAGE_ST
 import { crearEtiqueta } from "../unlogged/generador-qr";
 import * as TypedControls from "typed-controls";
 import * as likeAr from "like-ar";
-import {getEstructura, getHojaDeRuta, setPersistirDatosByPass, DatosByPassPersistibles, calcularFeedbackHojaDeRuta} from "../unlogged/bypass-formulario"
-import {cargarEstructura, cargarHojaDeRuta, GLOVAR_DATOSBYPASS, GLOVAR_MODOBYPASS} from "../unlogged/abrir-formulario"
+import {getEstructura, getHojaDeRuta, setPersistirDatosByPass, DatosByPassPersistibles, calcularFeedbackHojaDeRuta, setDatosByPass, setEstructura} from "../unlogged/bypass-formulario"
+import {cargarEstructura, cargarHojaDeRuta, GLOVAR_DATOSBYPASS, GLOVAR_ESTRUCTURA, GLOVAR_MODOBYPASS} from "../unlogged/abrir-formulario"
 
 export const OPERATIVO = 'etoi211';
 
@@ -24,6 +24,16 @@ function htmlNumero(num:number){
     return html.span({class:'numero'},''+(num??''))
 }
 
+var persistirEnMemoria = async (persistentes:DatosByPassPersistibles) => {
+    var {modoAlmacenamiento} = persistentes
+        if(modoAlmacenamiento=='local'){
+            my.setLocalVar(GLOVAR_DATOSBYPASS, persistentes)
+        }else{
+            my.setSessionVar(GLOVAR_DATOSBYPASS, persistentes)
+        }
+        my.setSessionVar(GLOVAR_MODOBYPASS, modoAlmacenamiento)
+}
+
 async function sincronizarDatos(state:CasoState|null){
     var datos = await my.ajax.dm_sincronizar({persistentes:state?.datos||null});
     var operativo = datos.operativo;
@@ -31,15 +41,6 @@ async function sincronizarDatos(state:CasoState|null){
     cargarEstructura(estructura);
     // @ts-ignore
     cargarHojaDeRuta({hojaDeRuta:datos, cargas:{} ,modoAlmacenamiento:'local',dirty:false});
-    var persistirEnMemoria = async (persistentes:DatosByPassPersistibles) => {
-        var {modoAlmacenamiento} = persistentes
-            if(modoAlmacenamiento=='local'){
-                my.setLocalVar(GLOVAR_DATOSBYPASS, persistentes)
-            }else{
-                my.setSessionVar(GLOVAR_DATOSBYPASS, persistentes)
-            }
-            my.setSessionVar(GLOVAR_MODOBYPASS, modoAlmacenamiento)
-    }
     setPersistirDatosByPass(persistirEnMemoria)
     persistirEnMemoria({hojaDeRuta: datos, modoAlmacenamiento:'local'});
     if(state==null){
@@ -110,7 +111,14 @@ myOwn.wScreens.sincronizar_dm=async function(){
 
     if(myOwn.existsLocalVar(LOCAL_STORAGE_STATE_NAME)){
         var state: CasoState = my.getLocalVar(LOCAL_STORAGE_STATE_NAME);
-        var hojaDeRuta = getHojaDeRuta();
+        var hojaDeRuta;
+        try {
+            hojaDeRuta = getHojaDeRuta();
+        } catch (error) {
+            setEstructura(my.getLocalVar(GLOVAR_ESTRUCTURA));
+            setDatosByPass(my.getLocalVar(GLOVAR_DATOSBYPASS));
+            hojaDeRuta = getHojaDeRuta();
+        }
         mainLayout.appendChild(html.div({class:'aviso'},[
             html.h4('información a transmitir'),
             html.p([htmlNumero(likeAr(state.datos.cargas).array().length),' areas: ',likeAr(state.datos.cargas).keys().join(', ')]),

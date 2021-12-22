@@ -17,7 +17,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Fast Launch",
+            "name": "back office Fast Launch",
             "env": {"BACKEND_PLUS_LOCAL_CONFIG":"local-config.yaml"},
             "program": "${workspaceFolder}/dist/server/server/server-dmencu.js",
             "outFiles": [
