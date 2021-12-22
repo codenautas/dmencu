@@ -18,6 +18,17 @@
             "type": "node",
             "request": "launch",
             "name": "Fast Launch",
+            "env": {"BACKEND_PLUS_LOCAL_CONFIG":"local-config.yaml"},
+            "program": "${workspaceFolder}/dist/server/server/server-dmencu.js",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "DM Fast Launch",
+            "env": {"BACKEND_PLUS_LOCAL_CONFIG":"local-config-dm.yaml"},
             "program": "${workspaceFolder}/dist/server/server/server-dmencu.js",
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
