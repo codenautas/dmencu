@@ -414,7 +414,7 @@ function SiNoDespliegue(props:{casilleroConOpciones:IcasilleroConOpciones, forPk
     />
 }
 
-function registradorDeVariable(pregunta:Pregunta|OpcionMultiple){
+function registradorDeVariable(pregunta:Pregunta|OpcionMultiple|ConjuntoPreguntas){
     return (
         respuestas:Respuestas, feedbackForm: FormStructureState<IdVariable,IdFin>, elemento:HTMLDivElement
     )=>{
@@ -1137,9 +1137,15 @@ function useSelectorVivienda(forPk:ForPk){
 
 function ConjuntoPreguntasDespliegue(props:{casillero:ConjuntoPreguntas, formulario:Formulario, forPk:ForPk}){
     let {casillero, forPk} = props;
+    var id = `conjunto-preguntas-${casillero.id_casillero}`;
+    registrarElemento({
+        id, 
+        direct:true, 
+        fun: registradorDeVariable(casillero)
+    })
     let modoDespliegue = "normal";
     let habilitado = true;
-    return habilitado || modoDespliegue=='metadatos'?<DesplegarCasillero casillero={casillero}>
+    return habilitado || modoDespliegue=='metadatos'?<DesplegarCasillero id={id} casillero={casillero}>
         <EncabezadoDespliegue casillero={casillero} forPk={forPk}/>
         <DesplegarContenidoInternoBloqueOFormulario bloqueOFormulario={casillero} formulario={props.formulario} forPk={forPk} multiple={false}/>
     </DesplegarCasillero>:null;
