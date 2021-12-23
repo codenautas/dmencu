@@ -1146,7 +1146,7 @@ function ConjuntoPreguntasDespliegue(props:{casillero:ConjuntoPreguntas, formula
     let modoDespliegue = "normal";
     let habilitado = true;
     return habilitado || modoDespliegue=='metadatos'?<DesplegarCasillero id={id} casillero={casillero}>
-        <EncabezadoDespliegue casillero={casillero} forPk={forPk}/>
+        <EncabezadoDespliegue casillero={casillero} forPk={forPk} leer={casillero.leer!==false}/>
         <DesplegarContenidoInternoBloqueOFormulario bloqueOFormulario={casillero} formulario={props.formulario} forPk={forPk} multiple={false}/>
     </DesplegarCasillero>:null;
 }
