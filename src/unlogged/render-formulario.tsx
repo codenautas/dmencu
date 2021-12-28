@@ -711,6 +711,7 @@ function DesplegarCasillero(props:{
     style?:React.CSSProperties,
     despliegueEncabezado?:'lateral'|'superior'
     children:React.ReactNode|Element[],
+    "ocultar-salteada"?:boolean
 }){
     return <div 
         key={`${props.casillero.tipoc}-${props.id||props.casillero.id_casillero}`}
@@ -718,6 +719,7 @@ function DesplegarCasillero(props:{
         id={props.id}
         style={props.style}
         despliegue-encabezado={props.casillero.despliegueEncabezado??props.despliegueEncabezado??'superior'}
+        ocultar-salteada={props["ocultar-salteada"]}
     >{props.children}</div>
 }
 
