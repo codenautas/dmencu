@@ -26,7 +26,7 @@ import {Bloque, BotonFormulario,
     Texto, Estructura
 } from "./tipos";
 import{ 
-    setCalcularVariables
+    setCalcularVariables, setDatosByPass, setEstructura
 } from "./bypass-formulario"
 import { dmTraerDatosFormulario, dispatchers, 
     gotoSincronizar,
@@ -77,6 +77,11 @@ import {
 } from "./bypass-formulario"
 
 import {arrange, html, HtmlTag} from "js-to-html";
+
+//REVISAR IMPORTS DUPLICADOS
+const GLOVAR_DATOSBYPASS='datosbypass';
+const GLOVAR_MODOBYPASS='modobypass';
+const GLOVAR_ESTRUCTURA='estructura';
 
 function breakeableText(text:string|null):string|undefined;
 function breakeableText(text:string|null, diccionario?:{[clave:string]:React.ReactNode}){
@@ -1748,7 +1753,14 @@ export function DesplegarNotasYVisitas(props:{tareas:Tareas, forPkRaiz:ForPkRaiz
 
 export function HojaDeRutaDespliegue(){
     var {cargas, modo, num_sincro} = useSelector((state:CasoState)=>({cargas: state.datos.cargas, modo:state.modo, num_sincro:state.datos.num_sincro}));
-    var hojaDeRuta = getHojaDeRuta();
+    var hojaDeRuta: HojaDeRuta;
+    try {
+        hojaDeRuta = getHojaDeRuta();
+    } catch (error) {
+        setEstructura(my.getLocalVar(GLOVAR_ESTRUCTURA));
+        setDatosByPass(my.getLocalVar(GLOVAR_DATOSBYPASS));
+        hojaDeRuta = getHojaDeRuta();
+    }
     var feedbackRowValidator = getFeedbackRowValidator()
     var dispatch = useDispatch();
     const updateOnlineStatus = function(){

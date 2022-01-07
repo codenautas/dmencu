@@ -218,7 +218,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
         if(opts && opts.extraFiles){
             menuedResources = menuedResources.concat(opts.extraFiles);
         }
-        return [
+        var resources = [
             // { type: 'js', src: 'consola-errores.js' },
             { type: 'js', module: 'react', modPath: 'umd', fileDevelopment:'react.development.js', file:'react.production.min.js' },
             { type: 'js', module: 'react-dom', modPath: 'umd', fileDevelopment:'react-dom.development.js', file:'react-dom.production.min.js' },
@@ -254,6 +254,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             { type: 'css', file: 'etiquetas-qr.css' },
             ... menuedResources
         ]
+        return resources
         // .map(m=>({...m, file:m.fileDevelopment||m.file}));
     }
     async refreshCaches(){
