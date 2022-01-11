@@ -13,13 +13,6 @@ export const OPERATIVO = 'etoi211';
 
 //TODO GENERALIZAR
 
-
-async function traerHdr(opts:{modoDemo:boolean}){
-    await dmTraerDatosFormulario({...opts, modoAlmacenamiento:'local', operativo:OPERATIVO});
-    history.replaceState(null, '', `${location.origin+location.pathname}/../campo`);
-    location.reload();   
-}
-
 function htmlNumero(num:number){
     return html.span({class:'numero'},''+(num??''))
 }
@@ -34,15 +27,13 @@ var persistirEnMemoria = async (persistentes:DatosByPassPersistibles) => {
         my.setSessionVar(GLOVAR_MODOBYPASS, modoAlmacenamiento)
 }
 
-async function sincronizarDatos(state:CasoState|null){
-    var datos = await my.ajax.dm_sincronizar({persistentes:state?.datos||null});
+async function sincronizarDatos(state:CasoState|null, persistentes:DatosByPassPersistibles|null){
+    var datos = await my.ajax.dm_sincronizar({datos:state, persistentes});
     var operativo = datos.operativo;
+    persistirEnMemoria({hojaDeRuta: {respuestas: datos.respuestas}, modoAlmacenamiento:'local'});
     var estructura = await traerEstructura({operativo})
-    cargarEstructura(estructura);
+    my.setLocalVar(GLOVAR_ESTRUCTURA, estructura);
     // @ts-ignore
-    cargarHojaDeRuta({hojaDeRuta:datos, cargas:{} ,modoAlmacenamiento:'local',dirty:false});
-    setPersistirDatosByPass(persistirEnMemoria)
-    persistirEnMemoria({hojaDeRuta: datos, modoAlmacenamiento:'local'});
     if(state==null){
         //@ts-ignore
         state={};
@@ -65,9 +56,10 @@ async function sincronizarDatos(state:CasoState|null){
         }
         //@ts-ignore
         state.feedbackRowValidator={};
-        my.setLocalVar(LOCAL_STORAGE_STATE_NAME, state);
     }
     
+    delete(state.datos.respuestas);
+    my.setLocalVar(LOCAL_STORAGE_STATE_NAME, state);
     return datos;
 }
 
@@ -103,70 +95,50 @@ myOwn.wScreens.abrir_encuesta={
     }
 }
 
-myOwn.wScreens.sincronizar_dm=async function(){
-    var mainLayout = document.getElementById('main_layout')!;
-    // TODO: Generalizar
-    var dv1='dv1' as IdVariable;
-    var c5ok='c5ok' as IdVariable;
-
-    if(myOwn.existsLocalVar(LOCAL_STORAGE_STATE_NAME)){
-        var state: CasoState = my.getLocalVar(LOCAL_STORAGE_STATE_NAME);
-        var hojaDeRuta;
-        try {
-            hojaDeRuta = getHojaDeRuta();
-        } catch (error) {
-            setEstructura(my.getLocalVar(GLOVAR_ESTRUCTURA));
-            setDatosByPass(my.getLocalVar(GLOVAR_DATOSBYPASS));
-            hojaDeRuta = getHojaDeRuta();
-        }
-        mainLayout.appendChild(html.div({class:'aviso'},[
-            html.h4('información a transmitir'),
+var mostrarInfoLocal = (divAvisoSincro:HTMLDivElement, titulo:string, nroSincro:number|null, mostrarLinkHdr: boolean)=>{
+    if(my.existsLocalVar(LOCAL_STORAGE_STATE_NAME)){
+        let state = my.getLocalVar(LOCAL_STORAGE_STATE_NAME);
+        let datosByPass = my.getLocalVar(GLOVAR_DATOSBYPASS);
+        divAvisoSincro.append(html.div({id:'aviso-sincro'}, [
+            nroSincro?html.p(["Número de sincronización: ", html.b(""+nroSincro.toString())]):null,
+            html.h4(titulo),
             html.p([htmlNumero(likeAr(state.datos.cargas).array().length),' areas: ',likeAr(state.datos.cargas).keys().join(', ')]),
-            ...(likeAr(hojaDeRuta.respuestas).map((lista, nombreLista)=>
-                html.p([htmlNumero(lista.length), ' '+nombreLista])
-            ).array())
+            html.p([htmlNumero(likeAr(datosByPass.hojaDeRuta.respuestas.viviendas).array().length),' viviendas']),
+            mostrarLinkHdr?html.a({href:'./campo'},[html.b('IR A LA HOJA DE RUTA')]):null
         ]).create());
-        var downloadButton = html.button({class:'download-dm-button-cont'},'proceder ⇒').create();
-        mainLayout.appendChild(downloadButton);
-        var divAvisoSincro:HTMLDivElement=html.div().create();
-        mainLayout.appendChild(divAvisoSincro);
-        downloadButton.onclick = async function(){
-            downloadButton.disabled=true;
-            downloadButton.className='download-dm-button';
-            divAvisoSincro.innerHTML='';
-            try{
-                var datos = await sincronizarDatos(state);
-                divAvisoSincro.append(html.div({id:'aviso-sincro'}, [
-                    html.p(["Número de sincronización: ", html.b(""+datos.num_sincro)]),
-                    html.h4('datos recibidos'),
-                    html.p([htmlNumero(likeAr(datos.cargas).array().length),' areas: ',likeAr(state.datos.cargas).keys().join(', ')]),
-                    html.p([htmlNumero(likeAr(datos.hdr).array().length),' viviendas']),
-                    html.p([htmlNumero(likeAr(datos.hdr).filter(dv=>dv.respuestas?.[dv1]==1 && dv.respuestas?.[c5ok]==1).array().length),' viviendas con muestras']),
-                    html.a({href:'./campo'},[html.b('IR A LA HOJA DE RUTA')])
-                ]).create());
-                //traer nueva
-                // await traerHdr({modoDemo:false});
-            }catch(err){
-                alertPromise(err.message)
-                throw err
-            }finally{
-                downloadButton.disabled=false;
-            }
-        }
     }else{
-        mainLayout.appendChild(html.div({class:'aviso'},[
+        divAvisoSincro.appendChild(html.div({class:'aviso'},[
             html.h4('Sistema vacío'),
             html.p('No hay información de formularios'),
             html.p('No hay información de viviendas')
         ]).create());
-        var loadButton = html.button({class:'load-dm-button'},'proceder').create();
-        mainLayout.appendChild(loadButton);
-        loadButton.onclick = async function(){
-            //traer nueva
-            await sincronizarDatos(null);
-            await traerHdr({modoDemo:false});
-        }
     }
+}
+var procederSincroFun = async (button:HTMLButtonElement, divAvisoSincro:HTMLDivElement)=>{
+    button.disabled=true;
+    button.className='download-dm-button';
+    divAvisoSincro.innerHTML='';
+    try{
+        var state = my.getLocalVar(LOCAL_STORAGE_STATE_NAME);
+        var datosByPass:DatosByPassPersistibles = my.getLocalVar(GLOVAR_DATOSBYPASS);
+        var datos = await sincronizarDatos(state?.datos || null, datosByPass);
+        mostrarInfoLocal(divAvisoSincro, 'datos recibidos', datos.num_sincro, true)
+    }catch(err){
+        alertPromise(err.message)
+        throw err
+    }finally{
+        button.disabled=false;
+        button.className='download-dm-button-cont';
+    }
+}
+myOwn.wScreens.sincronizar_dm=async function(){
+    var mainLayout = document.getElementById('main_layout')!;
+    var procederButton = html.button({class:'download-dm-button-cont'},'proceder ⇒').create();
+    var divAvisoSincro:HTMLDivElement=html.div().create();
+    mostrarInfoLocal(mainLayout as HTMLDivElement, 'información a transmitir', null, false)
+    mainLayout.appendChild(procederButton);
+    mainLayout.appendChild(divAvisoSincro);
+    procederButton.onclick = ()=>procederSincroFun(procederButton, divAvisoSincro)
 };
 
 function mostrarDatosPersona(hayDatos:boolean, datos:any, divResult:HTMLDivElement){

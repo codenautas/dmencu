@@ -562,15 +562,16 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         action:'dm_sincronizar',
         parameters:[
             // FALTA DECIDIR DE DÓNDE SE SACA OPERATIVO
+            {name:'datos'       , typeName:'jsonb'},
             {name:'persistentes'       , typeName:'jsonb'},
         ],
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             var be=context.be;
-            var {persistentes} = parameters;
+            var {persistentes, datos} = parameters;
             ///////////// ojojojojojojo
             // context.user.idper='11';
             var num_sincro:number=0;
-            var token:string|null=persistentes?.token;
+            var token:string|null=datos?.token;
             if(!token){
                 token = (await be.procedure.token_get.coreFunction(context, {
                     useragent: context.session.req.useragent, 
@@ -593,7 +594,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             `
             const UA_PRINCIPAL = await getUAPrincipal(context.client, OPERATIVO);
             if(persistentes){
-                await Promise.all(likeAr(persistentes.respuestas[UA_PRINCIPAL]).map(async (respuestasUAPrincipal, idEnc)=>{
+                await Promise.all(likeAr(persistentes.hojaDeRuta.respuestas[UA_PRINCIPAL]).map(async (respuestasUAPrincipal, idEnc)=>{
                     var tareas = respuestasUAPrincipal.tareas;
                     for(let tarea in tareas){
                         var puedoGuardarEnTEM=true;

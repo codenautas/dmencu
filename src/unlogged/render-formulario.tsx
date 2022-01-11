@@ -1592,10 +1592,6 @@ export function DesplegarCarga(props:{
 }){
     const {carga, idCarga, hojaDeRuta, feedbackRowValidator} = props;
     const dispatch = useDispatch();
-    const [desplegarEtiquetasRepetidas, setDesplegarEtiquetasRepetidas] = useState<boolean>(false);
-    const etiquetaRepetida = (etiquetas:(string|null)[], etiqueta:string)=>{
-        return etiquetas.filter((e)=>e==etiqueta).length > 1
-    }
     return <Paper className="carga">
         <div className="informacion-carga">
             <div className="carga">Área: {idCarga}</div>
@@ -1626,36 +1622,24 @@ export function DesplegarCarga(props:{
                 </TableRow>
             </TableHead>
             <TableBody>
-                {beingArray(hojaDeRuta.respuestas.viviendas).filter((respuestas:RespuestasRaiz, _numVivienda:number)=>!!respuestas).map((respuestas:RespuestasRaiz, numVivienda:number)=>
+                {beingArray(hojaDeRuta.respuestas.viviendas).filter((respuestas:RespuestasRaiz, _numVivienda:number)=>respuestas.tem.carga==idCarga).map((respuestas:RespuestasRaiz, numVivienda:number)=>
                     <TableRow key={numVivienda}>
                         <TableCell>
                             {numVivienda}
                         </TableCell>
                         <TableCell>
-                            <DesplegarTem tem={respuestas.TEM}/>
-                            {respuestas['resumenEstado' as IdVariable]=="cita pactada"?
-                                <DesplegarCitaPactada respuestas={respuestas}/>
-                            :
-                                <DesplegarCitaPactadaYSeleccionadoAnteriorTem tem={respuestas.TEM}/>
-                            }
-                            {`<DesplegarNotasYVisitas tareas={datosVivienda.tareas} visitas={datosVivienda.visitas} idCaso={numVivienda}/>`}
+                            {respuestas.TEM?
+                                <>
+                                    <DesplegarTem tem={respuestas.TEM}/>
+                                    {respuestas['resumenEstado' as IdVariable]=="cita pactada"?
+                                        <DesplegarCitaPactada respuestas={respuestas}/>
+                                    :
+                                        <DesplegarCitaPactadaYSeleccionadoAnteriorTem tem={respuestas.TEM}/>
+                                    }
+                                </>
+                            :null}
                         </TableCell>
-                        <TableCell>
-                            {"tareas"||`likeAr(datosVivienda.tareas).map((_tarea, idTarea)=>
-                                <Button
-                                    key={idTarea}
-                                    size="small"
-                                    resumen-estado={datosVivienda.resumenEstado}
-                                    variant="outlined"
-                                    onClick={()=>{
-                                        ////////////////// OJOJOJOJO sacar el formulario de la tabla de tareas GENERALIZAR TODO
-                                        dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:{vivienda:numVivienda, formulario:'F:RE' as IdFormulario}, apilarVuelta:false}))
-                                    }}
-                                >
-                                    {'RE'}
-                                </Button>
-                            ).array()`}
-                        </TableCell>
+                        <TableCell></TableCell>
                     </TableRow>
                 ).array()}
             </TableBody>
@@ -1753,14 +1737,7 @@ export function DesplegarNotasYVisitas(props:{tareas:Tareas, forPkRaiz:ForPkRaiz
 
 export function HojaDeRutaDespliegue(){
     var {cargas, modo, num_sincro} = useSelector((state:CasoState)=>({cargas: state.datos.cargas, modo:state.modo, num_sincro:state.datos.num_sincro}));
-    var hojaDeRuta: HojaDeRuta;
-    try {
-        hojaDeRuta = getHojaDeRuta();
-    } catch (error) {
-        setEstructura(my.getLocalVar(GLOVAR_ESTRUCTURA));
-        setDatosByPass(my.getLocalVar(GLOVAR_DATOSBYPASS));
-        hojaDeRuta = getHojaDeRuta();
-    }
+    var hojaDeRuta = getHojaDeRuta();
     var feedbackRowValidator = getFeedbackRowValidator()
     var dispatch = useDispatch();
     const updateOnlineStatus = function(){

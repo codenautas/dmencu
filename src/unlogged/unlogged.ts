@@ -4,6 +4,7 @@ import * as AjaxBestPromise from "ajax-best-promise";
 import {LOCAL_STORAGE_STATE_NAME} from "../unlogged/tipos";
 //import {CACHE_NAME} from "service-worker";
 import { desplegarFormularioActual } from './render-formulario';
+import { cargarEstructura, cargarHojaDeRuta, GLOVAR_ESTRUCTURA, GLOVAR_DATOSBYPASS } from './abrir-formulario';
 
 export const OPERATIVO = 'etoi211';
 
@@ -98,15 +99,21 @@ window.addEventListener('load', async function(){
             }catch(err){
                 console.log("error al buscar version.", err)
             }finally{
-                desplegarFormularioActual({operativo:OPERATIVO, modoDemo:false, modoAlmacenamiento:'local'});
+                prepararHojaDeRuta();
             }
         }else{
             console.log('serviceWorkers no soportados')
             setMessage('Service workers no soportados por el navegador. La aplicación no funcionará sin conexión a internet. ','danger')
-            desplegarFormularioActual({operativo:OPERATIVO, modoDemo:false, modoAlmacenamiento:'local'});
+            prepararHojaDeRuta();
         }
     }
 })
+
+function prepararHojaDeRuta() {
+    cargarEstructura(my.getLocalVar(GLOVAR_ESTRUCTURA));
+    cargarHojaDeRuta({ ...my.getLocalVar(LOCAL_STORAGE_STATE_NAME), ...my.getLocalVar(GLOVAR_DATOSBYPASS), modoAlmacenamiento: 'local' });
+    desplegarFormularioActual({ operativo: OPERATIVO, modoDemo: false, modoAlmacenamiento: 'local' });
+}
 
 async function setMessage(message:string, color:'all-ok'|'warning'|'danger'){
     var layout = await awaitForCacheLayout;
@@ -138,6 +145,7 @@ export var awaitForCacheLayout = async function prepareLayoutForCache(){
 
 
 var wasDownloading=false;
+
 //var appCache = window.applicationCache;
 //appCache.addEventListener('downloading', async function() {
 //    mostrarElementoId('dm-comprobando', false)
