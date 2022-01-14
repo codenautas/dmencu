@@ -210,7 +210,8 @@ function respuestasForPk(forPk:ForPk, conAumentadas?:boolean, agregarSiFalta?:bo
 export function volcadoInicialElementosRegistrados(forPkRaiz:ForPkRaiz){
     var {respuestasAumentadas} = respuestasForPk(forPkRaiz, true)
     var registroElementos = registroElementosGlobal;
-    var rowValidator =  datosByPass.feedbackRowValidator[toPlainForPk(forPkRaiz)];
+    var plainForPk = toPlainForPk(forPkRaiz)
+    var rowValidator =  datosByPass.feedbackRowValidator[plainForPk];
     for(var id in registroElementos){
         var def = registroElementos[id];
         if(def.elemento){

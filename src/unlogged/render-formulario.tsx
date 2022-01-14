@@ -1580,6 +1580,50 @@ resumidores.push(
     {nombre:'Otros', f:resumidores.reduce((g,r)=>(dv=>!r.f(dv) && g(dv) ),(_:DatosVivienda)=>true) }
 )
 
+export function DesplegarLineaResumenUAPrincipal(props:{
+    numVivienda:number,
+    respuestas:RespuestasRaiz,
+}){
+    const {numVivienda, respuestas} = props;
+    const id='viv-'+numVivienda;
+    const forPk:ForPk={formulario:'F:RE' as IdFormulario, vivienda:Number(numVivienda)};
+    var dispatch = useDispatch();
+    useEffect(()=>{
+        volcadoInicialElementosRegistrados(forPk);
+    })
+    registrarElemento({id, direct:true, attr:'resumen-estado',
+        fun:(
+            _r:Respuestas, 
+            _feedbackForm: FormStructureState<IdVariable,IdFin>, 
+            _elemento:HTMLDivElement, 
+            feedbackAll:{[formulario in PlainForPk]:FormStructureState<IdVariable,IdFin>}, 
+            _estructura:Estructura
+        )=>
+            feedbackAll[toPlainForPk(forPk)].resumen
+    })
+    return <TableRow key={numVivienda}>
+        <TableCell>
+            <Button id={id} onClick={()=> 
+                dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk, apilarVuelta:false}))
+            }>
+                {numVivienda.toString()}
+            </Button>
+        </TableCell>
+        <TableCell>
+            {respuestas.TEM?
+                <>
+                    <DesplegarTem tem={respuestas.TEM}/>
+                    {respuestas['resumenEstado' as IdVariable]=="cita pactada"?
+                        <DesplegarCitaPactada respuestas={respuestas}/>
+                    :
+                        <DesplegarCitaPactadaYSeleccionadoAnteriorTem tem={respuestas.TEM}/>
+                    }
+                </>
+            :null}
+        </TableCell>
+        <TableCell></TableCell>
+    </TableRow>
+}
 
 export function DesplegarCarga(props:{
     carga:Carga, 
@@ -1590,7 +1634,7 @@ export function DesplegarCarga(props:{
         [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> 
     }
 }){
-    const {carga, idCarga, hojaDeRuta, feedbackRowValidator} = props;
+    const {carga, idCarga, hojaDeRuta} = props;
     const dispatch = useDispatch();
     return <Paper className="carga">
         <div className="informacion-carga">
@@ -1623,24 +1667,11 @@ export function DesplegarCarga(props:{
             </TableHead>
             <TableBody>
                 {beingArray(hojaDeRuta.respuestas.viviendas).filter((respuestas:RespuestasRaiz, _numVivienda:number)=>respuestas.tem.carga==idCarga).map((respuestas:RespuestasRaiz, numVivienda:number)=>
-                    <TableRow key={numVivienda}>
-                        <TableCell>
-                            {numVivienda}
-                        </TableCell>
-                        <TableCell>
-                            {respuestas.TEM?
-                                <>
-                                    <DesplegarTem tem={respuestas.TEM}/>
-                                    {respuestas['resumenEstado' as IdVariable]=="cita pactada"?
-                                        <DesplegarCitaPactada respuestas={respuestas}/>
-                                    :
-                                        <DesplegarCitaPactadaYSeleccionadoAnteriorTem tem={respuestas.TEM}/>
-                                    }
-                                </>
-                            :null}
-                        </TableCell>
-                        <TableCell></TableCell>
-                    </TableRow>
+                    <DesplegarLineaResumenUAPrincipal 
+                        key={numVivienda} 
+                        numVivienda={numVivienda}
+                        respuestas={respuestas}
+                    />
                 ).array()}
             </TableBody>
         </Table>:

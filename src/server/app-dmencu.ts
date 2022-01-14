@@ -237,6 +237,13 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                                 && m.file!='var-cal.js'
                                 && m.file!='var-cal.js'
                                 //&& m.file!='varcal.js'
+                //)
+                //.filter(m=>logged || true
+                //    && m.file!='operativos.js' 
+                //    && m.file!='meta-enc.js'
+                //    && m.file!='datos-ext.js'
+                //    && m.file!='consistencias.js'
+                //    && m.file!='varcal.js'
                 ),
             { type: 'js', module: 'redux-typed-reducer', modPath:'../dist', file:'redux-typed-reducer.js' },
             { type: 'js', src: 'adapt.js' },
