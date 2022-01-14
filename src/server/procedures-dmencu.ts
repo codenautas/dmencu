@@ -618,7 +618,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                                     where operativo= $1 and enc = $2
                                     returning 'ok'`
                                 ,
-                                [OPERATIVO, idEnc, respuestasUAPrincipal.respuestas/*, vivienda.resumenEstado*/]
+                                [OPERATIVO, idEnc, respuestasUAPrincipal/*, vivienda.resumenEstado*/]
                             ).fetchUniqueRow();
                         }
                         if(!puedoGuardarEnTEM){
