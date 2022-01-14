@@ -12,7 +12,7 @@
   ],
   "dependencies": {
     "@material-ui/core": "~4.12.3",
-    "backend-plus": "^1.14.9",
+    "backend-plus": "^1.14.10",
     "memoize-one": "^6.0.0",
     "meta-enc": "^1.4.2",
     "procesamiento": "^1.0.9",

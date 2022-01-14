@@ -19,6 +19,7 @@ function siExisteId(id: string, hacer: (arg0: HTMLElement) => void){
 function mostrarElementoId(id:string, mostrar:boolean){
     siExisteId(id, e=>e.style.display=mostrar?'block':'none');
 }
+const URL_DM = 'campo';
 
 window.addEventListener('load', async function(){
     var layout = document.getElementById('total-layout')!;
@@ -29,8 +30,7 @@ window.addEventListener('load', async function(){
     }
     await myOwn.ready;
     layout.innerHTML='<div id=main_layout></div><span id="mini-console"></span>';
-    var url = new URL(window.location.href);
-    if(location.pathname.endsWith('/campo')){
+    if(location.pathname.endsWith(`/${URL_DM}`)){
         if(!myOwn.existsLocalVar(LOCAL_STORAGE_STATE_NAME)){
             var avisoInicial=html.div({class:'aviso-inicial'},[
                 html.div({id:'dm-cargando', style:'display:none'},[
@@ -113,6 +113,7 @@ function prepararHojaDeRuta() {
     cargarEstructura(my.getLocalVar(GLOVAR_ESTRUCTURA));
     cargarHojaDeRuta({ ...my.getLocalVar(LOCAL_STORAGE_STATE_NAME), ...my.getLocalVar(GLOVAR_DATOSBYPASS), modoAlmacenamiento: 'local' });
     desplegarFormularioActual({ operativo: OPERATIVO, modoDemo: false, modoAlmacenamiento: 'local' });
+    my.menuName = URL_DM;
 }
 
 async function setMessage(message:string, color:'all-ok'|'warning'|'danger'){
