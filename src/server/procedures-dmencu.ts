@@ -67,47 +67,47 @@ type AnyObject = {[k:string]:any}
 var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
     return `
     with viviendas as 
-    (select enc, t.json_encuesta as respuestas, t.resumen_estado as "resumenEstado", 
-        jsonb_build_object(
-            'nomcalle'      , nomcalle      ,
-            'sector'        , sector        ,
-            'edificio'      , edificio      ,
-            'entrada'       , entrada       ,
-            'nrocatastral'  , nrocatastral  ,
-            'piso'          , piso          ,
-            'departamento'  , departamento  ,
-            'habitacion'    , habitacion    ,
-            'casa'          , casa          ,
-            'prioridad'     , reserva+1     ,
-            'observaciones' , tt.carga_observaciones ,
-            'cita'          , cita ,
-            'carga'         , t.area         
-        ) as tem, t.area,
-        tt.visitas,
-        --TODO: GENERALIZAR
-        jsonb_object_agg(coalesce(tarea,${sqlTools.quoteLiteral(TAREA_ENCUESTADOR)}),jsonb_build_object(
-            'tarea', tarea,
-            'notas', notas,
-            'fecha_asignacion', fecha_asignacion,
-            'asignado', asignado
-        )) as tareas,
-        min(fecha_asignacion) as fecha_asignacion
-        from tem t left join tareas_tem tt using (operativo, enc)
-        where ${quotedCondViv}
-        group by t.enc, t.json_encuesta, t.resumen_estado, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area, tt.visitas
-    )
-    select jsonb_build_object(
-            'viviendas', ${jsono(
-                `select enc, respuestas, jsonb_build_object('resumenEstado',"resumenEstado", 'tem', tem, 'tareas', tareas, 'visitas', coalesce(visitas,'[]')) as otras from viviendas`,
-                'enc',
-                `otras || coalesce(respuestas,'{}'::jsonb)`
-            )}
-        ) as respuestas,
-        ${json(`
-            select area as carga, observaciones_hdr as observaciones, min(fecha_asignacion) as fecha
-                from viviendas inner join areas using (area) 
-                group by area, observaciones_hdr`, 
-            'fecha')} as cargas
+        (select enc, t.json_encuesta as respuestas, t.resumen_estado as "resumenEstado", 
+            jsonb_build_object(
+                'nomcalle'      , nomcalle      ,
+                'sector'        , sector        ,
+                'edificio'      , edificio      ,
+                'entrada'       , entrada       ,
+                'nrocatastral'  , nrocatastral  ,
+                'piso'          , piso          ,
+                'departamento'  , departamento  ,
+                'habitacion'    , habitacion    ,
+                'casa'          , casa          ,
+                'prioridad'     , reserva+1     ,
+                'observaciones' , tt.carga_observaciones ,
+                'cita'          , cita ,
+                'carga'         , t.area         
+            ) as tem, t.area,
+            tt.visitas,
+            --TODO: GENERALIZAR
+            jsonb_object_agg(coalesce(tarea,${sqlTools.quoteLiteral(TAREA_ENCUESTADOR)}),jsonb_build_object(
+                'tarea', tarea,
+                'notas', notas,
+                'fecha_asignacion', fecha_asignacion,
+                'asignado', asignado
+            )) as tareas,
+            min(fecha_asignacion) as fecha_asignacion
+            from tem t left join tareas_tem tt using (operativo, enc)
+            where ${quotedCondViv}
+            group by t.enc, t.json_encuesta, t.resumen_estado, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area, tt.visitas
+        )
+        select jsonb_build_object(
+                'viviendas', ${jsono(
+                    `select enc, respuestas, jsonb_build_object('resumenEstado',"resumenEstado", 'tem', tem, 'tareas', tareas, 'visitas', coalesce(visitas,'[]')) as otras from viviendas`,
+                    'enc',
+                    `otras || coalesce(respuestas,'{}'::jsonb)`
+                )}
+            ) as respuestas,
+            ${json(`
+                select area as carga, observaciones_hdr as observaciones, min(fecha_asignacion) as fecha
+                    from viviendas inner join areas using (area) 
+                    group by area, observaciones_hdr`, 
+                'fecha')} as cargas
 `
 }
 
