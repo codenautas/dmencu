@@ -690,6 +690,6 @@ function calcularFeedback(respuestas: Respuestas, forPkRaiz:ForPkRaiz, opts:Opci
     var nuevosRows : {[x in PlainForPk]:FormStructureState<IdVariable,IdFin>}={}
     calcularFeedbackEncuesta(nuevosRows, estructura.formularios, forPkRaiz, respuestas, opts);
     datosByPass.feedbackRowValidator = {...datosByPass.feedbackRowValidator, ...nuevosRows};
-    resumenEstado = datosByPass.feedbackRowValidator[toPlainForPk(forPkRaiz)].resumen;
-    datosByPass.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda].resumenEstado = resumenEstado
+    //resumenEstado = datosByPass.feedbackRowValidator[toPlainForPk(forPkRaiz)].resumen;
+    //datosByPass.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda].resumenEstado = resumenEstado
 }
