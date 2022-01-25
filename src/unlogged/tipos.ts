@@ -230,6 +230,7 @@ export type Respuestas={
 
 export type RespuestasRaiz=Respuestas & {
     TEM:TEM
+    resumenEstado:ResumenEstado
     $dirty:boolean
 }
 

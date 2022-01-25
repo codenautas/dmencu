@@ -548,11 +548,11 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 }
                 await context.client.query(
                     `update tem
-                        set json_encuesta = $3 --, resumen_estado=$4
+                        set json_encuesta = $3, resumen_estado=$4
                         where operativo= $1 and enc = $2
                         returning 'ok'`
                     ,
-                    [operativo, idEnc, respuestasUAPrincipal/*, vivienda.resumenEstado*/]
+                    [operativo, idEnc, respuestasUAPrincipal, respuestasUAPrincipal.resumenEstado]
                 ).fetchUniqueRow();
             }).array());
             return 'ok'
@@ -568,8 +568,6 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             var be=context.be;
             var {persistentes, datos} = parameters;
-            ///////////// ojojojojojojo
-            // context.user.idper='11';
             var num_sincro:number=0;
             var token:string|null=datos?.token;
             if(!token){
@@ -600,11 +598,11 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         var puedoGuardarEnTEM=true;
                         var queryTareasTem = await context.client.query(
                             `update tareas_tem
-                                set cargado_dm=null, notas = $4, visitas = $5
+                                set cargado_dm=null --, notas = $4, visitas = $5
                                 where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm = ${context.be.db.quoteLiteral(token!)}
                                 returning 'ok'`
                             ,
-                            [OPERATIVO, idEnc, tarea, tareas[tarea].notas, JSON.stringify(respuestasUAPrincipal.visitas || [])]
+                            [OPERATIVO, idEnc, tarea, /* tareas[tarea].notas, JSON.stringify(respuestasUAPrincipal.visitas || [])*/]
                         ).fetchOneRowIfExists();
                         if(queryTareasTem.rowCount==0){
                             var puedoGuardarEnTEM=false;
@@ -614,11 +612,11 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         if(tarea == TAREA_ENCUESTADOR && puedoGuardarEnTEM){
                             await context.client.query(
                                 `update tem
-                                    set json_encuesta = $3 --, resumen_estado=$4
+                                    set json_encuesta = $3, resumen_estado=$4
                                     where operativo= $1 and enc = $2
                                     returning 'ok'`
                                 ,
-                                [OPERATIVO, idEnc, respuestasUAPrincipal/*, vivienda.resumenEstado*/]
+                                [OPERATIVO, idEnc, respuestasUAPrincipal, respuestasUAPrincipal.resumenEstado]
                             ).fetchUniqueRow();
                         }
                         if(!puedoGuardarEnTEM){

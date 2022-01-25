@@ -662,7 +662,7 @@ export function numberOrStringIncIfArray(numberOrString:number|string, object:ob
 
 export function calcularFeedbackHojaDeRuta(){
     likeAr(estructura.unidades_analisis).filter(uaDef=>!uaDef.padre).forEach(uaDef=>{
-        likeAr(estructura.formularios).filter(f=>f.casilleros.unidad_analisis == uaDef.unidad_analisis).forEach((_defF, formulario)=>{
+        likeAr(estructura.formularios).filter(f=>f.casilleros.unidad_analisis == uaDef.unidad_analisis && f.casilleros.formulario_principal).forEach((_defF, formulario)=>{
             var conjuntoRespuestasUA = datosByPass.hojaDeRuta.respuestas[uaDef.unidad_analisis]
             beingArray(conjuntoRespuestasUA).forEach((respuestas, valorPkOPosicion)=>{
                 var valorPk = numberOrStringIncIfArray(valorPkOPosicion, conjuntoRespuestasUA);
@@ -685,66 +685,11 @@ export function calcularFeedbackEncuesta(
 }
 
 function calcularFeedback(respuestas: Respuestas, forPkRaiz:ForPkRaiz, opts:OpcionesRowValidator){
-    if(respuestas){
-        // @ts-ignore Partial
-        var nuevosRows : {[x in PlainForPk]:FormStructureState<IdVariable,IdFin>}={}
-        calcularFeedbackEncuesta(nuevosRows, estructura.formularios, forPkRaiz, respuestas, opts);
-        var resumenEstado = calcularResumenVivienda(forPkRaiz, 
-            // @ts-ignore sí, tiene los feedbacks de los formularios 
-            nuevosRows,
-            respuestas
-        );
-    }else{
-        //@ts-ignore sin nuevas rows
-        nuevosRows={};
-        resumenEstado='vacio';
-    }
+    var resumenEstado:ResumenEstado;
+    // @ts-ignore Partial
+    var nuevosRows : {[x in PlainForPk]:FormStructureState<IdVariable,IdFin>}={}
+    calcularFeedbackEncuesta(nuevosRows, estructura.formularios, forPkRaiz, respuestas, opts);
     datosByPass.feedbackRowValidator = {...datosByPass.feedbackRowValidator, ...nuevosRows};
+    resumenEstado = datosByPass.feedbackRowValidator[toPlainForPk(forPkRaiz)].resumen;
+    datosByPass.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda].resumenEstado = resumenEstado
 }
-
-
-function calcularResumenVivienda(
-    _forPkRaiz:ForPkRaiz, 
-    _feedbackRowValidator:{[formulario in PlainForPk]:FormStructureState<IdVariable,IdFin>}, 
-    respuestas:Respuestas
-){
-    if(defOperativo.esNorea(respuestas)){
-       return "no rea";
-    }
-    if(defOperativo.esVacio(respuestas)){
-        return "vacio";
-    }
-    //TODO GENERALIZAR
-    return "no rea"; 
-    /*
-    var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>JSON.parse(plainPk).vivienda==idCaso && JSON.parse(plainPk).formulario != 'F:F2_personas').array();
-    var feedBackViviendaPlain = likeAr(feedbackRowValidator).filter((_row, plainPk)=>JSON.parse(plainPk).vivienda==idCaso && JSON.parse(plainPk).formulario != 'F:F2_personas').plain();
-    var prioridades:{[key in ResumenEstado]: {prioridad:number, cantidad:number}} = {
-        'no rea':{prioridad: 1, cantidad:0},
-        'con problemas':{prioridad: 2, cantidad:0},
-        'incompleto':{prioridad: 3, cantidad:0},
-        'vacio':{prioridad: 4, cantidad:0},
-        'cita pactada':{prioridad: 5, cantidad:0},
-        'ok':{prioridad: 6, cantidad:0}
-    }
-    var min = 6;
-    var minResumen: ResumenEstado = 'ok';
-    for(var feedback of feedBackVivienda){
-        var resumen = feedback.resumen;
-        prioridades[resumen].cantidad++;
-        if(prioridades[resumen].prioridad<min){
-            min=prioridades[resumen].prioridad;
-            minResumen=resumen;
-        }
-    }
-    if(minResumen=='vacio'&& prioridades['ok'].cantidad || minResumen=='incompleto'){
-        if(respuestas[sp1]==2 && respuestas[sp6]==null){
-            minResumen='cita pactada';
-        }else{
-            minResumen='incompleto';
-        }
-    }
-    return minResumen;
-    */
-}
-

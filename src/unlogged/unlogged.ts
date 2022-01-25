@@ -5,6 +5,7 @@ import {LOCAL_STORAGE_STATE_NAME} from "../unlogged/tipos";
 //import {CACHE_NAME} from "service-worker";
 import { desplegarFormularioActual } from './render-formulario';
 import { cargarEstructura, cargarHojaDeRuta, GLOVAR_ESTRUCTURA, GLOVAR_DATOSBYPASS } from './abrir-formulario';
+import { calcularFeedbackHojaDeRuta } from './bypass-formulario';
 
 export const OPERATIVO = 'etoi211';
 
@@ -110,8 +111,9 @@ window.addEventListener('load', async function(){
 })
 
 function prepararHojaDeRuta() {
+    var datosByPass = my.getLocalVar(GLOVAR_DATOSBYPASS);
     cargarEstructura(my.getLocalVar(GLOVAR_ESTRUCTURA));
-    cargarHojaDeRuta({ ...my.getLocalVar(GLOVAR_DATOSBYPASS), modoAlmacenamiento: 'local' });
+    cargarHojaDeRuta({ ...datosByPass, modoAlmacenamiento: 'local' });
     desplegarFormularioActual({ operativo: OPERATIVO, modoDemo: false, modoAlmacenamiento: 'local' });
     my.menuName = URL_DM;
 }
