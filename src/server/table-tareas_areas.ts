@@ -1,6 +1,6 @@
 "use strict";
 
-import {TableDefinition, TableContext} from "./types-dmencu";
+import {TableDefinition, FieldDefinition, TableContext} from "./types-dmencu";
 
 export function tareas_areas(context:TableContext, opt:any):TableDefinition {
     var opt=opt||{}

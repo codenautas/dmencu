@@ -45,8 +45,8 @@ install:
       - fun_validar_tipodato.sql
       - desintegrarpk.sql
       - agregar_adjunto_carto_trg
-      - tem_area_sincro_trg.sql
-      - upd_operacion_area_tem_trg.sql
+      - sincro_tareas_areas_tareas_tem_trg.sql
+      - sincronizacion_tareas_tem.sql
       - sincronizacion_tem.sql
 login:
   infoFieldList: [usuario, rol, idper]

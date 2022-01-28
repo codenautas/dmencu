@@ -82,7 +82,7 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
                                 from (
                                     select t.*, tt.verificado, ${be.sqlNoreaCase('no_rea')} as cod_no_rea
                                         from tem t left join comunas c on t.nrocomuna=c.comuna
-                                            left join tareas_tem tt on t.operativo=tt.operativo and t.enc=tt.enc and tt.tarea='rel'
+                                            left join tareas_tem tt on t.operativo=tt.operativo and t.enc=tt.enc and tt.tarea='encu'
 
                                     where ${opts.filtroWhere || 'true'}    
                                 ) t left join (select area, string_agg(distinct participacion::text, ', ' order by participacion::text desc ) as participacion_a

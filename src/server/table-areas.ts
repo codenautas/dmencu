@@ -74,7 +74,7 @@ export function areas(context:TableContext):TableDefinition {
                   --a.operacion_area, a.fecha,
                 , a.cargadas_bkp, a.reas_bkp, a.no_reas_bkp, a.incompletas_bkp, a.vacias_bkp, a.inhabilitadas_bkp
                 , t.*
-                from areas a left join tareas_areas ta on ta.tarea='rel' and ta.area=a.area, lateral(
+                from areas a left join tareas_areas ta on ta.tarea='encu' and ta.area=a.area, lateral(
                     select 
                         bool_or( cargado_dm is not null )       as cargado , 
                         --count( cargado_dm )                     as cargadas,
@@ -96,7 +96,7 @@ export function areas(context:TableContext):TableDefinition {
                                 relevador, rea, norea, area, dominio, zona
                                 json_backup
                             , tt.habilitada, tt.cargado_dm
-                            , ${be.sqlNoreaCase('grupo')} as gru_no_rea from tem t left join tareas_tem tt using(operativo,enc) where t.area=a.area and tt.tarea='rel') tem
+                            , ${be.sqlNoreaCase('grupo')} as gru_no_rea from tem t left join tareas_tem tt using(operativo,enc) where t.area=a.area and tt.tarea='encu') tem
                 ) t
             )`
         }
