@@ -83,7 +83,6 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
                 'cita'          , cita ,
                 'carga'         , t.area         
             ) as tem, t.area,
-            tt.visitas,
             --TODO: GENERALIZAR
             jsonb_object_agg(coalesce(tarea,${sqlTools.quoteLiteral(TAREA_ENCUESTADOR)}),jsonb_build_object(
                 'tarea', tarea,
@@ -94,11 +93,11 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
             min(fecha_asignacion) as fecha_asignacion
             from tem t left join tareas_tem tt using (operativo, enc)
             where ${quotedCondViv}
-            group by t.enc, t.json_encuesta, t.resumen_estado, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area, tt.visitas
+            group by t.enc, t.json_encuesta, t.resumen_estado, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area
         )
         select jsonb_build_object(
                 'viviendas', ${jsono(
-                    `select enc, respuestas, jsonb_build_object('resumenEstado',"resumenEstado", 'tem', tem, 'tareas', tareas, 'visitas', coalesce(visitas,'[]')) as otras from viviendas`,
+                    `select enc, respuestas, jsonb_build_object('resumenEstado',"resumenEstado", 'tem', tem, 'tareas', tareas) as otras from viviendas`,
                     'enc',
                     `otras || coalesce(respuestas,'{}'::jsonb)`
                 )}
