@@ -40,7 +40,7 @@ export function mis_relevadores(context:TableContext):TableDefinition {
         sql:{
             isTable:false,
             from:`(
-                select u.idper as relevador, u.*, t.*, s.*, 'rel' as tarea
+                select u.idper as relevador, u.*, t.*, s.*, 'encu' as tarea
                     from usuarios u, lateral (
                         select sum(case when tt.fecha_asignacion = current_date then 1 else null end) as carga_hoy,
                                 sum(case when tt.fecha_asignacion = current_date + interval '1 day' then 1 else null end) as carga_1,

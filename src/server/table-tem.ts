@@ -136,7 +136,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
                     , tt.cargado, tt.cargado_dm, tt.habilitada, tt.asignado as relevador
                     , tt.notas
                     ${opts.recepcion? columnasNoRea.map(v=>'\n     , '+ v.expr +' as '+ v.name).join('') :''}
-                    from tem t left join tareas_tem tt on t.operativo=tt.operativo and t.enc=tt.enc and tt.tarea='rel'
+                    from tem t left join tareas_tem tt on t.operativo=tt.operativo and t.enc=tt.enc and tt.tarea='encu'
                 )
             `     
         };
