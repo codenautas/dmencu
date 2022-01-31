@@ -597,11 +597,11 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         var puedoGuardarEnTEM=true;
                         var queryTareasTem = await context.client.query(
                             `update tareas_tem
-                                set cargado_dm=null --, notas = $4, visitas = $5
+                                set cargado_dm=null --, notas = $4
                                 where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm = ${context.be.db.quoteLiteral(token!)}
                                 returning 'ok'`
                             ,
-                            [OPERATIVO, idEnc, tarea, /* tareas[tarea].notas, JSON.stringify(respuestasUAPrincipal.visitas || [])*/]
+                            [OPERATIVO, idEnc, tarea, /* tareas[tarea].notas*/]
                         ).fetchOneRowIfExists();
                         if(queryTareasTem.rowCount==0){
                             var puedoGuardarEnTEM=false;
