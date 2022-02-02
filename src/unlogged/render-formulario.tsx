@@ -999,7 +999,10 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     var {casillero, forPk} = props;
     var habilitador = casillero.expresion_habilitar_js?getFuncionHabilitar(casillero.expresion_habilitar_js):()=>true;
     var {opciones} = useSelectorVivienda(forPk);
-    var idFormularioDestino = 'F:'+casillero.salto! as IdFormulario;
+    //var idFormularioDestino = 'F:'+casillero.salto! as IdFormulario;   //original
+    var armoNomSalto=casillero.salto!.substr(0,2)=='F:'?casillero.salto.slice(2):casillero.salto;
+    //console.log('BotonFormularioDespliegue armoNomSalto ' +armoNomSalto);
+    var idFormularioDestino = 'F:'+armoNomSalto! as IdFormulario;
     var estructura = getEstructura();
     var {soloLectura, formularioAAbrir} = useSelector((state:CasoState)=>({
         soloLectura:state.datos.soloLectura, 
@@ -1024,7 +1027,8 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     var [confirmarForzarIr, setConfirmarForzarIr] = useState<DefinicionFormularioAbrir|false|null>(null);
     var multipleFormularios=formularioAAbrir.unidad_analisis != props.formulario.unidad_analisis;
     var nuevoCampoPk = defOperativo.defUA[formularioAAbrir.unidad_analisis].pk;
-    var var_name='$B.'+casillero.salto;
+   // var var_name='$B.'+casillero.salto; //original
+    var var_name='$B.'+armoNomSalto;
     var idSeccion=`seccion-boton-formulario-${var_name}`;
     var idButton=`special-button-${idSeccion}`;
     registrarElemento<HTMLDivElement>({
@@ -1037,14 +1041,19 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
             )=>{
             try{
                 var listaDeBotonesAbrir:DefinicionFormularioAbrir[] = [];
-                var esVarActual = feedbackRow.actual == '$B.F:'+casillero.salto;
+               // var esVarActual = feedbackRow.actual == '$B.F:'+casillero.salto;  //original
+                var esVarActual = feedbackRow.actual  == '$B.F:'+armoNomSalto;
+               // console.log('BotonFormularioDespliegue esVarActual ' +esVarActual  );
                 if(multipleFormularios && casillero.salto!=null){
-                    let defFormulario:InfoFormulario = estructura.formularios['F:'+casillero.salto as IdFormulario];
+                  //  let defFormulario:InfoFormulario = estructura.formularios['F:'+casillero.salto as IdFormulario];      //original
+                    let defFormulario:InfoFormulario = estructura.formularios['F:'+armoNomSalto as IdFormulario];
                     let defUA = estructura.unidades_analisis[defFormulario.casilleros.unidad_analisis!];
                     let conjunto = respuestasAumentadas[defFormulario.casilleros.unidad_analisis!];
                     let cantidadEsperada = respuestasAumentadas[casillero.expresion_habilitar as IdVariable];
                     var numActual:number|null = null;
-                    var estadoDelBoton = feedbackRow.feedback['$B.F:'+casillero.salto as IdVariable].estado
+                  //  var estadoDelBoton = feedbackRow.feedback['$B.F:'+casillero.salto as IdVariable].estado   //original
+                      var estadoDelBoton = feedbackRow.feedback['$B.F:'+armoNomSalto as IdVariable].estado
+                   // console.log('BotonFormularioDespliegue estadoDelBoton ' +estadoDelBoton  );
                     listaDeBotonesAbrir = likeAr(conjunto).map((_, i)=>{
                         let num:number = numberOrStringIncIfArray(i, conjunto) as number;
                         let forPk={...props.forPk, formulario:idFormularioDestino, [nuevoCampoPk]:num};

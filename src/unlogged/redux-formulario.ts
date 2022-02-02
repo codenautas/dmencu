@@ -226,7 +226,11 @@ function rellenarVariablesYOpciones(idFormulario:IdFormulario, estructura:Estruc
         }
         estructura.variables[var_name]=variableDef;
     } else if (casillero.tipoc=='BF'){
-        var var_name = '$B.F:'+casillero.salto as IdVariable;
+       // var var_name = '$B.F:'+casillero.salto as IdVariable;    //original
+        var saltoNombre=casillero.salto!.substr(0,2)=='F:'?casillero.salto.slice(2):casillero.salto;
+        //console.log('rellenarVariablesYOpciones saltonombre ' +saltoNombre);
+        var var_name = '$B.F:'+saltoNombre as IdVariable;
+       // console.log('rellenarVariablesYOpciones var_name ' +var_name);
         casillero.var_name_BF = var_name;
         let variableDef={
             tipo:'texto',
