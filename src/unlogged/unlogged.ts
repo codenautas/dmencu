@@ -32,23 +32,6 @@ window.addEventListener('load', async function(){
     await myOwn.ready;
     layout.innerHTML='<div id=main_layout></div><span id="mini-console"></span>';
     if(location.pathname.endsWith(`/${URL_DM}`)){
-        if(!myOwn.existsLocalVar(LOCAL_STORAGE_STATE_NAME)){
-            var avisoInicial=html.div({class:'aviso-inicial'},[
-                html.div({id:'dm-cargando', style:'display:none'},[
-                    html.p('Cargando el formulario'), 
-                    //html.img({src:'img/logo-dm.png'}),
-                ]),
-                html.div({id:'dm-instalandose', style:'display:none'},[
-                    html.p('Instalando el sistema de relevamiento'),
-                    //html.img({src:'img/logo-dm.png'}),
-                ]),
-                html.div({id:'dm-comprobando', style:'display:block'},[
-                    html.p('Verificando la instalación del sistema'),
-                    //html.img({src:'img/logo-dm.png'}),
-                ])
-            ]).create()
-            layout.appendChild(avisoInicial);
-        }
         if('serviceWorker' in navigator && false){
             navigator.serviceWorker.register('service-worker.js').then(function(reg) {
                 console.log('Registered:', reg);
@@ -110,12 +93,23 @@ window.addEventListener('load', async function(){
     }
 })
 
-function prepararHojaDeRuta() {
-    var datosByPass = my.getLocalVar(GLOVAR_DATOSBYPASS);
-    cargarEstructura(my.getLocalVar(GLOVAR_ESTRUCTURA));
-    cargarHojaDeRuta({ ...datosByPass, modoAlmacenamiento: 'local' });
-    desplegarFormularioActual({ operativo: OPERATIVO, modoDemo: false, modoAlmacenamiento: 'local' });
-    my.menuName = URL_DM;
+async function prepararHojaDeRuta() {
+    if(!myOwn.existsLocalVar(LOCAL_STORAGE_STATE_NAME)){
+        var layout = await awaitForCacheLayout;
+        layout.appendChild(html.div({class:'aviso-inicial'},[
+            html.div({id:'dm-comprobando', style:'display:block'},[
+                html.p('no se sincronizó una hoja de ruta'),
+                html.a({href:'menu#i=sincronizar'},'sinconizar'),
+                //html.img({src:'img/logo-dm.png'}),
+            ])
+        ]).create());
+    }else{
+        var datosByPass = my.getLocalVar(GLOVAR_DATOSBYPASS);
+        cargarEstructura(my.getLocalVar(GLOVAR_ESTRUCTURA));
+        cargarHojaDeRuta({ ...datosByPass, modoAlmacenamiento: 'local' });
+        desplegarFormularioActual({ operativo: OPERATIVO, modoDemo: false, modoAlmacenamiento: 'local' });
+        my.menuName = URL_DM;
+    }
 }
 
 async function setMessage(message:string, color:'all-ok'|'warning'|'danger'){

@@ -45,7 +45,7 @@ async function sincronizarDatos(state:CasoState|null, persistentes:DatosByPassPe
         }
         // OJO state.opciones se modifica acá y en otro lado con este mismo cartel
         state.opciones = {
-            bienvenido: false,
+            bienvenido: true,
             forPk: null,
             pilaForPk: [], 
             modoDespliegue: "relevamiento",

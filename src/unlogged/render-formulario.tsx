@@ -26,6 +26,7 @@ import {Bloque, BotonFormulario,
     Texto, Estructura
 } from "./tipos";
 import{ 
+    calcularResumenVivienda,
     setCalcularVariables, setDatosByPass, setEstructura
 } from "./bypass-formulario"
 import { dmTraerDatosFormulario, dispatchers, 
@@ -1591,15 +1592,22 @@ export function DesplegarLineaResumenUAPrincipal(props:{
     useEffect(()=>{
         volcadoInicialElementosRegistrados(forPk);
     })
-    registrarElemento({id, direct:true, attr:'resumen-estado',
+    registrarElemento({id, direct:true,
         fun:(
-            _r:Respuestas, 
+            r:Respuestas, 
             _feedbackForm: FormStructureState<IdVariable,IdFin>, 
-            _elemento:HTMLDivElement, 
+            elemento:HTMLDivElement, 
             feedbackAll:{[formulario in PlainForPk]:FormStructureState<IdVariable,IdFin>}, 
             _estructura:Estructura
-        )=>
-            feedbackAll[toPlainForPk(forPk)].resumen
+        )=>{
+            //pregunto si es la misma vivienda porque la funcion se dispara 
+            //con todas las combinaciones de respuestas para cada forPk
+            //@ts-ignore vivienda existe
+            if(r.vivienda == forPk.vivienda){
+                elemento.setAttribute('resumen-estado',calcularResumenVivienda(forPk, feedbackAll, r));
+            }
+        }
+            
     })
     return <TableRow key={numVivienda}>
         <TableCell>

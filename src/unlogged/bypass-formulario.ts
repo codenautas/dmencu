@@ -19,6 +19,8 @@ import {
     UnidadAnalisis
 } from "./tipos";
 
+const FORMULARIO_TEM = 'F:TEM';
+
 var especiales = {} as {
     calcularVariables?:(respuestasRaiz:RespuestasRaiz)=>void
 }
@@ -556,8 +558,11 @@ var rowValidator = getRowValidator({getFuncionHabilitar, getFuncionValorar})
 ////// TODOS LOS NOMBRES DE variables o formularios o casilleros deben estar en el objeto operativo
 //// QUITARLO Y REEMPLAZARLO por buscar en estructura.unidad_analisis y estructura.formulario
 export var defOperativo = {
-    esVacio:(respuestas:Respuestas)=>JSON.stringify(respuestas)=='{}',
-    esNorea:(respuestas:Respuestas)=>respuestas['entrea' as IdVariable]!=1,
+    //TODO: GENERALIZAR
+    esNorea:(respuestas:Respuestas)=>{
+        const NO_REA_VAR = 'entreav' as IdVariable;
+        return respuestas[NO_REA_VAR] && respuestas[NO_REA_VAR]!=1
+    },
     UAprincipal:'' as IdUnidadAnalisis,
     defUA:{} as {[i in IdUnidadAnalisis]:{pk:IdVariable, incluidas:IdUnidadAnalisis[], idsFor:IdFormulario[]}},
     defFor:{} as {[f in IdFormulario]:{/*arbolUA:IdUnidadAnalisis[], */ hermano?:true}}
@@ -690,6 +695,47 @@ function calcularFeedback(respuestas: Respuestas, forPkRaiz:ForPkRaiz, opts:Opci
     var nuevosRows : {[x in PlainForPk]:FormStructureState<IdVariable,IdFin>}={}
     calcularFeedbackEncuesta(nuevosRows, estructura.formularios, forPkRaiz, respuestas, opts);
     datosByPass.feedbackRowValidator = {...datosByPass.feedbackRowValidator, ...nuevosRows};
-    //resumenEstado = datosByPass.feedbackRowValidator[toPlainForPk(forPkRaiz)].resumen;
-    //datosByPass.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda].resumenEstado = resumenEstado
+    datosByPass.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!].resumenEstado = calcularResumenVivienda(
+        forPkRaiz, 
+        nuevosRows,
+        respuestas
+    );
+}
+
+export function calcularResumenVivienda(
+    forPkRaiz:ForPkRaiz, 
+    feedbackRowValidator:{[formulario in PlainForPk]:FormStructureState<IdVariable,IdFin>}, 
+    respuestas:Respuestas
+){
+    if(defOperativo.esNorea(respuestas)){
+        return "no rea";
+    }
+    //TODO sacar 
+    var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>JSON.parse(plainPk).vivienda==forPkRaiz.vivienda && JSON.parse(plainPk).formulario != FORMULARIO_TEM).array();
+    var prioridades:{[key in ResumenEstado]: {prioridad:number, cantidad:number}} = {
+        'no rea':{prioridad: 1, cantidad:0},
+        'con problemas':{prioridad: 2, cantidad:0},
+        'incompleto':{prioridad: 3, cantidad:0},
+        'vacio':{prioridad: 4, cantidad:0},
+        'cita pactada':{prioridad: 5, cantidad:0},
+        'ok':{prioridad: 6, cantidad:0}
+    }
+    var min = 6;
+    var minResumen: ResumenEstado = 'ok';
+    for(var feedback of feedBackVivienda){
+        var resumen = feedback.resumen;
+        prioridades[resumen].cantidad++;
+        if(prioridades[resumen].prioridad<min){
+            min=prioridades[resumen].prioridad;
+            minResumen=resumen;
+        }
+    }
+    if(minResumen=='vacio'&& prioridades['ok'].cantidad || minResumen=='incompleto'){
+        if(false /*respuestas[sp1]==2 && respuestas[sp6]==null*/){
+            minResumen='cita pactada';
+        }else{
+            minResumen='incompleto';
+        }
+    }
+    return minResumen;
 }
