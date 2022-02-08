@@ -5,7 +5,7 @@ import { getRowValidator, Structure, Opcion as RowValidatorOpcion, FormStructure
 import { date } from "best-globals";
 
 import { CasilleroBase, CasillerosImplementados, CasoState, 
-    DatosVivienda, EstadoCarga, EstructuraRowValidator, Estructura, 
+    EstadoCarga, EstructuraRowValidator, Estructura, 
     FeedbackVariable, Formulario, ForPk, ForPkRaiz,
     HojaDeRuta,  
     IdCarga, IdCasillero, IdDestino, IdFin, IdFormulario, IdPregunta, IdTarea, IdVariable, 

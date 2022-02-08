@@ -11,7 +11,7 @@ import {
     materialIoIconsSvgPath
 } from "./render-general";
 import {Bloque, BotonFormulario, 
-    CasilleroBase, CasoState, ConjuntoPreguntas, Consistencia, DatosVivienda, Despliegue, 
+    CasilleroBase, CasoState, ConjuntoPreguntas, Consistencia, Despliegue, 
     EstadoCarga, FeedbackVariable, Filtro, ForPk, ForPkRaiz, Formulario, 
     IdFormulario, IdPregunta, IdTarea, IdVariable, InfoFormulario,
     HojaDeRuta,
@@ -23,7 +23,7 @@ import {Bloque, BotonFormulario,
     toPlainForPk,
     IdCasillero,
     PreguntaConSiNo,
-    Texto, Estructura
+    Texto, Estructura, InformacionHdr, DatosHdrUaPpal
 } from "./tipos";
 import{ 
     calcularResumenVivienda,
@@ -1581,13 +1581,13 @@ export function Atributo(props:{nombre:string, valor:any}){
 
 const listaEstadosCarga:EstadoCarga[]=['resumen','relevamiento','recibo'];
 var resumidores = [
-    {nombre:'REA'         , f:(dv:DatosVivienda)=>dv.resumenEstado=="ok"          },
-    {nombre:'Cita pactada', f:(dv:DatosVivienda)=>dv.resumenEstado=="cita pactada"},
-    {nombre:'Pendientes'  , f:(dv:DatosVivienda)=>dv.resumenEstado=="vacio"       },
+    {nombre:'REA'         , f:(rr:RespuestasRaiz)=>rr.resumenEstado=="ok"          },
+    {nombre:'Cita pactada', f:(rr:RespuestasRaiz)=>rr.resumenEstado=="cita pactada"},
+    {nombre:'Pendientes'  , f:(rr:RespuestasRaiz)=>rr.resumenEstado=="vacio"       },
 ];
 
 resumidores.push(
-    {nombre:'Otros', f:resumidores.reduce((g,r)=>(dv=>!r.f(dv) && g(dv) ),(_:DatosVivienda)=>true) }
+    {nombre:'Otros', f:resumidores.reduce((g,r)=>(rr=>!r.f(rr) && g(rr) ),(_:RespuestasRaiz)=>true) }
 )
 
 export function DesplegarLineaResumenUAPrincipal(props:{
@@ -1646,12 +1646,13 @@ export function DesplegarCarga(props:{
     carga:Carga, 
     idCarga:IdCarga, 
     posicion:number,
-    hojaDeRuta:HojaDeRuta, 
+    informacionHdr:InformacionHdr, 
+    hojaDeRuta:HojaDeRuta,
     feedbackRowValidator:{
         [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> 
     }
 }){
-    const {carga, idCarga, hojaDeRuta} = props;
+    const {carga, idCarga, informacionHdr, hojaDeRuta} = props;
     const dispatch = useDispatch();
     return <Paper className="carga">
         <div className="informacion-carga">
@@ -1683,11 +1684,11 @@ export function DesplegarCarga(props:{
                 </TableRow>
             </TableHead>
             <TableBody>
-                {beingArray(hojaDeRuta.respuestas.viviendas).filter((respuestas:RespuestasRaiz, _numVivienda:number)=>respuestas.tem.carga==idCarga).map((respuestas:RespuestasRaiz, numVivienda:number)=>
+                {beingArray(informacionHdr).filter((informacion:DatosHdrUaPpal, _numVivienda:number)=>informacion.tem.carga==idCarga).map((informacion:DatosHdrUaPpal, numVivienda:number)=>
                     <DesplegarLineaResumenUAPrincipal 
                         key={numVivienda} 
                         numVivienda={numVivienda}
-                        respuestas={respuestas}
+                        respuestas={hojaDeRuta.respuestas.viviendas[numVivienda]}
                     />
                 ).array()}
             </TableBody>
@@ -1784,7 +1785,7 @@ export function DesplegarNotasYVisitas(props:{tareas:Tareas, forPkRaiz:ForPkRaiz
 }
 
 export function HojaDeRutaDespliegue(){
-    var {cargas, modo, num_sincro} = useSelector((state:CasoState)=>({cargas: state.datos.cargas, modo:state.modo, num_sincro:state.datos.num_sincro}));
+    var {cargas, modo, num_sincro, informacionHdr} = useSelector((state:CasoState)=>({cargas: state.datos.cargas, informacionHdr:state.datos.informacionHdr, modo:state.modo, num_sincro:state.datos.num_sincro}));
     var hojaDeRuta = getHojaDeRuta();
     var feedbackRowValidator = getFeedbackRowValidator()
     var dispatch = useDispatch();
@@ -1835,7 +1836,7 @@ export function HojaDeRutaDespliegue(){
                     <div>{my.getLocalVar('app-version')} - sincro {num_sincro}</div>
                 </div>
                 {likeAr(cargas).map((carga: Carga, idCarga: IdCarga, _, posicion:number)=>
-                    <DesplegarCarga key={idCarga} carga={carga} idCarga={idCarga} posicion={posicion} hojaDeRuta={hojaDeRuta} feedbackRowValidator={feedbackRowValidator}/>
+                    <DesplegarCarga key={idCarga} carga={carga} idCarga={idCarga} posicion={posicion} informacionHdr={informacionHdr} hojaDeRuta={hojaDeRuta} feedbackRowValidator={feedbackRowValidator}/>
                 ).array()}
             </div>
         </>

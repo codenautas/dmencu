@@ -1,6 +1,6 @@
 import { createStore } from "redux";
 import { CasilleroBase, CasillerosImplementados, CasoState, 
-    DatosVivienda, EstadoCarga, EstructuraRowValidator, 
+    EstadoCarga, EstructuraRowValidator, 
     FeedbackVariable, Formulario, ForPk, ForPkRaiz, 
     IdCarga, IdCasillero, IdDestino, IdFin, IdFormulario, IdTarea, IdVariable, IdOperativo, 
     IdUnidadAnalisis,

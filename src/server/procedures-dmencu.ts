@@ -97,7 +97,7 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
         )
         select jsonb_build_object(
                 'viviendas', ${jsono(
-                    `select enc, respuestas, jsonb_build_object('resumenEstado',"resumenEstado", 'tem', tem, 'tareas', tareas) as otras from viviendas`,
+                    `select enc, respuestas, jsonb_build_object('resumenEstado',"resumenEstado") as otras from viviendas`,
                     'enc',
                     `otras || coalesce(respuestas,'{}'::jsonb)`
                 )}
@@ -106,7 +106,13 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
                 select area as carga, observaciones_hdr as observaciones, min(fecha_asignacion) as fecha
                     from viviendas inner join areas using (area) 
                     group by area, observaciones_hdr`, 
-                'fecha')} as cargas
+                'fecha')} as cargas,
+            ${jsono(
+                `select enc, jsonb_build_object('tem', tem, 'tareas', tareas) as otras from viviendas`,
+                 'enc',
+                 `otras ||'{}'::jsonb`
+                )}
+            as "informacionHdr"
 `
 }
 
@@ -592,7 +598,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             const UA_PRINCIPAL = await getUAPrincipal(context.client, OPERATIVO);
             if(persistentes){
                 await Promise.all(likeAr(persistentes.hojaDeRuta.respuestas[UA_PRINCIPAL]).map(async (respuestasUAPrincipal, idEnc)=>{
-                    var tareas = respuestasUAPrincipal.tareas;
+                    var tareas = datos.informacionHdr[idEnc].tareas;
                     for(let tarea in tareas){
                         var puedoGuardarEnTEM=true;
                         var queryTareasTem = await context.client.query(

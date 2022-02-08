@@ -229,7 +229,6 @@ export type Respuestas={
     }
 
 export type RespuestasRaiz=Respuestas & {
-    TEM:TEM
     resumenEstado:ResumenEstado
     $dirty:boolean
 }
@@ -285,8 +284,7 @@ export type Visita={
     observaciones: string | null
 }
 
-export type  DatosVivienda= {
-    respuestas: Respuestas
+export type  DatosHdrUaPpal= {
     tareas: Tareas
     tem: TEM
     
@@ -295,9 +293,6 @@ export type  DatosVivienda= {
     {v1:'x', v2:'x', personas:[{p1:1, p2:'x},{p1:2, p2:x}], mascotas:[] }
     está anidado por unidad de análisis
 */
-    resumenEstado:ResumenEstado
-    visitas: Visita[]
-    dirty?:boolean,
 }
 
 export type IdCarga="2020-07-07"|"2020-07-08"
@@ -348,6 +343,8 @@ export type Estructura = {
     operativo:IdOperativo
 }
 
+export type InformacionHdr={[enc in '130031'|'130032'|'etc']: DatosHdrUaPpal}
+
 export type CasoState={
     datos:{
         token?:string
@@ -356,6 +353,7 @@ export type CasoState={
         num_sincro?:number
         idper:string
         cargas: Cargas
+        informacionHdr: InformacionHdr
         soloLectura?: boolean
     }
     opciones:{ // datos de navegación que elije el usuario
