@@ -191,6 +191,7 @@ function respuestasForPk(forPk:ForPk, conAumentadas?:boolean, agregarSiFalta?:bo
             if(agregarSiFalta){
                 respuestas = {} as Respuestas
                 respuestasAnterior[unidad_analisis][posicion] = respuestas
+                persistirDatosByPass(datosByPass); // OJO ASYNC DESCONTROLADA
             }else{
                 throw new Error(`No existe el elemento '${posicion}' en la unidad_analisis '${unidad_analisis}'`);
             }
