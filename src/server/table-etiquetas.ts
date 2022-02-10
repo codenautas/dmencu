@@ -29,7 +29,7 @@ export function etiquetas(context:TableContext):TableDefinition {
             {references:'planchas'        , fields:['plancha']},
             {references:'usuarios'        , fields:[{source:'laboratorista', target:'usuario'}]},
             {references:'usuarios'        , fields:[{source:'avisado_quien', target:'usuario'}], alias:'avi'},
-            {references:'resultados_test' , fields:['resultado']},
+            //{references:'resultados_test' , fields:['resultado']},
         ],
         sql:{
         }

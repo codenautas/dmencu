@@ -53,3 +53,7 @@ CREATE TRIGGER casilleros_disform_cerrado_trg
   ON casilleros
   FOR EACH ROW
   EXECUTE PROCEDURE control_disform_cerrado_trg();
+
+--limpiar roles 
+   delete from permisos where permiso~'citas|lab_resultado';
+   delete from roles where rol~'^(comunicacion|jefe_lab|lab|sensibilizador|jefe_equipo)$'; 

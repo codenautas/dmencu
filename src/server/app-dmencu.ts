@@ -29,10 +29,7 @@ import {tem                  } from "./table-tem";
 import {tem_recepcion        } from "./table-tem_recepcion";
 import {semanas              } from "./table-semanas";
 import { planchas            } from './table-planchas';
-import { resultados_test     } from './table-resultados-test';
 import { etiquetas           } from './table-etiquetas';
-import { etiquetas_resultado } from './table-etiquetas_resultado';
-import { etiquetas_resultado_plus } from './table-etiquetas_resultado_plus';
 import { usuarios            } from './table-usuarios';
 import { operaciones         } from './table-operaciones';
 import { comunas             } from './table-comunas';
@@ -197,9 +194,9 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             be.permisosRolSoloTrue=results[1].value;
             be.permisosSuperuser=results[2].value;
             be.permisosParaNadie=likeAr(be.permisosSuperuser).map(p=>likeAr(p).map(va=>false).plain()).plain()
-            console.dir(be.permisosRolSoloTrue,{depth:9});
-            console.dir(be.permisosSuperuser,{depth:9});
-            console.dir(be.permisosParaNadie,{depth:9});
+            //console.dir(be.permisosRolSoloTrue,{depth:9});
+            //console.dir(be.permisosSuperuser,{depth:9});
+            //console.dir(be.permisosParaNadie,{depth:9});
         });
         await this.refreshCaches();
     }
@@ -326,7 +323,6 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                 )
                 menu.push(
                     {menuType:'menu', name:'recepcion', label:'recepción' ,menuContent:[
-                        //{menuType:'carga_recepcionista', name:'cargar'},
                         {menuType:'table', name:'mis_areas', table:'areas', ff:{recepcionista:context.user.idper}},
                         {menuType:'table', name:'mis_relevadores'},
                         {menuType:'table', name:'areas'},
@@ -338,7 +334,6 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             if(context.superuser){
                 menu.push(
                     {menuType:'menu', name:'control', menuContent:[
-                        //{menuType:'carga_recepcionista', name:'cargar'},
                         {menuType:'table', name:'resumen', table:'control_resumen', selectedByDefault:true},
                         {menuType:'table', name:'dominio', table:'control_campo'},
                         {menuType:'table', name:'zona'   , table:'control_campo_zona'  },
@@ -347,37 +342,16 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                         {menuType:'table', name:'participacion'        , table:'control_campo_participacion'  },
                     ]},            
                 )
-            }else if(context.user.rol=='comunicacion'){
-                menu.push(
-                    {menuType:'menu', name:'control', menuContent:[
-                        {menuType:'table', name:'rea_sin_resultados' , table:'rea_sin_resultados'  },
-                    ]},            
-                )
-            }
-            if(context.puede?.citas?.programar){
-                //menu.push(
-                //    {menuType:'menu', name:'citas' ,menuContent:[
-                //        //{menuType:'carga_recepcionista', name:'cargar'},
-                //        {menuType:'table', name:'mis_areas', table:'areas', ff:{recepcionista:context.user.idper}}, //REVISAR CONDICION de búsqueda
-                //        {menuType:'table', name:'areas'},
-                //    ]},            
-                //)
             }
             if(context.superuser){
                 menu = [ ...menu,
                     {menuType:'menu', name:'configurar', menuContent:[
-                        /*{menuType:'menu', name:'etiquetas', menuContent:[
-                            {menuType:'table', name:'planchas'},
-                            {menuType:'table', name:'etiquetas'},
-                            {menuType:'table', name:'resultados_test'},
-                            {menuType:'proc', name:'imprimir', proc:'qrs_traer'},
-                        ]},*/
                         {menuType:'menu', name:'muestra', label:'muestra', menuContent:[
                             {menuType:'table', name:'tem', label: 'TEM'} ,
                             {menuType:'table', name:'tareas'},
                             {menuType:'table', name:'resultados_tarea'},
                         // {menuType:'table', name:'personal_rol'},
-                            ]},
+                        ]},
                         {menuType:'menu', name:'metadatos', menuContent:[
                             {menuType:'table', name:'operativos'},
                             {menuType:'table', name:'formularios' , table:'casilleros_principales'},
@@ -422,10 +396,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             , tem_recepcion
             , parametros
             , planchas
-            , resultados_test
             , etiquetas
-            , etiquetas_resultado
-            , etiquetas_resultado_plus
             , operaciones
             , comunas
             , areas
@@ -487,38 +458,6 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
         // be.appendToTableDefinition('casilleros',function(tableDef, context){
         //     tableDef.constraints = tableDef.constraints.filter(c=>c.consName!='casilleros salto REL')
         // })
-        // be.appendToTableDefinition('usuarios', function (tableDef,context) {
-        //     tableDef.fields.splice(2,0,
-        //         {name:'idper', typeName:'text'}
-        //     );
-        //     tableDef.fields.forEach(function(field){
-        //         if(field.name=='clave_nueva'){
-        //             field.allow=changing(field.allow, {
-        //                 select:true, update:true, insert:true
-        //             });
-        //             //field.editable=true;
-        //             // no deja cambiar clave_nueva por condicion en admin_chpass
-        //         }
-        //     })
-        //     var q = context.be.db.quoteLiteral;
-        //     var esSuperUser=context.superuser||false;
-        //     //o filtrar por usuario ${q(context.user.usuario)}
-        //     //asumo solo relacion de rol de un nivel
-        //     tableDef.sql=changing(tableDef.sql,{
-        //         isTable:true,
-        //         where:` (${q(esSuperUser)} 
-        //             or usuarios.rol= ${q(context.user.rol)}
-        //             or exists (select rol_subordinado from roles_subordinados s where s.rol=${q(context.user.rol)} and usuarios.rol=s.rol_subordinado)                      
-        //         )`
-        //     });
-        //     tableDef.editable=true;
-        //     tableDef.foreignKeys = tableDef.foreignKeys||[];
-        //     tableDef.foreignKeys.push({references:'roles'  , fields:['rol'] , onDelete: 'cascade'});
-        //     tableDef.constraints=tableDef.constraints||[];
-        //     tableDef.constraints.push(
-        //         {constraintType:'unique', fields:['idper']}
-        //     );
-        // });
     }
   }
 }
