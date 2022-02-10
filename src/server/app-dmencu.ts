@@ -477,6 +477,13 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                 }
             })
         })
+        be.appendToTableDefinition('operativos',function(tableDef, context){
+            tableDef.fields.splice(2,0,
+                {name:'disform_cerrado', typeName:'boolean', defaultValue: false
+                        , editable: context.forDump||['admin','dis_conceptual'].includes(context.user.rol)}
+            );
+        })
+
         // be.appendToTableDefinition('casilleros',function(tableDef, context){
         //     tableDef.constraints = tableDef.constraints.filter(c=>c.consName!='casilleros salto REL')
         // })
