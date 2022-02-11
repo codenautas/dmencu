@@ -22,6 +22,7 @@
     "react-redux": "^7.2.6",
     "redux": "^4.1.2",
     "redux-typed-reducer": "~0.1.1",
+    "service-worker-admin": "^0.2.1",
     "yazl": "~2.5.1"
   },
   "dependencias provisorias: las que se pongan en dependencias ponerlas acá y sacarlas juntas": {},

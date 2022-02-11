@@ -1924,9 +1924,13 @@ export async function desplegarFormularioActual(opts:{operativo:IdOperativo, mod
     // traer los datos de localStorage
     // verificar el main Layout
     const store = await dmTraerDatosFormulario(opts)
+    try{
+        await loadCSS(BOOTSTRAP_5_1_3_SRC);
+    }catch(err){
+        throw(err)
+    }
     ReactDOM.render(
         <RenderPrincipal store={store} dispatchers={dispatchers} mensajeRetorno={opts.forPkRaiz?"Volver al formulario":"Volver a la hoja de ruta"}>
-            <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossOrigin="anonymous"></link>            
             <OpenedTabs/>
             <AppDmEncu/>
         </RenderPrincipal>,
@@ -1996,3 +2000,21 @@ window.addEventListener('load', function(){
     loadInstance()
 })
 //FIN CONTROL PESTAÑAS
+
+function loadCSS(cssURL:string):Promise<void>{
+    return new Promise(( resolve, reject )=>{
+        var link = document.createElement( 'link' );
+        link.rel  = 'stylesheet';
+        link.href = cssURL;
+        document.head.appendChild( link );
+        link.onload = ()=>{ 
+            resolve(); 
+            console.log(`trae ${cssURL}`);
+        };
+        link.onerror=(err)=>{
+            reject(new Error(`problema cargando estilo ${cssURL}`))
+        }
+    });
+}
+
+const BOOTSTRAP_5_1_3_SRC = 'css/bootstrap.min.css';

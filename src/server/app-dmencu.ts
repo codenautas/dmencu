@@ -13,6 +13,8 @@ import * as yazl from "yazl";
 import { NextFunction } from "express-serve-static-core";
 import * as likeAr from "like-ar";
 
+import {promises as fs } from "fs";
+
 import { roles               } from "./table-roles";
 import { personal            } from "./table-personal";
 import { recepcionistas      } from "./table-recepcionistas";
@@ -49,6 +51,9 @@ import { control_campo       } from './table-control_campo';
 import { control_resumen     } from './table-control_resumen';
 
 import {defConfig} from "./def-config"
+
+const APP_DM_VERSION="#22-02-09";
+const APP_NAME="Etoi";
 
 export type Constructor<T> = new(...args: any[]) => T;
 export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesamientoType>>(Base:T){
@@ -102,6 +107,73 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                miniTools.serveText(htmlMain,'html')(req,res);
             }else{
                 res.redirect(baseUrl+'/login#w=path&path=/campo')
+            }
+        });
+        var createServiceWorker = async function(){
+            var sw = await fs.readFile('node_modules/service-worker-admin/dist/service-worker-wo-manifest.js', 'utf8');
+            var manifest = be.createResourcesForCacheJson({});
+            var swManifest = sw
+                .replace("'/*version*/'", JSON.stringify(manifest.version))
+                .replace("'/*appName*/'", JSON.stringify(manifest.appName))
+                .replace(/\[\s*\/\*urlsToCache\*\/\s*\]/, JSON.stringify(manifest.cache))
+                .replace(/\[\s*\/\*fallbacks\*\/\s*\]/, JSON.stringify(manifest.fallback || []));
+                //.replace("/#CACHE$/", "/(a\\d+m\\d+p\\d+t\\d+_estructura.js)|(a\\d+m\\d+p\\d+t\\d+_hdr.json)/");
+            return swManifest
+        }
+        mainApp.get(baseUrl+`/sw-manifest.js`, async function(req, res, next){
+            try{
+                miniTools.serveText(await createServiceWorker(),'application/javascript')(req,res);
+            }catch(err){
+                miniTools.serveErr(req,res,next)(err);
+            }
+        });
+        mainApp.get(baseUrl+`/carga-dm/web-manifest.webmanifest`, async function(req, res, next){
+            try{
+                const content = {
+                  "name": `${APP_NAME} Progressive Web App`,
+                  "short_name": `${APP_NAME} PWA`,
+                  "description": `Progressive Web App for ${APP_NAME}.`,
+                  "icons": [
+                    {
+                      "src": "../img/logo-dm-32.png",
+                      "sizes": "32x32",
+                      "type": "image/png"
+                    },
+                    {
+                      "src": "../img/logo-dm-48.png",
+                      "sizes": "48x48",
+                      "type": "image/png"
+                    },
+                    {
+                      "src": "../img/logo-dm-64.png",
+                      "sizes": "64x64",
+                      "type": "image/png"
+                    },
+                    {
+                      "src": "../img/logo-dm-72.png",
+                      "sizes": "72x72",
+                      "type": "image/png"
+                    },
+                    {
+                      "src": "../img/logo-dm-192.png",
+                      "sizes": "192x192",
+                      "type": "image/png"
+                    },
+                    {
+                      "src": "../img/logo-dm-512.png",
+                      "sizes": "512x512",
+                      "type": "image/png"
+                    }
+                  ],
+                  "start_url": "../dm",
+                  "display": "standalone",
+                  "theme_color": "#3F51B5",
+                  "background_color": "#FED214"
+                }
+                miniTools.serveText(JSON.stringify(content), 'application/json')(req,res);
+            }catch(err){
+                console.log(err);
+                miniTools.serveErr(req, res, next)(err);
             }
         });
         mainApp.get(baseUrl+'/consulta',async function(req,res,_next){
@@ -245,6 +317,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                 //    && m.file!='consistencias.js'
                 //    && m.file!='varcal.js'
                 ),
+            { type: 'js', module: 'service-worker-admin',  file:'service-worker-admin.js' },
             { type: 'js', module: 'redux-typed-reducer', modPath:'../dist', file:'redux-typed-reducer.js' },
             { type: 'js', src: 'adapt.js' },
             { type: 'js', src: 'tipos.js' },
@@ -305,6 +378,88 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             ...super.getClientSetupForSendToFrontEnd(req),
             idper: req.user?.idper
         }
+    
+    }
+    createResourcesForCacheJson(parameters){
+        var be = this;
+        var jsonResult = {};
+        
+        jsonResult.version = APP_DM_VERSION;
+        jsonResult.appName = 'dmencu';
+        jsonResult.cache=[
+            "campo",
+            "offline",
+            "lib/react.production.min.js",
+            "lib/react-dom.production.min.js",
+            "lib/material-ui.production.min.js",
+            "lib/clsx.min.js",
+            "lib/redux.min.js",
+            "lib/react-redux.min.js",
+            "lib/memoize-one.js",
+            "lib/qrcode.js",
+            "lib/require-bro.js",
+            "lib/cast-error.js",
+            "lib/like-ar.js",
+            "lib/best-globals.js",
+            "lib/json4all.js",
+            "lib/js-to-html.js",
+            "lib/redux-typed-reducer.js",
+            "adapt.js",
+            "unlogged.js",
+            "lib/js-yaml.js",
+            "lib/xlsx.core.min.js",
+            "lib/lazy-some.js",
+            "lib/sql-tools.js",
+            "dialog-promise/dialog-promise.js",
+            "moment/min/moment.js",
+            "pikaday/pikaday.js",
+            "lib/polyfills-bro.js",
+            "lib/big.js",
+            "lib/type-store.js",
+            "lib/typed-controls.js",
+            "lib/ajax-best-promise.js",
+            "my-ajax.js",
+            "my-start.js",
+            "lib/my-localdb.js",
+            "lib/my-websqldb.js",
+            "lib/my-localdb.js.map",
+            "lib/my-websqldb.js.map",
+            "lib/my-things.js",
+            "lib/my-tables.js",
+            "lib/my-inform-net-status.js",
+            "lib/my-menu.js",
+            "lib/my-skin.js",
+            "lib/cliente-en-castellano.js",
+            "lib/service-worker-admin.js",
+            "lib/redux-typed-reducer.js",
+            "tipos.js",
+            "generador-qr.js",
+            "digitov.js",
+            "bypass-formulario.js",
+            "redux-formulario.js",
+            "render-general.js",
+            "render-formulario.js",
+            "abrir-formulario.js",
+            "client_modules/row-validator.js",
+            "client/service-worker.js",
+            "client/menu.js",
+            "img/logo.png",
+            //"img/logo-dm.png",
+            "img/logo-128.png",
+            "img/main-loading.gif",
+            "client-setup",
+            "css/bootstrap.min.css",
+            "css/formulario-react.css",
+            "css/etiquetas-qr.css",
+            "css/Roboto-Regular.ttf"
+        ]
+        jsonResult.fallback=[
+            {"path":"login", "fallback":"offline"},
+            {"path":"logout", "fallback":"offline"},
+            {"path":"login#i=sincronizar", "fallback":"offline"},
+            {"path":"menu#i=sincronizar", "fallback":"offline"}
+        ];
+        return jsonResult
     }
     getMenu(context:Context){
         let menu:MenuInfoBase[] = [];

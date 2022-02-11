@@ -383,7 +383,6 @@ export async function traerEstructura(params:{operativo: string}){
 
 export async function dmTraerDatosFormulario(opts:{operativo:IdOperativo, modoDemo:boolean, modoAlmacenamiento:ModoAlmacenamiento, forPkRaiz?:ForPkRaiz}){
     var useSessionStorage = opts.modoAlmacenamiento == 'session';
-    var estructura = await traerEstructura({ operativo: opts.operativo });
     var loadState = async function loadState():Promise<CasoState>{
         var casoState:CasoState|null = useSessionStorage?my.getSessionVar(LOCAL_STORAGE_STATE_NAME):my.getLocalVar(LOCAL_STORAGE_STATE_NAME);
         var initialState = {

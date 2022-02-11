@@ -9,7 +9,6 @@ import { Variable } from "operativos";
 import {FormStructureState, Structure, Feedback} from "row-validator";
 
 export const LOCAL_STORAGE_STATE_NAME ='hdr-campo-0.6';
-export const LOCAL_STORAGE_ESTRUCTURA_NAME ='estructura-0.6';
 
 export type ModoAlmacenamiento = 'session'| // cuando sea para una sola pestaña, se usa en modo directo,
                                  'local'    // para todo el dispositivo, se usa al cargar hojas de ruta entres
