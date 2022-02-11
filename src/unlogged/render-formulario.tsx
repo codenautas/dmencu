@@ -396,7 +396,7 @@ function OpcionDespliegue(props:{casillero:Opcion, valorOpcion:number, variable:
                 <Grid className="opcion-texto">
                     <Typography debe-leer={casillero.leer?'SI':casillero.leer===false?'NO':props.leer?'SI':'NO'}>{breakeableText(casillero.nombre, diccionario)}</Typography>
                     {casillero.aclaracion?
-                        <Typography >{breakeableText(casillero.aclaracion, diccionario)}</Typography>
+                        <Typography className='aclaracion'>{breakeableText(casillero.aclaracion, diccionario)}</Typography>
                     :null}
                 </Grid>
             </Grid>
