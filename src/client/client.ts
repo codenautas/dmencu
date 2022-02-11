@@ -179,26 +179,6 @@ function mostrarDatosPersona(hayDatos:boolean, datos:any, divResult:HTMLDivEleme
             html.p("No se encontró una encuesta para la etiqueta cargada").create()
     )
 }
-
-myOwn.clientSides.avisar={
-    prepare: (depot, fieldName)=>{
-        var avisarButton = html.button({class:'avisar-button'},'aviso').create();
-        depot.rowControls[fieldName].appendChild(avisarButton);
-        avisarButton.onclick = async function(){
-            try{
-                avisarButton.disabled=true;
-                await my.ajax.etiqueta_avisar({operativo: depot.row['operativo'], etiqueta:depot.row['etiqueta']});        
-                var grid=depot.manager;
-                grid.retrieveRowAndRefresh(depot)
-            }catch(err){
-                alertPromise(err.message)
-            }finally{
-                avisarButton.disabled=false;
-            }
-        }
-    },
-};
-
 myOwn.clientSides.tareasTemRow={
     update:(depot)=>{
         var tarea:'nada'|'preasignar'|'cargar'|'realizar'|'verificar'='nada';
@@ -242,64 +222,6 @@ myOwn.clientSides.tareasTemRow={
     },
     prepare: function(){}
 }
-
-myOwn.clientSides.avisar_email={
-    prepare: (depot, fieldName)=>{
-        var {email, resultado, nombre, apellido, mail_aviso_texto, mail_aviso_asunto, tipo_informe} = depot.row;
-        if(resultado && email && resultado.toLowerCase()=='negativo' && tipo_informe!='5'){
-            // OJO QUE EL TEXTO CAMBIA MUCHO SI FUERA A POSITIVOS.
-            var body = replaceSpecialWords(mail_aviso_texto || '', nombre || '', apellido || '', resultado || '');
-            var subject = replaceSpecialWords(mail_aviso_asunto || '', nombre || '', apellido || '', resultado || '');
-            var avisarEmailButton = html.a({
-                class:'email-button',
-                href:`mailto:${email}?Subject=${subject}&body=${body}`
-            },'enviar mail').create();
-            depot.rowControls[fieldName].appendChild(avisarEmailButton);
-        }else if(tipo_informe==5){
-            depot.rowControls[fieldName].appendChild(html.span("geriatrico").create());
-        }else if(resultado && resultado.toLowerCase()!='negativo'){
-            depot.rowControls[fieldName].appendChild(html.span("avisa salud").create());
-        }
-    },
-};
-
-myOwn.wScreens.resultados_ver = async ()=>{
-    var mainLayout = document.getElementById('main_layout')!;
-    mainLayout.appendChild(html.h1('ingrese fecha de busqueda').create());
-    var fechaElement=html.td({style:'min-width:100px; border:solid 1px black', $attrs:{"typed-controls-direct-input":"true"}}).create();
-    var searchButton = html.button({class:'ver-resultados-button'},'buscar').create();
-    var allButton = html.button({class:'ver-todos-resultados-button'},'todos').create();
-    mainLayout.appendChild(html.label(['fecha:',fechaElement]).create());
-    mainLayout.appendChild(searchButton);
-    mainLayout.appendChild(allButton);
-    TypedControls.adaptElement(fechaElement,{typeName:'date'});
-    var resultDiv=html.div({id:"grilla-resultados-div"}).create();
-    mainLayout.appendChild(resultDiv);
-    searchButton.onclick=async ()=>{
-        resultDiv.innerHTML='';
-        var fecha;
-        try{
-            // @ts-ignore typed-controls
-            fecha = fechaElement.getPlainValue();
-        }catch(err){
-            // @ts-ignore typed-controls
-            fechaElement.setTypedValue(null)
-        }
-        var fixedFields = [];
-        if(fecha){
-            fixedFields.push({fieldName: 'fecha', value: fecha})
-            
-        }
-        my.tableGrid('etiquetas_resultado',resultDiv,{tableDef:{}, fixedFields})
-    }
-    allButton.onclick=async ()=>{
-        resultDiv.innerHTML='';
-        // @ts-ignore typed-controls
-        fechaElement.setTypedValue(null)
-        my.tableGrid('etiquetas_resultado',resultDiv,{tableDef:{}})
-    }
-}
-
 var crearBotonVer = (depot:myOwn.Depot, fieldName:string, label:'abrir'|'ver')=>{
     var openButton = html.button({class:'open-dm-button'},label).create();
     depot.rowControls[fieldName].innerHTML='';

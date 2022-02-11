@@ -48,6 +48,7 @@ install:
       - sincro_tareas_areas_tareas_tem_trg.sql
       - sincronizacion_tareas_tem.sql
       - sincronizacion_tem.sql
+      - control_disform_cerrado_trg.sql
 login:
   infoFieldList: [usuario, rol, idper]
   table: usuarios
