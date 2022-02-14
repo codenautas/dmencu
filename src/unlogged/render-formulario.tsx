@@ -1917,6 +1917,77 @@ export function AppDmEncu(){
     }
 }
 
+function PantallaInicialSinCarga(_props:{}){
+    const updateOnlineStatus = function(){
+        setOnline(window.navigator.onLine);
+    }
+    const [online, setOnline] = useState(window.navigator.onLine);
+    window.addEventListener('online',  updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    const paragraphStyles={fontSize:"1.2rem", fontWeight:600, padding: "5px 10px"};
+    return (
+        <>
+            <AppBar position="fixed">
+                <Typography variant="h6" style={{margin:25}}>
+                    Dispositivo sin carga
+                </Typography>
+            </AppBar>
+            <main>
+                <Paper style={{height:'600px', padding:"15px", marginTop:75}}>
+                    <div>
+                        {online?
+                            <>
+                                <Typography component="p" style={paragraphStyles}>
+                                    Sincronizar dispositivo
+                                    <span style={{padding:'5px'}}>
+                                        <Button
+                                            color="primary"
+                                            variant="contained"
+                                            onClick={()=>{
+                                                history.replaceState(null, '', `${location.origin+location.pathname}/../#i=sincronizar`);
+                                                location.reload();   
+                                            }}
+                                        >
+                                            <ICON.SyncAlt/>
+                                        </Button>
+                                    </span>
+                                </Typography>
+                            </>
+                        :
+                            <Typography component="p" style={paragraphStyles}>
+                                No hay conexión a internet, por favor conécte el dispositivo a una red para sincronizar una hoja de ruta.
+                            </Typography>
+                        }
+                    </div>
+                </Paper>
+            </main>
+        </>
+    );
+}
+
+export function PantallaInicial(){
+    var {forPk, bienvenido, modo} = useSelector((state:CasoState)=>({...state.opciones, ...state.modo, ...state}));
+    if(!bienvenido){
+        return <BienvenidaDespliegue modo={modo}/> 
+    }else if(forPk==null){
+        return <HojaDeRutaDespliegue /> 
+    }else{
+        return <FormularioDespliegue forPk={forPk}/>
+    }
+}
+
+export async function dmPantallaInicialSinCarga(){
+    try{
+        await loadCSS(BOOTSTRAP_5_1_3_SRC);
+    }catch(err){
+        throw(err)
+    }
+    ReactDOM.render(
+        <PantallaInicialSinCarga/>,
+        document.getElementById('main_layout')
+    )
+}
+
 export async function desplegarFormularioActual(opts:{operativo:IdOperativo, modoDemo:boolean, modoAlmacenamiento:ModoAlmacenamiento, forPkRaiz?:ForPkRaiz}){
     // traer los metadatos en una "estructura"
     // traer los datos de localStorage
@@ -1939,7 +2010,8 @@ export async function desplegarFormularioActual(opts:{operativo:IdOperativo, mod
 if(typeof window !== 'undefined'){
     // @ts-ignore para hacerlo
     window.desplegarFormularioActual = desplegarFormularioActual;
-    // window.desplegarHojaDeRuta = desplegarHojaDeRuta;
+    // @ts-ignore para hacerlo
+    window.dmPantallaInicialSinCarga = dmPantallaInicialSinCarga;
 }
 
 

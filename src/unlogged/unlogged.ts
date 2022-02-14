@@ -3,7 +3,7 @@ import {html}  from 'js-to-html';
 import * as AjaxBestPromise from "ajax-best-promise";
 import {LOCAL_STORAGE_STATE_NAME} from "../unlogged/tipos";
 //import {CACHE_NAME} from "service-worker";
-import { desplegarFormularioActual } from './render-formulario';
+import { desplegarFormularioActual, dmPantallaInicialSinCarga } from './render-formulario';
 import { cargarEstructura, cargarHojaDeRuta, GLOVAR_ESTRUCTURA, GLOVAR_DATOSBYPASS } from './abrir-formulario';
 import { calcularFeedbackHojaDeRuta } from './bypass-formulario';
 const ServiceWorkerAdmin = require("service-worker-admin");
@@ -70,15 +70,7 @@ window.addEventListener('load', async function(){
         }else{
             startApp = async ()=>{
                 //@ts-ignore existe 
-                //dmPantallaInicial();
-                var layout = await awaitForCacheLayout;
-                layout.appendChild(html.div({class:'aviso-inicial'},[
-                    html.div({id:'dm-comprobando', style:'display:block'},[
-                        html.p('no se sincronizó una hoja de ruta'),
-                        html.a({href:'menu#i=sincronizar'},'sinconizar'),
-                        //html.img({src:'img/logo-dm.png'}),
-                    ])
-                ]).create());
+                dmPantallaInicialSinCarga();
             }
         }
         var refrescarStatus=async function(showScreen, newVersionAvaiable, installing){
