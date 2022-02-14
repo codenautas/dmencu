@@ -1307,10 +1307,8 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
     const [descargaCompleta, setDescargaCompleta] = useState<boolean|null>(false);
     const [descargando, setDescargando] = useState<boolean|null>(false);
     var cerrarDirecto = async function(){
-        close();
-        await sleep(100);
-        // dispatch(dispatchers.VOLVER_HDR({}));
-        await sleep(100);
+        var linkNode =  document.getElementById(BOOTSTRAP_5_1_3_SRC);
+        linkNode?.parentNode?.removeChild(linkNode);
         var hash=new URLSearchParams(location.hash?.replace(/^\#/,''));
         hash.delete('autoproced')
         location.hash=hash.toString();
@@ -2001,11 +1999,12 @@ window.addEventListener('load', function(){
 })
 //FIN CONTROL PESTAÑAS
 
-function loadCSS(cssURL:string):Promise<void>{
+function loadCSS(cssURL:string, id?:string):Promise<void>{
     return new Promise(( resolve, reject )=>{
         var link = document.createElement( 'link' );
         link.rel  = 'stylesheet';
         link.href = cssURL;
+        link.id = id || cssURL;
         document.head.appendChild( link );
         link.onload = ()=>{ 
             resolve(); 
