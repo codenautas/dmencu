@@ -395,9 +395,9 @@ function OpcionDespliegue(props:{casillero:Opcion, valorOpcion:number, variable:
                     {casillero.ver_id || casillero.casillero}
                 </Grid>
                 <Grid className="opcion-texto">
-                    <Typography debe-leer={casillero.leer?'SI':casillero.leer===false?'NO':props.leer?'SI':'NO'}>{breakeableText(casillero.nombre, diccionario)}</Typography>
+                    <Typography debe-leer={casillero.leer?'SI':casillero.leer===false?'NO':props.leer?'SI':'NO'}>{breakeableText(casillero.nombre)}</Typography>
                     {casillero.aclaracion?
-                        <Typography className='aclaracion'>{breakeableText(casillero.aclaracion, diccionario)}</Typography>
+                        <Typography className='aclaracion'>{breakeableText(casillero.aclaracion)}</Typography>
                     :null}
                 </Grid>
             </Grid>
@@ -512,12 +512,14 @@ function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?
             {(casillero.tipovar=="si_no"||casillero.tipovar=="opciones")?<Campo disabled={false} pregunta={casillero} forPk={forPk} mini={true} hidden={!conCampoOpciones}/>:null}
         </div>
         <div className="nombre-div">
-            <div className="nombre">{breakeableText(casillero.nombre,diccionario)}</div>
+            <div className="nombre">{breakeableText(casillero.nombre)}</div>
             {casillero.aclaracion?
                 <div className="aclaracion">
                     {casillero.salto && casillero.tipoc=='FILTRO'?
                         <SaltoDespliegue casillero={casillero} prefijo={breakeableText(casillero.aclaracion)}/>
-                    :null}        
+                    :
+                        breakeableText(casillero.aclaracion)
+                    }        
                 </div>
             :null}
             <div los-metadatos="si">
