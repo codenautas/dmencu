@@ -316,6 +316,10 @@ export function gotoVer(){
     location.reload();   
 }
 
+export function getCacheVersion(){
+    return my.getLocalVar('app-cache-version');
+}
+
 export async function consultarEtiqueta(etiqueta:string, numero_documento:string){
     try{
         var result = await my.ajax.resultado_consultar({

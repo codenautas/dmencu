@@ -438,6 +438,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             "abrir-formulario.js",
             "client_modules/row-validator.js",
             "client/menu.js",
+            "client/menu.js",
             "img/logo.png",
             //"img/logo-dm.png",
             "img/logo-128.png",

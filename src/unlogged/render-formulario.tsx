@@ -35,6 +35,7 @@ import { dmTraerDatosFormulario, dispatchers,
     saveSurvey,
     consultarEtiqueta,
     gotoVer,
+    getCacheVersion,
 } from "./redux-formulario";
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux"; 
@@ -1792,6 +1793,7 @@ export function HojaDeRutaDespliegue(){
     const updateOnlineStatus = function(){
         setOnline(window.navigator.onLine);
     }
+    const appVersion = getCacheVersion();
     const [online, setOnline] = useState(window.navigator.onLine);
     window.addEventListener('online',  updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
@@ -1802,12 +1804,14 @@ export function HojaDeRutaDespliegue(){
                     <Typography variant="h6">
                         Hoja de ruta
                     </Typography>
-                    <IconButton style={{marginTop:'3px'}}
-                        color="inherit"
-                        //onClick={/*dispatch que lleva a pantalla opciones*/}
-                    >
-                        <ICON.Settings/>
-                    </IconButton>
+                    {
+                    //<IconButton style={{marginTop:'3px'}}
+                    //    color="inherit"
+                    //    //onClick={/*dispatch que lleva a pantalla opciones*/}
+                    //>
+                    //    <ICON.Settings/>
+                    //</IconButton>
+                    }
                     {online?
                         <>
                             <IconButton
@@ -1833,7 +1837,7 @@ export function HojaDeRutaDespliegue(){
                 </div>:null}
                 <div className="nombre-version">
                     <div>Dirección General de Estadística y Censos - C.A.B.A.</div>
-                    <div>{my.getLocalVar('app-version')} - sincro {num_sincro}</div>
+                    <div>{my.getLocalVar('app-version')} sincro {num_sincro} - versión {appVersion}</div>
                 </div>
                 {likeAr(cargas).map((carga: Carga, idCarga: IdCarga, _, posicion:number)=>
                     <DesplegarCarga key={idCarga} carga={carga} idCarga={idCarga} posicion={posicion} informacionHdr={informacionHdr} hojaDeRuta={hojaDeRuta} feedbackRowValidator={feedbackRowValidator}/>
