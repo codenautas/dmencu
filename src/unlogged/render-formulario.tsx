@@ -1310,10 +1310,9 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
     var cerrarDirecto = async function(){
         var linkNode =  document.getElementById(BOOTSTRAP_5_1_3_SRC);
         linkNode?.parentNode?.removeChild(linkNode);
-        var hash=new URLSearchParams(location.hash?.replace(/^\#/,''));
+        var hash=new URLSearchParams(location.hash?.replace(/^\#/,'').split('&')[0]);
         hash.delete('autoproced')
         location.hash=hash.toString();
-        // location.reload();
     }
     var botonesFormulario=[];
     if(!opciones.modoDirecto){
