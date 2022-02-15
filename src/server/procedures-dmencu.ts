@@ -647,7 +647,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 token,
                 num_sincro,
                 idper:context.user.idper,
-                cargas:likeAr.createIndex(row.cargas.map(carga=>({...carga, fecha:carga.fecha?date.iso(carga.fecha).toDmy():null})), 'carga')
+                cargas:likeAr.createIndex(row.cargas.map(carga=>({...carga, fecha:carga.fecha?date.iso(carga.fecha).toDmy():null, estado_carga:'relevamiento'})), 'carga')
             };
         }
     },

@@ -1659,6 +1659,7 @@ export function DesplegarCarga(props:{
         </div>
         <div className="informacion-carga">
             <div className="fecha">{carga.fecha}</div>
+            {/*
             <ButtonGroup>
             {listaEstadosCarga.map(estado_carga=>
                 <Button key={estado_carga} variant={estado_carga==carga.estado_carga?"contained":"outlined"} onClick={
@@ -1666,6 +1667,7 @@ export function DesplegarCarga(props:{
                 }>{estado_carga}</Button>
             )}
             </ButtonGroup>
+            */}
         </div>
         {carga.estado_carga==null && !props.posicion || carga.estado_carga=='relevamiento'?
         <Table className="tabla-carga-hoja-de-ruta">
