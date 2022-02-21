@@ -1085,6 +1085,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                 ).array();
                 arrange(document.getElementById(idSeccion)!, todosLosBotones);
             }catch(err){
+                console.log("entra al catch")
                 div.textContent='esto, FALLÉ '+err.message;
             }
         }

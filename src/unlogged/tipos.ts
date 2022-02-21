@@ -340,6 +340,7 @@ export type Estructura = {
     tareas:TareasEstructura
     timestamp:number
     operativo:IdOperativo
+    configSorteo: ConfiguracionSorteo
 }
 
 export type InformacionHdr={[enc in '130031'|'130032'|'etc']: DatosHdrUaPpal}
@@ -379,7 +380,36 @@ export type EtiquetaOpts={
 
 export type HojaDeRuta = {
     respuestas:{[ua in IdUnidadAnalisis]:RespuestasRaiz[]}
-} 
+}
+
+export type ConfiguracionSorteo = {
+    unidad_analisis: IdUnidadAnalisis,
+    expr_incompletitud: string //"not (p1) or no t (p2) or not(p3)"
+    expr_incompletitud_js: string //se crea al compilar
+    disparador: IdVariable //"p9"
+    filtro: string //"p3>=18"
+    filtro_js: string //se crea al compilar
+    orden: {
+        variable:IdVariable
+        orden: 1|-1
+    }[] //["p3", "p2", "p1", "p0"], // p0 es construida, no va en parámetros, se pone para que el orden sea determinístico
+    parametros:IdVariable[]// ["p1","p2","p3", "p4", "p5", "p6"], // variables que anulan al disparador
+    cantidad_sorteables: IdVariable
+    cantidad_total: IdVariable
+    resultado: IdVariable //"p11"
+    incompletas: IdVariable
+    metodo: "tabla" | "hash",
+    param_metodo: {
+        tabla?:string[],
+        var_letra?:IdVariable,
+        var_coef?: [
+            {var:IdVariable, coef:number},
+            {var:IdVariable, coef:number},
+        ],
+        divisor?: number
+    }    
+}
+
 
 export function toPlainForPk(forPk:ForPk):PlainForPk{
     // @ts-ignore sabemos que hay que hacer un JSON

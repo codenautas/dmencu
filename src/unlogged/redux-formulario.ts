@@ -449,5 +449,3 @@ export async function dmTraerDatosFormulario(opts:{operativo:IdOperativo, modoDe
     //HDR CON STORE CREADO
     return store;
 }
-
-

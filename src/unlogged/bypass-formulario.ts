@@ -2,7 +2,7 @@ import { strict as likeAr, beingArray } from "like-ar";
 
 import { getRowValidator, Structure, Opcion as RowValidatorOpcion, FormStructureState, OpcionesRowValidator } from "row-validator";
 
-import { date } from "best-globals";
+import { date, compareForOrder } from "best-globals";
 
 import {
     Estructura, 
@@ -16,7 +16,8 @@ import {
     Tareas, TareasEstructura, TEM, Valor, Visita, 
     toPlainForPk,
     ModoAlmacenamiento, 
-    UnidadAnalisis
+    UnidadAnalisis,
+    ConfiguracionSorteo
 } from "./tipos";
 
 const FORMULARIO_TEM = 'F:TEM';
@@ -384,7 +385,16 @@ export function accion_registrar_respuesta(payload:{
     var feedbackRow = datosByPass.feedbackRowValidator[toPlainForPk(forPk)];
     var siguienteVariable:IdVariable|IdFin|null|undefined;
     if(variable != NO_CAMBIAR__SOLO_TRAER_STATUS && (recentModified || NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO && feedbackRow.autoIngresadas?.[variable])){
-        variablesCalculadas(respuestasRaiz)
+        variablesCalculadas(respuestasRaiz);
+        if(estructura.configSorteo){
+            verificarSorteo({
+                configuracionSorteo: estructura.configSorteo, 
+                respuestas,
+                respuestasRaiz,
+                variableActual: variable, 
+                forPk: forPk
+            })
+        }
         if(respuestas[ultimaVaribleVivienda]==null && respuestas[ultimaVaribleVivienda]!=null){
             encolarBackup(token, forPkRaiz, respuestasRaiz);
         }
@@ -394,8 +404,8 @@ export function accion_registrar_respuesta(payload:{
         calcularFeedback(respuestasRaiz, forPkRaiz, {autoIngreso: true});
         feedbackRow = datosByPass.feedbackRowValidator[toPlainForPk(forPk)];
         calcularVariablesBotonFormulario(forPk);
-        volcadoInicialElementosRegistrados(forPk);
         persistirDatosByPass(datosByPass); // OJO ASYNC DESCONTROLADA
+        volcadoInicialElementosRegistrados(forPk);
         siguienteVariable = feedbackRow.feedback[variable].siguiente;
     }
     return {recentModified, siguienteVariable, variableActual: feedbackRow.actual};
@@ -595,6 +605,94 @@ function num(num:number|string|null):number{
     if(isNaN(num-0)) return 0;
     //@ts-ignore la gracia es meter num cuando es string
     return num-0;
+}
+
+var funcionesConocidas:{[k in string]:boolean} = {}
+
+export function verificarSorteo(opts:{
+    configuracionSorteo:ConfiguracionSorteo, 
+    respuestas:Respuestas,
+    respuestasRaiz: RespuestasRaiz
+    forPk:ForPk,
+    variableActual:IdVariable
+
+}){
+    const resetearSorteo = (opts:{respuestas:Respuestas, resetearDisparador:boolean})=>{
+        var {respuestas, resetearDisparador} = opts;
+        respuestas[configuracionSorteo.resultado]=null;
+        respuestas[configuracionSorteo.cantidad_sorteables]=null;
+        respuestas[configuracionSorteo.disparador] = resetearDisparador?null:respuestas[configuracionSorteo.disparador];
+    }
+
+    var {configuracionSorteo, variableActual, respuestas, forPk, respuestasRaiz} = opts;
+    var idEnc = forPk.vivienda!;
+    var expr_incompletitud_fun = getFuncionHabilitar(configuracionSorteo.expr_incompletitud_js);
+    var filtro_fun =  getFuncionHabilitar(configuracionSorteo.filtro_js);
+    var unidadAnalisis = configuracionSorteo.unidad_analisis;
+    
+    //TODO ver parametros
+    //ver dominio de la TEM
+
+    if(configuracionSorteo.parametros.includes(variableActual)){
+        var {respuestasAumentadas} = respuestasForPk(forPk, true);
+        var uaPadre = likeAr(estructura.unidades_analisis).find((ua)=>ua.unidad_analisis==unidadAnalisis)?.padre;
+        var pkAgregadaPadre = likeAr(estructura.unidades_analisis).find((ua)=>ua.unidad_analisis==uaPadre)?.pk_agregada
+        if(uaPadre && respuestasAumentadas[uaPadre]){
+            var padre = respuestasAumentadas[uaPadre][Number(respuestasAumentadas[pkAgregadaPadre])-1];
+            resetearSorteo({respuestas:padre, resetearDisparador:true});
+        }
+    }
+
+    if(respuestas[unidadAnalisis]){
+        //if(respuestas[configuracionSorteo.cantidad_total]<respuestas[unidadAnalisis].length){
+        //    respuestas[unidadAnalisis]=respuestas[unidadAnalisis].filter(p=>
+        //        configuracionSorteo.parametros.some((param)=>p[param])
+        //    );
+        //}
+        //while(respuestas[configuracionSorteo.cantidad_total]>respuestas[unidadAnalisis].length){
+        //    respuestas[unidadAnalisis].push({} as Respuestas)
+        //}
+        respuestas[configuracionSorteo.incompletas] = respuestas[unidadAnalisis].filter(p=>expr_incompletitud_fun(p)).length;
+        if(respuestas[configuracionSorteo.disparador]!=1){
+            resetearSorteo({respuestas, resetearDisparador:false});
+        }
+        if(respuestas[configuracionSorteo.disparador]==1 &&
+            !respuestas[configuracionSorteo.resultado] &&
+            respuestas[configuracionSorteo.incompletas]==0
+        ){
+            var sortear=respuestas[unidadAnalisis].filter(p=>filtro_fun(p)).map((p,i)=>({p0:num(i)+1, ...p}));
+            configuracionSorteo.orden.push({variable:"p0", orden:1});
+            sortear.sort(compareForOrder(configuracionSorteo.orden.map(elem => ({column:elem.variable, order:elem.orden}))));
+            var posicionSorteada = null;
+            if(configuracionSorteo.metodo=='hash'){
+                throw new Error('NO IMPLEMENTADO');
+                /*posicionSorteada=(
+                    configuracionSorteo.param_metodo.var_coef.reduce(
+                        ((sum, pair)=>sum + datosVivienda.tem[pair.var] * pair.coef),
+                        0
+                    ) % configuracionSorteo.param_metodo.divisor
+                ) % sortear.length*/
+            }else{
+                var letra = 'A';
+                const varLetra:IdVariable = configuracionSorteo.param_metodo.var_letra;
+                for(var persona of sortear){
+                    respuestas[unidadAnalisis].find((_per,i)=>i==persona.p0-1)[varLetra] = letra;
+                    letra = String.fromCharCode(letra.charCodeAt(0)+1);   
+                }
+                var tablaAleatoriaMiembros = configuracionSorteo.param_metodo.tabla.map((lista)=>lista.split(''));
+                var columnaTablaAleatoria = idEnc % 10 - 1;
+                if(sortear.length > tablaAleatoriaMiembros.length){
+                    sortear.splice(tablaAleatoriaMiembros.length) //descarto candidatos si son más que lo que permite la tabla
+                }
+                var filaTablaAleatoria = sortear.length - 1 ;
+                var letraSeleccionada = tablaAleatoriaMiembros[filaTablaAleatoria][columnaTablaAleatoria];
+                posicionSorteada = sortear.findIndex((persona:Respuestas)=>persona[varLetra]==letraSeleccionada);
+            }
+            respuestas[configuracionSorteo.resultado]=sortear[posicionSorteada].p0;
+            respuestas[configuracionSorteo.cantidad_sorteables]=sortear.length;
+        }
+    }
+    
 }
 
 function variablesCalculadas(respuestasRaiz: RespuestasRaiz){

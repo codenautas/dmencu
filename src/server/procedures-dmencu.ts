@@ -220,7 +220,16 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             likeAr(result.row.unidades_analisis).forEach((ua, idUa)=>
                 completarUA(ua, idUa as IdUnidadAnalisis, result.row.unidades_analisis)
             )
-            return {timestamp: be.timestampEstructura, ...result.row, operativo:parameters.operativo};
+            var configSorteo = (await context.client.query(`
+                select config_sorteo 
+                    from operativos 
+                    where operativo = $1
+            `,[parameters.operativo]).fetchUniqueValue()).value;
+            if(configSorteo){
+                configSorteo.expr_incompletitud_js =  compilarExpresion(configSorteo.expr_incompletitud);
+                configSorteo.filtro_js = compilarExpresion(configSorteo.filtro)
+            }
+            return {timestamp: be.timestampEstructura, ...result.row, operativo:parameters.operativo, configSorteo};
         }
     },
     {
