@@ -538,6 +538,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             ).fetchOneRowIfExists()).rowCount;
             var {row} = await context.client.query(getHdrQuery(condviv),[operativo,parameters.forPkRaiz.vivienda]).fetchUniqueRow();
             return {
+                ...row,
                 hojaDeRuta:row,
                 soloLectura,
                 idPer:context.user.idper,

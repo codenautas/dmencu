@@ -39,23 +39,8 @@ async function sincronizarDatos(state:CasoState|null, persistentes:DatosByPassPe
         state={};
     }
     if(state){
+        inicializarState(state);
         state.datos=datos;
-        state.modo = {
-            demo: false
-        }
-        // OJO state.opciones se modifica acá y en otro lado con este mismo cartel
-        state.opciones = {
-            bienvenido: true,
-            forPk: null,
-            pilaForPk: [], 
-            modoDespliegue: "relevamiento",
-            modoDirecto: false,
-            modoBorrarRespuesta: null,
-            conCampoOpciones: false,
-            saltoAutomatico: true,
-        }
-        //@ts-ignore
-        state.feedbackRowValidator={};
     }
     
     delete(state.datos.respuestas);
@@ -89,6 +74,13 @@ myOwn.wScreens.abrir_encuesta={
         if(!carga.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!]){
             throw new Error(`No se encuentra la vivienda ${forPkRaiz.vivienda!}`);
         }
+        // @ts-ignore
+        var state:CasoState = {}
+        inicializarState(state);
+        state.datos={...carga};
+        delete(state.datos.hojaDeRuta);
+        delete(state.datos.respuestas);
+        my.setLocalVar(LOCAL_STORAGE_STATE_NAME, state);
         cargarHojaDeRuta({...carga, modoAlmacenamiento:'session'});
         // @ts-ignore
         desplegarFormularioActual({operativo, modoDemo:false, forPkRaiz, useSessionStorage:true});
@@ -140,6 +132,25 @@ myOwn.wScreens.sincronizar_dm=async function(){
     mainLayout.appendChild(divAvisoSincro);
     procederButton.onclick = ()=>procederSincroFun(procederButton, divAvisoSincro)
 };
+
+function inicializarState(state: CasoState) {
+    state.modo = {
+        demo: false
+    };
+    // OJO state.opciones se modifica acá y en otro lado con este mismo cartel
+    state.opciones = {
+        bienvenido: true,
+        forPk: null,
+        pilaForPk: [],
+        modoDespliegue: "relevamiento",
+        modoDirecto: false,
+        modoBorrarRespuesta: null,
+        conCampoOpciones: false,
+        saltoAutomatico: true,
+    };
+    //@ts-ignore
+    state.feedbackRowValidator = {};
+}
 
 function mostrarDatosPersona(hayDatos:boolean, datos:any, divResult:HTMLDivElement){
     //TODO: EVALUAR SI CONVIENE TRAERLO DE LA BASE
