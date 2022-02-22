@@ -66,20 +66,27 @@ myOwn.wScreens.abrir_encuesta={
             estructura = await traerEstructura({operativo})
             cargarEstructura(estructura);
         }
+        //@ts-ignore
+        var state:CasoState = {}
+        inicializarState(state);
+        var datos = {...carga};
+        //@ts-ignore
+        delete(datos.hojaDeRuta);
+        //@ts-ignore respuestas viene desde la base
+        delete(datos.respuestas);
+        //@ts-ignore la info ya se limpió
+        state.datos=datos;
         setPersistirDatosByPass(
             async function persistirDatosByPassEnBaseDeDatos(persistentes:DatosByPassPersistibles){
+                if(state.datos.soloLectura){
+                    throw new Error("Está intentando modificar una encuesta abierta como solo lectura, no se guardaron los cambios")
+                }
                 await my.ajax.dm_forpkraiz_descargar({operativo, persistentes});
             }
         )
         if(!carga.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!]){
             throw new Error(`No se encuentra la vivienda ${forPkRaiz.vivienda!}`);
         }
-        // @ts-ignore
-        var state:CasoState = {}
-        inicializarState(state);
-        state.datos={...carga};
-        delete(state.datos.hojaDeRuta);
-        delete(state.datos.respuestas);
         my.setLocalVar(LOCAL_STORAGE_STATE_NAME, state);
         cargarHojaDeRuta({...carga, modoAlmacenamiento:'session'});
         // @ts-ignore
