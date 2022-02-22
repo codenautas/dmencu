@@ -404,8 +404,10 @@ export function accion_registrar_respuesta(payload:{
         calcularFeedback(respuestasRaiz, forPkRaiz, {autoIngreso: true});
         feedbackRow = datosByPass.feedbackRowValidator[toPlainForPk(forPk)];
         calcularVariablesBotonFormulario(forPk);
-        persistirDatosByPass(datosByPass); // OJO ASYNC DESCONTROLADA
         volcadoInicialElementosRegistrados(forPk);
+        console.log("datosbypass",datosByPass);
+        persistirDatosByPass(datosByPass); // OJO ASYNC DESCONTROLADA
+
         siguienteVariable = feedbackRow.feedback[variable].siguiente;
     }
     return {recentModified, siguienteVariable, variableActual: feedbackRow.actual};
@@ -644,14 +646,14 @@ export function verificarSorteo(opts:{
     }
 
     if(respuestas[unidadAnalisis]){
-        //if(respuestas[configuracionSorteo.cantidad_total]<respuestas[unidadAnalisis].length){
-        //    respuestas[unidadAnalisis]=respuestas[unidadAnalisis].filter(p=>
-        //        configuracionSorteo.parametros.some((param)=>p[param])
-        //    );
-        //}
-        //while(respuestas[configuracionSorteo.cantidad_total]>respuestas[unidadAnalisis].length){
-        //    respuestas[unidadAnalisis].push({} as Respuestas)
-        //}
+        if(respuestas[configuracionSorteo.cantidad_total]<respuestas[unidadAnalisis].length){
+            respuestas[unidadAnalisis]=respuestas[unidadAnalisis].filter(p=>
+                configuracionSorteo.parametros.some((param)=>p[param])
+            );
+        }
+        while(respuestas[configuracionSorteo.cantidad_total]>respuestas[unidadAnalisis].length){
+            respuestas[unidadAnalisis].push({} as Respuestas)
+        }
         respuestas[configuracionSorteo.incompletas] = respuestas[unidadAnalisis].filter(p=>expr_incompletitud_fun(p)).length;
         if(respuestas[configuracionSorteo.disparador]!=1){
             resetearSorteo({respuestas, resetearDisparador:false});
