@@ -646,10 +646,11 @@ export function verificarSorteo(opts:{
     }
 
     if(respuestas[unidadAnalisis]){
-        if(respuestas[configuracionSorteo.cantidad_total]<respuestas[unidadAnalisis].length){
+        if(respuestas[configuracionSorteo.cantidad_total] != null && respuestas[configuracionSorteo.cantidad_total]<respuestas[unidadAnalisis].length){
             respuestas[unidadAnalisis]=respuestas[unidadAnalisis].filter(p=>
                 configuracionSorteo.parametros.some((param)=>p[param])
             );
+            respuestas[configuracionSorteo.cantidad_total]=respuestas[unidadAnalisis].length;
         }
         while(respuestas[configuracionSorteo.cantidad_total]>respuestas[unidadAnalisis].length){
             respuestas[unidadAnalisis].push({} as Respuestas)
