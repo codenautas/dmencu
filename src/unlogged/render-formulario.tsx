@@ -907,7 +907,7 @@ var botonFormularioConResumen = (
             ><ICON.Check/></Button></>:null}
         </div>
         */
-    ])
+    ]).create()
 }
 
 
@@ -991,12 +991,15 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                     let forPk={...props.forPk, formulario:idFormularioDestino};
                     listaDeBotonesAbrir = [{forPk, num:false, unico:true, actual:esVarActual, previo:true}]
                 }
-                var todosLosBotones = beingArray(listaDeBotonesAbrir).map(defBoton=>
+                var todosLosBotones = listaDeBotonesAbrir.map(defBoton=>
                     botonFormularioConResumen(defBoton, feedbackAll[toPlainForPk(defBoton.forPk)]??{resumen:'vacio'}, respuestasAumentadas,
                         casillero, props.forPk, idButton, formularioAAbrir
                     )
-                ).array();
-                arrange(document.getElementById(idSeccion)!, todosLosBotones);
+                )
+                var htmlSeccion=document.getElementById(idSeccion)!;
+                htmlSeccion.innerHTML="";
+                htmlSeccion.appendChild(html.div(todosLosBotones).create());
+                //arrange(document.getElementById(idSeccion)!, todosLosBotones);
             }catch(err){
                 console.log("entra al catch")
                 div.textContent='esto, FALLÉ '+err.message;

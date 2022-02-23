@@ -367,7 +367,24 @@ export type CasoState={
 export type HojaDeRuta = {
     respuestas:{[ua in IdUnidadAnalisis]:RespuestasRaiz[]}
 }
+type ConfiguracionSorteoTabla = {
+    metodo: "tabla",
+    param_metodo: {
+        tabla:string[],
+        var_letra:IdVariable,
+    }    
+}
 
+type ConfiguracionSorteoHash = {
+    metodo: "hash",
+    param_metodo: {
+        var_coef: [
+            {var:IdVariable, coef:number},
+            {var:IdVariable, coef:number},
+        ],
+        divisor: number
+    }    
+}
 export type ConfiguracionSorteo = {
     unidad_analisis: IdUnidadAnalisis,
     expr_incompletitud: string //"not (p1) or no t (p2) or not(p3)"
@@ -384,17 +401,7 @@ export type ConfiguracionSorteo = {
     cantidad_total: IdVariable
     resultado: IdVariable //"p11"
     incompletas: IdVariable
-    metodo: "tabla" | "hash",
-    param_metodo: {
-        tabla?:string[],
-        var_letra?:IdVariable,
-        var_coef?: [
-            {var:IdVariable, coef:number},
-            {var:IdVariable, coef:number},
-        ],
-        divisor?: number
-    }    
-}
+} & (ConfiguracionSorteoHash | ConfiguracionSorteoTabla)
 
 
 export function toPlainForPk(forPk:ForPk):PlainForPk{
