@@ -17,7 +17,8 @@ import {
     toPlainForPk,
     ModoAlmacenamiento, 
     UnidadAnalisis,
-    ConfiguracionSorteo
+    ConfiguracionSorteo,
+    LOCAL_STORAGE_STATE_NAME
 } from "./tipos";
 
 const FORMULARIO_TEM = 'F:TEM';
@@ -68,6 +69,17 @@ export function setEncolarBackup(
 
 let encolarBackup:(token:string|undefined, forPkRaiz:ForPkRaiz, respuestasRaiz:Respuestas)=>void = ()=>{
     throw new Error("SIN ESPECIFICAR encolarBackup")
+}
+
+export var intentarBackup = (forPk:ForPk){
+    var {respuestasRaiz, forPkRaiz} = respuestasForPk(forPk, true)
+    let state = myOwn.getLocalVar(LOCAL_STORAGE_STATE_NAME);
+    var token:string = state.datos.token;
+    if(token){
+        encolarBackup(token, forPkRaiz, respuestasRaiz)
+    }else{
+        console.log("no hay token, no se pudo hacer el backup")
+    }
 }
 
 export function setEstructura(estructuraACargar:Estructura){
@@ -395,9 +407,6 @@ export function accion_registrar_respuesta(payload:{
                 forPk: forPk
             })
         }
-        if(respuestas[ultimaVaribleVivienda]==null && respuestas[ultimaVaribleVivienda]!=null){
-            encolarBackup(token, forPkRaiz, respuestasRaiz);
-        }
         datosByPass.dirty = datosByPass.dirty || recentModified;
         respuestasRaiz.$dirty = respuestasRaiz.$dirty || recentModified;
         refrescarMarcaDirty();
@@ -405,9 +414,7 @@ export function accion_registrar_respuesta(payload:{
         feedbackRow = datosByPass.feedbackRowValidator[toPlainForPk(forPk)];
         calcularVariablesBotonFormulario(forPk);
         volcadoInicialElementosRegistrados(forPk);
-        console.log("datosbypass",datosByPass);
         persistirDatosByPass(datosByPass); // OJO ASYNC DESCONTROLADA
-
         siguienteVariable = feedbackRow.feedback[variable].siguiente;
     }
     return {recentModified, siguienteVariable, variableActual: feedbackRow.actual};

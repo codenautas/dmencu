@@ -27,6 +27,7 @@ import {Bloque, BotonFormulario,
 } from "./tipos";
 import{ 
     calcularResumenVivienda,
+    intentarBackup,
     setCalcularVariables, setDatosByPass, setEstructura
 } from "./bypass-formulario"
 import { dmTraerDatosFormulario, dispatchers, 
@@ -1601,6 +1602,7 @@ export function DesplegarLineaResumenUAPrincipal(props:{
     var dispatch = useDispatch();
     useEffect(()=>{
         volcadoInicialElementosRegistrados(forPk);
+        intentarBackup(forPk)
     })
     registrarElemento({id, direct:true,
         fun:(

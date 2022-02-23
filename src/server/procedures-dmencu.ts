@@ -711,14 +711,14 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 }
             }
             if(parameters.tem){
-                await Promise.all(parameters.tem.map(async ({vivienda,idCaso}:{vivienda:{respuestas:object},idCaso:string})=>{
-                    await context.client.query(
+                await Promise.all(parameters.tem.map(async (backup:any)=>{
+                    context.client.query(
                         `update tem
                             set json_backup = $3
                             where operativo= $1 and enc = $2 and json_backup is distinct from $4
                             returning 'ok'`
                         ,
-                        [OPERATIVO, idCaso, vivienda.respuestas, vivienda.respuestas]
+                        [OPERATIVO, backup.forPkRaiz.vivienda, backup.respuestasRaiz, backup.respuestasRaiz]
                     ).fetchOneRowIfExists();
                 }));
             }
