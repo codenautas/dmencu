@@ -1,22 +1,6 @@
-import { strict as likeAr, beingArray } from "like-ar";
-
-import { getRowValidator, Structure, Opcion as RowValidatorOpcion, FormStructureState, OpcionesRowValidator } from "row-validator";
-
-import { date } from "best-globals";
-
-import { CasilleroBase, CasillerosImplementados, CasoState, 
-    EstadoCarga, EstructuraRowValidator, Estructura, 
-    FeedbackVariable, Formulario, ForPk, ForPkRaiz,
-    HojaDeRuta,  
-    IdCarga, IdCasillero, IdDestino, IdFin, IdFormulario, IdPregunta, IdTarea, IdVariable, 
-    IdUnidadAnalisis,
-    InfoFormulario, 
-    ModoDespliegue, 
-    Opcion, PlainForPk, Respuestas, RespuestasRaiz, ResumenEstado,
-    Tareas, TareasEstructura, TEM, Valor, Visita, 
-    toPlainForPk,
-    ModoAlmacenamiento, 
-    UnidadAnalisis
+import {Estructura, ForPkRaiz,
+    HojaDeRuta, Respuestas,
+    ModoAlmacenamiento
 } from "./tipos";
 
 import { DatosByPassPersistibles, 

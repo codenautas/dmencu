@@ -1,12 +1,5 @@
 "use strict";
-import { Variable } from "operativos";
-/* TODO: controlar los nombres y tipos de la base
- * atributo
- * producto
- * 
- */
-
-import {FormStructureState, Structure, Feedback} from "row-validator";
+import {Structure, Feedback} from "row-validator";
 
 export const LOCAL_STORAGE_STATE_NAME ='hdr-campo-0.6';
 
@@ -369,13 +362,6 @@ export type CasoState={
     modo:{ // no se persiste
         demo:boolean
     }
-}
-
-export type EtiquetaOpts={
-    dgeyc: string,
-    operativo: string,
-    etiqueta: string,
-    plancha: string
 }
 
 export type HojaDeRuta = {

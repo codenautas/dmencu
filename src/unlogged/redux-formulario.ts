@@ -1,24 +1,17 @@
 import { createStore } from "redux";
-import { CasilleroBase, CasillerosImplementados, CasoState, 
+import { CasillerosImplementados, CasoState, 
     EstadoCarga, EstructuraRowValidator, 
-    FeedbackVariable, Formulario, ForPk, ForPkRaiz, 
-    IdCarga, IdCasillero, IdDestino, IdFin, IdFormulario, IdTarea, IdVariable, IdOperativo, 
-    IdUnidadAnalisis,
-    InfoFormulario, 
+    Formulario, ForPk, ForPkRaiz, 
+    IdCarga, IdDestino, IdFormulario, IdVariable, IdOperativo, 
     ModoDespliegue, 
-    Opcion, PlainForPk, Respuestas, ResumenEstado,
-    Tareas, TareasEstructura, TEM, Visita,
+    Opcion,
     toPlainForPk,
     LOCAL_STORAGE_STATE_NAME
 } from "./tipos";
-import { deepFreeze, datetime } from "best-globals";
 import { createReducer, createDispatchers, ActionsFrom } from "redux-typed-reducer";
 import { ModoAlmacenamiento } from "./tipos"
-import * as JSON4all from "json4all";
 import * as likeAr from "like-ar";
 import * as bestGlobals from "best-globals";
-import { controlarCodigoDV2 } from "./digitov";
-import { Variable } from "operativos";
 
 import { Opcion as RowValidatorOpcion } from "row-validator";
 
@@ -311,31 +304,8 @@ export function gotoCampo(){
     location.reload();   
 }
 
-export function gotoVer(){
-    history.replaceState(null, '', `${location.origin+location.pathname}/../consulta`);
-    location.reload();   
-}
-
 export function getCacheVersion(){
     return my.getLocalVar('app-cache-version');
-}
-
-export async function consultarEtiqueta(etiqueta:string, numero_documento:string){
-    try{
-        var result = await my.ajax.resultado_consultar({
-            etiqueta,
-            numero_documento
-        });
-        if(result){
-            let {pagina_texto, nombre, apellido, resultado } = result;
-            return replaceSpecialWords(pagina_texto || '', nombre || '', apellido || '', resultado || '')
-        }else{
-            return 'Sin resultado aún. '
-        }
-        
-    }catch(err){
-        return err.message;
-    }
 }
 
 var redirectIfNotLogged = function redirectIfNotLogged(err:Error){
@@ -345,18 +315,6 @@ var redirectIfNotLogged = function redirectIfNotLogged(err:Error){
             location.reload();   
         },1500)
         
-    }
-}
-
-export async function saveSurvey(){
-    try{
-        await my.ajax.dm_enc_descargar({
-            datos: my.getSessionVar(LOCAL_STORAGE_STATE_NAME)?.datos
-        });
-        return 'encuesta guardada'
-    }catch(err){
-        redirectIfNotLogged(err);
-        return err.message;
     }
 }
 

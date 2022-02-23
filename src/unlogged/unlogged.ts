@@ -1,11 +1,8 @@
 "use strict";
 import {html}  from 'js-to-html';
-import * as AjaxBestPromise from "ajax-best-promise";
 import {LOCAL_STORAGE_STATE_NAME} from "../unlogged/tipos";
-//import {CACHE_NAME} from "service-worker";
 import { desplegarFormularioActual, dmPantallaInicialSinCarga } from './render-formulario';
 import { cargarEstructura, cargarHojaDeRuta, GLOVAR_ESTRUCTURA, GLOVAR_DATOSBYPASS } from './abrir-formulario';
-import { calcularFeedbackHojaDeRuta } from './bypass-formulario';
 const ServiceWorkerAdmin = require("service-worker-admin");
 
 export const OPERATIVO = 'etoi211';

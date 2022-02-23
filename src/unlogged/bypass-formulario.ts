@@ -1,6 +1,6 @@
 import { strict as likeAr, beingArray } from "like-ar";
 
-import { getRowValidator, Structure, Opcion as RowValidatorOpcion, FormStructureState, OpcionesRowValidator } from "row-validator";
+import { getRowValidator, FormStructureState, OpcionesRowValidator } from "row-validator";
 
 import { date, compareForOrder } from "best-globals";
 
@@ -11,9 +11,8 @@ import {
     IdFin, IdFormulario, IdPregunta, IdTarea, IdVariable, 
     IdUnidadAnalisis,
     InfoFormulario, 
-    ModoDespliegue, 
-    Opcion, PlainForPk, Respuestas, RespuestasRaiz, ResumenEstado,
-    Tareas, TareasEstructura, TEM, Valor, Visita, 
+    PlainForPk, Respuestas, RespuestasRaiz, ResumenEstado,
+    Valor, Visita, 
     toPlainForPk,
     ModoAlmacenamiento, 
     UnidadAnalisis,

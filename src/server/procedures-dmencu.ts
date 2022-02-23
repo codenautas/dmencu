@@ -1,29 +1,24 @@
 "use strict";
 
 import { ProcedureDef, TableDefinition, Client } from "./types-dmencu";
-import { adaptParameterTypes, TablaDatos, OperativoGenerator, ProcedureContext, CoreFunctionParameters, ForeignKey } from "meta-enc";
+import { ProcedureContext, CoreFunctionParameters, ForeignKey } from "meta-enc";
 import * as likeAr from "like-ar";
 export * from "./types-dmencu";
 import { IdUnidadAnalisis, UnidadAnalisis } from "../unlogged/tipos";
 
 import {json, jsono} from "pg-promise-strict";
 
-import {changing, datetime, date } from 'best-globals';
+import {changing, date } from 'best-globals';
 import {promises as  fs} from "fs";
 
 import * as ExpresionParser from 'expre-parser';
-import { usuarios } from "./table-usuarios";
 
 var path = require('path');
 var sqlTools = require('sql-tools');
 
 var discrepances = require('discrepances');
 
-//NO SE USA MAS, ahora en tabla resultados_test
-//const  ResultadosLaboratorio = ['Positivo', 'Negativo', 'Indeterminado','Escasa muestra']; 
-
 const OPERATIVO = 'etoi211';
-const OPERATIVO_ETIQUETAS = 'etoi211';
 const formPrincipal = 'F:F1';
 const MAIN_TABLENAME ='viviendas';
 const TAREA_ENCUESTADOR = 'encu';
@@ -407,30 +402,6 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         }
     },
     {
-        action: 'id_caso_obtener',
-        parameters: [
-            {name:'operativo' ,references:'operativos',typeName:'text'   },
-            {name:'annio'                             ,typeName:'integer'},
-            {name:'mes'                               ,typeName:'integer'},
-            {name:'lote'                              ,typeName:'integer'},
-            {name:'id'                                ,typeName:'integer'},
-        ],
-        coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters){
-            var client=context.client;
-            return client.query(
-                `select id_caso 
-                    from defgen 
-                    where operativo=$1 and annio = $2 and mes = $3 and lote = $4 and id = $5`,
-                [parameters.operativo, parameters.annio,parameters.mes,parameters.lote,parameters.id]
-            ).fetchUniqueValue().then(function(result){
-                return result.value;
-            }).catch(function(err){
-                console.log('ERROR',err.message);
-                throw err;
-            });
-        }
-    },
-    {
         action: 'caso_traer_o_crear',
         parameters: [
             {name:'operativo'     ,references:'operativos',  typeName:'text'},
@@ -491,33 +462,6 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             })
         }
     },
-    /*
-    {
-        action:'dm_enc_cargar',
-        parameters:[
-            {name:'enc'         , typeName:'text'},
-        ],
-        coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
-            var be=context.be;
-            var condviv= ` t.operativo= $1 and t.enc =$2`;
-            //GENERALIZAR
-            var soloLectura = !!(await context.client.query(
-                `select *
-                    from tareas_tem
-                    where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm is not null`
-                ,
-                [OPERATIVO, parameters.enc, TAREA_ENCUESTADOR]
-            ).fetchOneRowIfExists()).rowCount;
-            var {row} = await context.client.query(getHdrQuery(condviv),[OPERATIVO,parameters.enc]).fetchUniqueRow();
-            return {
-                ...row,
-                soloLectura,
-                idPer:context.user.idper,
-                cargas:likeAr.createIndex(row.cargas.map(carga=>({...carga, fecha:carga.fecha?date.iso(carga.fecha).toDmy():null})), 'carga')
-            };
-        }
-    },
-    */
     {
         action:'dm_forpkraiz_cargar',
         parameters:[
@@ -659,36 +603,6 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 idper:context.user.idper,
                 cargas:likeAr.createIndex(row.cargas.map(carga=>({...carga, fecha:carga.fecha?date.iso(carga.fecha).toDmy():null, estado_carga:'relevamiento'})), 'carga')
             };
-        }
-    },
-    {
-        action:'dm_enc_descargar',
-        parameters:[
-            {name:'datos'       , typeName:'jsonb'},
-        ],
-        coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
-            await Promise.all(likeAr(parameters.datos.hdr).map(async (vivienda,idCaso)=>{
-                //GENERALIZAR
-                var result = await context.client.query(
-                    `select *
-                        from tareas_tem
-                        where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm is not null`
-                    ,
-                    [OPERATIVO, idCaso, TAREA_ENCUESTADOR]
-                ).fetchOneRowIfExists();
-                if(result.rowCount){
-                    throw new Error('La encuesta que intenta guardar ha sido cargada por un encuestador.')
-                }
-                await context.client.query(
-                    `update tem
-                        set json_encuesta = $3, resumen_estado=$4
-                        where operativo= $1 and enc = $2
-                        returning 'ok'`
-                    ,
-                    [OPERATIVO, idCaso, vivienda.respuestas, vivienda.resumenEstado]
-                ).fetchUniqueRow();
-            }).array());
-            return 'ok'
         }
     },
     {

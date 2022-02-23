@@ -30,8 +30,6 @@ import {no_rea               } from "./table-no_rea";
 import {tem                  } from "./table-tem";
 import {tem_recepcion        } from "./table-tem_recepcion";
 import {semanas              } from "./table-semanas";
-import { planchas            } from './table-planchas';
-import { etiquetas           } from './table-etiquetas';
 import { usuarios            } from './table-usuarios';
 import { operaciones         } from './table-operaciones';
 import { comunas             } from './table-comunas';
@@ -173,28 +171,6 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                 miniTools.serveErr(req, res, next)(err);
             }
         });
-        mainApp.get(baseUrl+'/consulta',async function(req,res,_next){
-            // @ts-ignore sé que voy a recibir useragent por los middlewares de Backend-plus
-            var {useragent, user} = req;
-            //if(user){
-                var manifestPath = 'carga-dm/dm-manifest.manifest';
-                /** @type {{type:'js', src:string}[]} */
-                var htmlMain=be.mainPage({useragent, user}, false, {skipMenu:true}).toHtmlDoc();
-               miniTools.serveText(htmlMain,'html')(req,res);
-            //}else{
-            //    res.redirect(baseUrl+'/login#w=path&path=/consulta')
-            //}
-        });
-        mainApp.get(baseUrl+'/consulta-ws',async function(req,res,_next){
-            var {etiqueta,numero_documento} = req.query;
-            var context = be.getContext(req);
-            let response =  await be.inTransaction(req, function(client:pg.Client){
-                context.client=client;
-                var procedureResultadoConsultar = ProceduresDmEncu.find((proc)=>proc.action =='resultado_consultar');
-                return procedureResultadoConsultar.coreFunction(context, {etiqueta,numero_documento});
-            });
-            miniTools.serveText(JSON.stringify(response), 'application/json')(req,res);
-        });
     }
     addLoggedServices(){
         var be = this;
@@ -288,7 +264,6 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             menuedResources = menuedResources.concat(opts.extraFiles);
         }
         var resources = [
-            // { type: 'js', src: 'consola-errores.js' },
             { type: 'js', module: 'react', modPath: 'umd', fileDevelopment:'react.development.js', file:'react.production.min.js' },
             { type: 'js', module: 'react-dom', modPath: 'umd', fileDevelopment:'react-dom.development.js', file:'react-dom.production.min.js' },
             { type: 'js', module: '@material-ui/core', modPath: 'umd', fileDevelopment:'material-ui.development.js', file:'material-ui.production.min.js' },
@@ -318,8 +293,6 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             { type: 'js', module: 'redux-typed-reducer', modPath:'../dist', file:'redux-typed-reducer.js' },
             { type: 'js', src: 'adapt.js' },
             { type: 'js', src: 'tipos.js' },
-            { type: 'js', src: 'generador-qr.js' },
-            { type: 'js', src: 'digitov.js' },
             { type: 'js', src: 'bypass-formulario.js' },
             { type: 'js', src: 'redux-formulario.js' },
             { type: 'js', src: 'render-general.js' },
@@ -327,7 +300,6 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             { type: 'js', src: 'abrir-formulario.js' },
             { type: 'css', file: 'menu.css' },
             { type: 'css', file: 'formulario-react.css' },
-            { type: 'css', file: 'etiquetas-qr.css' },
             ... menuedResources
         ]
         return resources
@@ -429,8 +401,6 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             "lib/service-worker-admin.js",
             "lib/redux-typed-reducer.js",
             "tipos.js",
-            "generador-qr.js",
-            "digitov.js",
             "bypass-formulario.js",
             "redux-formulario.js",
             "render-general.js",
@@ -446,7 +416,6 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             "client-setup",
             "css/bootstrap.min.css",
             "css/formulario-react.css",
-            "css/etiquetas-qr.css",
             "css/Roboto-Regular.ttf"
         ]
         jsonResult.fallback=[
@@ -549,8 +518,6 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             , tem: tem
             , tem_recepcion
             , parametros
-            , planchas
-            , etiquetas
             , operaciones
             , comunas
             , areas

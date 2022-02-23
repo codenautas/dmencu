@@ -1,12 +1,10 @@
-import {html, HtmlTag} from "js-to-html";
-import {dmTraerDatosFormulario, traerEstructura, replaceSpecialWords} from "../unlogged/redux-formulario";
-import { CasoState, EtiquetaOpts, IdUnidadAnalisis, IdVariable, LOCAL_STORAGE_STATE_NAME,  
-    ForPkRaiz, HojaDeRuta, IdFormulario, IdOperativo
+import {html} from "js-to-html";
+import {traerEstructura} from "../unlogged/redux-formulario";
+import { CasoState, LOCAL_STORAGE_STATE_NAME,  
+    ForPkRaiz, HojaDeRuta
 } from "../unlogged/tipos";
-import { crearEtiqueta } from "../unlogged/generador-qr";
-import * as TypedControls from "typed-controls";
 import * as likeAr from "like-ar";
-import {getEstructura, getHojaDeRuta, setPersistirDatosByPass, DatosByPassPersistibles, calcularFeedbackHojaDeRuta, setDatosByPass, setEstructura} from "../unlogged/bypass-formulario"
+import {getEstructura, setPersistirDatosByPass, DatosByPassPersistibles} from "../unlogged/bypass-formulario"
 import {cargarEstructura, cargarHojaDeRuta, GLOVAR_DATOSBYPASS, GLOVAR_ESTRUCTURA, GLOVAR_MODOBYPASS} from "../unlogged/abrir-formulario"
 
 export const OPERATIVO = 'etoi211';

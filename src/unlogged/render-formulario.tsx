@@ -1,24 +1,23 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import {  
-    FocusOpts, RenderPrincipal, 
-    clsx, memoize, adaptarTipoVarCasillero,
+    RenderPrincipal, 
+    adaptarTipoVarCasillero,
     ICON,
     focusToId,
     scrollToTop,
     scrollToBottom,
-    InputTypes,
     materialIoIconsSvgPath
 } from "./render-general";
 import {Bloque, BotonFormulario, 
-    CasilleroBase, CasoState, ConjuntoPreguntas, Consistencia, Despliegue, 
-    EstadoCarga, FeedbackVariable, Filtro, ForPk, ForPkRaiz, Formulario, 
+    CasilleroBase, CasoState, ConjuntoPreguntas, Consistencia, 
+    EstadoCarga, Filtro, ForPk, ForPkRaiz, Formulario, 
     IdFormulario, IdPregunta, IdTarea, IdVariable, InfoFormulario,
     HojaDeRuta,
     ModoDespliegue,
-    Opcion, OpcionMultiple, OpcionNo, OpcionSi, PlainForPk, 
-    Pregunta, PreguntaConOpciones, PreguntaConOpcionesMultiples, PreguntaSimple, 
-    Respuestas, RespuestasRaiz, Valor, TEM, IdCarga, Carga, IdFin, InfoTarea, Tareas, Visita, IdUnidadAnalisis, UnidadAnalisis,
+    Opcion, OpcionMultiple, PlainForPk, 
+    Pregunta, PreguntaConOpciones, PreguntaSimple, 
+    Respuestas, RespuestasRaiz, Valor, TEM, IdCarga, Carga, IdFin, IdUnidadAnalisis,
     ModoAlmacenamiento,
     toPlainForPk,
     IdCasillero,
@@ -28,35 +27,25 @@ import {Bloque, BotonFormulario,
 import{ 
     calcularResumenVivienda,
     intentarBackup,
-    setCalcularVariables, setDatosByPass, setEstructura
+    setCalcularVariables
 } from "./bypass-formulario"
 import { dmTraerDatosFormulario, dispatchers, 
     gotoSincronizar,
-    gotoCampo,
-    saveSurvey,
-    consultarEtiqueta,
-    gotoVer,
     getCacheVersion,
 } from "./redux-formulario";
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux"; 
 import { strict as likeAr, beingArray } from "like-ar";
-import {serie, sleep} from "best-globals";
+import {sleep} from "best-globals";
 
 import {
-    AppBar, Badge, /*Button,*/ ButtonGroup, Card, Chip, CircularProgress, CssBaseline, Checkbox, 
+    AppBar, ButtonGroup, CircularProgress, Checkbox, 
     Dialog, DialogActions, DialogContent, DialogContentText, 
-    DialogTitle, Divider, Fab, /*Grid,*/ IconButton, InputBase, 
-    Link, List, ListItem, ListItemIcon, ListItemText, Drawer, 
+    DialogTitle, Divider, Fab, IconButton,
     Menu, MenuItem, Paper, Popover,
-    Step, Stepper, StepContent, StepLabel, 
-    SvgIcon, Switch, 
-    Table, TableBody, TableCell, TableHead, TableRow, /*TextField,*/ Theme, Toolbar, /*Typography,*/ Zoom,
-    useScrollTrigger,
-    createStyles, makeStyles, Icon, Hidden, Grow
+    Table, TableBody, TableCell, TableHead, TableRow, Toolbar
 } from "@material-ui/core";
 import { EstadoVariable, FormStructureState } from "row-validator";
-import { controlarCodigoDV2 } from "./digitov";
 import { CSSProperties } from "@material-ui/core/styles/withStyles";
 
 import { 
@@ -70,21 +59,12 @@ import {
     calcularElementoEnfocado,
     accion_registrar_respuesta,
     accion_id_pregunta,
-    accion_agregar_visita,
-    accion_registrar_nota,
     accion_agregar_formulario,
-    accion_modificar_visita,
-    accion_borrar_visita,
     NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO,
     NO_CAMBIAR__SOLO_TRAER_STATUS
 } from "./bypass-formulario"
 
 import {arrange, html, HtmlTag} from "js-to-html";
-
-//REVISAR IMPORTS DUPLICADOS
-const GLOVAR_DATOSBYPASS='datosbypass';
-const GLOVAR_MODOBYPASS='modobypass';
-const GLOVAR_ESTRUCTURA='estructura';
 
 function breakeableText(text:string|null):string|undefined;
 function breakeableText(text:string|null, diccionario?:{[clave:string]:React.ReactNode}){
@@ -214,62 +194,11 @@ function Grid(props:{
 >{children}</div>
 }
 
-// */
-
-// TODO: Generalizar
-var c5 = 'c5' as IdVariable;
-var e1 = 'e1' as IdVariable;
-var e2 = 'e2' as IdVariable;
-var e7 = 'e7' as IdVariable;
-
 var p12 = 'p12' as IdVariable;
 var sp2 = 'sp2' as IdVariable;
 var sp3 = 'sp3' as IdVariable;
 var sp4 = 'sp4' as IdVariable;
 var sp5 = 'sp5' as IdVariable;
-
-var useStyles = makeStyles((_theme: Theme) =>
-    createStyles({
-        root:{},
-        errorCasillero:{
-            backgroundColor:'#FDA'
-        },
-        F:{
-            fontSize:'2rem'
-        },
-        aclaracion:{
-            color:'gray'
-        },
-        idOpcionM:{
-            fontWeight:'bold',
-            margin:'4px',
-            color:'gray'
-        },
-        textoOpcion:{
-            margin:'6px'
-        },
-        buttonOpcion:{
-            padding:'0px',
-            paddingLeft:'3px',
-            textTransform: 'none',
-            color:'inherit'
-        },
-
-        itemOpciones:{
-            border:'1px dashed red'
-        },
-        salto:{
-            textAlign:'center',
-            fontSize:'80%',
-            '&::before':{
-                content:'->'
-            },
-            '::before':{
-                content:'=>'
-            },
-        }
-    })
-);
 
 var diccionario = {}
 
@@ -289,23 +218,6 @@ function takeElementOrDefault<V,K extends string,KO extends string>(k:K, object:
 function DespliegueEncabezado(props:{casillero:CasilleroEncabezable, leer?:boolean}){
     const forPkNull={} as ForPk;
     return <EncabezadoDespliegue casillero={props.casillero} leer={props.leer} forPk={forPkNull}/>;
-    /*
-    const {casillero} = props;
-    var classes = useStyles();
-    return <Grid container alignItems="center" debe-leer={props.leer?'SI':'NO'}>
-        <Grid item>
-            {casillero.tipoc=='B'?null:
-                <Button variant="outlined" className={takeElementOrDefault(casillero.tipoc, classes, classes.root)}>{casillero.ver_id ?? casillero.casillero}</Button>
-            }
-        </Grid>
-        <Grid item>
-            <Typography className={takeElementOrDefault(casillero.tipoc, classes, classes.root)}>{casillero.nombre}</Typography>
-            {casillero.aclaracion?
-                <Typography className={classes.aclaracion}>{casillero.aclaracion}</Typography>
-            :null}
-        </Grid>
-    </Grid>
-    */
 }
 
 function subirHasta(elemento:HTMLElement|null, fun:(elemento:HTMLElement)=>boolean):HTMLElement|null{
@@ -1402,20 +1314,7 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
                                 color="inherit"
                                 variant="outlined"
                                 disabled={true}
-                                onClick={async ()=>{
-                                    setMensajeDescarga('descargando, por favor espere...');
-                                    setDescargando(true);
-                                    var message = await saveSurvey();
-                                    setDescargando(false);
-                                    if(message=='encuesta guardada'){
-                                        setDescargaCompleta(true);
-                                        message+=', cerrando pestaña...';
-                                        setTimeout(function(){
-                                            cerrarDirecto()
-                                        }, 2000)
-                                    }
-                                    setMensajeDescarga(message)
-                                }}
+                                onClick={async ()=>true}
                             >
                                 <ICON.Save/>
                             </Button>
@@ -1747,45 +1646,6 @@ export function DesplegarTem(props:{tem:TEM}){
         <div className="tem-observaciones">
             {tem.observaciones} 
         </div>
-    </div>
-}
-
-export function DesplegarNotasYVisitas(props:{tareas:Tareas, forPkRaiz:ForPkRaiz, visitas:Visita[]}){
-    const {tareas, visitas, forPkRaiz} = props;
-    const {miIdPer} = useSelector((state:CasoState)=>({miIdPer:state.datos.idper}));
-    const [dialogoNotas, setDialogoNotas] = useState<boolean>(false);
-    const [nota, setNota] = useState<string|null>(null);
-    const [editando, setEditando] = useState<number|null>(null);
-    const [adding, setAdding] = useState<number|null>(null);
-    const [miTarea, setMiTarea] = useState<IdTarea|null>(null);
-    const [titulo, setTitulo] = useState<string|null>(null);
-    const handleCloseDialogNotas = ()=>{
-        setDialogoNotas(false);
-        setAdding(null);
-    }
-    var dispatch = useDispatch();
-    var obsTitle = <Grid item xs={2} sm={4} >
-        observaciones
-    </Grid>
-    return <div className="tareas-notas">
-        <div className="notas"><h4>Notas y visitas</h4></div>
-        {likeAr(tareas).map((tarea)=>
-            <div className="nota">
-                <span>{tarea.tarea + ":"}</span><span>{tarea.notas?tarea.notas:'-'}</span>
-                <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={()=>{
-                        setNota(tarea.notas)
-                        setMiTarea(tarea.tarea)
-                        setDialogoNotas(true)
-                        setTitulo(`${toPlainForPk(forPkRaiz)} - tarea "${tarea.tarea}"`)
-                    }}
-                >
-                    <ICON.Create/>
-                </Button>
-            </div>
-        ).array()}
     </div>
 }
 
