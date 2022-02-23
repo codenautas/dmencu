@@ -625,11 +625,11 @@ export function verificarSorteo(opts:{
     variableActual:IdVariable
 
 }){
-    const resetearSorteo = (opts:{respuestas:Respuestas, resetearDisparador:boolean})=>{
-        var {respuestas, resetearDisparador} = opts;
+    const resetearSorteo = (opts:{respuestas:Respuestas})=>{
+        var {respuestas} = opts;
         respuestas[configuracionSorteo.resultado]=null;
         respuestas[configuracionSorteo.cantidad_sorteables]=null;
-        respuestas[configuracionSorteo.disparador] = resetearDisparador?null:respuestas[configuracionSorteo.disparador];
+        respuestas[configuracionSorteo.disparador] = null
     }
 
     var {configuracionSorteo, variableActual, respuestas, forPk, respuestasRaiz} = opts;
@@ -638,7 +638,6 @@ export function verificarSorteo(opts:{
     var filtro_fun =  getFuncionHabilitar(configuracionSorteo.filtro_js);
     var unidadAnalisis = configuracionSorteo.unidad_analisis;
     
-    //TODO ver parametros
     //ver dominio de la TEM
 
     if(configuracionSorteo.parametros.includes(variableActual)){
@@ -648,24 +647,31 @@ export function verificarSorteo(opts:{
         if(uaPadre && respuestasAumentadas[uaPadre]){
             //@ts-ignore pkAgregadaPadre existe e indica la posicion del padre
             var padre = respuestasAumentadas[uaPadre][Number(respuestasAumentadas[pkAgregadaPadre])-1];
-            resetearSorteo({respuestas:padre, resetearDisparador:true});
+            if(variableActual != configuracionSorteo.cantidad_total){
+                padre[configuracionSorteo.cantidad_total]=padre[unidadAnalisis].length; //si agrega desde boton agregar
+            }
+            resetearSorteo({respuestas:padre});
         }
     }
     if(respuestas[unidadAnalisis] && respuestas[unidadAnalisis] instanceof Array){
+        if(respuestas[configuracionSorteo.disparador]!=1){
+            if(respuestas[configuracionSorteo.disparador]==2){
+                respuestas[configuracionSorteo.cantidad_total]=respuestas[unidadAnalisis].length + 1
+            }
+            resetearSorteo({respuestas});
+        }
         let cantidadTotal = Number(respuestas[configuracionSorteo.cantidad_total]);
-        if(respuestas[configuracionSorteo.cantidad_total] != null && cantidadTotal<respuestas[unidadAnalisis].length){
+        if(cantidadTotal<respuestas[unidadAnalisis].length){
             respuestas[unidadAnalisis]=respuestas[unidadAnalisis].filter((p,i)=>
                 configuracionSorteo.parametros.some((param)=>p[param] || i <= cantidadTotal-1)
             );
-            respuestas[configuracionSorteo.cantidad_total]=null;    
         }
         while(cantidadTotal>respuestas[unidadAnalisis].length){
             respuestas[unidadAnalisis].push({} as Respuestas)
         }
+        
         respuestas[configuracionSorteo.incompletas] = respuestas[unidadAnalisis].filter(p=>expr_incompletitud_fun(p)).length;
-        if(respuestas[configuracionSorteo.disparador]!=1){
-            resetearSorteo({respuestas, resetearDisparador:false});
-        }
+        
         if(respuestas[configuracionSorteo.disparador]==1 &&
             !respuestas[configuracionSorteo.resultado] &&
             respuestas[configuracionSorteo.incompletas]==0
@@ -701,6 +707,8 @@ export function verificarSorteo(opts:{
             respuestas[configuracionSorteo.resultado]=sortear[posicionSorteada].p0;
             respuestas[configuracionSorteo.cantidad_sorteables]=sortear.length;
         }
+        respuestas[configuracionSorteo.cantidad_total]=respuestas[unidadAnalisis].length;
+        respuestas[configuracionSorteo.variableBotonFormularioUA]='ok';
     }
     
 }
