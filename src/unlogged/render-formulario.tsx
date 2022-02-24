@@ -1467,6 +1467,7 @@ export function DesplegarLineaResumenUAPrincipal(props:{
     const {numVivienda, respuestas} = props;
     const id='viv-'+numVivienda;
     const forPk:ForPk={formulario:'F:RE' as IdFormulario, vivienda:Number(numVivienda)};
+    var {tem} = useSelector((state:CasoState)=>({tem:state.datos.informacionHdr[numVivienda].tem}));
     var dispatch = useDispatch();
     useEffect(()=>{
         volcadoInicialElementosRegistrados(forPk);
@@ -1491,25 +1492,24 @@ export function DesplegarLineaResumenUAPrincipal(props:{
     })
     return <TableRow key={numVivienda}>
         <TableCell>
+            {tem?
+                <>
+                    <DesplegarTem tem={tem}/>
+                    {respuestas['resumenEstado' as IdVariable]=="cita pactada"?
+                        <DesplegarCitaPactada respuestas={respuestas}/>
+                    :
+                        <DesplegarCitaPactadaYSeleccionadoAnteriorTem tem={tem}/>
+                    }
+                </>
+            :null}
+        </TableCell>
+        <TableCell>
             <Button id={id} onClick={()=> 
                 dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk, apilarVuelta:false}))
             }>
                 {numVivienda.toString()}
             </Button>
         </TableCell>
-        <TableCell>
-            {respuestas.TEM?
-                <>
-                    <DesplegarTem tem={respuestas.TEM}/>
-                    {respuestas['resumenEstado' as IdVariable]=="cita pactada"?
-                        <DesplegarCitaPactada respuestas={respuestas}/>
-                    :
-                        <DesplegarCitaPactadaYSeleccionadoAnteriorTem tem={respuestas.TEM}/>
-                    }
-                </>
-            :null}
-        </TableCell>
-        <TableCell></TableCell>
     </TableRow>
 }
 
@@ -1545,15 +1545,13 @@ export function DesplegarCarga(props:{
         {carga.estado_carga==null && !props.posicion || carga.estado_carga=='relevamiento'?
         <Table className="tabla-carga-hoja-de-ruta">
             <colgroup>
-                <col style={{width:"15%"}}/>
-                <col style={{width:"70%"}}/>
-                <col style={{width:"15%"}}/>
+                <col style={{width:"80%"}}/>
+                <col style={{width:"20%"}}/>
             </colgroup>
             <TableHead style={{fontSize: "1.2rem"}}>
                 <TableRow className="tr-carga">
-                    <TableCell>enc</TableCell>
                     <TableCell>domicilio</TableCell>
-                    <TableCell>form</TableCell>
+                    <TableCell>enc</TableCell>
                 </TableRow>
             </TableHead>
             <TableBody>
@@ -1605,12 +1603,12 @@ export function DesplegarTem(props:{tem:TEM}){
     return <div>
         <div className="tem-domicilio">{tem.nomcalle} {tem.nrocatastral} <Atributo nombre="piso" valor={tem.piso}/> <Atributo nombre="dpto" valor={tem.departamento}/> </div>
         <div>
-            <Atributo nombre="suplente" valor={tem.prioridad==2?'!':tem.prioridad>2?tem.prioridad-1+'':null}/>
             <Atributo nombre="sector" valor={tem.sector}/>
             <Atributo nombre="edificio" valor={tem.edificio}/>
             <Atributo nombre="casa" valor={tem.casa}/>
             <Atributo nombre="entrada" valor={tem.entrada}/>
             <Atributo nombre="habitacion" valor={tem.habitacion}/>
+            <Atributo nombre="dominio" valor={tem.dominio}/>
         </div>
         <div className="tem-observaciones">
             {tem.observaciones} 
