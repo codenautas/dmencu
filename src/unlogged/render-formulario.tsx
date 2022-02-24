@@ -838,7 +838,7 @@ type DefinicionFormularioAbrir=
 {forPk:ForPk, num:number, actual:boolean, previo:false, esAgregar:true} | 
 {forPk:ForPk, num:number, actual:boolean, previo:false, esConfirmar:true} | 
 {forPk:ForPk, num:false, actual:boolean, previo:true, unico:true})
-& {esConfirmar?:true, esAgregar?:true};
+& {esConfirmar?:true, esAgregar?:true, disabled:boolean|undefined};
 
 var botonFormularioConResumen = (
     defBoton:DefinicionFormularioAbrir, 
@@ -869,6 +869,7 @@ var botonFormularioConResumen = (
                 // id:`var-${idVariable}`,
                 id:`boton-formulario-${sufijoIdElemento}`, 
                 variant:"outlined",
+                disabled: defBoton.disabled,
                 color:"inherit",
                 onClick:()=>{
                     if(defBoton.esConfirmar){
@@ -977,15 +978,40 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                         if(numActual == null && feedback.resumen == "vacio" && estadoDelBoton =='valida'){
                             numActual = num;
                         }
-                        return {forPk, resumen:null, num, actual: numActual == num, previo: numActual == null}
+                        return {
+                            forPk, 
+                            resumen:null, 
+                            num, 
+                            actual: 
+                            numActual == num, 
+                            previo: numActual == null, 
+                            disabled:
+                                estructura.configSorteo && 
+                                estructura.configSorteo.id_formulario_individual == idFormularioDestino &&
+                                num != respuestasAumentadas[estructura.configSorteo.resultado]
+                        }
                     }).array();
                     if("puede agregar //TODO VER ESTO" && (conjunto instanceof Array || conjunto == null)){
                         let nuevoValorPk=(conjunto==null ? 0 : conjunto.length) + 1;
                         let forPk={...props.forPk, formulario:idFormularioDestino, [nuevoCampoPk]:nuevoValorPk};
                         let debeAgregarOlisto = numActual == null && (cantidadEsperada == null || cantidadEsperada != (conjunto !=null && conjunto.length)) 
                             && (estadoDelBoton =='valida' || esVarActual);
-                        listaDeBotonesAbrir.push({forPk, num:nuevoValorPk, esAgregar:true, actual:debeAgregarOlisto, previo: false});
-                        listaDeBotonesAbrir.push({forPk, num:nuevoValorPk - 1, esConfirmar:true, actual:debeAgregarOlisto && (!casillero.longitud || nuevoValorPk > Number(casillero.longitud)), previo: false});
+                        listaDeBotonesAbrir.push({
+                            forPk, 
+                            num:nuevoValorPk, 
+                            esAgregar:true, 
+                            actual:debeAgregarOlisto, 
+                            previo: false, 
+                            disabled:estructura.configSorteo && estructura.configSorteo.id_formulario_individual == idFormularioDestino
+                        });
+                        listaDeBotonesAbrir.push({
+                            forPk, 
+                            num:nuevoValorPk - 1, 
+                            esConfirmar:true, 
+                            actual:debeAgregarOlisto && (!casillero.longitud || nuevoValorPk > Number(casillero.longitud)), 
+                            previo: false, 
+                            disabled:estructura.configSorteo && estructura.configSorteo.id_formulario_individual == idFormularioDestino
+                        });
                     }
                 }else{
                     let forPk={...props.forPk, formulario:idFormularioDestino};

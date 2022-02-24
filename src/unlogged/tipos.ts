@@ -415,6 +415,7 @@ export type ConfiguracionSorteo = {
     resultado: IdVariable //"p11"
     incompletas: IdVariable
     variableBotonFormularioUA: IdVariable//'$B.F:S1_P'
+    id_formulario_individual: IdFormulario // 'F:I1'
 } & (ConfiguracionSorteoHash | ConfiguracionSorteoTabla)
 
 

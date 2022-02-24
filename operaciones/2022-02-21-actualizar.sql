@@ -56,4 +56,5 @@ UPDATE operativos
 		"cantidad_sorteables":"tp",
 		"cantidad_total":"total_m",
         "resultado": "cr_num_miembro"
+		"id_formulario_individual":"F:I1"
     }'
