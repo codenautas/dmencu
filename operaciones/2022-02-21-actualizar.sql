@@ -6,9 +6,15 @@ ALTER TABLE operativos
 UPDATE operativos
   SET config_sorteo= '{
         "unidad_analisis": "personas",
-        "expr_incompletitud": "not(nombre) or not(sexo) or not(edad)",
+		"expr_incompletitud": {
+			"3":{"dominio": 3, "expr": "not(nombre) or not(sexo) or not(edad)"},
+			"5":{"dominio": 5, "expr": "not(nombre) or not(sexo) or not(edad)"}
+		},
         "disparador": "sorteo",
-        "filtro": "edad>=18",
+        "filtro": {
+			"3":{"dominio": 3, "expr": "edad>=18"},
+			"5":{"dominio": 5, "expr": "edad>=18"}
+		},
         "orden": [
             {"variable":"edad" , "orden":-1}
         ], 

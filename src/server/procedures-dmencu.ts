@@ -64,6 +64,7 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
     with viviendas as 
         (select enc, t.json_encuesta as respuestas, t.resumen_estado as "resumenEstado", 
             jsonb_build_object(
+                'dominio'       , dominio       ,
                 'nomcalle'      , nomcalle      ,
                 'sector'        , sector        ,
                 'edificio'      , edificio      ,
@@ -88,7 +89,7 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
             min(fecha_asignacion) as fecha_asignacion
             from tem t left join tareas_tem tt using (operativo, enc)
             where ${quotedCondViv}
-            group by t.enc, t.json_encuesta, t.resumen_estado, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area
+            group by t.enc, t.json_encuesta, t.resumen_estado, dominio, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area
         )
         select jsonb_build_object(
                 'viviendas', ${jsono(
@@ -220,9 +221,13 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     from operativos 
                     where operativo = $1
             `,[parameters.operativo]).fetchUniqueValue()).value;
+            let compilarExpresionesDominios = (expresionesDominio:any)=> 
+                likeAr(expresionesDominio)
+                    .map((expr,dominio)=>({dominio, expr:compilarExpresion(expr.expr)}))
+                    .plain();
             if(configSorteo){
-                configSorteo.expr_incompletitud_js =  compilarExpresion(configSorteo.expr_incompletitud);
-                configSorteo.filtro_js = compilarExpresion(configSorteo.filtro)
+                configSorteo.expr_incompletitud_js=compilarExpresionesDominios(configSorteo.expr_incompletitud)
+                configSorteo.filtro_js=compilarExpresionesDominios(configSorteo.filtro)
             }
             return {timestamp: be.timestampEstructura, ...result.row, operativo:parameters.operativo, configSorteo};
         }

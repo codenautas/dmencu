@@ -23,9 +23,9 @@ import {
 const FORMULARIO_TEM = 'F:TEM';
 
 var especiales = {} as {
-    calcularVariables?:(respuestasRaiz:RespuestasRaiz)=>void
+    calcularVariables?:(respuestasRaiz:RespuestasRaiz, forPk:ForPk)=>void
 }
-export function setCalcularVariables(calcularVariables:(respuestasRaiz:RespuestasRaiz)=>void){
+export function setCalcularVariables(calcularVariables:(respuestasRaiz:RespuestasRaiz,forPk:ForPk)=>void){
     especiales.calcularVariables = calcularVariables
 }
 
@@ -396,7 +396,7 @@ export function accion_registrar_respuesta(payload:{
     var feedbackRow = datosByPass.feedbackRowValidator[toPlainForPk(forPk)];
     var siguienteVariable:IdVariable|IdFin|null|undefined;
     if(variable != NO_CAMBIAR__SOLO_TRAER_STATUS && (recentModified || NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO && feedbackRow.autoIngresadas?.[variable])){
-        variablesCalculadas(respuestasRaiz);
+        variablesCalculadas(respuestasRaiz, forPk);
         if(estructura.configSorteo){
             verificarSorteo({
                 configuracionSorteo: estructura.configSorteo, 
@@ -634,14 +634,12 @@ export function verificarSorteo(opts:{
 
     var {configuracionSorteo, variableActual, respuestas, forPk, respuestasRaiz} = opts;
     var idEnc = forPk.vivienda!;
-    var expr_incompletitud_fun = getFuncionHabilitar(configuracionSorteo.expr_incompletitud_js);
-    var filtro_fun =  getFuncionHabilitar(configuracionSorteo.filtro_js);
+    var {respuestasAumentadas} = respuestasForPk(forPk, true);
+    var expr_incompletitud_fun = getFuncionHabilitar(configuracionSorteo.expr_incompletitud_js[respuestasAumentadas.vdominio].expr);
+    var filtro_fun =  getFuncionHabilitar(configuracionSorteo.filtro_js[respuestasAumentadas.vdominio].expr);
     var unidadAnalisis = configuracionSorteo.unidad_analisis;
     
-    //ver dominio de la TEM
-
     if(configuracionSorteo.parametros.includes(variableActual)){
-        var {respuestasAumentadas} = respuestasForPk(forPk, true);
         var uaPadre = likeAr(estructura.unidades_analisis).find((ua)=>ua.unidad_analisis==unidadAnalisis)?.padre;
         var pkAgregadaPadre = likeAr(estructura.unidades_analisis).find((ua)=>ua.unidad_analisis==uaPadre)?.pk_agregada
         if(uaPadre && respuestasAumentadas[uaPadre]){
@@ -653,30 +651,30 @@ export function verificarSorteo(opts:{
             resetearSorteo({respuestas:padre});
         }
     }
-    if(respuestas[unidadAnalisis] && respuestas[unidadAnalisis] instanceof Array){
-        if(respuestas[configuracionSorteo.disparador]!=1){
-            if(respuestas[configuracionSorteo.disparador]==2){
-                respuestas[configuracionSorteo.cantidad_total]=respuestas[unidadAnalisis].length + 1
+    if(respuestasAumentadas[unidadAnalisis] && respuestasAumentadas[unidadAnalisis] instanceof Array){
+        if(respuestasAumentadas[configuracionSorteo.disparador]!=1){
+            if(respuestasAumentadas[configuracionSorteo.disparador]==2){
+                respuestasAumentadas[configuracionSorteo.cantidad_total]=respuestasAumentadas[unidadAnalisis].length + 1
             }
-            resetearSorteo({respuestas});
+            resetearSorteo({respuestas: respuestasAumentadas});
         }
-        let cantidadTotal = Number(respuestas[configuracionSorteo.cantidad_total]);
-        if(cantidadTotal<respuestas[unidadAnalisis].length){
-            respuestas[unidadAnalisis]=respuestas[unidadAnalisis].filter((p,i)=>
+        let cantidadTotal = Number(respuestasAumentadas[configuracionSorteo.cantidad_total]);
+        if(cantidadTotal<respuestasAumentadas[unidadAnalisis].length){
+            respuestasAumentadas[unidadAnalisis]=respuestasAumentadas[unidadAnalisis].filter((p,i)=>
                 configuracionSorteo.parametros.some((param)=>p[param] || i <= cantidadTotal-1)
             );
         }
-        while(cantidadTotal>respuestas[unidadAnalisis].length){
-            respuestas[unidadAnalisis].push({} as Respuestas)
+        while(cantidadTotal>respuestasAumentadas[unidadAnalisis].length){
+            respuestasAumentadas[unidadAnalisis].push({} as Respuestas)
         }
         
-        respuestas[configuracionSorteo.incompletas] = respuestas[unidadAnalisis].filter(p=>expr_incompletitud_fun(p)).length;
+        respuestasAumentadas[configuracionSorteo.incompletas] = respuestasAumentadas[unidadAnalisis].filter(p=>expr_incompletitud_fun(p)).length;
         
-        if(respuestas[configuracionSorteo.disparador]==1 &&
-            !respuestas[configuracionSorteo.resultado] &&
-            respuestas[configuracionSorteo.incompletas]==0
+        if(respuestasAumentadas[configuracionSorteo.disparador]==1 &&
+            !respuestasAumentadas[configuracionSorteo.resultado] &&
+            respuestasAumentadas[configuracionSorteo.incompletas]==0
         ){
-            var sortear=respuestas[unidadAnalisis].filter(p=>filtro_fun(p)).map((p:Respuestas,i:number)=>({p0:num(i)+1, ...p}));
+            var sortear=respuestasAumentadas[unidadAnalisis].filter(p=>filtro_fun(p)).map((p:Respuestas,i:number)=>({p0:num(i)+1, ...p}));
             configuracionSorteo.orden.push({variable:"p0" as IdVariable, orden:1});
             sortear.sort(compareForOrder(configuracionSorteo.orden.map(elem => ({column:elem.variable, order:elem.orden}))));
             var posicionSorteada = null;
@@ -692,7 +690,7 @@ export function verificarSorteo(opts:{
                 var letra = 'A';
                 const varLetra:IdVariable = configuracionSorteo.param_metodo.var_letra;
                 for(var persona of sortear){
-                    respuestas[unidadAnalisis].find((_per,i)=>i==persona.p0-1)[varLetra] = letra;
+                    respuestasAumentadas[unidadAnalisis].find((_per,i)=>i==persona.p0-1)[varLetra] = letra;
                     letra = String.fromCharCode(letra.charCodeAt(0)+1);   
                 }
                 var tablaAleatoriaMiembros = configuracionSorteo.param_metodo.tabla.map((lista)=>lista.split(''));
@@ -702,20 +700,20 @@ export function verificarSorteo(opts:{
                 }
                 var filaTablaAleatoria = sortear.length - 1 ;
                 var letraSeleccionada = tablaAleatoriaMiembros[filaTablaAleatoria][columnaTablaAleatoria];
-                posicionSorteada = respuestas[unidadAnalisis].findIndex((p:Respuestas)=>p[varLetra]==letraSeleccionada);
+                posicionSorteada = respuestasAumentadas[unidadAnalisis].findIndex((p:Respuestas)=>p[varLetra]==letraSeleccionada);
             }
-            respuestas[configuracionSorteo.resultado]=sortear[posicionSorteada].p0;
-            respuestas[configuracionSorteo.cantidad_sorteables]=sortear.length;
+            respuestasAumentadas[configuracionSorteo.resultado]=sortear[posicionSorteada].p0;
+            respuestasAumentadas[configuracionSorteo.cantidad_sorteables]=sortear.length;
         }
-        respuestas[configuracionSorteo.cantidad_total]=respuestas[unidadAnalisis].length;
-        respuestas[configuracionSorteo.variableBotonFormularioUA]='ok';
+        respuestasAumentadas[configuracionSorteo.cantidad_total]=respuestasAumentadas[unidadAnalisis].length;
+        respuestasAumentadas[configuracionSorteo.variableBotonFormularioUA]='ok';
     }
     
 }
 
-function variablesCalculadas(respuestasRaiz: RespuestasRaiz){
+function variablesCalculadas(respuestasRaiz: RespuestasRaiz, forPk:ForPk){
     if(especiales.calcularVariables){
-        especiales.calcularVariables(respuestasRaiz);
+        especiales.calcularVariables(respuestasRaiz, forPk);
     }
 }
 

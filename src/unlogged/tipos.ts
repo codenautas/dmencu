@@ -241,6 +241,7 @@ export type UnidadAnalisis = {
 
 export type TEM = {
     nomcalle:string
+    dominio:number
     sector:string
     edificio:string
     entrada:string
@@ -387,11 +388,23 @@ type ConfiguracionSorteoHash = {
 }
 export type ConfiguracionSorteo = {
     unidad_analisis: IdUnidadAnalisis,
-    expr_incompletitud: string //"not (p1) or no t (p2) or not(p3)"
-    expr_incompletitud_js: string //se crea al compilar
+    //expr_incompletitud: string //"not (p1) or no t (p2) or not(p3)"
+    expr_incompletitud: {
+        [key in number]:{dominio:number, expr:string}
+    } 
+    //expr_incompletitud_js: string //se crea al compilar
+    expr_incompletitud_js: {
+        [key in number]:{dominio:number, expr:string}
+    } 
     disparador: IdVariable //"p9"
-    filtro: string //"p3>=18"
-    filtro_js: string //se crea al compilar
+    //filtro: string //"p3>=18"
+    filtro: {
+        [key in number]:{dominio:number, expr:string}
+    } 
+    //filtro_js: string //se crea al compilar
+    filtro_js: {
+        [key in number]:{dominio:number, expr:string}
+    } 
     orden: {
         variable:IdVariable
         orden: 1|-1

@@ -22,7 +22,7 @@ import {Bloque, BotonFormulario,
     toPlainForPk,
     IdCasillero,
     PreguntaConSiNo,
-    Texto, Estructura, InformacionHdr, DatosHdrUaPpal
+    Texto, Estructura, InformacionHdr, DatosHdrUaPpal, LOCAL_STORAGE_STATE_NAME
 } from "./tipos";
 import{ 
     calcularResumenVivienda,
@@ -1223,9 +1223,7 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
     const forPk = props.forPk;
     const {opciones} = useSelectorVivienda(forPk);
     const [confirmaCerrar, setConfirmaCerrar] = useState<boolean|null>(false);
-    const [mensajeDescarga, setMensajeDescarga] = useState<string|null>(null);
-    const [descargaCompleta, setDescargaCompleta] = useState<boolean|null>(false);
-    const [descargando, setDescargando] = useState<boolean|null>(false);
+    var {dominio} = useSelector((state:CasoState)=>({dominio:state.datos.informacionHdr[forPk.vivienda].tem.dominio}));
     var cerrarDirecto = async function(){
         var linkNode =  document.getElementById(BOOTSTRAP_5_1_3_SRC);
         linkNode?.parentNode?.removeChild(linkNode);
@@ -1311,58 +1309,26 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
                             
                         </DialogActions>
                     </Dialog>
-                    {!props.soloLectura?
-                            <Button
-                                id={"save-button"}
-                                color="inherit"
-                                variant="outlined"
-                                disabled={true}
-                                onClick={async ()=>true}
-                            >
-                                <ICON.Save/>
-                            </Button>
-                    :null}
-                    {!props.soloLectura?
-                        <Dialog
-                                open={!!mensajeDescarga}
-                                //hace que no se cierre el mensaje
-                                onClose={()=>setMensajeDescarga(mensajeDescarga)}
-                                aria-labelledby="alert-dialog-title"
-                                aria-describedby="alert-dialog-description"
-                            >
-                                <DialogTitle id="alert-dialog-title">Información de descarga</DialogTitle>
-                                <DialogContent>
-                                    <DialogContentText id="alert-dialog-description">
-                                        {mensajeDescarga}{descargando?<CircularProgress />:null}
-                                    </DialogContentText>
-                                </DialogContent>
-                                <DialogActions>
-                                    {descargando?
-                                        null
-                                    :
-                                        <Button 
-                                            onClick={()=>{
-                                                if(descargaCompleta){
-                                                    close()
-                                                }else{
-                                                    setMensajeDescarga(null)
-                                                }
-                                            }} 
-                                            color="primary" 
-                                            variant="contained"
-                                        >
-                                            Cerrar
-                                        </Button>
-                                    }
-                                </DialogActions>
-                            </Dialog>
-                    :null}
+                    {props.soloLectura?null:
+                        <Button
+                            id={"save-button"}
+                            color="inherit"
+                            variant="outlined"
+                            disabled={true}
+                            onClick={async ()=>true}
+                        >
+                            <ICON.Save/>
+                        </Button>
+                    }
                 </ButtonGroup>
             </>
         :null}
-        <Typography className="mostrar-forPk" component="span" style={{margin:'0 10px'}}> {likeAr(props.forPk).filter((_,k)=>k!='formulario').map((v,k)=>
-            <div key={k}><span>{k}</span><span>{v}</span></div>
-        ).array()} </Typography>
+        <Typography className="mostrar-forPk" component="span" style={{margin:'0 10px'}}> 
+            <div key={dominio}><span>dominio</span><span>{dominio}</span></div>
+            {likeAr(props.forPk).filter((_,k)=>k!='formulario').map((v,k)=>
+                <div key={k}><span>{k}</span><span>{v}</span></div>
+            ).array()} 
+        </Typography>
         <FastSettup/>
     </>
 }
@@ -1923,7 +1889,7 @@ function loadInstance(){
     //mostrarQuienesSomos();
 }
 
-setCalcularVariables((respuestasRaiz:RespuestasRaiz)=>{
+setCalcularVariables((respuestasRaiz:RespuestasRaiz, forPk:ForPk)=>{
     for(var respuestasHogar of respuestasRaiz.hogares||[]){
         if(!respuestasHogar.personas || respuestasHogar.personas.length==0 || respuestasHogar.personas[0].sexo == null){
             if(respuestasHogar.los_nombres){
@@ -1937,6 +1903,8 @@ setCalcularVariables((respuestasRaiz:RespuestasRaiz)=>{
             }
         }
     }
+    var state:CasoState = my.getLocalVar(LOCAL_STORAGE_STATE_NAME);
+    respuestasRaiz.vdominio=state.datos.informacionHdr[forPk.vivienda].tem.dominio;
 })
 
 window.addEventListener('load', function(){
