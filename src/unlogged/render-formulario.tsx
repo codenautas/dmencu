@@ -1546,7 +1546,7 @@ export function DesplegarCarga(props:{
         <Table className="tabla-carga-hoja-de-ruta">
             <colgroup>
                 <col style={{width:"80%"}}/>
-                <col style={{width:"20%"}}/>
+                <col style={{width:"20%"}}/>    
             </colgroup>
             <TableHead style={{fontSize: "1.2rem"}}>
                 <TableRow className="tr-carga">

@@ -18,10 +18,20 @@ var sqlTools = require('sql-tools');
 
 var discrepances = require('discrepances');
 
-const OPERATIVO = 'etoi211';
 const formPrincipal = 'F:F1';
 const MAIN_TABLENAME ='viviendas';
 const TAREA_ENCUESTADOR = 'encu';
+
+const getOpertivoActual = async (context:ProcedureContext)=>{
+    var be = context.be;
+    var result = await be.procedure.table_data.coreFunction(context,{table: `parametros`, fixedFields:[]});
+    if(result[0]?.operativo){
+        return result[0].operativo
+    }else{
+        throw Error ('no se configuró un operativo en la tabla parámetros');
+    }
+}
+
 
 /*definición de estructura completa, cuando exista ing-enc hay que ponerlo ahí*/ 
 type EstructuraTabla={tableName:string, pkFields:{fieldName:string}[], childTables:EstructuraTabla[]};
@@ -241,6 +251,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         ],
         coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters){
             var be=context.be;
+            const OPERATIVO = await getOpertivoActual(context);
             let resultUA = await context.client.query(
                 `select *
                    from unidad_analisis
@@ -434,6 +445,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             /* GENERALIZAR: */
             var be=context.be;
             /* FIN-GENERALIZAR: */
+            const OPERATIVO = await getOpertivoActual(context);
             let resultMain = await context.client.query(`SELECT * FROM ${MAIN_TABLENAME} LIMIT 1`).fetchAll();
             if(resultMain.rowCount>0){
                 console.log('HAY DATOS',resultMain.rows)
@@ -525,11 +537,11 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
     {
         action:'dm_sincronizar',
         parameters:[
-            // FALTA DECIDIR DE DÓNDE SE SACA OPERATIVO
             {name:'datos'       , typeName:'jsonb'},
             {name:'persistentes'       , typeName:'jsonb'},
         ],
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
+            const OPERATIVO = await getOpertivoActual(context);
             var be=context.be;
             var {persistentes, datos} = parameters;
             var num_sincro:number=0;
@@ -619,6 +631,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         unlogged:true,
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             var {be, client} =context;
+            const OPERATIVO = await getOpertivoActual(context);
             var num_sincro:number=0;
             var token:string|null=parameters.token;
             if(token == null){

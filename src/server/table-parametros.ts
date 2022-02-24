@@ -12,11 +12,13 @@ export function parametros(context:TableContext):TableDefinition{
             update:admin,
         },     
         fields:[
-            {name:'unico_registro'       , typeName:'boolean' , nullable:false, defaultValue:true, editable: false},
-            {name:'mail_aviso_texto'    , typeName:'text'    , editable: true},
-            {name:'mail_aviso_asunto'   , typeName:'text'    , editable: true},
+            {name:'unico_registro'       , typeName:'boolean' , nullable:false, editable: false, defaultValue:true },
+            {name:'operativo'            , typeName:'text'    , nullable:false, editable: true                     },
         ],
         primaryKey:['unico_registro'],
+        foreignKeys:[
+            {references:'operativos', fields:['operativo']}
+        ],
         constraints:[
             {consName:'unico registro', constraintType:'check', expr:'unico_registro is true'},
         ],
