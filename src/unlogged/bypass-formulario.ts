@@ -649,32 +649,33 @@ export function verificarSorteo(opts:{
                 padre[configuracionSorteo.cantidad_total]=padre[unidadAnalisis].length; //si agrega desde boton agregar
             }
             resetearSorteo({respuestas:padre});
+            respuestas = padre;
         }
     }
-    if(respuestasAumentadas[unidadAnalisis] && respuestasAumentadas[unidadAnalisis] instanceof Array){
-        if(respuestasAumentadas[configuracionSorteo.disparador]!=1){
-            if(respuestasAumentadas[configuracionSorteo.disparador]==2){
-                respuestasAumentadas[configuracionSorteo.cantidad_total]=respuestasAumentadas[unidadAnalisis].length + 1
+    if(respuestas[unidadAnalisis] && respuestas[unidadAnalisis] instanceof Array){
+        if(respuestas[configuracionSorteo.disparador]!=1){
+            if(respuestas[configuracionSorteo.disparador]==2){
+                respuestas[configuracionSorteo.cantidad_total]=respuestas[unidadAnalisis].length + 1
             }
-            resetearSorteo({respuestas: respuestasAumentadas});
+            resetearSorteo({respuestas});
         }
-        let cantidadTotal = Number(respuestasAumentadas[configuracionSorteo.cantidad_total]);
-        if(cantidadTotal<respuestasAumentadas[unidadAnalisis].length){
-            respuestasAumentadas[unidadAnalisis]=respuestasAumentadas[unidadAnalisis].filter((p,i)=>
+        let cantidadTotal = Number(respuestas[configuracionSorteo.cantidad_total]);
+        if(cantidadTotal<respuestas[unidadAnalisis].length){
+            respuestas[unidadAnalisis]=respuestas[unidadAnalisis].filter((p,i)=>
                 configuracionSorteo.parametros.some((param)=>p[param] || i <= cantidadTotal-1)
             );
         }
-        while(cantidadTotal>respuestasAumentadas[unidadAnalisis].length){
-            respuestasAumentadas[unidadAnalisis].push({} as Respuestas)
+        while(cantidadTotal>respuestas[unidadAnalisis].length){
+            respuestas[unidadAnalisis].push({} as Respuestas)
         }
         
-        respuestasAumentadas[configuracionSorteo.incompletas] = respuestasAumentadas[unidadAnalisis].filter(p=>expr_incompletitud_fun(p)).length;
+        respuestas[configuracionSorteo.incompletas] = respuestas[unidadAnalisis].filter(p=>expr_incompletitud_fun(p)).length;
         
-        if(respuestasAumentadas[configuracionSorteo.disparador]==1 &&
-            !respuestasAumentadas[configuracionSorteo.resultado] &&
-            respuestasAumentadas[configuracionSorteo.incompletas]==0
+        if(respuestas[configuracionSorteo.disparador]==1 &&
+            !respuestas[configuracionSorteo.resultado] &&
+            respuestas[configuracionSorteo.incompletas]==0
         ){
-            var sortear=respuestasAumentadas[unidadAnalisis].filter(p=>filtro_fun(p)).map((p:Respuestas,i:number)=>({p0:num(i)+1, ...p}));
+            var sortear=respuestas[unidadAnalisis].filter(p=>filtro_fun(p)).map((p:Respuestas,i:number)=>({p0:num(i)+1, ...p}));
             configuracionSorteo.orden.push({variable:"p0" as IdVariable, orden:1});
             sortear.sort(compareForOrder(configuracionSorteo.orden.map(elem => ({column:elem.variable, order:elem.orden}))));
             var posicionSorteada = null;
@@ -690,7 +691,7 @@ export function verificarSorteo(opts:{
                 var letra = 'A';
                 const varLetra:IdVariable = configuracionSorteo.param_metodo.var_letra;
                 for(var persona of sortear){
-                    respuestasAumentadas[unidadAnalisis].find((_per,i)=>i==persona.p0-1)[varLetra] = letra;
+                    respuestas[unidadAnalisis].find((_per,i)=>i==persona.p0-1)[varLetra] = letra;
                     letra = String.fromCharCode(letra.charCodeAt(0)+1);   
                 }
                 var tablaAleatoriaMiembros = configuracionSorteo.param_metodo.tabla.map((lista)=>lista.split(''));
@@ -700,13 +701,13 @@ export function verificarSorteo(opts:{
                 }
                 var filaTablaAleatoria = sortear.length - 1 ;
                 var letraSeleccionada = tablaAleatoriaMiembros[filaTablaAleatoria][columnaTablaAleatoria];
-                posicionSorteada = respuestasAumentadas[unidadAnalisis].findIndex((p:Respuestas)=>p[varLetra]==letraSeleccionada);
+                posicionSorteada = respuestas[unidadAnalisis].findIndex((p:Respuestas)=>p[varLetra]==letraSeleccionada);
             }
-            respuestasAumentadas[configuracionSorteo.resultado]=sortear[posicionSorteada].p0;
-            respuestasAumentadas[configuracionSorteo.cantidad_sorteables]=sortear.length;
+            respuestas[configuracionSorteo.resultado]=sortear[posicionSorteada].p0;
+            respuestas[configuracionSorteo.cantidad_sorteables]=sortear.length;
         }
-        respuestasAumentadas[configuracionSorteo.cantidad_total]=respuestasAumentadas[unidadAnalisis].length;
-        respuestasAumentadas[configuracionSorteo.variableBotonFormularioUA]='ok';
+        respuestas[configuracionSorteo.cantidad_total]=respuestas[unidadAnalisis].length;
+        respuestas[configuracionSorteo.variableBotonFormularioUA]='ok';
     }
     
 }
