@@ -1379,18 +1379,22 @@ function FormularioDespliegue(props:{forPk:ForPk}){
     const dispatch = useDispatch();
     useEffect(()=>{
         var controlScroll=()=>{
-            var arriba = document.getElementById('fab-activo-arriba')!;
-            setValorDistinto(arriba.style, 'visibility',
-                // @ts-ignore
-                arriba.elTopVisibilizar !=null && arriba.elTopVisibilizar + 10 
-                < document.documentElement.scrollTop ? 'visible' : 'hidden'
-            );
-            var abajo = document.getElementById('fab-activo-abajo')!;
-            setValorDistinto(abajo.style, 'visibility', 
-                // @ts-ignore
-                abajo.elBottomVisibilizar != null && abajo.elBottomVisibilizar - 20
-                > document.documentElement.scrollTop + window.innerHeight * 0.7 ? 'visible' : 'hidden'
-            );
+            var arriba = document.getElementById('fab-activo-arriba');
+            if(arriba){
+                setValorDistinto(arriba.style, 'visibility',
+                    // @ts-ignore
+                    arriba.elTopVisibilizar !=null && arriba.elTopVisibilizar + 10 
+                    < document.documentElement.scrollTop ? 'visible' : 'hidden'
+                );
+            }
+            var abajo = document.getElementById('fab-activo-abajo');
+            if(abajo){
+                setValorDistinto(abajo.style, 'visibility', 
+                    // @ts-ignore
+                    abajo.elBottomVisibilizar != null && abajo.elBottomVisibilizar - 20
+                    > document.documentElement.scrollTop + window.innerHeight * 0.7 ? 'visible' : 'hidden'
+                );
+            }
         }
         window.addEventListener('scroll', controlScroll);
         controlScroll();
