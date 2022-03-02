@@ -413,6 +413,7 @@ export type ConfiguracionSorteo = {
     cantidad_sorteables: IdVariable
     cantidad_total: IdVariable
     resultado: IdVariable //"p11"
+    sorteado_mostrar?: {source:IdVariable, target:IdVariable}[],
     incompletas: IdVariable
     variableBotonFormularioUA: IdVariable//'$B.F:S1_P'
     id_formulario_individual: IdFormulario // 'F:I1'

@@ -629,7 +629,8 @@ export function verificarSorteo(opts:{
         var {respuestas} = opts;
         respuestas[configuracionSorteo.resultado]=null;
         respuestas[configuracionSorteo.cantidad_sorteables]=null;
-        respuestas[configuracionSorteo.disparador] = null
+        respuestas[configuracionSorteo.disparador] = null;
+        configuracionSorteo.sorteado_mostrar?.forEach((mostrar)=>respuestas[mostrar.target]=null)
     }
 
     var {configuracionSorteo, variableActual, respuestas, forPk, respuestasRaiz} = opts;
@@ -705,6 +706,9 @@ export function verificarSorteo(opts:{
             }
             respuestas[configuracionSorteo.resultado]=sortear[posicionSorteada].p0;
             respuestas[configuracionSorteo.cantidad_sorteables]=sortear.length;
+            configuracionSorteo.sorteado_mostrar?.forEach((mostrar)=>
+                respuestas[mostrar.target]=respuestas[unidadAnalisis][respuestas[configuracionSorteo.resultado] as number -1][mostrar.source]
+            )
         }
         respuestas[configuracionSorteo.cantidad_total]=respuestas[unidadAnalisis].length;
         respuestas[configuracionSorteo.variableBotonFormularioUA]='ok';

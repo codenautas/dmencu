@@ -56,5 +56,7 @@ UPDATE operativos
 		"cantidad_sorteables":"tp",
 		"cantidad_total":"total_m",
         "resultado": "cr_num_miembro",
+		"sorteado_mostrar": [{"source":"nombre", "target":"msnombre"}],
 		"id_formulario_individual":"F:I1"
     }'
+where operativo = 'PREJU_2022';
