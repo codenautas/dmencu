@@ -693,16 +693,18 @@ export function verificarSorteo(opts:{
                 const varLetra:IdVariable = configuracionSorteo.param_metodo.var_letra;
                 for(var persona of sortear){
                     respuestas[unidadAnalisis].find((_per,i)=>i==persona.p0-1)[varLetra] = letra;
+                    persona[varLetra]=letra;
                     letra = String.fromCharCode(letra.charCodeAt(0)+1);   
                 }
                 var tablaAleatoriaMiembros = configuracionSorteo.param_metodo.tabla.map((lista)=>lista.split(''));
-                var columnaTablaAleatoria = idEnc % 10 - 1;
+                var resto = idEnc % 10;
+                var columnaTablaAleatoria = resto?resto - 1:9;
                 if(sortear.length > tablaAleatoriaMiembros.length){
                     sortear.splice(tablaAleatoriaMiembros.length) //descarto candidatos si son más que lo que permite la tabla
                 }
                 var filaTablaAleatoria = sortear.length - 1 ;
                 var letraSeleccionada = tablaAleatoriaMiembros[filaTablaAleatoria][columnaTablaAleatoria];
-                posicionSorteada = respuestas[unidadAnalisis].findIndex((p:Respuestas)=>p[varLetra]==letraSeleccionada);
+                posicionSorteada = sortear.findIndex((p:Respuestas)=>p[varLetra]==letraSeleccionada);
             }
             respuestas[configuracionSorteo.resultado]=sortear[posicionSorteada].p0;
             respuestas[configuracionSorteo.cantidad_sorteables]=sortear.length;
