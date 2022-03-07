@@ -1492,11 +1492,13 @@ resumidores.push(
 
 export function DesplegarLineaResumenUAPrincipal(props:{
     numVivienda:number,
+    formPrincipal:IdFormulario,
+    tarea: string,
     respuestas:RespuestasRaiz,
 }){
-    const {numVivienda, respuestas} = props;
+    const {numVivienda, respuestas, formPrincipal, tarea} = props;
     const id='viv-'+numVivienda;
-    const forPk:ForPk={formulario:'F:RE' as IdFormulario, vivienda:Number(numVivienda)};
+    const forPk:ForPk={formulario:formPrincipal, vivienda:Number(numVivienda)};
     var {tem} = useSelector((state:CasoState)=>({tem:state.datos.informacionHdr[numVivienda].tem}));
     var dispatch = useDispatch();
     useEffect(()=>{
@@ -1532,6 +1534,9 @@ export function DesplegarLineaResumenUAPrincipal(props:{
                     }
                 </>
             :null}
+        </TableCell>
+        <TableCell>
+            {tarea}
         </TableCell>
         <TableCell>
             <Button id={id} onClick={()=> 
@@ -1575,12 +1580,14 @@ export function DesplegarCarga(props:{
         {carga.estado_carga==null && !props.posicion || carga.estado_carga=='relevamiento'?
         <Table className="tabla-carga-hoja-de-ruta">
             <colgroup>
-                <col style={{width:"80%"}}/>
-                <col style={{width:"20%"}}/>    
+                <col style={{width:"75%"}}/>
+                <col style={{width:"10%"}}/>    
+                <col style={{width:"15%"}}/>    
             </colgroup>
             <TableHead style={{fontSize: "1.2rem"}}>
                 <TableRow className="tr-carga">
                     <TableCell>domicilio</TableCell>
+                    <TableCell>tarea</TableCell>
                     <TableCell>enc</TableCell>
                 </TableRow>
             </TableHead>
@@ -1589,6 +1596,8 @@ export function DesplegarCarga(props:{
                     <DesplegarLineaResumenUAPrincipal 
                         key={numVivienda} 
                         numVivienda={numVivienda}
+                        tarea={informacion.tarea.tarea}
+                        formPrincipal={informacion.tarea.main_form}
                         respuestas={hojaDeRuta.respuestas.viviendas[numVivienda]}
                     />
                 ).array()}
@@ -1855,7 +1864,7 @@ export async function dmPantallaInicialSinCarga(){
     )
 }
 
-export async function desplegarFormularioActual(opts:{operativo:IdOperativo, modoDemo:boolean, modoAlmacenamiento:ModoAlmacenamiento, forPkRaiz?:ForPkRaiz}){
+export async function desplegarFormularioActual(opts:{modoDemo:boolean, modoAlmacenamiento:ModoAlmacenamiento, forPkRaiz?:ForPkRaiz}){
     // traer los metadatos en una "estructura"
     // traer los datos de localStorage
     // verificar el main Layout
