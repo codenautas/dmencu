@@ -28,7 +28,6 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
         {name:'fecha_resultado' , typeName:'date'}, // fk tareas_resultados 
         {name:'verificado'      , typeName:'text'}, 
         {name:'obs_verificado'  , typeName:'text'}, 
-        {name:'visitas'         , typeName:"jsonb", editable:false}
     ];
     return {
         name:`${mis}tareas_tem`,

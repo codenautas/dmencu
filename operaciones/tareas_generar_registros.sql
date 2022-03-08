@@ -8,7 +8,7 @@ set search_path=base;
 insert into tareas_areas(tarea, area, asignado, asignante, obs_asignante)
     select * 
         from (
-          select tarea, area, relevador, recepcionista, obs_recepcionista
+          select tarea, area,encuestador, recepcionista, obs_recepcionista
             from areas ,(select tarea from tareas where tarea ~'^(encu|rel)$')t
             union   
             select tarea, area, null, recepcionista, obs_recepcionista

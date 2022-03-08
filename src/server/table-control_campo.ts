@@ -27,7 +27,7 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
         {name:'salieron'     , typeName:'bigint', aggregate:'sum', title:'salieron a campo'},
         {name:'sin_novedad'  , typeName:'bigint', aggregate:'sum', visible:opts.agrupado},
         {name:'sin_resultado', typeName:'bigint', aggregate:'sum', visible:!opts.agrupado, condicion:`resumen_estado in ('vacio')`},
-        {name:'cita_pactada' , typeName:'bigint', aggregate:'sum', visible:!opts.agrupado, condicion:`resumen_estado in ('cita pactada')`},
+       // {name:'cita_pactada' , typeName:'bigint', aggregate:'sum', visible:!opts.agrupado, condicion:`resumen_estado in ('cita pactada')`},
         {name:'rea'          , typeName:'bigint', aggregate:'sum', condicion:`rea=1`},
         /*
         {name:'asuente_viv'  , typeName:'bigint', title:'ausente de vivienda', condicion:`cod_no_rea=7`},
@@ -61,7 +61,10 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
             from:` 
             ( 
                 select t.*, coalesce(incompleto,0)+coalesce(sin_resultado,0) as sin_novedad,
-                        round(rea*100.0/nullif(${'rea'+(camposCalculados.filter(f=>f.tasa_efectividad)).map(f=>f.name).join('+')},0),1) as tasa_efectividad,
+                        --TODO REVISAR
+                        round(rea*100.0/nullif( ${(
+                            ['rea', ...(camposCalculados.filter(f=>f.tasa_efectividad).map(f=>f.name))].join('+')
+                        )},0),1) as tasa_efectividad,
                         total-coalesce(no_salieron,0) as salieron
                     from (   
                         select ${[

@@ -13,16 +13,9 @@ export interface Puedes{
         encuestas:{
             relevar:boolean
         },
-        lab_resultado:{
-            editar:boolean
-            ver:boolean
-        },
         campo:{
             editar:boolean
             administrar:boolean
-        }
-        citas:{
-            programar:boolean
         }
     }
     superuser?:true

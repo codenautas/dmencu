@@ -9,6 +9,9 @@ export function areas(context:TableContext):TableDefinition {
         name:'areas',
         elementName:'area',
         editable:puedeEditar,
+        hiddenColumns:['clusters', 'clases','cargadas_bkp', 'reas_bkp', 'no_reas_bkp'  
+            , 'incompletas_bkp', 'vacias_bkp', 'inhabilitadas_bkp'
+        ],
         fields:[
             /*
             {
@@ -25,9 +28,9 @@ export function areas(context:TableContext):TableDefinition {
                 nullable: false,
                 editable: true
             },
-            {name:'clusters'                , typeName:'text' },
+            {name:'clusters'                , typeName:'text'     },
             {name:'recepcionista'           , typeName:'text', references:'recepcionistas'},
-            {name:'relevador'               , typeName:'text', editable:false},
+            {name:'encuestador'               , typeName:'text', editable:false},
             {name:'observaciones_hdr'       , typeName:'text'                      },
             {name:'clases'                  , typeName:'text'    , editable:false  , inTable:false},
             {name:'cargado'                 , typeName:'boolean' , editable:false  , inTable:false},
@@ -55,12 +58,12 @@ export function areas(context:TableContext):TableDefinition {
         foreignKeys:[
             //{references:'operativos', fields:['operativo']},
             //{references:'operaciones', fields:[{source:'operacion_area', target:'operacion'}]},
-            //{references:'usuarios', fields:[{source:'relevador'    , target:'idper'}], alias:'per_enc', displayFields:[]},
+            //{references:'usuarios', fields:[{source:'encuestador'    , target:'idper'}], alias:'per_enc', displayFields:[]},
             {references:'usuarios', fields:[{source:'recepcionista', target:'idper'}], alias:'per_recep', displayFields:[]},
         ],
         softForeignKeys:[
             //{references:'operativos', fields:['operativo']},
-            {references:'relevadores', fields:[{source:'relevador', target:'persona'}]},
+            {references:'encuestadores', fields:[{source:'encuestador', target:'persona'}]},
         ],
         detailTables:[
             {table:'tareas_areas'     , fields:['area'], abr:'T', refreshParent:true, label:'tareas'},
@@ -69,7 +72,7 @@ export function areas(context:TableContext):TableDefinition {
         sql:{
             isTable:true,
             from:` 
-            (select a.area, a.recepcionista, ta.asignado relevador
+            (select a.area, a.recepcionista, ta.asignado encuestador
                 ,  a.observaciones_hdr, a.verificado_rec, a.obs_recepcionista
                   --a.operacion_area, a.fecha,
                 , a.cargadas_bkp, a.reas_bkp, a.no_reas_bkp, a.incompletas_bkp, a.vacias_bkp, a.inhabilitadas_bkp
@@ -86,14 +89,14 @@ export function areas(context:TableContext):TableDefinition {
                         --sum(case when cluster <>4 then null when confirmada is true then 1 else 0 end) as confirmadas,
                         --sum(case when cluster <>4 then null when confirmada is null then 1 else 0 end) as pend_conf,
                         string_agg(distinct clase,', ' order by clase desc) as clases,
-                        string_agg(distinct nrocomuna::text,'0' order by nrocomuna::text)::bigint as comuna,
-                        string_agg(distinct cluster::text,', ' order by cluster::text desc) as clusters
+                        string_agg(distinct nrocomuna::text,'0' order by nrocomuna::text)::bigint as comuna
+                        , string_agg(distinct cluster::text,', ' order by cluster::text desc) as clusters
                         ${be.caches.tableContent.no_rea_groups.map(x=>
                         	`, sum(CASE WHEN gru_no_rea=${be.db.quoteLiteral(x.grupo)} THEN 1 ELSE NULL END) as ${be.db.quoteIdent(x.grupo.replace(/ /g,'_'))}`
                         ).join('')}
                         from ( select operativo, enc, cluster, nrocomuna, clase, 
                                 json_encuesta, resumen_estado,  
-                                relevador, rea, norea, area, dominio, zona
+                                encuestador, rea, norea, area, dominio, zona
                                 json_backup
                             , tt.habilitada, tt.cargado_dm
                             , ${be.sqlNoreaCase('grupo')} as gru_no_rea from tem t left join tareas_tem tt using(operativo,enc) where t.area=a.area and tt.tarea='encu') tem

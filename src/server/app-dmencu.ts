@@ -18,8 +18,10 @@ import {promises as fs } from "fs";
 import { roles               } from "./table-roles";
 import { personal            } from "./table-personal";
 import { recepcionistas      } from "./table-recepcionistas";
-import { relevadores         } from "./table-relevadores";
-import { mis_relevadores     } from "./table-mis_relevadores";
+import { encuestadores         } from "./table-encuestadores";
+import { mis_encuestadores     } from "./table-mis_encuestadores";
+import { recuperadores       } from "./table-recuperadores";
+import { supervisores        } from "./table-supervisores";
 import { personal_rol        } from "./table-personal_rol";
 import { permisos            } from "./table-permisos";
 import { roles_permisos      } from "./table-roles_permisos";
@@ -447,7 +449,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                 menu.push(
                     {menuType:'menu', name:'recepcion', label:'recepción' ,menuContent:[
                         {menuType:'table', name:'mis_areas', table:'areas', ff:{recepcionista:context.user.idper}},
-                        {menuType:'table', name:'mis_relevadores'},
+                        {menuType:'table', name:'mis_encuestadores'},
                         {menuType:'table', name:'areas'},
                         {menuType:'table', name:'tem_recepcion', label:'TEM'},
                     ]},            
@@ -507,8 +509,8 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             , usuarios
             , personal
             , recepcionistas
-            , relevadores
-            , mis_relevadores
+            , encuestadores
+            , mis_encuestadores
             , personal_rol
             , permisos
             , roles_permisos
