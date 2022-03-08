@@ -58,7 +58,6 @@ myOwn.wScreens.abrir_encuesta={
         var {operativo, encuesta, formulario} = params;
         let forPkRaiz:ForPkRaiz = {formulario, vivienda:encuesta}
         var estructura = getEstructura();
-        // TODO: EN UN DM ESTO SE TRAE DEL LOCALSTORAGE
         var carga = await my.ajax.dm_forpkraiz_cargar({operativo, forPkRaiz}) as {hojaDeRuta:HojaDeRuta, timestampEstructura:number};
         if(!estructura || (estructura.timestamp??0) < carga.timestampEstructura || estructura.operativo != operativo || my.config.config.devel){
             estructura = await traerEstructura({operativo})

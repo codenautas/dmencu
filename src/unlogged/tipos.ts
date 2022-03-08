@@ -260,10 +260,10 @@ export type TEM = {
 export type ResumenEstado = 'vacio' | 'con problemas' | 'incompleto' | 'ok' | 'no rea' | 'cita pactada';
 
 export type InfoTarea= {
-    tarea: IdTarea
-    notas:string
-    fecha_asignacion:Date
-    asignado:string
+    tarea?: IdTarea
+    notas?:string
+    fecha_asignacion?:Date
+    asignado?:string
     main_form: IdFormulario
 }
 

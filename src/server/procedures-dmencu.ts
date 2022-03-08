@@ -486,16 +486,20 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         ],
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             var be=context.be;
-            var operativo = parameters.operativo;
+            var {tarea, operativo,forPkRaiz} = parameters;
+            
             var condviv= ` t.operativo= $1 and t.enc =$2`;
             var soloLectura = !!(await context.client.query(
                 `select *
                     from tareas_tem
                     where operativo= $1 and enc = $2 and cargado_dm is not null`
                 ,
-                [operativo, parameters.forPkRaiz.vivienda]
+                [operativo, forPkRaiz.vivienda]
             ).fetchOneRowIfExists()).rowCount;
-            var {row} = await context.client.query(getHdrQuery(condviv),[operativo,parameters.forPkRaiz.vivienda]).fetchUniqueRow();
+            var {row} = await context.client.query(getHdrQuery(condviv),[operativo,forPkRaiz.vivienda]).fetchUniqueRow();
+            row.informacionHdr[forPkRaiz.vivienda].tarea={
+                main_form: forPkRaiz.formulario
+            } ;
             return {
                 ...row,
                 hojaDeRuta:row,
