@@ -156,7 +156,7 @@ function inicializarState(state: CasoState) {
     //@ts-ignore
     state.feedbackRowValidator = {};
 }
-
+/*
 function mostrarDatosPersona(hayDatos:boolean, datos:any, divResult:HTMLDivElement){
     //TODO: EVALUAR SI CONVIENE TRAERLO DE LA BASE
     var tiposDocumento = ['DNI argentino', 'Documento extranjero', 'No tiene documento', 'Otro'];
@@ -195,6 +195,7 @@ function mostrarDatosPersona(hayDatos:boolean, datos:any, divResult:HTMLDivEleme
             html.p("No se encontró una encuesta para la etiqueta cargada").create()
     )
 }
+*/
 myOwn.clientSides.tareasTemRow={
     update:(depot)=>{
         var tarea:'nada'|'preasignar'|'cargar'|'realizar'|'verificar'='nada';

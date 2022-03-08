@@ -2,14 +2,14 @@
 
 import {TableDefinition, TableContext} from "./types-dmencu";
 
-export function mis_relevadores(context:TableContext):TableDefinition {
+export function mis_encuestadores(context:TableContext):TableDefinition {
     var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';
     return {
-        name:'mis_relevadores',
-        elementName:'relevador',
+        name:'mis_encuestadores',
+        elementName:'encuestador',
         editable:false,
         fields:[
-            { name: "relevador"     , typeName: "text"    },
+            { name: "encuestador"     , typeName: "text"    },
             { name: "nombre"        , typeName: "text"    ,isName:true},
             { name: "apellido"      , typeName: "text"    ,isName:true},
             { name: "cuit"          , typeName: "text"    },
@@ -32,15 +32,15 @@ export function mis_relevadores(context:TableContext):TableDefinition {
             {name:'reas_dia'                , typeName:'decimal' , editable:false  , title:'reas/día' , aggregate:'avg'},
             {name:'tarea'                   , typeName:'text'    , editable:false  },
         ],
-        primaryKey:['relevador'],
+        primaryKey:['encuestador'],
         detailTables:[
-            {table:'tareas_areas'    , fields:[{source:'relevador', target:'asignado'},'tarea'], abr:'TA'},
-            {table:'tareas_tem'      , fields:[{source:'relevador', target:'asignado'},'tarea'], abr:'E'},
+            {table:'tareas_areas'    , fields:[{source:'encuestador', target:'asignado'},'tarea'], abr:'TA'},
+            {table:'tareas_tem'      , fields:[{source:'encuestador', target:'asignado'},'tarea'], abr:'E'},
         ],
         sql:{
             isTable:false,
             from:`(
-                select u.idper as relevador, u.*, t.*, s.*, 'encu' as tarea
+                select u.idper as encuestador, u.*, t.*, s.*, 'encu' as tarea
                     from usuarios u, lateral (
                         select sum(case when tt.fecha_asignacion = current_date then 1 else null end) as carga_hoy,
                                 sum(case when tt.fecha_asignacion = current_date + interval '1 day' then 1 else null end) as carga_1,
@@ -51,14 +51,14 @@ export function mis_relevadores(context:TableContext):TableDefinition {
                                 sum(case when t.resumen_estado in ('incompleta', 'con problemas') then 1 else null end) as incompletas,
                                 sum(case when t.resumen_estado in ('vacia') then 1 else null end) as vacias,
                                 sum(case when tt.fecha_asignacion is not null and t.rea = 1 then 1 else null end)*1.0 / nullif(count(distinct tt.fecha_asignacion),0) as reas_dia
-                            from tem t inner join areas a using (area) inner join tareas_tem tt on (t.operativo=tt.operativo and  t.enc=tt.enc and 'rel'=tt.tarea)
+                            from tem t inner join areas a using (area) inner join tareas_tem tt on (t.operativo=tt.operativo and  t.enc=tt.enc and 'encu'=tt.tarea)
                             where tt.asignado = u.idper
                     ) t left join lateral (
                         select max(cuando) as ultima_sincro
                             from sincronizaciones s
                             where s.usuario = u.usuario
                     ) s on true
-                    where rol='relevador' and u.idper is not null
+                    where rol='encuestador' and u.idper is not null
                     ${context.user.rol=='recepcionista'?` and recepcionista = ${context.be.db.quoteLiteral(context.user.idper)}`:''}
             )`
         }

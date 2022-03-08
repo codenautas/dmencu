@@ -46,7 +46,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
             {name:'habilitada'           , typeName:'boolean' , editable: false , inTable: false  },
             {name:'cargado'              , typeName:'boolean' , editable: false , inTable: false  },
             {name:'resumen_estado'       , typeName:'text'    , editable: false  },
-            {name:'relevador'            , typeName:'text'    , editable: false , inTable: false  },
+            {name:'encuestador'          , typeName:'text'    , editable: false , inTable: false  },
             {name:'codcalle'             , typeName:'integer' , editable: false  },
             {name:'nomcalle'             , typeName:'text'    , editable: false  },
             {name:'nrocatastral'         , typeName:'integer' , editable: false  },
@@ -133,7 +133,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
             from:`
                 (select
                     ${def.fields.filter(f=>f.inTable==undefined && !f.clientSide).map(f=>'t.'+q(f.name)).join(',')}
-                    , tt.cargado, tt.cargado_dm, tt.habilitada, tt.asignado as relevador
+                    , tt.cargado, tt.cargado_dm, tt.habilitada, tt.asignado as encuestador
                     , tt.notas
                     ${opts.recepcion? columnasNoRea.map(v=>'\n     , '+ v.expr +' as '+ v.name).join('') :''}
                     from tem t left join tareas_tem tt on t.operativo=tt.operativo and t.enc=tt.enc and tt.tarea='encu'
