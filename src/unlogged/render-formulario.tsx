@@ -982,8 +982,11 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                             forPk, 
                             resumen:null, 
                             num, 
-                            actual: 
-                            numActual == num, 
+                            actual: estructura.configSorteo? 
+                                estructura.configSorteo.id_formulario_individual == idFormularioDestino &&
+                                num == respuestasAumentadas[estructura.configSorteo.resultado]
+                            :
+                                numActual == num, 
                             previo: numActual == null, 
                             disabled:
                                 estructura.configSorteo && 
@@ -1251,8 +1254,7 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
     const [confirmaCerrar, setConfirmaCerrar] = useState<boolean|null>(false);
     var {dominio} = useSelector((state:CasoState)=>({dominio:state.datos.informacionHdr[forPk.vivienda].tem.dominio}));
     var cerrarDirecto = async function(){
-        var linkNode =  document.getElementById(BOOTSTRAP_5_1_3_SRC);
-        linkNode?.parentNode?.removeChild(linkNode);
+        removeCSSById(BOOTSTRAP_5_1_3_SRC);
         var hash=new URLSearchParams(location.hash?.replace(/^\#/,'').split('&autoproced')[0]);
         //hash.delete('autoproced')
         location.hash=hash.toString();
@@ -1955,6 +1957,11 @@ function loadCSS(cssURL:string, id?:string):Promise<void>{
             reject(new Error(`problema cargando estilo ${cssURL}`))
         }
     });
+}
+
+function removeCSSById(id:string){
+    var linkNode =  document.getElementById(id);
+    linkNode?.parentNode?.removeChild(linkNode);
 }
 
 const BOOTSTRAP_5_1_3_SRC = 'css/bootstrap.min.css';

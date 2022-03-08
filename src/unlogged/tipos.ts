@@ -416,6 +416,7 @@ export type ConfiguracionSorteo = {
     sorteado_mostrar?: {source:IdVariable, target:IdVariable}[],
     incompletas: IdVariable
     variableBotonFormularioUA: IdVariable//'$B.F:S1_P'
+    variableBotonFormularioUAIndividual: IdVariable //'$B.F:I1'
     id_formulario_individual: IdFormulario // 'F:I1'
 } & (ConfiguracionSorteoHash | ConfiguracionSorteoTabla)
 

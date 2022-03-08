@@ -32,6 +32,7 @@ UPDATE operativos
         "parametros":["nombre","sexo","edad", "p4", "p5", "total_m"],
 		"incompletas":"_personas_incompletas",
 		"variableBotonFormularioUA":"$B.F:S1_P",
+        "variableBotonFormularioUAIndividual":"$B.F:I1",
         "metodo": "tabla",
         "param_metodo": {
 			"var_letra": "l0",
