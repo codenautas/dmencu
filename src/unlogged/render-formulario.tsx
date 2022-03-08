@@ -1257,6 +1257,7 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
         removeCSSById(BOOTSTRAP_5_1_3_SRC);
         var hash=new URLSearchParams(location.hash?.replace(/^\#/,'').split('&autoproced')[0]);
         //hash.delete('autoproced')
+        close();
         location.hash=hash.toString();
     }
     var botonesFormulario=[];
