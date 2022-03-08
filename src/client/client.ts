@@ -1,7 +1,7 @@
 import {html} from "js-to-html";
 import {traerEstructura} from "../unlogged/redux-formulario";
 import { CasoState, LOCAL_STORAGE_STATE_NAME,  
-    ForPkRaiz, HojaDeRuta
+    ForPkRaiz, HojaDeRuta, IdFormulario
 } from "../unlogged/tipos";
 import * as likeAr from "like-ar";
 import {getEstructura, setPersistirDatosByPass, DatosByPassPersistibles} from "../unlogged/bypass-formulario"
@@ -10,6 +10,8 @@ import {cargarEstructura, cargarHojaDeRuta, GLOVAR_DATOSBYPASS, GLOVAR_ESTRUCTUR
 //TODO GENERALIZAR
 
 const DEFAULT_MAIN_FORM = 'F:RE';
+
+var tareas:any = null;
 
 function htmlNumero(num:number){
     return html.span({class:'numero'},''+(num??''))
@@ -238,21 +240,24 @@ myOwn.clientSides.tareasTemRow={
     },
     prepare: function(){}
 }
-var crearBotonVer = (depot:myOwn.Depot, fieldName:string, label:'abrir'|'ver')=>{
-    var openButton = html.button({class:'open-dm-button'},label).create();
+var crearBotonVer = async (depot:myOwn.Depot, fieldName:string, label:'abrir'|'ver')=>{
+    tareas = tareas?tareas:(await myOwn.ajax.table_data({table: `tareas`, fixedFields:[]})).filter((tarea)=>!!tarea.main_form);
     depot.rowControls[fieldName].innerHTML='';
-    depot.rowControls[fieldName].appendChild(openButton);
-    openButton.onclick = async function(){
-        var urlAndWindowName = `menu#w=abrir_encuesta&formulario=${DEFAULT_MAIN_FORM}&encuesta=${depot.row.enc}`;
-        window.open(urlAndWindowName,urlAndWindowName);
-    }
+    tareas.forEach((tarea:{tarea:string, nombre:string, main_form:IdFormulario})=>{
+        var openButton = html.button({class:'open-dm-button'},`${label} ${tarea.tarea}`).create();
+        depot.rowControls[fieldName].appendChild(openButton);
+        openButton.onclick = async function(){
+            var urlAndWindowName = `menu#i=abrir_encuesta&up={"operativo":"${depot.row.operativo}","formulario":"${tarea.main_form}","encuesta":${depot.row.enc}}&autoproced=true`;
+            window.open(urlAndWindowName,urlAndWindowName);
+        }
+    })
 }
 
 myOwn.clientSides.abrir={
     prepare: (_depot, _fieldName)=>{},
     update: (depot, fieldName)=>{
         var label:'ver'|'abrir' = depot.row.cargado_dm?'ver':'abrir';
-        crearBotonVer(depot,fieldName,label);
+        crearBotonVer(depot,fieldName,label); //no espero promesa porque no es necesario
     }
 };
 
@@ -260,7 +265,7 @@ myOwn.clientSides.abrirRecepcion={
     prepare: (_depot, _fieldName)=>{},
     update: (depot, fieldName)=>{
         var label:'ver'|'abrir' = depot.row.cargado?'ver':'abrir';
-        crearBotonVer(depot,fieldName,label);
+        crearBotonVer(depot,fieldName,label); //no espero promesa porque no es necesario
     }
 };
 
