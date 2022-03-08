@@ -264,10 +264,7 @@ export type InfoTarea= {
     notas:string
     fecha_asignacion:Date
     asignado:string
-}
-
-export type Tareas = {
-    [tarea in IdTarea]:InfoTarea
+    main_form: IdFormulario
 }
 
 export type Visita={
@@ -278,7 +275,7 @@ export type Visita={
 }
 
 export type  DatosHdrUaPpal= {
-    tareas: Tareas
+    tarea: InfoTarea
     tem: TEM
     
 /*

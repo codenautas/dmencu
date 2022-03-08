@@ -20,7 +20,6 @@ var discrepances = require('discrepances');
 
 const formPrincipal = 'F:F1';
 const MAIN_TABLENAME ='viviendas';
-const TAREA_ENCUESTADOR = 'encu';
 
 const getOpertivoActual = async (context:ProcedureContext)=>{
     var be = context.be;
@@ -90,16 +89,16 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
                 'carga'         , t.area         
             ) as tem, t.area,
             --TODO: GENERALIZAR
-            jsonb_object_agg(coalesce(tarea,${sqlTools.quoteLiteral(TAREA_ENCUESTADOR)}),jsonb_build_object(
+            jsonb_build_object(
                 'tarea', tarea,
-                'notas', notas,
                 'fecha_asignacion', fecha_asignacion,
-                'asignado', asignado
-            )) as tareas,
+                'asignado', asignado,
+                'main_form', main_form
+            ) as tarea,
             min(fecha_asignacion) as fecha_asignacion
-            from tem t left join tareas_tem tt using (operativo, enc)
+            from tem t left join tareas_tem tt using (operativo, enc) left join tareas using (tarea)
             where ${quotedCondViv}
-            group by t.enc, t.json_encuesta, t.resumen_estado, dominio, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area
+            group by t.enc, t.json_encuesta, t.resumen_estado, dominio, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area, tarea, fecha_asignacion, asignado, main_form
         )
         select jsonb_build_object(
                 'viviendas', ${jsono(
@@ -114,7 +113,7 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
                     group by area, observaciones_hdr`, 
                 'fecha')} as cargas,
             ${jsono(
-                `select enc, jsonb_build_object('tem', tem, 'tareas', tareas) as otras from viviendas`,
+                `select enc, jsonb_build_object('tem', tem, 'tarea', tarea) as otras from viviendas`,
                  'enc',
                  `otras ||'{}'::jsonb`
                 )}
@@ -489,13 +488,12 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             var be=context.be;
             var operativo = parameters.operativo;
             var condviv= ` t.operativo= $1 and t.enc =$2`;
-            //GENERALIZAR
             var soloLectura = !!(await context.client.query(
                 `select *
                     from tareas_tem
-                    where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm is not null`
+                    where operativo= $1 and enc = $2 and cargado_dm is not null`
                 ,
-                [operativo, parameters.forPkRaiz.vivienda, TAREA_ENCUESTADOR]
+                [operativo, parameters.forPkRaiz.vivienda]
             ).fetchOneRowIfExists()).rowCount;
             var {row} = await context.client.query(getHdrQuery(condviv),[operativo,parameters.forPkRaiz.vivienda]).fetchUniqueRow();
             return {
@@ -569,35 +567,28 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             const UA_PRINCIPAL = await getUAPrincipal(context.client, OPERATIVO);
             if(persistentes){
                 await Promise.all(likeAr(persistentes.hojaDeRuta.respuestas[UA_PRINCIPAL]).map(async (respuestasUAPrincipal, idEnc)=>{
-                    var tareas = datos.informacionHdr[idEnc].tareas;
-                    for(let tarea in tareas){
-                        var puedoGuardarEnTEM=true;
-                        var queryTareasTem = await context.client.query(
-                            `update tareas_tem
-                                set cargado_dm=null --, notas = $4
-                                where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm = ${context.be.db.quoteLiteral(token!)}
+                    var tarea = datos.informacionHdr[idEnc].tarea.tarea;
+                    var puedoGuardarEnTEM=true;
+                    var queryTareasTem = await context.client.query(
+                        `update tareas_tem
+                            set cargado_dm=null
+                            where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm = $4
+                            returning 'ok'`
+                        ,
+                        [OPERATIVO, idEnc, tarea, token]
+                    ).fetchOneRowIfExists();
+                    puedoGuardarEnTEM=queryTareasTem.rowCount==1;
+                    if(puedoGuardarEnTEM){
+                        await context.client.query(
+                            `update tem
+                                set json_encuesta = $3, resumen_estado=$4
+                                where operativo= $1 and enc = $2
                                 returning 'ok'`
                             ,
-                            [OPERATIVO, idEnc, tarea, /* tareas[tarea].notas*/]
-                        ).fetchOneRowIfExists();
-                        if(queryTareasTem.rowCount==0){
-                            var puedoGuardarEnTEM=false;
-                            await fs.appendFile('local-recibido-sin-token.txt', JSON.stringify({now:new Date(),user:context.username,idCaso: idEnc,vivienda: respuestasUAPrincipal, tarea, tareas})+'\n\n', 'utf8');
-                        }
-                        //GENERALIZAR
-                        if(tarea == TAREA_ENCUESTADOR && puedoGuardarEnTEM){
-                            await context.client.query(
-                                `update tem
-                                    set json_encuesta = $3, resumen_estado=$4
-                                    where operativo= $1 and enc = $2
-                                    returning 'ok'`
-                                ,
-                                [OPERATIVO, idEnc, respuestasUAPrincipal, respuestasUAPrincipal.resumenEstado]
-                            ).fetchUniqueRow();
-                        }
-                        if(!puedoGuardarEnTEM){
-                            await fs.appendFile('local-recibido-sin-token.txt', JSON.stringify({now:new Date(),user:context.username,idCaso: idEnc,vivienda: respuestasUAPrincipal})+'\n\n', 'utf8');
-                        }
+                            [OPERATIVO, idEnc, respuestasUAPrincipal, respuestasUAPrincipal.resumenEstado]
+                        ).fetchUniqueRow();
+                    }else{
+                        await fs.appendFile('local-recibido-sin-token.txt', JSON.stringify({now:new Date(),user:context.username,idCaso: idEnc,vivienda: respuestasUAPrincipal})+'\n\n', 'utf8');
                     }
                 }).array());
             }

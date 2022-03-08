@@ -7,9 +7,9 @@ import * as likeAr from "like-ar";
 import {getEstructura, setPersistirDatosByPass, DatosByPassPersistibles} from "../unlogged/bypass-formulario"
 import {cargarEstructura, cargarHojaDeRuta, GLOVAR_DATOSBYPASS, GLOVAR_ESTRUCTURA, GLOVAR_MODOBYPASS} from "../unlogged/abrir-formulario"
 
-export const OPERATIVO = 'etoi211';
-
 //TODO GENERALIZAR
+
+const DEFAULT_MAIN_FORM = 'F:RE';
 
 function htmlNumero(num:number){
     return html.span({class:'numero'},''+(num??''))
@@ -49,7 +49,7 @@ async function sincronizarDatos(state:CasoState|null, persistentes:DatosByPassPe
 myOwn.wScreens.abrir_encuesta={
     parameters:[
         {name:'operativo' , typeName:'text', defaultValue:'etoi211', references:'operativos'},
-        {name:'formulario', typeName:'text', defaultValue:'F:RE'},
+        {name:'formulario', typeName:'text', defaultValue:DEFAULT_MAIN_FORM},
         {name:'encuesta'  , typeName:'integer', defaultValue:130031}
     ],
     autoproced:true,
@@ -243,7 +243,7 @@ var crearBotonVer = (depot:myOwn.Depot, fieldName:string, label:'abrir'|'ver')=>
     depot.rowControls[fieldName].innerHTML='';
     depot.rowControls[fieldName].appendChild(openButton);
     openButton.onclick = async function(){
-        var urlAndWindowName = 'menu#w=abrir_encuesta&formulario=F:RE&encuesta='+depot.row.enc;
+        var urlAndWindowName = `menu#w=abrir_encuesta&formulario=${DEFAULT_MAIN_FORM}&encuesta=${depot.row.enc}`;
         window.open(urlAndWindowName,urlAndWindowName);
     }
 }

@@ -17,7 +17,9 @@ import {
     ModoAlmacenamiento, 
     UnidadAnalisis,
     ConfiguracionSorteo,
-    LOCAL_STORAGE_STATE_NAME
+    LOCAL_STORAGE_STATE_NAME,
+    Formulario,
+    CasoState
 } from "./tipos";
 
 const FORMULARIO_TEM = 'F:TEM';
@@ -72,8 +74,8 @@ let encolarBackup:(token:string|undefined, forPkRaiz:ForPkRaiz, respuestasRaiz:R
 
 export var intentarBackup = (forPk:ForPk){
     var {respuestasRaiz, forPkRaiz} = respuestasForPk(forPk, true)
-    let state = myOwn.getLocalVar(LOCAL_STORAGE_STATE_NAME);
-    var token:string = state.datos.token;
+    let state:CasoState = myOwn.getLocalVar(LOCAL_STORAGE_STATE_NAME);
+    var token = state.datos.token;
     if(token){
         encolarBackup(token, forPkRaiz, respuestasRaiz)
     }else{
@@ -585,23 +587,6 @@ export var defOperativo = {
     UAprincipal:'' as IdUnidadAnalisis,
     defUA:{} as {[i in IdUnidadAnalisis]:{pk:IdVariable, incluidas:IdUnidadAnalisis[], idsFor:IdFormulario[]}},
     defFor:{} as {[f in IdFormulario]:{/*arbolUA:IdUnidadAnalisis[], */ hermano?:true}}
-    /*
-    UAprincipal:'viviendas' as IdUnidadAnalisis,
-    defUA:{
-        hogares  :{ pk: 'hogar'  , incluidas:['personas']           , idsFor:['F:A1', 'F:S1']  },
-        personas :{ pk: 'persona', incluidas:[]                     , idsFor:['F:S1_P', 'F:I1']},
-        viviendas:{ pk: false    , incluidas:['hogares', 'visitas'] , idsFor:['F:RE']  },
-        visitas  :{ pk: 'visita' , incluidas:[]                     , idsFor:['F:VI']  },
-    } as unknown as {[i in IdUnidadAnalisis]:{pk:IdVariable, incluidas:IdUnidadAnalisis[], idsFor:IdFormulario[]}},
-    defFor:{
-        'F:RE':{arbolUA:[]},
-        'F:VI':{arbolUA:['visitas']},
-        'F:S1':{arbolUA:['hogares']},
-        'F:A1':{hermano:true, arbolUA:['hogares']},
-        'F:S1_P':{arbolUA:['hogares', 'personas']},
-        'F:I1':{arbolUA:['hogares', 'personas']}
-    } as unknown as {[f in IdFormulario]:{arbolUA:IdUnidadAnalisis[], hermano?:true}}
-    */
 }
 ///// ABAJO de esta línea no puede haber otros nombres de variables o formularios o casilleros en general
 
@@ -788,12 +773,21 @@ export function numberOrStringIncIfArray(numberOrString:number|string, object:ob
     return Number(numberOrString)+(object instanceof Array?1:0);
 }
 
+var getMainFormForVivienda = (vivienda:number):IdFormulario=>{
+    let state:CasoState = myOwn.getLocalVar(LOCAL_STORAGE_STATE_NAME);
+    return state.datos.informacionHdr[vivienda].tarea.main_form
+}
+
 export function calcularFeedbackHojaDeRuta(){
     likeAr(estructura.unidades_analisis).filter(uaDef=>!uaDef.padre).forEach(uaDef=>{
-        likeAr(estructura.formularios).filter(f=>f.casilleros.unidad_analisis == uaDef.unidad_analisis && f.casilleros.formulario_principal).forEach((_defF, formulario)=>{
-            var conjuntoRespuestasUA = datosByPass.hojaDeRuta.respuestas[uaDef.unidad_analisis]
-            beingArray(conjuntoRespuestasUA).forEach((respuestas, valorPkOPosicion)=>{
-                var valorPk = numberOrStringIncIfArray(valorPkOPosicion, conjuntoRespuestasUA);
+        var esPrincipal = (f:Formulario, enc:any)=> {
+            let formularioPrincipal = getMainFormForVivienda(enc);
+            return formularioPrincipal?formularioPrincipal==f.id_casillero:f.formulario_principal
+        }
+        var conjuntoRespuestasUA = datosByPass.hojaDeRuta.respuestas[uaDef.unidad_analisis]
+        beingArray(conjuntoRespuestasUA).forEach((respuestas, valorPkOPosicion)=>{
+            var valorPk = numberOrStringIncIfArray(valorPkOPosicion, conjuntoRespuestasUA);
+            likeAr(estructura.formularios).filter(f=>f.casilleros.unidad_analisis == uaDef.unidad_analisis && esPrincipal(f.casilleros, valorPk as number)).forEach((_defF, formulario)=>{
                 var forPkRaiz = {formulario, [uaDef.pk_agregada]:valorPk}
                 calcularFeedback(respuestas, forPkRaiz, {});
             })
@@ -833,8 +827,17 @@ export function calcularResumenVivienda(
     if(defOperativo.esNorea(respuestas)){
         return "no rea";
     }
-    //TODO sacar 
-    var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>JSON.parse(plainPk).vivienda==forPkRaiz.vivienda && JSON.parse(plainPk).formulario != FORMULARIO_TEM).array();
+    
+    var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>{
+        var mainFormForVivienda = getMainFormForVivienda(forPkRaiz.vivienda);
+        //formularios principales diferentes a main_form de la tara
+        var formsPpalesExcluidos = likeAr(estructura.formularios).filter((form)=>
+            form.casilleros.tipoc == 'F' && 
+            !estructura.unidades_analisis[form.casilleros.unidad_analisis].padre &&
+            form.casilleros.id_casillero != mainFormForVivienda
+        ).map((infoFormulario)=>infoFormulario.casilleros.id_casillero).array();
+        return JSON.parse(plainPk).vivienda==forPkRaiz.vivienda && !formsPpalesExcluidos.includes(JSON.parse(plainPk).formulario)
+    }).array();
     var prioridades:{[key in ResumenEstado]: {prioridad:number, cantidad:number}} = {
         'no rea':{prioridad: 1, cantidad:0},
         'con problemas':{prioridad: 2, cantidad:0},

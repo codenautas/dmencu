@@ -5,9 +5,6 @@ import { desplegarFormularioActual, dmPantallaInicialSinCarga } from './render-f
 import { cargarEstructura, cargarHojaDeRuta, GLOVAR_ESTRUCTURA, GLOVAR_DATOSBYPASS } from './abrir-formulario';
 const ServiceWorkerAdmin = require("service-worker-admin");
 
-export const OPERATIVO = 'etoi211';
-
-
 function siExisteId(id: string, hacer: (arg0: HTMLElement) => void){
     var elemento = document.getElementById(id);
     if(elemento!=null){
@@ -61,7 +58,7 @@ window.addEventListener('load', async function(){
                 var datosByPass = my.getLocalVar(GLOVAR_DATOSBYPASS);
                 cargarEstructura(my.getLocalVar(GLOVAR_ESTRUCTURA));
                 cargarHojaDeRuta({ ...datosByPass, modoAlmacenamiento: 'local' });
-                desplegarFormularioActual({ operativo: OPERATIVO, modoDemo: false, modoAlmacenamiento: 'local' });
+                desplegarFormularioActual({modoDemo: false, modoAlmacenamiento: 'local'});
                 my.menuName = URL_DM;
             }
         }else{
