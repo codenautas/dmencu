@@ -828,16 +828,21 @@ export function calcularResumenVivienda(
         return "no rea";
     }
     
-    var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>{
-        var mainFormForVivienda = getMainFormForVivienda(forPkRaiz.vivienda);
-        //formularios principales diferentes a main_form de la tara
-        var formsPpalesExcluidos = likeAr(estructura.formularios).filter((form)=>
-            form.casilleros.tipoc == 'F' && 
-            !estructura.unidades_analisis[form.casilleros.unidad_analisis].padre &&
-            form.casilleros.id_casillero != mainFormForVivienda
-        ).map((infoFormulario)=>infoFormulario.casilleros.id_casillero).array();
-        return JSON.parse(plainPk).vivienda==forPkRaiz.vivienda && !formsPpalesExcluidos.includes(JSON.parse(plainPk).formulario)
-    }).array();
+    var mainFormForVivienda = getMainFormForVivienda(forPkRaiz.vivienda);
+    var formsFeedback = [mainFormForVivienda];
+    var buscarFormulariosHijos = (idFormulario:IdFormulario)=>{
+        estructura.formularios[idFormulario].casilleros.casilleros.forEach((casillero)=>{
+            if(casillero.tipoc == 'BF'){
+                var formHijo = ('F:' + casillero.salto) as IdFormulario;
+                formsFeedback.push(formHijo);
+                buscarFormulariosHijos(formHijo);
+            }
+        })
+    }
+    buscarFormulariosHijos(mainFormForVivienda);
+    var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>
+        JSON.parse(plainPk).vivienda==forPkRaiz.vivienda && formsFeedback.includes(JSON.parse(plainPk).formulario)
+    ).array();
     var prioridades:{[key in ResumenEstado]: {prioridad:number, cantidad:number}} = {
         'no rea':{prioridad: 1, cantidad:0},
         'con problemas':{prioridad: 2, cantidad:0},
