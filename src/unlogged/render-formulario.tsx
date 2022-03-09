@@ -984,8 +984,11 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                             forPk, 
                             resumen:null, 
                             num, 
-                            actual: configSorteoFormulario && configSorteoFormulario.id_formulario_individual? 
-                                configSorteoFormulario.id_formulario_individual == idFormularioDestino &&
+                            actual: 
+                                configSorteoFormulario && 
+                                configSorteoFormulario.id_formulario_individual &&
+                                configSorteoFormulario.id_formulario_individual == idFormularioDestino
+                            ? 
                                 num == coalesce(
                                     respuestasAumentadas[configSorteoFormulario.resultado_manual],
                                     respuestasAumentadas[configSorteoFormulario.resultado]
