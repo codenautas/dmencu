@@ -69,7 +69,7 @@ UPDATE operativos
             "variableBotonFormularioUA":"$B.F:S1_P_SUP",
             "metodo": "tabla",
             "param_metodo": {
-                "var_letra": "l0",
+                "var_letra": "spl0_sup",
                 "tabla": [
                     "AAAAAAAAAA",
                     "BABAABAABB",
