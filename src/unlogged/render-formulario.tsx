@@ -37,7 +37,7 @@ import { dmTraerDatosFormulario, dispatchers,
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux"; 
 import { strict as likeAr, beingArray } from "like-ar";
-import {sleep} from "best-globals";
+import {sleep, coalesce} from "best-globals";
 
 import {
     AppBar, ButtonGroup, CircularProgress, Checkbox, 
@@ -986,14 +986,20 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                             num, 
                             actual: configSorteoFormulario? 
                                 configSorteoFormulario.id_formulario_individual == idFormularioDestino &&
-                                num == respuestasAumentadas[configSorteoFormulario.resultado]
+                                num == coalesce(
+                                    respuestasAumentadas[configSorteoFormulario.resultado_manual],
+                                    respuestasAumentadas[configSorteoFormulario.resultado]
+                                )
                             :
                                 numActual == num, 
                             previo: numActual == null, 
                             disabled:
                                 configSorteoFormulario && 
                                 configSorteoFormulario.id_formulario_individual == idFormularioDestino &&
-                                num != respuestasAumentadas[configSorteoFormulario.resultado]
+                                num != coalesce(
+                                    respuestasAumentadas[configSorteoFormulario.resultado_manual],
+                                    respuestasAumentadas[configSorteoFormulario.resultado]
+                                )
                         }
                     }).array();
                     if("puede agregar //TODO VER ESTO" && (conjunto instanceof Array || conjunto == null)){
