@@ -22,3 +22,7 @@ drop table if exists resultados_test;
 
 alter table tareas_tem drop column if exists visitas;
 
+--2022-03-08
+delete from tareas_tem where tarea in ('rece', 'coor');
+delete from tareas_areas where tarea in ('rece', 'coor');
+delete from tareas where tarea in ('rece', 'coor');
