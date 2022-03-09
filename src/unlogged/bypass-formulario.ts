@@ -400,7 +400,7 @@ export function accion_registrar_respuesta(payload:{
     var siguienteVariable:IdVariable|IdFin|null|undefined;
     if(variable != NO_CAMBIAR__SOLO_TRAER_STATUS && (recentModified || NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO && feedbackRow.autoIngresadas?.[variable])){
         variablesCalculadas(respuestasRaiz, forPk);
-        if(estructura.configSorteo){
+        if(estructura.configSorteo && !getCasoState().datos.soloLectura){
             verificarSorteo({
                 configuracionSorteo: estructura.configSorteo[getMainFormForVivienda(forPk.vivienda!)], 
                 respuestas,
@@ -774,8 +774,10 @@ export function numberOrStringIncIfArray(numberOrString:number|string, object:ob
     return Number(numberOrString)+(object instanceof Array?1:0);
 }
 
+var getCasoState=():CasoState=> myOwn.getLocalVar(LOCAL_STORAGE_STATE_NAME);
+
 export var getMainFormForVivienda = (vivienda:number):IdFormulario=>{
-    let state:CasoState = myOwn.getLocalVar(LOCAL_STORAGE_STATE_NAME);
+    let state = getCasoState();
     return state.datos.informacionHdr[vivienda].tarea.main_form
 }
 
