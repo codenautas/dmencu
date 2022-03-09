@@ -700,7 +700,9 @@ export function verificarSorteo(opts:{
         }
         respuestas[configuracionSorteo.cantidad_total]=respuestas[unidadAnalisis].length;
         respuestas[configuracionSorteo.variableBotonFormularioUA]='ok';
-        respuestas[configuracionSorteo.variableBotonFormularioUAIndividual]='ok';
+        if(configuracionSorteo.variableBotonFormularioUAIndividual){
+            respuestas[configuracionSorteo.variableBotonFormularioUAIndividual]='ok';
+        }
     }
     
 }
