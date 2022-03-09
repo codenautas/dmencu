@@ -19,7 +19,8 @@ import {
     ConfiguracionSorteo,
     LOCAL_STORAGE_STATE_NAME,
     Formulario,
-    CasoState
+    CasoState,
+    ConfiguracionSorteoFormulario
 } from "./tipos";
 
 const FORMULARIO_TEM = 'F:TEM';
@@ -401,7 +402,7 @@ export function accion_registrar_respuesta(payload:{
         variablesCalculadas(respuestasRaiz, forPk);
         if(estructura.configSorteo){
             verificarSorteo({
-                configuracionSorteo: estructura.configSorteo, 
+                configuracionSorteo: estructura.configSorteo[getMainFormForVivienda(forPk.vivienda!)], 
                 respuestas,
                 respuestasRaiz,
                 variableActual: variable, 
@@ -603,7 +604,7 @@ function num(num:number|string|null):number{
 var funcionesConocidas:{[k in string]:boolean} = {}
 
 export function verificarSorteo(opts:{
-    configuracionSorteo:ConfiguracionSorteo, 
+    configuracionSorteo:ConfiguracionSorteoFormulario, 
     respuestas:Respuestas,
     respuestasRaiz: RespuestasRaiz
     forPk:ForPk,
@@ -773,7 +774,7 @@ export function numberOrStringIncIfArray(numberOrString:number|string, object:ob
     return Number(numberOrString)+(object instanceof Array?1:0);
 }
 
-var getMainFormForVivienda = (vivienda:number):IdFormulario=>{
+export var getMainFormForVivienda = (vivienda:number):IdFormulario=>{
     let state:CasoState = myOwn.getLocalVar(LOCAL_STORAGE_STATE_NAME);
     return state.datos.informacionHdr[vivienda].tarea.main_form
 }

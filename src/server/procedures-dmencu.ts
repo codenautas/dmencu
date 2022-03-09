@@ -235,8 +235,10 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     .map((expr,dominio)=>({dominio, expr:compilarExpresion(expr.expr)}))
                     .plain();
             if(configSorteo){
-                configSorteo.expr_incompletitud_js=compilarExpresionesDominios(configSorteo.expr_incompletitud)
-                configSorteo.filtro_js=compilarExpresionesDominios(configSorteo.filtro)
+                likeAr(configSorteo).forEach((configSorteoFormulario)=>{
+                    configSorteoFormulario.expr_incompletitud_js=compilarExpresionesDominios(configSorteoFormulario.expr_incompletitud)
+                    configSorteoFormulario.filtro_js=compilarExpresionesDominios(configSorteoFormulario.filtro)
+                })
             }
             return {timestamp: be.timestampEstructura, ...result.row, operativo:parameters.operativo, configSorteo};
         }

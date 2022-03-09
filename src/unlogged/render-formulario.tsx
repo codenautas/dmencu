@@ -26,6 +26,7 @@ import {Bloque, BotonFormulario,
 } from "./tipos";
 import{ 
     calcularResumenVivienda,
+    getMainFormForVivienda,
     intentarBackup,
     setCalcularVariables
 } from "./bypass-formulario"
@@ -971,6 +972,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                   //  var estadoDelBoton = feedbackRow.feedback['$B.F:'+casillero.salto as IdVariable].estado   //original
                       var estadoDelBoton = feedbackRow.feedback['$B.F:'+armoNomSalto as IdVariable].estado
                    // console.log('BotonFormularioDespliegue estadoDelBoton ' +estadoDelBoton  );
+                    var configSorteoFormulario = estructura.configSorteo?estructura.configSorteo[getMainFormForVivienda(forPk.vivienda!)]:null
                     listaDeBotonesAbrir = likeAr(conjunto).map((_, i)=>{
                         let num:number = numberOrStringIncIfArray(i, conjunto) as number;
                         let forPk={...props.forPk, formulario:idFormularioDestino, [nuevoCampoPk]:num};
@@ -982,16 +984,16 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                             forPk, 
                             resumen:null, 
                             num, 
-                            actual: estructura.configSorteo? 
-                                estructura.configSorteo.id_formulario_individual == idFormularioDestino &&
-                                num == respuestasAumentadas[estructura.configSorteo.resultado]
+                            actual: configSorteoFormulario? 
+                                configSorteoFormulario.id_formulario_individual == idFormularioDestino &&
+                                num == respuestasAumentadas[configSorteoFormulario.resultado]
                             :
                                 numActual == num, 
                             previo: numActual == null, 
                             disabled:
-                                estructura.configSorteo && 
-                                estructura.configSorteo.id_formulario_individual == idFormularioDestino &&
-                                num != respuestasAumentadas[estructura.configSorteo.resultado]
+                                configSorteoFormulario && 
+                                configSorteoFormulario.id_formulario_individual == idFormularioDestino &&
+                                num != respuestasAumentadas[configSorteoFormulario.resultado]
                         }
                     }).array();
                     if("puede agregar //TODO VER ESTO" && (conjunto instanceof Array || conjunto == null)){
@@ -1005,7 +1007,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                             esAgregar:true, 
                             actual:debeAgregarOlisto, 
                             previo: false, 
-                            disabled:estructura.configSorteo && estructura.configSorteo.id_formulario_individual == idFormularioDestino
+                            disabled:configSorteoFormulario && configSorteoFormulario.id_formulario_individual == idFormularioDestino
                         });
                         listaDeBotonesAbrir.push({
                             forPk, 
@@ -1013,7 +1015,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                             esConfirmar:true, 
                             actual:debeAgregarOlisto && (!casillero.longitud || nuevoValorPk > Number(casillero.longitud)), 
                             previo: false, 
-                            disabled:estructura.configSorteo && estructura.configSorteo.id_formulario_individual == idFormularioDestino
+                            disabled:configSorteoFormulario && configSorteoFormulario.id_formulario_individual == idFormularioDestino
                         });
                     }
                 }else{

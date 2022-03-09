@@ -383,7 +383,10 @@ type ConfiguracionSorteoHash = {
         divisor: number
     }    
 }
-export type ConfiguracionSorteo = {
+
+export type ConfiguracionSorteo = {[key in IdFormulario]:ConfiguracionSorteoFormulario}
+
+export type ConfiguracionSorteoFormulario = {
     unidad_analisis: IdUnidadAnalisis,
     //expr_incompletitud: string //"not (p1) or no t (p2) or not(p3)"
     expr_incompletitud: {
