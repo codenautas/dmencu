@@ -984,7 +984,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                             forPk, 
                             resumen:null, 
                             num, 
-                            actual: configSorteoFormulario? 
+                            actual: configSorteoFormulario && configSorteoFormulario.id_formulario_individual? 
                                 configSorteoFormulario.id_formulario_individual == idFormularioDestino &&
                                 num == coalesce(
                                     respuestasAumentadas[configSorteoFormulario.resultado_manual],
@@ -1013,7 +1013,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                             esAgregar:true, 
                             actual:debeAgregarOlisto, 
                             previo: false, 
-                            disabled:configSorteoFormulario && configSorteoFormulario.id_formulario_individual == idFormularioDestino
+                            disabled:!!(configSorteoFormulario && configSorteoFormulario.id_formulario_individual == idFormularioDestino)
                         });
                         listaDeBotonesAbrir.push({
                             forPk, 
@@ -1021,7 +1021,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                             esConfirmar:true, 
                             actual:debeAgregarOlisto && (!casillero.longitud || nuevoValorPk > Number(casillero.longitud)), 
                             previo: false, 
-                            disabled:configSorteoFormulario && configSorteoFormulario.id_formulario_individual == idFormularioDestino
+                            disabled:!!(configSorteoFormulario && configSorteoFormulario.id_formulario_individual == idFormularioDestino)
                         });
                     }
                 }else{
