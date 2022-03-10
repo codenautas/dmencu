@@ -758,11 +758,24 @@ export function calcularFeedbackUnidadAnalisis(
                     respuestas[varName] = autoIngresadas[varName];
                 }
             }
-            var resumenOrNull = resumen == 'vacio' ? null : resumen
+            var BF_varname = '$B.'+formulario as IdVariable
+            var formPrincipalForVivienda = getMainFormForVivienda(forPk.vivienda!);
+            var configSorteoFormulario = estructura.configSorteo[formPrincipalForVivienda];
+            if(!configSorteoFormulario){
+                throw Error(`no se configuró un sorteo para el formulario ${formPrincipalForVivienda}`)
+            }
+            var resumenOrNull = 
+                estructura.configSorteo &&
+                configSorteoFormulario.variableBotonFormularioUAIndividual && 
+                configSorteoFormulario.variableBotonFormularioUAIndividual == BF_varname?
+                    'ok'
+                :resumen == 'vacio' ? 
+                    null
+                :resumen
             if(esHermano){
-                respuestas['$B.'+formulario as IdVariable] = resumenOrNull;
+                respuestas[BF_varname] = resumenOrNull;
             }else if(respuestasPadre != null){
-                respuestasPadre['$B.'+formulario as IdVariable] = resumenOrNull;
+                respuestasPadre[BF_varname] = resumenOrNull;
             }
         }
     }
