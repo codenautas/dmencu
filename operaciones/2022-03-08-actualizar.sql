@@ -92,7 +92,7 @@ UPDATE operativos
             "cantidad_total":"total_m_sup",
             "resultado": "nro_miembro_sel_sup",
             "resultado_manual":"nro_mie_sel_ing_sup",
-            "sorteado_mostrar": [{"source":"nombre_sup", "target":"msnombre"}],
+            "sorteado_mostrar": [{"source":"nombre_sup", "target":"msnombre"}]
         }
     }'
 where operativo = 'PREJU_2022';
