@@ -8,17 +8,17 @@ UPDATE operativos
             "unidad_analisis": "personas",
             "expr_incompletitud": {
                 "3":{"dominio": 3, "expr": "not(nombre) or not(sexo) or not(edad)"},
-                "5":{"dominio": 5, "expr": "not(nombre) or not(sexo) or not(edad)"}
+                "5":{"dominio": 5, "expr": "not(nombre) or not(sexo) or not(edad) or (edad >= 18 and not(lp))"}
             },
             "disparador": "sorteo",
             "filtro": {
                 "3":{"dominio": 3, "expr": "edad>=18"},
-                "5":{"dominio": 5, "expr": "edad>=18"}
+                "5":{"dominio": 5, "expr": "edad>=18 and lp = 1"}
             },
             "orden": [
                 {"variable":"edad" , "orden":-1}
             ], 
-            "parametros":["nombre","sexo","edad", "p4", "p5", "total_m"],
+            "parametros":["nombre","sexo","edad", "p4", "p5", "total_m","lp"],
             "incompletas":"_personas_incompletas",
             "variableBotonFormularioUA":"$B.F:S1_P",
             "variableBotonFormularioUAIndividual":"$B.F:I1",
@@ -56,7 +56,7 @@ UPDATE operativos
                 "3":{"dominio": 3, "expr": "not(nombre_sup) or not(sexo_sup) or not(edad_sup)"},
                 "5":{"dominio": 5, "expr": "not(nombre_sup) or not(sexo_sup) or not(edad_sup)"}
             },
-            "disparador": "sorteo",
+            "disparador": "sorteo_sup",
             "filtro": {
                 "3":{"dominio": 3, "expr": "edad_sup>=18"},
                 "5":{"dominio": 5, "expr": "edad_sup>=18"}
@@ -92,7 +92,7 @@ UPDATE operativos
             "cantidad_total":"total_m_sup",
             "resultado": "nro_miembro_sel_sup",
             "resultado_manual":"nro_mie_sel_ing_sup",
-            "sorteado_mostrar": [{"source":"nombre_sup", "target":"msnombre"}]
+            "sorteado_mostrar": [{"source":"nombre_sup", "target":"nombre_miembro_sel_sup"}]
         }
     }'
 where operativo = 'PREJU_2022';

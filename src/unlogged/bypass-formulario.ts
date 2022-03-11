@@ -616,7 +616,12 @@ export function verificarSorteo(opts:{
         respuestas[configuracionSorteo.resultado]=null;
         respuestas[configuracionSorteo.cantidad_sorteables]=null;
         respuestas[configuracionSorteo.disparador] = null;
-        configuracionSorteo.sorteado_mostrar?.forEach((mostrar)=>respuestas[mostrar.target]=null)
+        configuracionSorteo.sorteado_mostrar?.forEach((mostrar)=>respuestas[mostrar.target]=null);
+        if(respuestas[unidadAnalisis] && respuestas[unidadAnalisis] instanceof Array){
+            for(var per of respuestas[unidadAnalisis){
+                per[configuracionSorteo.param_metodo.var_letra] = null;
+            }
+        }
     }
 
     var {configuracionSorteo, variableActual, respuestas, forPk, respuestasRaiz} = opts;
