@@ -667,8 +667,12 @@ export function verificarSorteo(opts:{
             !respuestas[configuracionSorteo.resultado] &&
             respuestas[configuracionSorteo.incompletas]==0
         ){
-            respuestas[unidadAnalisis].forEach((per, i)=>per.$p0=i+1);
             var sortear=respuestas[unidadAnalisis].filter(p=>filtro_fun(p));
+            if(sortear.length == 0){
+                resetearSorteo({respuestas});
+                throw new Error("ninguna persona está en condiciones de ser sorteada");
+            }
+            respuestas[unidadAnalisis].forEach((per, i)=>per.$p0=i+1);
             configuracionSorteo.orden.push({variable:"$p0" as IdVariable, orden:1});
             sortear.sort(compareForOrder(configuracionSorteo.orden.map(elem => ({column:elem.variable, order:elem.orden}))));
             var posicionSorteada = null;
