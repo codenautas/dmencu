@@ -695,9 +695,9 @@ export function verificarSorteo(opts:{
                 }
                 var filaTablaAleatoria = sortear.length - 1 ;
                 var letraSeleccionada = tablaAleatoriaMiembros[filaTablaAleatoria][columnaTablaAleatoria];
-                posicionSorteada = sortear.findIndex((p:Respuestas)=>p[varLetra]==letraSeleccionada);
+                posicionSorteada = respuestas[unidadAnalisis].findIndex((p:Respuestas)=>p[varLetra]==letraSeleccionada) +1;
             }
-            respuestas[configuracionSorteo.resultado]=sortear[posicionSorteada].p0;
+            respuestas[configuracionSorteo.resultado]=posicionSorteada;
             respuestas[configuracionSorteo.cantidad_sorteables]=sortear.length;
             configuracionSorteo.sorteado_mostrar?.forEach((mostrar)=>
                 respuestas[mostrar.target]=respuestas[unidadAnalisis][respuestas[configuracionSorteo.resultado] as number -1][mostrar.source]
