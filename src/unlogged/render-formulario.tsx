@@ -1941,19 +1941,43 @@ function loadInstance(){
 }
 
 setCalcularVariables((respuestasRaiz:RespuestasRaiz, forPk:ForPk)=>{
-    for(var respuestasHogar of respuestasRaiz.hogares||[]){
-        if(!respuestasHogar.personas || respuestasHogar.personas.length==0 || respuestasHogar.personas[0].sexo == null){
-            if(respuestasHogar.los_nombres){
-                if(!respuestasHogar.personas){
-                    respuestasHogar.personas=[];
-                }
-                respuestasHogar.los_nombres.split(',').forEach((nombre, i)=>{
-                    respuestasHogar.personas[i] = respuestasHogar.personas[i] || {};
-                    respuestasHogar.personas[i].nombre = nombre.trim();
-                })
-            }
+    //TODO GENERALIZAR
+    var uasIterar:{
+        [key in IdUnidadAnalisis]:{
+            uaPersonas: IdUnidadAnalisis,
+            varSexoPersona: IdVariable,
+            varLosNombres: IdVariable
+        }
+    } = {
+        hogares: {
+            uaPersonas: 'personas',
+            varSexoPersona: 'sexo' as IdVariable,
+            varNombrePersona: 'nombre' as IdVariable,
+            varLosNombres: "los_nombres" as IdVariable
+        },
+        //@ts-ignore es unidad de analisis
+        hogares_sup: {
+            uaPersonas: 'personas_sup' as IdUnidadAnalisis,
+            varSexoPersona: 'sexo_sup'  as IdVariable,
+            varNombrePersona: 'nombre_sup'  as IdVariable,
+            varLosNombres: "nombres_componentes_sup"  as IdVariable
         }
     }
+    likeAr(uasIterar).forEach((configHogares,uaHogares)=>{
+        for(var respuestasHogar of respuestasRaiz[uaHogares]||[]){
+            if(!respuestasHogar[configHogares.uaPersonas] || respuestasHogar[configHogares.uaPersonas].length==0 || respuestasHogar[configHogares.uaPersonas][0][configHogares.varSexoPersona] == null){
+                if(respuestasHogar[configHogares.varLosNombres]){
+                    if(!respuestasHogar[configHogares.uaPersonas]){
+                        respuestasHogar[configHogares.uaPersonas]=[];
+                    }
+                    respuestasHogar[configHogares.varLosNombres].split(',').forEach((nombre, i)=>{
+                        respuestasHogar[configHogares.uaPersonas][i] = respuestasHogar[configHogares.uaPersonas][i] || {};
+                        respuestasHogar[configHogares.uaPersonas][i][configHogares.varNombrePersona] = nombre.trim();
+                    })
+                }
+            }
+        }
+    })
     var state:CasoState = my.getLocalVar(LOCAL_STORAGE_STATE_NAME);
     respuestasRaiz.vdominio=state.datos.informacionHdr[forPk.vivienda].tem.dominio;
 })
