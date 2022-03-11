@@ -667,8 +667,9 @@ export function verificarSorteo(opts:{
             !respuestas[configuracionSorteo.resultado] &&
             respuestas[configuracionSorteo.incompletas]==0
         ){
-            var sortear=respuestas[unidadAnalisis].filter(p=>filtro_fun(p)).map((p:Respuestas,i:number)=>({p0:num(i)+1, ...p}));
-            configuracionSorteo.orden.push({variable:"p0" as IdVariable, orden:1});
+            respuestas[unidadAnalisis].forEach((per, i)=>per.$p0=i+1);
+            var sortear=respuestas[unidadAnalisis].filter(p=>filtro_fun(p));
+            configuracionSorteo.orden.push({variable:"$p0" as IdVariable, orden:1});
             sortear.sort(compareForOrder(configuracionSorteo.orden.map(elem => ({column:elem.variable, order:elem.orden}))));
             var posicionSorteada = null;
             if(configuracionSorteo.metodo=='hash'){
@@ -683,7 +684,7 @@ export function verificarSorteo(opts:{
                 var letra = 'A';
                 const varLetra:IdVariable = configuracionSorteo.param_metodo.var_letra;
                 for(var persona of sortear){
-                    respuestas[unidadAnalisis].find((_per,i)=>i==persona.p0-1)[varLetra] = letra;
+                    respuestas[unidadAnalisis].find((_per,i)=>i==persona.$p0-1)[varLetra] = letra;
                     persona[varLetra]=letra;
                     letra = String.fromCharCode(letra.charCodeAt(0)+1);   
                 }
@@ -695,7 +696,7 @@ export function verificarSorteo(opts:{
                 }
                 var filaTablaAleatoria = sortear.length - 1 ;
                 var letraSeleccionada = tablaAleatoriaMiembros[filaTablaAleatoria][columnaTablaAleatoria];
-                posicionSorteada = respuestas[unidadAnalisis].findIndex((p:Respuestas)=>p[varLetra]==letraSeleccionada) +1;
+                posicionSorteada = respuestas[unidadAnalisis].findIndex((p:Respuestas)=>p[varLetra]==letraSeleccionada) + 1;
             }
             respuestas[configuracionSorteo.resultado]=posicionSorteada;
             respuestas[configuracionSorteo.cantidad_sorteables]=sortear.length;
