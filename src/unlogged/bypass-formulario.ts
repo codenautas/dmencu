@@ -22,6 +22,7 @@ import {
     CasoState,
     ConfiguracionSorteoFormulario
 } from "./tipos";
+import { unwatchFile } from "fs";
 
 const FORMULARIO_TEM = 'F:TEM';
 
@@ -73,7 +74,7 @@ let encolarBackup:(token:string|undefined, forPkRaiz:ForPkRaiz, respuestasRaiz:R
     throw new Error("SIN ESPECIFICAR encolarBackup")
 }
 
-export var intentarBackup = (forPk:ForPk){
+export var intentarBackup = (forPk:ForPk)=>{
     var {respuestasRaiz, forPkRaiz} = respuestasForPk(forPk, true)
     let state:CasoState = myOwn.getLocalVar(LOCAL_STORAGE_STATE_NAME);
     var token = state.datos.token;
@@ -617,9 +618,11 @@ export function verificarSorteo(opts:{
         respuestas[configuracionSorteo.cantidad_sorteables]=null;
         respuestas[configuracionSorteo.disparador] = null;
         configuracionSorteo.sorteado_mostrar?.forEach((mostrar)=>respuestas[mostrar.target]=null);
-        if(respuestas[unidadAnalisis] && respuestas[unidadAnalisis] instanceof Array){
-            for(var per of respuestas[unidadAnalisis){
-                per[configuracionSorteo.param_metodo.var_letra] = null;
+        if('var_letra' in configuracionSorteo.param_metodo){
+            if(respuestas[unidadAnalisis] && respuestas[unidadAnalisis] instanceof Array){
+                for(var per of respuestas[unidadAnalisis){
+                        per[configuracionSorteo.param_metodo.var_letra] = null;
+                }
             }
         }
     }
@@ -630,7 +633,7 @@ export function verificarSorteo(opts:{
     var expr_incompletitud_fun = getFuncionHabilitar(configuracionSorteo.expr_incompletitud_js[respuestasAumentadas.vdominio].expr);
     var filtro_fun =  getFuncionHabilitar(configuracionSorteo.filtro_js[respuestasAumentadas.vdominio].expr);
     var unidadAnalisis = configuracionSorteo.unidad_analisis;
-    
+
     if(configuracionSorteo.parametros.includes(variableActual)){
         var uaPadre = likeAr(estructura.unidades_analisis).find((ua)=>ua.unidad_analisis==unidadAnalisis)?.padre;
         var pkAgregadaPadre = likeAr(estructura.unidades_analisis).find((ua)=>ua.unidad_analisis==uaPadre)?.pk_agregada
@@ -755,19 +758,27 @@ export function calcularFeedbackUnidadAnalisis(
     for(var esHermano of [true, false]){
         for(var formulario of defOperativo.defUA[UA].idsFor) if(!!esHermano == !!defOperativo.defFor[formulario].hermano){
             var plainForPk:PlainForPk = toPlainForPk({...forPk, formulario})
-            feedbackRowValidator[plainForPk]=
-                rowValidator(
-                    {marcaFin:'fin', ...formularios[formulario].estructuraRowValidator}, 
-                    respuestasAumentadas,
-                    opts
-                )
-            var {resumen, autoIngresadas} = feedbackRowValidator[plainForPk];
-            var varName:IdVariable;
-            if(autoIngresadas!=null){
-                for(varName in autoIngresadas){
-                    respuestas[varName] = autoIngresadas[varName];
+            var maxPasosAutoingresadas = 10;
+            var varAutoIngresadas = [];
+            do{
+                feedbackRowValidator[plainForPk]=
+                    rowValidator(
+                        {marcaFin:'fin', ...formularios[formulario].estructuraRowValidator}, 
+                        respuestasAumentadas,
+                        opts
+                    )
+                var {resumen, autoIngresadas} = feedbackRowValidator[plainForPk];
+                var varName:IdVariable;
+                if(autoIngresadas!=null){
+                    for(varName in autoIngresadas){
+                        respuestas[varName] = autoIngresadas[varName];
+                        varAutoIngresadas.push(varName);
+                    }
                 }
-            }
+            } while(autoIngresadas!=null && maxPasosAutoingresadas-->0);
+            varAutoIngresadas.forEach(varname=>{
+                feedbackRowValidator[plainForPk].estados[varname as IdVariable] = 'actual';
+            })
             var BF_varname = '$B.'+formulario as IdVariable
             var formPrincipalForVivienda = getMainFormForVivienda(forPk.vivienda!);
             var configSorteoFormulario = estructura.configSorteo[formPrincipalForVivienda];
