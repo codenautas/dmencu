@@ -8,7 +8,7 @@ export type ModoAlmacenamiento = 'session'| // cuando sea para una sola pestaña
 
 export type IdOpcion = number
 export type IdOperativo = 'etoi211'|'eah2022'|'etc...'
-export type IdVariable = 'v1'|'v2'|'v3'|'etc...'
+export type IdVariable = 'v1'|'v2'|'v3'|'etc...'|'vdominio'
 export type IdPregunta = 'P1'|'P2'|'etc...'
 export type IdBloque = 'B1'|'B2'|'etc...'
 export type IdFormulario = 'F1'|'F2'|'etc...'
@@ -20,7 +20,7 @@ export type IdFiltro = 'FILTRO1' | 'FILTRO2' | 'etc...'
 export type IdCasillero = IdVariable | IdPregunta | IdBloque | IdFormulario | IdFiltro | IdOpcion
 export type IdFin = 'fin'; // never // TODO: poder poner 'FIN'
 export type IdDestino = IdPregunta | IdBloque | IdFin | IdFiltro 
-export type Valor = string|number|Date|null;
+export type Valor = string|number|null;
 export type TipocDestinos = 'P'|'CP'|'B'|'FILTRO'|'BF'
 export type Tipoc = TipocDestinos | 'F'|'O'|'OM'|'CONS' |'TEXTO'
 
@@ -425,4 +425,13 @@ export type ConfiguracionSorteoFormulario = {
 export function toPlainForPk(forPk:ForPk):PlainForPk{
     // @ts-ignore sabemos que hay que hacer un JSON
     return JSON.stringify(forPk);
+}
+
+declare global {
+    namespace myOwn{
+        interface AddrParams {
+            state_forPk:string
+            state_pilaForPk:string
+        }
+    }
 }

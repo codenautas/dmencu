@@ -22,7 +22,6 @@ import {
     CasoState,
     ConfiguracionSorteoFormulario
 } from "./tipos";
-import { unwatchFile } from "fs";
 
 const FORMULARIO_TEM = 'F:TEM';
 
@@ -40,7 +39,7 @@ export type DatosByPassPersistibles = {
 
 type DatosByPass = DatosByPassPersistibles & {
     feedbackRowValidator:{  // no se persiste
-        [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> // resultado del rowValidator para estado.forPk
+        [formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin> // resultado del rowValidator para estado.forPk
     }
     dirty:boolean
 };
@@ -137,9 +136,9 @@ export function getEstructura(){
 
 type ElementosRegistrables = HTMLDivElement|HTMLButtonElement|HTMLInputElement;
 
-type DirectFunction<T, Result> = (respuestasAumentadas:Respuestas, feedbackForm: FormStructureState<IdVariable,IdFin>, elemento:T,
+type DirectFunction<T, Result> = (respuestasAumentadas:Respuestas, feedbackForm: FormStructureState<IdVariable,Valor,IdFin>, elemento:T,
     feedbackAll:{
-        [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> // resultado del rowValidator para estado.forPk
+        [formulario in PlainForPk]:FormStructureState<IdVariable,Valor,IdFin> // resultado del rowValidator para estado.forPk
     },
     estructura:Estructura
 ) => Result

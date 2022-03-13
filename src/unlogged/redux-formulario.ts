@@ -21,7 +21,7 @@ function forPkToUrl(forPk:ForPk|null, pilaForPk:ForPk[]){
     var addrParams=myOwn.UriSearchToObject(location.hash||location.search||'');
     myOwn.replaceAddrParams({
         ...addrParams, 
-        state_forPk:toPlainForPk(forPk), 
+        state_forPk:forPk == null ? 'null' : toPlainForPk(forPk), 
         state_pilaForPk:pilaForPk.map(toPlainForPk).join('|')
     });
 }
@@ -228,7 +228,7 @@ function rellenarVariablesYOpciones(idFormulario:IdFormulario, estructura:Estruc
         let variableDef={
             tipo:'texto',
             libre:true,
-            // ...(casillero.expresion_habilitar?{funcionHabilitar:(v)=>}:{}),
+            ...(casillero.expresion_habilitar?{funcionHabilitar:(r:Record<string, any>)=>r[casillero.expresion_habilitar!]!==0}:{}),
         }
         estructura.variables[var_name]=variableDef;
     }
