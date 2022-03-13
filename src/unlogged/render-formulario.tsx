@@ -874,7 +874,7 @@ var botonFormularioConResumen = (
                 color:"inherit",
                 onClick:()=>{
                     if(defBoton.esConfirmar){
-                        if(defBoton.num){
+                        if(defBoton.num != null){
                             dispatchByPass(accion_registrar_respuesta,{forPk:forPkPadre, variable:casillero.expresion_habilitar as IdVariable, respuesta:defBoton.num});
                         }
                     }else{

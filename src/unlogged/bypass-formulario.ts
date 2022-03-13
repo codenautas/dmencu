@@ -384,7 +384,7 @@ export function accion_registrar_respuesta(payload:{
     var unidad_analisis = estructura.formularios[forPk.formulario];
     var recentModified = false;
     if(respuesta !== NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO && variable != NO_CAMBIAR__SOLO_TRAER_STATUS){
-        if(respuesta == ''){
+        if(respuesta === ''){
             respuesta = null;
         }else if(estructura.formularios[forPk.formulario].estructuraRowValidator.variables[variable].tipo=='numero'){
             if(respuesta != null){
@@ -620,7 +620,7 @@ export function verificarSorteo(opts:{
         configuracionSorteo.sorteado_mostrar?.forEach((mostrar)=>respuestas[mostrar.target]=null);
         if('var_letra' in configuracionSorteo.param_metodo){
             if(respuestas[unidadAnalisis] && respuestas[unidadAnalisis] instanceof Array){
-                for(var per of respuestas[unidadAnalisis){
+                for(var per of respuestas[unidadAnalisis]){
                         per[configuracionSorteo.param_metodo.var_letra] = null;
                 }
             }
@@ -761,6 +761,7 @@ export function calcularFeedbackUnidadAnalisis(
             var maxPasosAutoingresadas = 10;
             var varAutoIngresadas = [];
             do{
+                var huboAutoingresos = false;
                 feedbackRowValidator[plainForPk]=
                     rowValidator(
                         {marcaFin:'fin', ...formularios[formulario].estructuraRowValidator}, 
@@ -773,9 +774,10 @@ export function calcularFeedbackUnidadAnalisis(
                     for(varName in autoIngresadas){
                         respuestas[varName] = autoIngresadas[varName];
                         varAutoIngresadas.push(varName);
+                        huboAutoingresos = true;
                     }
                 }
-            } while(autoIngresadas!=null && maxPasosAutoingresadas-->0);
+            } while(huboAutoingresos && maxPasosAutoingresadas-->0);
             varAutoIngresadas.forEach(varname=>{
                 feedbackRowValidator[plainForPk].estados[varname as IdVariable] = 'actual';
             })

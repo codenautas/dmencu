@@ -227,7 +227,8 @@ function rellenarVariablesYOpciones(idFormulario:IdFormulario, estructura:Estruc
         casillero.var_name_BF = var_name;
         let variableDef={
             tipo:'texto',
-            libre:true
+            libre:true,
+            // ...(casillero.expresion_habilitar?{funcionHabilitar:(v)=>}:{}),
         }
         estructura.variables[var_name]=variableDef;
     }
