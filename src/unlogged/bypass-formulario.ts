@@ -674,45 +674,45 @@ export function verificarSorteo(opts:{
                 respuestas[configuracionSorteo.incompletas]==0
             ){
                 var sortear=respuestasUA.filter(p=>filtro_fun(p));
-                if(sortear.length == 0){
-                    resetearSorteo({respuestas});
-                    throw new Error("ninguna persona está en condiciones de ser sorteada");
-                }
-                respuestasUA.forEach((per, i)=>per.$p0=i+1);
-                configuracionSorteo.orden.push({variable:"$p0" as IdVariable, orden:1});
-                sortear.sort(compareForOrder(configuracionSorteo.orden.map(elem => ({column:elem.variable, order:elem.orden}))));
-                var posicionSorteada = null;
-                if(configuracionSorteo.metodo=='hash'){
-                    throw new Error('NO IMPLEMENTADO');
-                    /*posicionSorteada=(
-                        configuracionSorteo.param_metodo.var_coef.reduce(
-                            ((sum, pair)=>sum + datosVivienda.tem[pair.var] * pair.coef),
-                            0
-                        ) % configuracionSorteo.param_metodo.divisor
-                    ) % sortear.length*/
+                if(sortear.length){
+                    respuestasUA.forEach((per, i)=>per.$p0=i+1);
+                    configuracionSorteo.orden.push({variable:"$p0" as IdVariable, orden:1});
+                    sortear.sort(compareForOrder(configuracionSorteo.orden.map(elem => ({column:elem.variable, order:elem.orden}))));
+                    var posicionSorteada = null;
+                    if(configuracionSorteo.metodo=='hash'){
+                        throw new Error('NO IMPLEMENTADO');
+                        /*posicionSorteada=(
+                            configuracionSorteo.param_metodo.var_coef.reduce(
+                                ((sum, pair)=>sum + datosVivienda.tem[pair.var] * pair.coef),
+                                0
+                            ) % configuracionSorteo.param_metodo.divisor
+                        ) % sortear.length*/
+                    }else{
+                        var letra = 'A';
+                        const varLetra:IdVariable = configuracionSorteo.param_metodo.var_letra;
+                        for(var persona of sortear){
+                            respuestasUA.find((_per,i)=>i==persona.$p0-1)![varLetra] = letra;
+                            persona[varLetra]=letra;
+                            letra = String.fromCharCode(letra.charCodeAt(0)+1);   
+                        }
+                        var tablaAleatoriaMiembros = configuracionSorteo.param_metodo.tabla.map((lista)=>lista.split(''));
+                        var resto = idEnc % 10;
+                        var columnaTablaAleatoria = resto?resto - 1:9;
+                        if(sortear.length > tablaAleatoriaMiembros.length){
+                            sortear.splice(tablaAleatoriaMiembros.length) //descarto candidatos si son más que lo que permite la tabla
+                        }
+                        var filaTablaAleatoria = sortear.length - 1 ;
+                        var letraSeleccionada = tablaAleatoriaMiembros[filaTablaAleatoria][columnaTablaAleatoria];
+                        posicionSorteada = respuestasUA.findIndex((p:Respuestas)=>p[varLetra]==letraSeleccionada) + 1;
+                        respuestas[configuracionSorteo.resultado]=posicionSorteada;
+                        respuestas[configuracionSorteo.cantidad_sorteables]=sortear.length;
+                        configuracionSorteo.sorteado_mostrar?.forEach((mostrar)=>
+                            respuestas[mostrar.target]=respuestasUA[respuestas[configuracionSorteo.resultado] as number -1][mostrar.source]
+                        )
+                    }
                 }else{
-                    var letra = 'A';
-                    const varLetra:IdVariable = configuracionSorteo.param_metodo.var_letra;
-                    for(var persona of sortear){
-                        respuestasUA.find((_per,i)=>i==persona.$p0-1)![varLetra] = letra;
-                        persona[varLetra]=letra;
-                        letra = String.fromCharCode(letra.charCodeAt(0)+1);   
-                    }
-                    var tablaAleatoriaMiembros = configuracionSorteo.param_metodo.tabla.map((lista)=>lista.split(''));
-                    var resto = idEnc % 10;
-                    var columnaTablaAleatoria = resto?resto - 1:9;
-                    if(sortear.length > tablaAleatoriaMiembros.length){
-                        sortear.splice(tablaAleatoriaMiembros.length) //descarto candidatos si son más que lo que permite la tabla
-                    }
-                    var filaTablaAleatoria = sortear.length - 1 ;
-                    var letraSeleccionada = tablaAleatoriaMiembros[filaTablaAleatoria][columnaTablaAleatoria];
-                    posicionSorteada = respuestasUA.findIndex((p:Respuestas)=>p[varLetra]==letraSeleccionada) + 1;
+                    respuestas[configuracionSorteo.cantidad_sorteables]=0;
                 }
-                respuestas[configuracionSorteo.resultado]=posicionSorteada;
-                respuestas[configuracionSorteo.cantidad_sorteables]=sortear.length;
-                configuracionSorteo.sorteado_mostrar?.forEach((mostrar)=>
-                    respuestas[mostrar.target]=respuestasUA[respuestas[configuracionSorteo.resultado] as number -1][mostrar.source]
-                )
             }
             respuestas[configuracionSorteo.cantidad_total]=respuestasUA.length;
             respuestas[configuracionSorteo.variableBotonFormularioUA]='ok';

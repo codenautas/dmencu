@@ -49,7 +49,7 @@ import { control_resumen     } from './table-control_resumen';
 
 import {defConfig} from "./def-config"
 
-const APP_DM_VERSION="#22-03-11";
+const APP_DM_VERSION="#22-03-14";
 const APP_NAME="Etoi";
 
 export type Constructor<T> = new(...args: any[]) => T;
