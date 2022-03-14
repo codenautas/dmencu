@@ -24,6 +24,7 @@
     "redux-typed-reducer": "~0.1.1",
     "service-worker-admin": "^0.2.1",
     "yazl": "~2.5.1",
+    "cast-error": "^0.1.0",
     "row-validator": "^1.0.0-rc1"
   },
   "dependencias provisorias: las que se pongan en dependencias ponerlas acá y sacarlas juntas": {},

@@ -38,6 +38,7 @@ import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux"; 
 import { strict as likeAr, beingArray } from "like-ar";
 import {sleep, coalesce} from "best-globals";
+import { unexpected } from "cast-error";
 
 import {
     AppBar, ButtonGroup, CircularProgress, Checkbox, 
@@ -337,7 +338,7 @@ function SiNoDespliegue(props:{casilleroConOpciones:IcasilleroConOpciones, forPk
 
 function registradorDeVariable(pregunta:Pregunta|OpcionMultiple|ConjuntoPreguntas){
     return (
-        respuestas:Respuestas, feedbackForm: FormStructureState<IdVariable,IdFin>, elemento:HTMLDivElement
+        respuestas:Respuestas, feedbackForm: FormStructureState<IdVariable, Valor, IdFin>, elemento:HTMLDivElement
     )=>{
         var valorActual = pregunta.var_name == null ? null : respuestas[pregunta.var_name];
         var feedbackRow = feedbackForm.feedback;
@@ -492,7 +493,7 @@ function calcularNuestraLongitud(longitud:string |null){
     return longitud;
 }
 
-function enfocarElementoDeVariable(siguienteVariable:IdVariable){
+function enfocarElementoDeVariable(siguienteVariable:IdVariable|IdFin){
     debeSaltar = false;
     var {top, enfocado, elementoInputVariable} = calcularElementoEnfocado(siguienteVariable);
     if(top != null && !enfocado){
@@ -723,7 +724,7 @@ function PreguntaDespliegue(props:{
     </DesplegarCasillero>
 }
 
-function botonesDelFormulario(r:Respuestas, unidad_analisis:IdUnidadAnalisis, estructura:Estructura, forPkPadre:ForPk, feedbackAll:{[formulario in PlainForPk]:FormStructureState<IdVariable,IdFin>}):HtmlTag<HTMLDivElement>{
+function botonesDelFormulario(r:Respuestas, unidad_analisis:IdUnidadAnalisis, estructura:Estructura, forPkPadre:ForPk, feedbackAll:{[formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin>}):HtmlTag<HTMLDivElement>{
     var uaDef = estructura.unidades_analisis[unidad_analisis];
     var x = likeAr(uaDef.hijas).map(uaHija=>(
         uaHija == null ? null :
@@ -773,9 +774,9 @@ function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
         registrarElemento({id, direct:true, 
             fun:(
                 r:Respuestas, 
-                _feedbackForm: FormStructureState<IdVariable,IdFin>, 
+                _feedbackForm: FormStructureState<IdVariable, Valor, IdFin>, 
                 elemento:HTMLDivElement, 
-                feedbackAll:{[formulario in PlainForPk]:FormStructureState<IdVariable,IdFin>}, 
+                feedbackAll:{[formulario in PlainForPk]:FormStructureState<IdVariable,Valor, IdFin>}, 
                 estructura:Estructura
             )=>{
                 elemento.style.display='';
@@ -839,11 +840,11 @@ type DefinicionFormularioAbrir=
 {forPk:ForPk, num:number, actual:boolean, previo:false, esAgregar:true} | 
 {forPk:ForPk, num:number, actual:boolean, previo:false, esConfirmar:true} | 
 {forPk:ForPk, num:false, actual:boolean, previo:true, unico:true})
-& {esConfirmar?:true, esAgregar?:true, disabled:boolean|undefined};
+& {esConfirmar?:true, esAgregar?:true, disabled?:boolean|undefined};
 
 var botonFormularioConResumen = (
     defBoton:DefinicionFormularioAbrir, 
-    feedbackForm:FormStructureState<IdVariable,IdFin>, 
+    feedbackForm:FormStructureState<IdVariable, Valor, IdFin>, 
     respuestasAumentadas:Respuestas,
     casillero:{despliegueOculta?:boolean|null, expresion_habilitar_js?:string, aclaracion:string|null, expresion_habilitar?:string, nombre?:string, salto:string|null, especial?:any},
     forPkPadre: ForPk,
@@ -875,7 +876,7 @@ var botonFormularioConResumen = (
                 onClick:()=>{
                     if(defBoton.esConfirmar){
                         if(defBoton.num != null){
-                            dispatchByPass(accion_registrar_respuesta,{forPk:forPkPadre, variable:casillero.expresion_habilitar as IdVariable, respuesta:defBoton.num});
+                            dispatchByPass(accion_registrar_respuesta,{forPk:forPkPadre, variable:casillero.expresion_habilitar as IdVariable, respuesta:defBoton.num as Valor});
                         }
                     }else{
                         var button = document.getElementById(idButton)! as HTMLButtonElement;
@@ -952,9 +953,9 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     registrarElemento<HTMLDivElement>({
         id:idSeccion, 
         direct:true,
-        fun: (respuestasAumentadas:Respuestas, feedbackRow: FormStructureState<IdVariable,IdFin>, div:HTMLDivElement,
+        fun: (respuestasAumentadas:Respuestas, feedbackRow: FormStructureState<IdVariable, Valor, IdFin>, div:HTMLDivElement,
                 feedbackAll:{
-                    [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> // resultado del rowValidator para estado.forPk
+                    [formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin> // resultado del rowValidator para estado.forPk
                 }
             )=>{
             try{
@@ -1041,8 +1042,9 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                 htmlSeccion.appendChild(html.div(todosLosBotones).create());
                 //arrange(document.getElementById(idSeccion)!, todosLosBotones);
             }catch(err){
+                var error = unexpected(err);
                 console.log("entra al catch")
-                div.textContent='esto, FALLÉ '+err.message;
+                div.textContent='esto, FALLÉ '+error.message;
             }
         }
     });
@@ -1436,7 +1438,7 @@ function FormularioDespliegue(props:{forPk:ForPk}){
     }
     var listaModos:ModoDespliegue[]=['metadatos','relevamiento','PDF'];
     ['boton-volver-1', 'boton-volver-2'].forEach(id=>{
-        registrarElemento({id, attr:'resumen-estado', fun:(_:Respuestas, feedbackForm: FormStructureState<IdVariable,IdFin>)=>(
+        registrarElemento({id, attr:'resumen-estado', fun:(_:Respuestas, feedbackForm: FormStructureState<IdVariable, Valor, IdFin>)=>(
             feedbackForm.resumen
         )})
     })
@@ -1522,9 +1524,9 @@ export function DesplegarLineaResumenUAPrincipal(props:{
     registrarElemento({id, direct:true,
         fun:(
             r:Respuestas, 
-            _feedbackForm: FormStructureState<IdVariable,IdFin>, 
+            _feedbackForm: FormStructureState<IdVariable, Valor, IdFin>, 
             elemento:HTMLDivElement, 
-            feedbackAll:{[formulario in PlainForPk]:FormStructureState<IdVariable,IdFin>}, 
+            feedbackAll:{[formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin>}, 
             _estructura:Estructura
         )=>{
             //pregunto si es la misma vivienda porque la funcion se dispara 
@@ -1569,7 +1571,7 @@ export function DesplegarCarga(props:{
     informacionHdr:InformacionHdr, 
     hojaDeRuta:HojaDeRuta,
     feedbackRowValidator:{
-        [formulario in PlainForPk]:FormStructureState<IdVariable,IdFin> 
+        [formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin> 
     }
 }){
     const {carga, idCarga, informacionHdr, hojaDeRuta} = props;
@@ -1999,6 +2001,7 @@ function loadCSS(cssURL:string, id?:string):Promise<void>{
             console.log(`trae ${cssURL}`);
         };
         link.onerror=(err)=>{
+            console.log('error cargando el estilo', err)
             reject(new Error(`problema cargando estilo ${cssURL}`))
         }
     });

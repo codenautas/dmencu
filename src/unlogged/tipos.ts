@@ -8,7 +8,7 @@ export type ModoAlmacenamiento = 'session'| // cuando sea para una sola pestaña
 
 export type IdOpcion = number
 export type IdOperativo = 'etoi211'|'eah2022'|'etc...'
-export type IdVariable = 'v1'|'v2'|'v3'|'etc...'|'vdominio'
+export type IdVariable = 'v1'|'v2'|'v3'|'etc...'|'vdominio'|'$p0'
 export type IdPregunta = 'P1'|'P2'|'etc...'
 export type IdBloque = 'B1'|'B2'|'etc...'
 export type IdFormulario = 'F1'|'F2'|'etc...'
@@ -300,7 +300,7 @@ export type Cargas={
     [idCarga in IdCarga]: Carga
 }
 
-export type EstructuraRowValidator=Structure<IdVariable,IdFin>;
+export type EstructuraRowValidator=Structure<IdVariable,Valor,IdFin>;
 
 export type ModoDespliegue = 'metadatos'|'relevamiento'|'PDF'
 
