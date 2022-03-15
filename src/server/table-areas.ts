@@ -30,7 +30,9 @@ export function areas(context:TableContext):TableDefinition {
             },
             {name:'clusters'                , typeName:'text'     },
             {name:'recepcionista'           , typeName:'text', references:'recepcionistas'},
-            {name:'encuestador'               , typeName:'text', editable:false},
+            {name:'encuestador'             , typeName:'text'                    },
+            //{name:'recuperador'             , typeName:'text'                    },
+            //{name:'supervisor'              , typeName:'text'                    },
             {name:'observaciones_hdr'       , typeName:'text'                      },
             {name:'clases'                  , typeName:'text'    , editable:false  , inTable:false},
             {name:'cargado'                 , typeName:'boolean' , editable:false  , inTable:false},
@@ -63,7 +65,9 @@ export function areas(context:TableContext):TableDefinition {
         ],
         softForeignKeys:[
             //{references:'operativos', fields:['operativo']},
-            {references:'encuestadores', fields:[{source:'encuestador', target:'persona'}]},
+            {references:'encuestadores', fields:[{source:'encuestador', target:'persona'}], alias:'per_encu'},
+            //{references:'recuperadores', fields:[{source:'recuperador', target:'persona'}], alias:'per_recu'},
+            //{references:'supervisores', fields:[{source:'supervisor', target:'persona'}], alias:'per_supe'},
         ],
         detailTables:[
             {table:'tareas_areas'     , fields:['area'], abr:'T', refreshParent:true, label:'tareas'},

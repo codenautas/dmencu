@@ -511,6 +511,8 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             , recepcionistas
             , encuestadores
             , mis_encuestadores
+            , recuperadores
+            , supervisores
             , personal_rol
             , permisos
             , roles_permisos
