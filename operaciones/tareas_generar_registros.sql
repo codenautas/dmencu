@@ -23,7 +23,7 @@ insert into tareas_tem (operativo, enc, tarea, habilitada, operacion, fecha_asig
   select * 
     from (select operativo, enc, ta.tarea, case when ta.tarea='encu' then true else false end , operacion, fecha_asignacion,asignado
             from (select * from tareas ta, tem t) ta left join tareas_areas x on x.tarea=ta.tarea and x.area=ta.area
-            where operativo= 'xope' and not (operativo, enc, ta.tarea) in (select operativo, enc, tarea from tareas_tem)
+            where operativo= (select operativo from parametros where unico_registro) and not (operativo, enc, ta.tarea) in (select operativo, enc, tarea from tareas_tem)
                 and ta.main_form is not null
     ) x
     --where not exists(select 1 from tareas_tem t where t.operativo=x.operativo and t.tarea=x.tarea and t.enc=x.enc)            
