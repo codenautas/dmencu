@@ -23,6 +23,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
         tableName:'tem',
         editable: puedeEditar,
         hiddenColumns:[
+            'cita','notas',
             'codviviendaparticular', 'casa', 'obsdatosdomicilio', 'obsconjunto', 'reserva', 'rotacion_etoi', 'rotacion_eah'
             , 'trimestre'   , 'procedencia', 'sel_etoi_villa'   , 'marco'      , 'semana' , 'periodicidad' 
             , 'cargado_dm'
@@ -40,13 +41,19 @@ export function tem(context:TableContext, opts:any):TableDefinition {
             {name:'seleccionado'         , typeName:'integer' , editable: false  },
 //            {name:'sexo_sel'             , typeName:'integer' , editable: false  },
 //            {name:'edad_sel'             , typeName:'integer' , editable: false  },
-            {name:'cita'                 , typeName:'text'    , editable: false  },
             {name:'cod_no_rea'           , typeName:'text'    , editable: false , inTable:false  },
             {name:'gru_no_rea'           , typeName:'text'    , editable: false , inTable:false  },
-            {name:'habilitada'           , typeName:'boolean' , editable: false , inTable: false  },
-            {name:'cargado'              , typeName:'boolean' , editable: false , inTable: false  },
             {name:'resumen_estado'       , typeName:'text'    , editable: false  },
+            {name:'cargado'              , typeName:'boolean' , editable: false , inTable: false  },
+            //{name:'encu_habilitada'      , typeName:'boolean' , editable: false , inTable: false  },
+            //{name:'encu_cargado'         , typeName:'boolean' , editable: false , inTable: false  },
             {name:'encuestador'          , typeName:'text'    , editable: false , inTable: false  },
+            //{name:'recu_habilitada'      , typeName:'boolean' , editable: false , inTable: false  },
+            //{name:'recu_cargado'         , typeName:'boolean' , editable: false , inTable: false  },
+            {name:'recuperador'          , typeName:'text'    , editable: false , inTable: false  },
+            //{name:'supe_habilitada'      , typeName:'boolean' , editable: false , inTable: false  },
+            //{name:'supe_cargado'         , typeName:'boolean' , editable: false , inTable: false  },
+            {name:'supervisor'           , typeName:'text'    , editable: false , inTable: false  },
             {name:'codcalle'             , typeName:'integer' , editable: false  },
             {name:'nomcalle'             , typeName:'text'    , editable: false  },
             {name:'nrocatastral'         , typeName:'integer' , editable: false  },
@@ -102,6 +109,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
             {name:"x"                    , typeName:'decimal' , editable: false  },
             {name:"y"                    , typeName:'decimal' , editable: false  },
             {name:'notas'                , typeName:'text'    , editable: false, inTable:false},
+            {name:'cita'                 , typeName:'text'    , editable: false  },
             //{ name: "modificado"   , label:'modificado'        , typeName: 'timestamp'},
             //{name:'obs_sup'        , typeName:'text' , editable: isSupervisor     },
             //{name:'obs_coor'       , typeName:'text' , editable: isCoordinador || isSubCoordinador },  
@@ -110,7 +118,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
         foreignKeys:[
             {references:'areas' , fields:['area']},
         //    {references:'usuarios', fields:[{source:'carga_persona', target:'idper'}], displayFields:['apellido','nombre']},
-        ], 
+        ],        
         softForeignKeys:[
             {references:'tokens', fields:[{source:'cargado_dm', target:'token'}], displayFields:['username'], displayAfterFieldName:'cargado'}
         ],
@@ -133,10 +141,18 @@ export function tem(context:TableContext, opts:any):TableDefinition {
             from:`
                 (select
                     ${def.fields.filter(f=>f.inTable==undefined && !f.clientSide).map(f=>'t.'+q(f.name)).join(',')}
-                    , tt.cargado, tt.cargado_dm, tt.habilitada, tt.asignado as encuestador
-                    , tt.notas
+                    , tt.cargado, tt.cargado_dm
+                    --, (tt.etareas->'encu'->>'cargado')::boolean encu_cargado, tt.etareas->'encu'->>'cargado_dm' enc_cargado_dm, (tt.etareas->'encu'->>'habilitada')::boolean encu_habilitada
+                    , tt.etareas->'encu'->>'asignado' as encuestador
+                    --, (tt.etareas->'recu'->>'cargado')::boolean recu_cargado, tt.etareas->'recu'->>'cargado_dm' recu_cargado_dm, (tt.etareas->'recu'->>'habilitada')::boolean recu_habilitada
+                    , tt.etareas->'recu'->>'asignado' as recuperador
+                    --, (tt.etareas->'supe'->>'cargado')::boolean supe_cargado, tt.etareas->'supe'->>'cargado_dm' supe_cargado_dm, (tt.etareas->'supe'->>'habilitada')::boolean supe_habilitada
+                    , tt.etareas->'supe'->>'asignado' as supervisor
+                    , null notas
                     ${opts.recepcion? columnasNoRea.map(v=>'\n     , '+ v.expr +' as '+ v.name).join('') :''}
-                    from tem t left join tareas_tem tt on t.operativo=tt.operativo and t.enc=tt.enc and tt.tarea='encu'
+                    from tem t left join (
+                        select tt.operativo, tt.enc, bool_or(cargado) cargado, string_agg(cargado_dm,',') cargado_dm,jsonb_object_agg(tarea,jsonb_build_object('asignado',asignado,'habilitada',habilitada,'cargado',cargado,'cargado_dm',cargado_dm))etareas 
+                            from tareas_tem tt group by tt.operativo, tt.enc  )tt on t.operativo=tt.operativo and t.enc=tt.enc
                 )
             `     
         };

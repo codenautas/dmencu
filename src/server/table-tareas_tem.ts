@@ -8,26 +8,33 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
     var mis=opt.mis?'mis_':'';
     var be=context.be;
     var db=be.db;
-    var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';
+    var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';       
     var fields:FieldDefinition[]=[
-        {name:'tarea'    , typeName:'text', isPk:1},
-        {name:'operativo', typeName:'text', isPk:2},
-        {name:'enc'      , typeName:'text', isPk:3},
-        {name:'abrir'    , typeName:'text'    , editable:false, inTable:false, clientSide:'abrirRecepcion'},
-        {name:'area'     , typeName: 'integer', editable: false, inTable:false },
-        {name:"habilitada"      , typeName: "boolean", editable: puedeEditar},
-        {name:'asignante' , typeName:'text', inTable:false, editable:false}, // va a la hoja de ruta
-        {name:'asignado' , typeName:'text'}, // va a la hoja de ruta
-        {name:'operacion' , typeName:'text'}, // cargar/descargar
-        {name:'fecha_asignacion', typeName:'date'}, // cargar/descargar
-        {name:"carga_observaciones", typeName: "text", editable: true},        
-        {name:'cargado_dm'      , typeName:'text', editable: false}, //cargar/descargar 
-        {name:"cargado"         , typeName: "boolean", editable: false},
-        {name:'notas'           , typeName:'text'}, // viene de la hoja de ruta
-        {name:'resultado'       , typeName:'text'}, // fk tareas_resultados 
-        {name:'fecha_resultado' , typeName:'date'}, // fk tareas_resultados 
-        {name:'verificado'      , typeName:'text'}, 
-        {name:'obs_verificado'  , typeName:'text'}, 
+        {name:'tarea'              , typeName:'text', isPk:1},
+        {name:'operativo'          , typeName:'text', isPk:2},
+        {name:'enc'                , typeName:'text', isPk:3},
+        {name:'abrir'              , typeName:'text'        , editable:false   , inTable:false, clientSide:'abrirRecepcion'},
+        {name:'area'               , typeName: 'integer'    , editable:false   , inTable:false },
+        {name:'ok'                 , typeName: 'text'       , editable:false   , inTable:false },
+        {name:"habilitada"         , typeName: "boolean"    , editable:puedeEditar},
+        {name:'asignante'          , typeName:'text'        , editable:false   , inTable:false}, // va a la hoja de ruta
+        {name:'asignado'           , typeName:'text'}, // va a la hoja de ruta
+        {name:'operacion'          , typeName:'text'}, // cargar/descargar
+        {name:'fecha_asignacion'   , typeName:'date'}, // cargar/descargar
+        {name:"carga_observaciones", typeName: "text"       , editable: true},        
+        {name:'cargado_dm'         , typeName:'text'        , editable: false}, //cargar/descargar 
+        {name:"cargado"            , typeName: "boolean"    , editable: false},
+        {name:'notas'              , typeName:'text'}, // viene de la hoja de ruta
+        //{name:'rea'                , typeName:'integer'     , editable: false  },
+        //{name:'norea'              , typeName:'integer'     , editable: false  },
+        //{name:'cod_no_rea'         , typeName:'text'        , editable: false   , inTable:false  },
+        //{name:'gru_no_rea'         , typeName:'text'        , editable: false   , inTable:false  },
+        //{name:'resumen_estado'     , typeName:'text'        , editable: false  },
+
+        {name:'resultado'          , typeName:'text'}, // fk tareas_resultados 
+        {name:'fecha_resultado'    , typeName:'date'}, // fk tareas_resultados 
+        {name:'verificado'         , typeName:'text'}, 
+        {name:'obs_verificado'     , typeName:'text'}, 
     ];
     return {
         name:`${mis}tareas_tem`,
@@ -35,7 +42,7 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
         editable:puedeEditar,
         fields,
         primaryKey:['tarea','operativo','enc'],
-        hiddenColumns:['cargado_dm'],
+        hiddenColumns:['cargado_dm','notas'],
         foreignKeys:[
             {references:'tem' , fields:['operativo','enc'], displayFields:[], alias:'te'},
             {references:'tareas' , fields:['tarea']},
@@ -51,6 +58,36 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
         sql:{
             isTable: !opt.mis,
             insertIfNotUpdate:true,
+            fields:{
+                ok:{ 
+                    expr:` coalesce(nullif(
+                                case when tareas_tem.asignado is null and tareas_tem.verificado is not null then '!asignacion borrada'
+                                    when tareas_tem.verificado is not null and tareas_tem.habilitada then 'deshabilitar!'
+                                else '' end 
+                                ||case when tareas_tem.asignado is null and tareas_tem.operacion is not null then '!asignacion borrada'
+                                    when tareas_tem.verificado is not null and coalesce(tareas_tem.operacion,'descargar')='cargar' then 'verificado-cargado'
+                                    when tareas_tem.verificado is not null and tareas_tem.operacion is null then 'verificado-nosincro'
+                                else '' end 
+                                --NO FUNCIONA
+                                ||(select case
+                                        when tareas_tem.habilitada and tareas_tem.tarea='recu' and count(*) filter(where h.verificado is not null and h.tarea='encu') =0  then '!tarea previa encu sin verif'
+                                        when tareas_tem.habilitada and tareas_tem.tarea='supe' and (count(*) filter (where h.verificado is not null and h.tarea <>'supe') )=0  then '!tarea previa a supe sin verif' 
+                                    else '' end  
+                                    from tareas_tem h 
+                                   where h.enc=tareas_tem.enc and h.operativo=tareas_tem.operativo
+                                )
+                                ||(select case 
+                                    when count(cargado_dm)>1  then '!+cargados'
+                                    when count(*) filter (where habilitada is true)>1 then '!+habilitadas'
+                                    when count(*) filter (where operacion='cargar')>1   then '!+opeCargar'
+                                    else '' end
+                            from tareas_tem h 
+                            where h.enc=tareas_tem.enc and h.operativo=tareas_tem.operativo
+                            ) 
+                         ,''),'✔')
+                    `
+                }
+            },
             from:`(
                 select *
                     from (
