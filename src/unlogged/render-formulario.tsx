@@ -1836,8 +1836,7 @@ function PantallaInicialSinCarga(_props:{}){
                                             color="primary"
                                             variant="contained"
                                             onClick={()=>{
-                                                history.replaceState(null, '', `${location.origin+location.pathname}/../#i=sincronizar`);
-                                                location.reload();   
+                                                gotoSincronizar()
                                             }}
                                         >
                                             <ICON.SyncAlt/>
