@@ -786,6 +786,9 @@ export function calcularFeedbackUnidadAnalisis(
             })
             var BF_varname = '$B.'+formulario as IdVariable
             var formPrincipalForVivienda = getMainFormForVivienda(forPk.vivienda!);
+            if(estructura.configSorteo && !estructura.configSorteo[formPrincipalForVivienda]){
+                throw new Error(`no hay configuracion de sorteo para el formulario ${formPrincipalForVivienda}`)
+            }
             var configSorteoFormulario = estructura.configSorteo && estructura.configSorteo[formPrincipalForVivienda];
             var resumenOrNull = 
                 configSorteoFormulario &&
