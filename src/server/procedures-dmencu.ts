@@ -21,7 +21,7 @@ var discrepances = require('discrepances');
 const formPrincipal = 'F:F1';
 const MAIN_TABLENAME ='viviendas';
 
-const getOperativoActual = async (context:ProcedureContext)=>{
+export const getOperativoActual = async (context:ProcedureContext)=>{
     var be = context.be;
     var result = await be.procedure.table_data.coreFunction(context,{table: `parametros`, fixedFields:[]});
     if(result[0]?.operativo){
