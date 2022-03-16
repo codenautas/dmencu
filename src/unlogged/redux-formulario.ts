@@ -227,7 +227,7 @@ function rellenarVariablesYOpciones(idFormulario:IdFormulario, estructura:Estruc
         let variableDef={
             tipo:'texto',
             libre:true,
-            ...(casillero.expresion_habilitar?{funcionHabilitar:(r:Record<string, any>)=>r[casillero.expresion_habilitar!]!==0}:{}),
+            ...(casillero.expresion_habilitar?{funcionHabilitar:`valores['${casillero.expresion_habilitar}'] !==0 `}:{}),
         }
         estructura.variables[var_name]=variableDef;
     }
