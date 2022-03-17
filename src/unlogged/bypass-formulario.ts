@@ -877,9 +877,11 @@ export function calcularResumenVivienda(
     var buscarFormulariosHijos = (idFormulario:IdFormulario)=>{
         estructura.formularios[idFormulario].casilleros.casilleros.forEach((casillero)=>{
             if(casillero.tipoc == 'BF'){
-                var formHijo = ('F:' + casillero.salto) as IdFormulario;
-                formsFeedback.push(formHijo);
-                buscarFormulariosHijos(formHijo);
+                var formHijo = (casillero.salto?.startsWith('F:')?casillero.salto:'F:' + casillero.salto) as IdFormulario;
+                if(formHijo){
+                    formsFeedback.push(formHijo);
+                    buscarFormulariosHijos(formHijo);
+                }
             }
         })
     }
