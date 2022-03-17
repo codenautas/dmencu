@@ -34,7 +34,7 @@ import { dmTraerDatosFormulario, dispatchers,
     gotoSincronizar,
     getCacheVersion,
 } from "./redux-formulario";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import { useSelector, useDispatch } from "react-redux"; 
 import { strict as likeAr, beingArray } from "like-ar";
 import {sleep, coalesce} from "best-globals";
@@ -947,7 +947,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     var multipleFormularios=formularioAAbrir.unidad_analisis != props.formulario.unidad_analisis;
     var nuevoCampoPk = defOperativo.defUA[formularioAAbrir.unidad_analisis].pk;
    // var var_name='$B.'+casillero.salto; //original
-    var var_name='$B.'+armoNomSalto;
+    var var_name='$B.F:'+armoNomSalto;
     var idSeccion=`seccion-boton-formulario-${var_name}`;
     var idButton=`special-button-${idSeccion}`;
     registrarElemento<HTMLDivElement>({
@@ -1156,6 +1156,21 @@ function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Blo
             volcadoInicialElementosRegistrados(props.forPk);
         }
     },[toPlainForPk(props.forPk),verTodo])
+    useLayoutEffect(() => {
+        if(props.bloqueOFormulario.tipoc=='F' && verTodo){
+            var {siguienteVariable, variableActual} = dispatchByPass(accion_registrar_respuesta, {respuesta:null, variable:NO_CAMBIAR__SOLO_TRAER_STATUS, forPk:props.forPk});
+            if(variableActual || siguienteVariable){
+                enfocarElementoDeVariable(coalesce(variableActual as string|null,siguienteVariable as string|null) as IdVariable)
+            }else{
+                var feedbackRowValidator = getFeedbackRowValidator()
+                if(feedbackRowValidator[toPlainForPk(props.forPk)].resumen=='ok'){
+                    scrollToTop()
+                }else{
+                    scrollToTop()
+                }
+            }
+        }
+    });
     return <div className="contenido">
         {verTodo?null:<div style={{height:"500px", textAlign:'center', verticalAlign:'middle', width:'100%', position:"fixed", backgroundColor: 'rgba(100,100,100,0.3)', fontSize:'200%'}} >cargando...</div>}
         {props.bloqueOFormulario.casilleros.map((casillero, i)=>{
@@ -1421,15 +1436,6 @@ function FormularioDespliegue(props:{forPk:ForPk}){
     // TODO Volver a poner el movimiento a la actual
     var actual:any
     var completo:any
-    useEffect(() => {
-        if(actual){
-            focusToId(actual, {moveToElement:true, moveBehavior:'smooth'});            
-        }else if(completo && forPk.formulario!=('F:F2' as IdFormulario)){ // TODO generalizar los que van siempre arriba
-            scrollToBottom()
-        }else{
-            scrollToTop()
-        }
-    }, [formulario]);
     var onClickSaltarActual = ()=>{
         var {variableActual} = dispatchByPass(accion_registrar_respuesta, {respuesta:null, variable:NO_CAMBIAR__SOLO_TRAER_STATUS, forPk:props.forPk});
         if(variableActual){
