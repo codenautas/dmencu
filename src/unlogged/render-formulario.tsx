@@ -22,10 +22,11 @@ import {Bloque, BotonFormulario,
     toPlainForPk,
     IdCasillero,
     PreguntaConSiNo,
-    Texto, Estructura, InformacionHdr, DatosHdrUaPpal, LOCAL_STORAGE_STATE_NAME
+    Texto, Estructura, InformacionHdr, DatosHdrUaPpal, LOCAL_STORAGE_STATE_NAME, ConfiguracionSorteo, ConfiguracionSorteoFormulario
 } from "./tipos";
 import{ 
     calcularResumenVivienda,
+    getFormulariosForIdVivienda,
     getMainFormForVivienda,
     intentarBackup,
     setCalcularVariables
@@ -724,9 +725,41 @@ function PreguntaDespliegue(props:{
     </DesplegarCasillero>
 }
 
+var calcularActualBF = (configSorteoFormulario:ConfiguracionSorteoFormulario|null, numElementoUA: number, numActual:number|null, formulario:IdFormulario, r:Respuestas)=>
+    !!(configSorteoFormulario && 
+    configSorteoFormulario.id_formulario_individual &&
+    configSorteoFormulario.id_formulario_individual == formulario
+    ? 
+        numElementoUA == coalesce(
+            r[configSorteoFormulario.resultado_manual],
+            r[configSorteoFormulario.resultado]
+        )
+    :
+        numActual == numElementoUA
+    )
+
+var calcularDisabledBF = (configSorteoFormulario:ConfiguracionSorteoFormulario|null, numElementoUA: number, formulario:IdFormulario, r:Respuestas)=>
+    !!(configSorteoFormulario && 
+    configSorteoFormulario.id_formulario_individual == formulario &&
+    numElementoUA != coalesce(
+        r[configSorteoFormulario.resultado_manual],
+        r[configSorteoFormulario.resultado]
+    ))
+
+var calcularDisabledBFAgregarListo = (configSorteoFormulario:ConfiguracionSorteoFormulario|null, formulario:IdFormulario)=>
+    !!(configSorteoFormulario && configSorteoFormulario.id_formulario_individual == formulario)
+
 function botonesDelFormulario(r:Respuestas, unidad_analisis:IdUnidadAnalisis, estructura:Estructura, forPkPadre:ForPk, feedbackAll:{[formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin>}):HtmlTag<HTMLDivElement>{
+    var formsVivienda = getFormulariosForIdVivienda(forPkPadre.vivienda!);
     var uaDef = estructura.unidades_analisis[unidad_analisis];
-    var x = likeAr(uaDef.hijas).map(uaHija=>(
+    var arrayEstructuraFormularios = (likeAr(estructura.formularios)).array();
+    var x = likeAr(uaDef.hijas).filter(uaHija=>
+            formsVivienda.includes(
+                arrayEstructuraFormularios.find((infoFormulario)=>
+                    infoFormulario.casilleros.unidad_analisis == uaHija?.unidad_analisis)
+                ?.casilleros.id_casillero as IdFormulario
+            )
+        ).map(uaHija=>(
         uaHija == null ? null :
         html.div({class:'ua-hijas'},[
             html.div(uaHija.unidad_analisis),
@@ -734,32 +767,42 @@ function botonesDelFormulario(r:Respuestas, unidad_analisis:IdUnidadAnalisis, es
                 likeAr(r[uaHija.unidad_analisis]||[]).map((respuestasHija, i)=>{
                     var num = Number(i)+1
                     var forPkHijaParcial = {...forPkPadre, [uaHija.pk_agregada]: num};
-                    return html.div({class:'numerador-ua'}, [html.div(num.toString()), html.div([
-                        ...likeAr(estructura.formularios)
-                        .filter(formDef=>formDef.casilleros.unidad_analisis == uaHija.unidad_analisis )
-                        .map((_formDef, formulario)=>{
-                            var forPk = {...forPkHijaParcial, formulario};
-                            var feedbackForm = feedbackAll[toPlainForPk(forPk)];
-                            return feedbackForm ? html.div([
-                                // html.button((uaHija!).pk_agregada+" ok: "+(Number(i)+1)),
-                                botonFormularioConResumen(
-                                    {forPk, num, actual:false, previo:false}, 
-                                    feedbackForm, 
-                                    r,
-                                    {despliegueOculta:false, expresion_habilitar_js:'', nombre:formulario, aclaracion:null, salto:formulario},
-                                    forPkPadre,
-                                    "boton-ir-resumen-formulario",
-                                    estructura.formularios[formulario].casilleros
-                                )
-                            ]) : null
-                        }).array().map(x=>x == null ? null : x),
-                        botonesDelFormulario(respuestasHija, uaHija.unidad_analisis, estructura, forPkHijaParcial, feedbackAll)
-                    ])])
+                    var configSorteoFormulario = estructura.configSorteo?estructura.configSorteo[getMainFormForVivienda(forPkPadre.vivienda!)]:null
+                    return html.div({class:'numerador-ua'}, [
+                        html.div({class:'botones-ua'},[
+                            html.div({class:'numero-ua'},num.toString()),
+                            ...likeAr(estructura.formularios)
+                            .filter(formDef=>formDef.casilleros.unidad_analisis == uaHija.unidad_analisis )
+                            .map((_formDef, formulario)=>{
+                                var forPk = {...forPkHijaParcial, formulario};
+                                var feedbackForm = feedbackAll[toPlainForPk(forPk)];
+                                return feedbackForm ? html.div({},[
+                                    // html.button((uaHija!).pk_agregada+" ok: "+(Number(i)+1)),
+                                    botonFormularioConResumen(
+                                        {
+                                            forPk, 
+                                            num, 
+                                            actual: true || calcularActualBF(configSorteoFormulario, num, null, formulario, r), //REVISAR true para que no se grisen
+                                            previo:false, 
+                                            disabled: calcularDisabledBF(configSorteoFormulario, num, formulario, r)
+                                        },
+                                        feedbackForm, 
+                                        r,
+                                        {despliegueOculta:false, expresion_habilitar_js:'', nombre:formulario, aclaracion:null, salto:formulario},
+                                        forPkPadre,
+                                        "boton-ir-resumen-formulario",
+                                        estructura.formularios[formulario].casilleros
+                                    )
+                                ]) : null
+                            }).array().map(x=>x == null ? null : x),
+                        ])
+                        ,botonesDelFormulario(respuestasHija, uaHija.unidad_analisis, estructura, forPkHijaParcial, feedbackAll)
+                    ])
                 }).array().map(x=>x == null ? null : x)
             )
         ])
     )).array().map(x=>x == null ? null : x);
-    return html.div(x);
+    return html.div(/*{style:'display:flex; flex-direction:row'},*/x);
 }
 
 function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
@@ -985,25 +1028,9 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                             forPk, 
                             resumen:null, 
                             num, 
-                            actual: 
-                                configSorteoFormulario && 
-                                configSorteoFormulario.id_formulario_individual &&
-                                configSorteoFormulario.id_formulario_individual == idFormularioDestino
-                            ? 
-                                num == coalesce(
-                                    respuestasAumentadas[configSorteoFormulario.resultado_manual],
-                                    respuestasAumentadas[configSorteoFormulario.resultado]
-                                )
-                            :
-                                numActual == num, 
+                            actual: calcularActualBF(configSorteoFormulario, num, numActual, idFormularioDestino, respuestasAumentadas),
                             previo: numActual == null, 
-                            disabled:
-                                configSorteoFormulario && 
-                                configSorteoFormulario.id_formulario_individual == idFormularioDestino &&
-                                num != coalesce(
-                                    respuestasAumentadas[configSorteoFormulario.resultado_manual],
-                                    respuestasAumentadas[configSorteoFormulario.resultado]
-                                )
+                            disabled: calcularDisabledBF(configSorteoFormulario, num, idFormularioDestino, respuestasAumentadas)
                         }
                     }).array();
                     if("puede agregar //TODO VER ESTO" && (conjunto instanceof Array || conjunto == null)){
@@ -1017,7 +1044,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                             esAgregar:true, 
                             actual:debeAgregarOlisto, 
                             previo: false, 
-                            disabled:!!(configSorteoFormulario && configSorteoFormulario.id_formulario_individual == idFormularioDestino)
+                            disabled: calcularDisabledBFAgregarListo(configSorteoFormulario,idFormularioDestino)
                         });
                         listaDeBotonesAbrir.push({
                             forPk, 
@@ -1025,7 +1052,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                             esConfirmar:true, 
                             actual:debeAgregarOlisto && (!casillero.longitud || nuevoValorPk > Number(casillero.longitud)), 
                             previo: false, 
-                            disabled:!!(configSorteoFormulario && configSorteoFormulario.id_formulario_individual == idFormularioDestino)
+                            disabled: calcularDisabledBFAgregarListo(configSorteoFormulario,idFormularioDestino)
                         });
                     }
                 }else{

@@ -863,16 +863,8 @@ function calcularFeedback(respuestas: Respuestas, forPkRaiz:ForPkRaiz, opts:Opci
     );
 }
 
-export function calcularResumenVivienda(
-    forPkRaiz:ForPkRaiz, 
-    feedbackRowValidator:{[formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin>}, 
-    respuestas:Respuestas
-){
-    if(defOperativo.esNorea(respuestas)){
-        return "no rea";
-    }
-    
-    var mainFormForVivienda = getMainFormForVivienda(forPkRaiz.vivienda);
+export var getFormulariosForIdVivienda = (idVivienda:number)=>{
+    var mainFormForVivienda = getMainFormForVivienda(idVivienda);
     var formsFeedback = [mainFormForVivienda];
     var buscarFormulariosHijos = (idFormulario:IdFormulario)=>{
         estructura.formularios[idFormulario].casilleros.casilleros.forEach((casillero)=>{
@@ -886,6 +878,18 @@ export function calcularResumenVivienda(
         })
     }
     buscarFormulariosHijos(mainFormForVivienda);
+    return formsFeedback;
+}
+
+export function calcularResumenVivienda(
+    forPkRaiz:ForPkRaiz, 
+    feedbackRowValidator:{[formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin>}, 
+    respuestas:Respuestas
+){
+    if(defOperativo.esNorea(respuestas)){
+        return "no rea";
+    }
+    var formsFeedback = getFormulariosForIdVivienda(forPkRaiz.vivienda!);
     var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>
         JSON.parse(plainPk).vivienda==forPkRaiz.vivienda && formsFeedback.includes(JSON.parse(plainPk).formulario)
     ).array();
