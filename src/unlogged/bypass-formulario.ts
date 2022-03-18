@@ -75,7 +75,7 @@ let encolarBackup:(token:string|undefined, forPkRaiz:ForPkRaiz, respuestasRaiz:R
 
 export var intentarBackup = (forPk:ForPk)=>{
     var {respuestasRaiz, forPkRaiz} = respuestasForPk(forPk, true)
-    let state:CasoState = myOwn.getLocalVar(LOCAL_STORAGE_STATE_NAME);
+    let state:CasoState = getCasoState();
     var token = state.datos.token;
     if(token){
         encolarBackup(token, forPkRaiz, respuestasRaiz)
@@ -815,7 +815,8 @@ export function numberOrStringIncIfArray(numberOrString:number|string, object:ob
     return Number(numberOrString)+(object instanceof Array?1:0);
 }
 
-var getCasoState=():CasoState=> myOwn.getLocalVar(LOCAL_STORAGE_STATE_NAME);
+export var getCasoState=():CasoState=> myOwn.getSessionVar(LOCAL_STORAGE_STATE_NAME);
+export var setCasoState=(casoState:CasoState)=> myOwn.setSessionVar(LOCAL_STORAGE_STATE_NAME, casoState);
 
 export var getMainFormForVivienda = (vivienda:number):IdFormulario=>{
     let state = getCasoState();

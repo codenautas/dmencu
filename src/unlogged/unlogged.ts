@@ -3,6 +3,7 @@ import {html}  from 'js-to-html';
 import {LOCAL_STORAGE_STATE_NAME} from "../unlogged/tipos";
 import { desplegarFormularioActual, dmPantallaInicialSinCarga } from './render-formulario';
 import { cargarEstructura, cargarHojaDeRuta, GLOVAR_ESTRUCTURA, GLOVAR_DATOSBYPASS } from './abrir-formulario';
+import { getCasoState } from './bypass-formulario';
 const ServiceWorkerAdmin = require("service-worker-admin");
 
 function siExisteId(id: string, hacer: (arg0: HTMLElement) => void){
@@ -58,7 +59,7 @@ window.addEventListener('load', async function(){
                 var datosByPass = my.getLocalVar(GLOVAR_DATOSBYPASS);
                 cargarEstructura(my.getLocalVar(GLOVAR_ESTRUCTURA));
                 cargarHojaDeRuta({ ...datosByPass, modoAlmacenamiento: 'local' });
-                desplegarFormularioActual({modoDemo: false, modoAlmacenamiento: 'local'});
+                desplegarFormularioActual({modoDemo: false});
                 my.menuName = URL_DM;
             }
         }else{
@@ -118,7 +119,7 @@ window.addEventListener('load', async function(){
 })
 
 var hayHojaDeRuta = () =>
-    myOwn.existsLocalVar(LOCAL_STORAGE_STATE_NAME)
+    !!getCasoState()
 
 export var awaitForCacheLayout = async function prepareLayoutForCache(){
     await new Promise(function(resolve, _reject){

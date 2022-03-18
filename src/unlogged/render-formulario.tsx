@@ -22,10 +22,11 @@ import {Bloque, BotonFormulario,
     toPlainForPk,
     IdCasillero,
     PreguntaConSiNo,
-    Texto, Estructura, InformacionHdr, DatosHdrUaPpal, LOCAL_STORAGE_STATE_NAME, ConfiguracionSorteo, ConfiguracionSorteoFormulario
+    Texto, Estructura, InformacionHdr, DatosHdrUaPpal, ConfiguracionSorteoFormulario
 } from "./tipos";
 import{ 
     calcularResumenVivienda,
+    getCasoState,
     getFormulariosForIdVivienda,
     getMainFormForVivienda,
     intentarBackup,
@@ -1912,7 +1913,7 @@ export async function dmPantallaInicialSinCarga(){
     )
 }
 
-export async function desplegarFormularioActual(opts:{modoDemo:boolean, modoAlmacenamiento:ModoAlmacenamiento, forPkRaiz?:ForPkRaiz}){
+export async function desplegarFormularioActual(opts:{modoDemo:boolean, forPkRaiz?:ForPkRaiz}){
     // traer los metadatos en una "estructura"
     // traer los datos de localStorage
     // verificar el main Layout
@@ -2012,7 +2013,7 @@ setCalcularVariables((respuestasRaiz:RespuestasRaiz, forPk:ForPk)=>{
             }
         }
     })
-    var state:CasoState = my.getLocalVar(LOCAL_STORAGE_STATE_NAME);
+    var state = getCasoState();
     respuestasRaiz.vdominio=state.datos.informacionHdr[forPk.vivienda].tem.dominio;
 })
 

@@ -1,10 +1,10 @@
 import {html} from "js-to-html";
 import {traerEstructura} from "../unlogged/redux-formulario";
-import { CasoState, LOCAL_STORAGE_STATE_NAME,  
+import { CasoState,  
     ForPkRaiz, HojaDeRuta, IdFormulario
 } from "../unlogged/tipos";
 import * as likeAr from "like-ar";
-import {getEstructura, setPersistirDatosByPass, DatosByPassPersistibles} from "../unlogged/bypass-formulario"
+import {getEstructura, setPersistirDatosByPass, DatosByPassPersistibles, setCasoState, getCasoState} from "../unlogged/bypass-formulario"
 import {cargarEstructura, cargarHojaDeRuta, GLOVAR_DATOSBYPASS, GLOVAR_ESTRUCTURA, GLOVAR_MODOBYPASS} from "../unlogged/abrir-formulario"
 
 //TODO GENERALIZAR
@@ -44,7 +44,7 @@ async function sincronizarDatos(state:CasoState|null, persistentes:DatosByPassPe
     }
     
     delete(state.datos.respuestas);
-    my.setLocalVar(LOCAL_STORAGE_STATE_NAME, state);
+    setCasoState(state);
     return datos;
 }
 
@@ -86,16 +86,16 @@ myOwn.wScreens.abrir_encuesta={
         if(!carga.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!]){
             throw new Error(`No se encuentra la vivienda ${forPkRaiz.vivienda!}`);
         }
-        my.setLocalVar(LOCAL_STORAGE_STATE_NAME, state);
+        setCasoState(state);
         cargarHojaDeRuta({...carga, modoAlmacenamiento:'session'});
         // @ts-ignore
-        desplegarFormularioActual({operativo, modoDemo:false, forPkRaiz, useSessionStorage:true});
+        desplegarFormularioActual({operativo, modoDemo:false, forPkRaiz});
     }
 }
 
 var mostrarInfoLocal = (divAvisoSincro:HTMLDivElement, titulo:string, nroSincro:number|null, mostrarLinkHdr: boolean)=>{
-    if(my.existsLocalVar(LOCAL_STORAGE_STATE_NAME)){
-        let state = my.getLocalVar(LOCAL_STORAGE_STATE_NAME);
+    let state = getCasoState();
+    if(state){
         let datosByPass = my.getLocalVar(GLOVAR_DATOSBYPASS);
         divAvisoSincro.append(html.div({id:'aviso-sincro'}, [
             nroSincro?html.p(["Número de sincronización: ", html.b(""+nroSincro.toString())]):null,
@@ -117,7 +117,7 @@ var procederSincroFun = async (button:HTMLButtonElement, divAvisoSincro:HTMLDivE
     button.className='download-dm-button';
     divAvisoSincro.innerHTML='';
     try{
-        var state = my.getLocalVar(LOCAL_STORAGE_STATE_NAME);
+        var state = getCasoState();
         var datosByPass:DatosByPassPersistibles = my.getLocalVar(GLOVAR_DATOSBYPASS);
         var datos = await sincronizarDatos(state?.datos || null, datosByPass);
         mostrarInfoLocal(divAvisoSincro, 'datos recibidos', datos.num_sincro, true)

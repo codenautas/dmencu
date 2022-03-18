@@ -6,7 +6,6 @@ import { CasillerosImplementados, CasoState,
     ModoDespliegue, 
     Opcion,
     toPlainForPk,
-    LOCAL_STORAGE_STATE_NAME,
     IdFin
 } from "./tipos";
 import { createReducer, createDispatchers, ActionsFrom } from "redux-typed-reducer";
@@ -15,6 +14,7 @@ import * as likeAr from "like-ar";
 import * as bestGlobals from "best-globals";
 
 import { Opcion as RowValidatorOpcion } from "row-validator";
+import { getCasoState, setCasoState } from "./bypass-formulario";
 
 var my=myOwn;
 
@@ -343,10 +343,9 @@ export async function traerEstructura(params:{operativo: string}){
     return estructura;
 }
 
-export async function dmTraerDatosFormulario(opts:{operativo:IdOperativo, modoDemo:boolean, modoAlmacenamiento:ModoAlmacenamiento, forPkRaiz?:ForPkRaiz}){
-    var useSessionStorage = opts.modoAlmacenamiento == 'session';
+export async function dmTraerDatosFormulario(opts:{operativo:IdOperativo, modoDemo:boolean, forPkRaiz?:ForPkRaiz}){
     var loadState = async function loadState():Promise<CasoState>{
-        var casoState:CasoState|null = useSessionStorage?my.getSessionVar(LOCAL_STORAGE_STATE_NAME):my.getLocalVar(LOCAL_STORAGE_STATE_NAME);
+        var casoState:CasoState|null = getCasoState();
         var initialState = {
             opciones:{
                 forPk:null,
@@ -390,7 +389,7 @@ export async function dmTraerDatosFormulario(opts:{operativo:IdOperativo, modoDe
         return initialState;
     }
     var saveState = function saveState(state:CasoState){
-        useSessionStorage?my.setSessionVar(LOCAL_STORAGE_STATE_NAME, state):my.setLocalVar(LOCAL_STORAGE_STATE_NAME, state);
+        setCasoState(state);
     }
     /* DEFINICION CONTROLADOR */
     var initialState:CasoState = await loadState();
