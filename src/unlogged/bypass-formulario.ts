@@ -582,9 +582,38 @@ var rowValidator = getRowValidator<IdVariable, Valor, IdFin>({getFuncionHabilita
 export var defOperativo = {
     //TODO: GENERALIZAR
     esNorea:(respuestas:Respuestas)=>{
-        const NO_REA_VAR = 'entreav' as IdVariable;
+        const NO_REA_VAR = 'entreav' as IdVariable; 
         return respuestas[NO_REA_VAR] && respuestas[NO_REA_VAR]!=1
     },
+   /*
+    Norea:(respuestas:Respuestas)=>{
+        const NO_REA_VAR = 'entreav' as IdVariable;
+        /* PREGUNTARLE A MANUEL COMO MANEJAR LA ESTRUCTURA recuperada en procedures
+        const noreasfilas = string;
+        estructura.noReas.forEach(row=>{
+            noreavar= row.variable;
+            noreavalor=row.valor;
+			noreacodigo=row.no_rea;
+			//viviendas
+			if (noreavar)='razonv'{ 
+			   if ( respuestas[noreavar]==noreavalor ) return noreacodigo;
+			};  
+            
+           //hogar
+		   if (noreavar in ('razon1', 'esm1','tp','razon2_9')) {
+		       if (respuestas.hogares[hogar].[noreavar]=noreavalor return noreacodigo;
+		   }
+		   //personas
+		   if (noreavar)='noreaind'{ 
+			   if ( respuestas.hogares.personas[noreavar]==noreavalor ) return noreacodigo
+			};  
+		   
+		   ;
+               
+        
+        return respuestas[NO_REA_VAR] && respuestas[NO_REA_VAR]!=1
+    },
+    */
     UAprincipal:'' as IdUnidadAnalisis,
     defUA:{} as {[i in IdUnidadAnalisis]:{pk:IdVariable, incluidas:IdUnidadAnalisis[], idsFor:IdFormulario[]}},
     defFor:{} as {[f in IdFormulario]:{/*arbolUA:IdUnidadAnalisis[], */ hermano?:true}}
