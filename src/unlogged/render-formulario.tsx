@@ -25,6 +25,8 @@ import {Bloque, BotonFormulario,
     Texto, Estructura, InformacionHdr, DatosHdrUaPpal, ConfiguracionSorteoFormulario
 } from "./tipos";
 import{ 
+    calcularActualBF,
+    calcularDisabledBF,
     calcularResumenVivienda,
     getCasoState,
     getFormulariosForIdVivienda,
@@ -725,27 +727,6 @@ function PreguntaDespliegue(props:{
         </div>
     </DesplegarCasillero>
 }
-
-var calcularActualBF = (configSorteoFormulario:ConfiguracionSorteoFormulario|null, numElementoUA: number, numActual:number|null, formulario:IdFormulario, r:Respuestas)=>
-    !!(configSorteoFormulario && 
-    configSorteoFormulario.id_formulario_individual &&
-    configSorteoFormulario.id_formulario_individual == formulario
-    ? 
-        numElementoUA == coalesce(
-            r[configSorteoFormulario.resultado_manual],
-            r[configSorteoFormulario.resultado]
-        )
-    :
-        numActual == numElementoUA
-    )
-
-var calcularDisabledBF = (configSorteoFormulario:ConfiguracionSorteoFormulario|null, numElementoUA: number, formulario:IdFormulario, r:Respuestas)=>
-    !!(configSorteoFormulario && 
-    configSorteoFormulario.id_formulario_individual == formulario &&
-    numElementoUA != coalesce(
-        r[configSorteoFormulario.resultado_manual],
-        r[configSorteoFormulario.resultado]
-    ))
 
 var calcularDisabledBFAgregarListo = (configSorteoFormulario:ConfiguracionSorteoFormulario|null, formulario:IdFormulario)=>
     !!(configSorteoFormulario && configSorteoFormulario.id_formulario_individual == formulario)

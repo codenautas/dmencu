@@ -2,7 +2,7 @@ import { strict as likeAr, beingArray } from "like-ar";
 
 import { getRowValidator, FormStructureState, OpcionesRowValidator } from "row-validator";
 
-import { date, compareForOrder } from "best-globals";
+import { date, compareForOrder, coalesce } from "best-globals";
 
 import {
     Estructura, 
@@ -22,8 +22,6 @@ import {
     CasoState,
     ConfiguracionSorteoFormulario
 } from "./tipos";
-
-const FORMULARIO_TEM = 'F:TEM';
 
 var especiales = {} as {
     calcularVariables?:(respuestasRaiz:RespuestasRaiz, forPk:ForPk)=>void
@@ -910,6 +908,27 @@ export var getFormulariosForIdVivienda = (idVivienda:number)=>{
     return formsFeedback;
 }
 
+export var calcularActualBF = (configSorteoFormulario:ConfiguracionSorteoFormulario|null, numElementoUA: number, numActual:number|null, formulario:IdFormulario, r:Respuestas)=>
+    !!(configSorteoFormulario && 
+    configSorteoFormulario.id_formulario_individual &&
+    configSorteoFormulario.id_formulario_individual == formulario
+    ? 
+        numElementoUA == coalesce(
+            r[configSorteoFormulario.resultado_manual],
+            r[configSorteoFormulario.resultado]
+        )
+    :
+        numActual == numElementoUA
+    )
+
+export var calcularDisabledBF = (configSorteoFormulario:ConfiguracionSorteoFormulario|null, numElementoUA: number, formulario:IdFormulario, r:Respuestas)=>
+    !!(configSorteoFormulario && 
+    configSorteoFormulario.id_formulario_individual == formulario &&
+    numElementoUA != coalesce(
+        r[configSorteoFormulario.resultado_manual],
+        r[configSorteoFormulario.resultado]
+    ))
+
 export function calcularResumenVivienda(
     forPkRaiz:ForPkRaiz, 
     feedbackRowValidator:{[formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin>}, 
@@ -918,10 +937,24 @@ export function calcularResumenVivienda(
     if(defOperativo.esNorea(respuestas)){
         return "no rea";
     }
+    
     var formsFeedback = getFormulariosForIdVivienda(forPkRaiz.vivienda!);
-    var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>
-        JSON.parse(plainPk).vivienda==forPkRaiz.vivienda && formsFeedback.includes(JSON.parse(plainPk).formulario)
-    ).array();
+    var configuracionSorteoFormulario = estructura.configSorteo && estructura.configSorteo[getMainFormForVivienda(forPkRaiz.vivienda!)]
+    
+    var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>{
+        return JSON.parse(plainPk).vivienda==forPkRaiz.vivienda && 
+            formsFeedback.includes(JSON.parse(plainPk).formulario) &&
+            !calcularDisabledBF(
+                configuracionSorteoFormulario, 
+                JSON.parse(plainPk).persona, 
+                JSON.parse(plainPk).formulario, 
+                JSON.parse(plainPk).hogar?respuestasForPk({
+                    vivienda:forPkRaiz.vivienda, 
+                    formulario:'F:S1' as IdFormulario, //TODO GENERALIZAR en sorteo quizás
+                    hogar:JSON.parse(plainPk).hogar //TODO GENERALIZAR en sorteo quizás
+                }).respuestas:{}
+            )
+    }).array();
     var prioridades:{[key in ResumenEstado]: {prioridad:number, cantidad:number}} = {
         'no rea':{prioridad: 1, cantidad:0},
         'con problemas':{prioridad: 2, cantidad:0},
