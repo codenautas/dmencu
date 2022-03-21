@@ -101,6 +101,8 @@ anchoNormal(ancho)
   min-height 2em
   &[despliegue-contenido=horizontal]
     flex-direction row
+    @media (max-width 35em)
+      flex-wrap wrap
     > *
       flex-wrap wrap
   > .otros-especificar

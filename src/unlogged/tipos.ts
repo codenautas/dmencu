@@ -332,8 +332,15 @@ export type Estructura = {
     timestamp:number
     operativo:IdOperativo
     configSorteo: ConfiguracionSorteo
+	noReas: { 
+	      no_rea: string  
+		  descripcion: string
+		  grupo:     string    
+		  variable:  string
+		  valor:     string
+		  grupo0:    string
+	}[]
 }
-
 export type InformacionHdr={[enc in '130031'|'130032'|'etc']: DatosHdrUaPpal}
 
 export type CasoState={
