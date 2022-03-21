@@ -585,35 +585,34 @@ export var defOperativo = {
         const NO_REA_VAR = 'entreav' as IdVariable; 
         return respuestas[NO_REA_VAR] && respuestas[NO_REA_VAR]!=1
     },
-   /*
-    Norea:(respuestas:Respuestas)=>{
-        const NO_REA_VAR = 'entreav' as IdVariable;
-        /* PREGUNTARLE A MANUEL COMO MANEJAR LA ESTRUCTURA recuperada en procedures
-        const noreasfilas = string;
-        estructura.noReas.forEach(row=>{
-            noreavar= row.variable;
-            noreavalor=row.valor;
-			noreacodigo=row.no_rea;
-			//viviendas
-			if (noreavar)='razonv'{ 
-			   if ( respuestas[noreavar]==noreavalor ) return noreacodigo;
-			};  
-            
-           //hogar
-		   if (noreavar in ('razon1', 'esm1','tp','razon2_9')) {
-		       if (respuestas.hogares[hogar].[noreavar]=noreavalor return noreacodigo;
-		   }
-		   //personas
-		   if (noreavar)='noreaind'{ 
-			   if ( respuestas.hogares.personas[noreavar]==noreavalor ) return noreacodigo
-			};  
-		   
-		   ;
-               
-        
-        return respuestas[NO_REA_VAR] && respuestas[NO_REA_VAR]!=1
-    },
-    */
+    /*
+    esNorea:(respuestas:Respuestas)=>{
+        //TODO GENERALIZAR
+        //const noreasfilas = string;
+        var unidadesARecorrer = ['viviendas','hogares','personas'] as IdUnidadAnalisis[];
+        var uaPrincipal = likeAr(estructura.unidades_analisis).find((ua)=>!ua.padre);
+        var esNoRea = false;
+        var codNoRea:string|null= null;
+
+        var buscarNoReaEnRespuestas = (unidadAnalisis:UnidadAnalisis, respuestas:Respuestas)=>{
+            if(unidadesARecorrer.includes(unidadAnalisis.unidad_analisis)){
+                estructura.noReas.forEach(noRea=>{
+                    var {variable, valor, no_rea} = noRea;
+                    if(respuestas[variable as IdVariable]==valor){
+                        return {codNoRea:no_rea, esNorea: true}
+                    }
+                })
+            }
+            likeAr(unidadAnalisis?.hijas).forEach((ua)=>{
+                if(ua?.unidad_analisis && respuestas[ua.unidad_analisis] instanceof Array){
+                    for(let respuestasHijas of respuestas[ua?.unidad_analisis]){
+                        buscarNoReaEnRespuestas(ua,respuestasHijas);
+                    }
+                }
+            })
+        }
+        buscarNoReaEnRespuestas(uaPrincipal!,respuestas);
+    },*/
     UAprincipal:'' as IdUnidadAnalisis,
     defUA:{} as {[i in IdUnidadAnalisis]:{pk:IdVariable, incluidas:IdUnidadAnalisis[], idsFor:IdFormulario[]}},
     defFor:{} as {[f in IdFormulario]:{/*arbolUA:IdUnidadAnalisis[], */ hermano?:true}}
