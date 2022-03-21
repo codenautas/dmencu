@@ -49,7 +49,7 @@ import { control_resumen     } from './table-control_resumen';
 
 import {defConfig} from "./def-config"
 
-const APP_DM_VERSION="#22-03-18b";
+const APP_DM_VERSION="#22-03-22";
 
 export type Constructor<T> = new(...args: any[]) => T;
 export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesamientoType>>(Base:T){
@@ -418,6 +418,9 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             //"img/logo-dm.png",
             "img/logo-128.png",
             "img/main-loading.gif",
+            "img/borrar-valor.png",
+            "img/fondo-salteado-error.png",
+            "img/fondo-salteado.png",
             "client-setup",
             "css/bootstrap.min.css",
             "css/formulario-react.css",
