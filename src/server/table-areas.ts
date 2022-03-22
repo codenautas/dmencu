@@ -85,10 +85,10 @@ export function areas(context:TableContext):TableDefinition {
                     select 
                         bool_or( cargado_dm is not null )       as cargado , 
                         --count( cargado_dm )                     as cargadas,
-                        sum ( rea )                              as reas,
-                        count(*) filter ( where resumen_estado='no rea')       as no_reas,
-                        count(*) filter ( where resumen_estado in ('incompleto', 'con problemas') ) as incompletas, 
-                        count(*) filter ( where resumen_estado in ('vacio' ) ) as vacias,
+                        sum ( tem.rea )                              as reas,
+                        count(*) filter ( where tem.resumen_estado='no rea')       as no_reas,
+                        count(*) filter ( where tem.resumen_estado in ('incompleto', 'con problemas') ) as incompletas, 
+                        count(*) filter ( where tem.resumen_estado in ('vacio' ) ) as vacias,
                         count(*) filter ( where habilitada is not true )    as inhabilitadas,
                         --sum(case when cluster <>4 then null when confirmada is true then 1 else 0 end) as confirmadas,
                         --sum(case when cluster <>4 then null when confirmada is null then 1 else 0 end) as pend_conf,
@@ -99,8 +99,8 @@ export function areas(context:TableContext):TableDefinition {
                         	`, sum(CASE WHEN gru_no_rea=${be.db.quoteLiteral(x.grupo)} THEN 1 ELSE NULL END) as ${be.db.quoteIdent(x.grupo.replace(/ /g,'_'))}`
                         ).join('')}
                         from ( select operativo, enc, cluster, nrocomuna, clase, 
-                                json_encuesta, resumen_estado,  
-                                encuestador, rea, norea, area, dominio, zona
+                                json_encuesta, t.resumen_estado,  
+                                encuestador, t.rea, t.norea, area, dominio, zona
                                 json_backup
                             , tt.habilitada, tt.cargado_dm
                             , ${be.sqlNoreaCase('grupo')} as gru_no_rea from tem t left join tareas_tem tt using(operativo,enc) where t.area=a.area and tt.tarea='encu') tem

@@ -23,7 +23,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
         tableName:'tem',
         editable: puedeEditar,
         hiddenColumns:[
-            'cita','notas',
+            'cita','notas', 'cluster',
             'codviviendaparticular', 'casa', 'obsdatosdomicilio', 'obsconjunto', 'reserva', 'rotacion_etoi', 'rotacion_eah'
             , 'trimestre'   , 'procedencia', 'sel_etoi_villa'   , 'marco'      , 'semana' , 'periodicidad' 
             , 'cargado_dm'

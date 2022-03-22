@@ -97,3 +97,9 @@ UPDATE operativos
         }
     }'
 where operativo = 'PREJU_2022';
+
+alter table tareas_tem
+  add column if not exists rea integer,
+  add column if not exists norea integer,
+  add column if not exists resumen_estado integer;
+alter table "tareas_tem" add constraint "resumen_estado<>''" check ("resumen_estado"<>'');
