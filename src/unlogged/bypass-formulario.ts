@@ -940,7 +940,6 @@ export function calcularResumenVivienda(
     
     var formsFeedback = getFormulariosForIdVivienda(forPkRaiz.vivienda!);
     var configuracionSorteoFormulario = estructura.configSorteo && estructura.configSorteo[getMainFormForVivienda(forPkRaiz.vivienda!)]
-    
     var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>{
         return JSON.parse(plainPk).vivienda==forPkRaiz.vivienda && 
             formsFeedback.includes(JSON.parse(plainPk).formulario) &&
@@ -948,10 +947,10 @@ export function calcularResumenVivienda(
                 configuracionSorteoFormulario, 
                 JSON.parse(plainPk).persona, 
                 JSON.parse(plainPk).formulario, 
-                JSON.parse(plainPk).hogar?respuestasForPk({
+                JSON.parse(plainPk).hogar && configuracionSorteoFormulario.id_formulario_padre?respuestasForPk({
                     vivienda:forPkRaiz.vivienda, 
-                    formulario:'F:S1' as IdFormulario, //TODO GENERALIZAR en sorteo quizás
-                    hogar:JSON.parse(plainPk).hogar //TODO GENERALIZAR en sorteo quizás
+                    formulario:configuracionSorteoFormulario.id_formulario_padre,
+                    hogar:JSON.parse(plainPk).hogar
                 }).respuestas:{}
             )
     }).array();
