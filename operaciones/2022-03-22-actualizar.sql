@@ -101,5 +101,10 @@ where operativo = 'PREJU_2022';
 alter table tareas_tem
   add column if not exists rea integer,
   add column if not exists norea integer,
-  add column if not exists resumen_estado integer;
+  add column if not exists resumen_estado text;
 alter table "tareas_tem" add constraint "resumen_estado<>''" check ("resumen_estado"<>'');
+
+
+alter table tareas add column if not exists registra_estado_en_tem boolean;
+
+update tareas set registra_estado_en_tem = true where tarea in ('encu','recu');

@@ -488,7 +488,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         ],
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             var be=context.be;
-            var {tarea, operativo,forPkRaiz} = parameters;
+            var {operativo,forPkRaiz} = parameters;
             
             var condviv= ` t.operativo= $1 and t.enc =$2`;
             var soloLectura = !!(await context.client.query(
@@ -526,13 +526,19 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 if(respuestasUAPrincipal.s1a1_obs == '!prueba de error al grabar!'){
                     throw new Error('DIO PRUEBA DE ERROR AL GRABAR');
                 }
+                var params = [operativo, idEnc, respuestasUAPrincipal]
+                var setters = `json_encuesta = $3`;
+                if(false /*registra estado en tem*/){
+                    setters+= `, resumen_estado=$4, norea=$5, rea=$6`
+                    params = params.concat([respuestasUAPrincipal.resumenEstado, respuestasUAPrincipal.codNoRea, respuestasUAPrincipal.codRea]);
+                }
                 await context.client.query(
                     `update tem
-                        set json_encuesta = $3, resumen_estado=$4, norea=$5
+                        set ${setters}
                         where operativo= $1 and enc = $2
                         returning 'ok'`
                     ,
-                    [operativo, idEnc, respuestasUAPrincipal, respuestasUAPrincipal.resumenEstado,respuestasUAPrincipal.codNoRea]
+                    params
                 ).fetchUniqueRow();
             }).array());
             return 'ok'
@@ -577,21 +583,34 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     var puedoGuardarEnTEM=true;
                     var queryTareasTem = await context.client.query(
                         `update tareas_tem
-                            set cargado_dm=null
+                            set cargado_dm=null, resumen_estado=$5, norea = $6, rea=$7
                             where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm = $4
                             returning 'ok'`
                         ,
-                        [OPERATIVO, idEnc, tarea, token]
+                        [OPERATIVO, idEnc, tarea, token, respuestasUAPrincipal.resumenEstado, respuestasUAPrincipal.codNoRea, respuestasUAPrincipal.codRea]
                     ).fetchOneRowIfExists();
                     puedoGuardarEnTEM=queryTareasTem.rowCount==1;
                     if(puedoGuardarEnTEM){
+                        var registraEstadoEnTem = (await context.client.query(
+                            `select registra_estado_en_tem
+                                from tareas
+                                where tarea = $1`
+                            ,
+                            [tarea]
+                        ).fetchUniqueValue()).value;
+                        var params = [OPERATIVO, idEnc, respuestasUAPrincipal]
+                        var setters = `json_encuesta = $3`;
+                        if(registraEstadoEnTem){
+                            setters+= `, resumen_estado=$4, norea=$5, rea=$6`
+                            params = params.concat([respuestasUAPrincipal.resumenEstado, respuestasUAPrincipal.codNoRea, respuestasUAPrincipal.codRea]);
+                        }
                         await context.client.query(
                             `update tem
-                                set json_encuesta = $3, resumen_estado=$4, norea=$5
+                                set ${setters}
                                 where operativo= $1 and enc = $2
                                 returning 'ok'`
                             ,
-                            [OPERATIVO, idEnc, respuestasUAPrincipal, respuestasUAPrincipal.resumenEstado, respuestasUAPrincipal.codNoRea]
+                            params
                         ).fetchUniqueRow();
                     }else{
                         await fs.appendFile('local-recibido-sin-token.txt', JSON.stringify({now:new Date(),user:context.username,idCaso: idEnc,vivienda: respuestasUAPrincipal})+'\n\n', 'utf8');
