@@ -579,14 +579,13 @@ var rowValidator = getRowValidator<IdVariable, Valor, IdFin>({getFuncionHabilita
 //// QUITARLO Y REEMPLAZARLO por buscar en estructura.unidad_analisis y estructura.formulario
 export var defOperativo = {
     //TODO: GENERALIZAR
-    esNorea:(respuestas:Respuestas)=>{
-        const NO_REA_VAR = 'entreav' as IdVariable; 
-        return respuestas[NO_REA_VAR] && respuestas[NO_REA_VAR]!=1
-    },
-    /*
+    //esNorea:(respuestas:Respuestas)=>{
+    //    const NO_REA_VAR = 'entreav' as IdVariable; 
+    //    return respuestas[NO_REA_VAR] && respuestas[NO_REA_VAR]!=1
+    //},
+    
     esNorea:(respuestas:Respuestas)=>{
         //TODO GENERALIZAR
-        //const noreasfilas = string;
         var unidadesARecorrer = ['viviendas','hogares','personas'] as IdUnidadAnalisis[];
         var uaPrincipal = likeAr(estructura.unidades_analisis).find((ua)=>!ua.padre);
         var esNoRea = false;
@@ -594,23 +593,31 @@ export var defOperativo = {
 
         var buscarNoReaEnRespuestas = (unidadAnalisis:UnidadAnalisis, respuestas:Respuestas)=>{
             if(unidadesARecorrer.includes(unidadAnalisis.unidad_analisis)){
-                estructura.noReas.forEach(noRea=>{
+                for(let noRea of estructura.noReas){
                     var {variable, valor, no_rea} = noRea;
                     if(respuestas[variable as IdVariable]==valor){
-                        return {codNoRea:no_rea, esNorea: true}
-                    }
-                })
-            }
-            likeAr(unidadAnalisis?.hijas).forEach((ua)=>{
-                if(ua?.unidad_analisis && respuestas[ua.unidad_analisis] instanceof Array){
-                    for(let respuestasHijas of respuestas[ua?.unidad_analisis]){
-                        buscarNoReaEnRespuestas(ua,respuestasHijas);
+                        codNoRea = no_rea;
+                        esNoRea = true;
+                        return true
                     }
                 }
-            })
+            }
+            for(let ua of (likeAr(unidadAnalisis?.hijas).array()){
+                if(ua?.unidad_analisis && respuestas[ua.unidad_analisis] instanceof Array){
+                    for(let respuestasHijas of respuestas[ua?.unidad_analisis]){
+                        let result = buscarNoReaEnRespuestas(ua,respuestasHijas);
+                        if(result){
+                            break;
+                        }
+                    }
+                }
+            }
+            return false
         }
         buscarNoReaEnRespuestas(uaPrincipal!,respuestas);
-    },*/
+        console.log(codNoRea, esNoRea)
+        return {codNoRea,esNoRea}
+    },
     UAprincipal:'' as IdUnidadAnalisis,
     defUA:{} as {[i in IdUnidadAnalisis]:{pk:IdVariable, incluidas:IdUnidadAnalisis[], idsFor:IdFormulario[]}},
     defFor:{} as {[f in IdFormulario]:{/*arbolUA:IdUnidadAnalisis[], */ hermano?:true}}
@@ -934,25 +941,28 @@ export function calcularResumenVivienda(
     feedbackRowValidator:{[formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin>}, 
     respuestas:Respuestas
 ){
-    if(defOperativo.esNorea(respuestas)){
+    if(defOperativo.esNorea(respuestas).esNoRea){
         return "no rea";
     }
     
     var formsFeedback = getFormulariosForIdVivienda(forPkRaiz.vivienda!);
     var configuracionSorteoFormulario = estructura.configSorteo && estructura.configSorteo[getMainFormForVivienda(forPkRaiz.vivienda!)]
     var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>{
+        var tieneIndividual = !!(configuracionSorteoFormulario.id_formulario_individual && configuracionSorteoFormulario.id_formulario_padre)
         return JSON.parse(plainPk).vivienda==forPkRaiz.vivienda && 
             formsFeedback.includes(JSON.parse(plainPk).formulario) &&
-            !calcularDisabledBF(
-                configuracionSorteoFormulario, 
-                JSON.parse(plainPk).persona, 
-                JSON.parse(plainPk).formulario, 
-                JSON.parse(plainPk).hogar && configuracionSorteoFormulario.id_formulario_padre?respuestasForPk({
-                    vivienda:forPkRaiz.vivienda, 
-                    formulario:configuracionSorteoFormulario.id_formulario_padre,
-                    hogar:JSON.parse(plainPk).hogar
-                }).respuestas:{}
-            )
+            (tieneIndividual?
+                !calcularDisabledBF(
+                    configuracionSorteoFormulario, 
+                    JSON.parse(plainPk).persona, 
+                    JSON.parse(plainPk).formulario, 
+                    JSON.parse(plainPk).hogar?respuestasForPk({
+                        vivienda:forPkRaiz.vivienda, 
+                        formulario:configuracionSorteoFormulario.id_formulario_padre!,
+                        hogar:JSON.parse(plainPk).hogar 
+                    }).respuestas:{} as Respuestas
+                )
+            :true)
     }).array();
     var prioridades:{[key in ResumenEstado]: {prioridad:number, cantidad:number}} = {
         'no rea':{prioridad: 1, cantidad:0},

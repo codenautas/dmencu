@@ -805,7 +805,7 @@ function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
                 estructura:Estructura
             )=>{
                 elemento.style.display='';
-                if(r["entreav" as IdVariable] == null){
+                if(false && r["entreav" as IdVariable] == null){
                     elemento.textContent = "relevamiento sin empezar";
                 }else{
                     elemento.textContent = "relevamiento empezado";
