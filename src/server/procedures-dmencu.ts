@@ -528,11 +528,11 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 }
                 await context.client.query(
                     `update tem
-                        set json_encuesta = $3, resumen_estado=$4
+                        set json_encuesta = $3, resumen_estado=$4, norea=$5
                         where operativo= $1 and enc = $2
                         returning 'ok'`
                     ,
-                    [operativo, idEnc, respuestasUAPrincipal, respuestasUAPrincipal.resumenEstado]
+                    [operativo, idEnc, respuestasUAPrincipal, respuestasUAPrincipal.resumenEstado,respuestasUAPrincipal.codNoRea]
                 ).fetchUniqueRow();
             }).array());
             return 'ok'
@@ -587,11 +587,11 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     if(puedoGuardarEnTEM){
                         await context.client.query(
                             `update tem
-                                set json_encuesta = $3, resumen_estado=$4
+                                set json_encuesta = $3, resumen_estado=$4, norea=$5
                                 where operativo= $1 and enc = $2
                                 returning 'ok'`
                             ,
-                            [OPERATIVO, idEnc, respuestasUAPrincipal, respuestasUAPrincipal.resumenEstado]
+                            [OPERATIVO, idEnc, respuestasUAPrincipal, respuestasUAPrincipal.resumenEstado, respuestasUAPrincipal.codNoRea]
                         ).fetchUniqueRow();
                     }else{
                         await fs.appendFile('local-recibido-sin-token.txt', JSON.stringify({now:new Date(),user:context.username,idCaso: idEnc,vivienda: respuestasUAPrincipal})+'\n\n', 'utf8');

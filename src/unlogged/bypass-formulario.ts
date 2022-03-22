@@ -615,7 +615,6 @@ export var defOperativo = {
             return false
         }
         buscarNoReaEnRespuestas(uaPrincipal!,respuestas);
-        console.log(codNoRea, esNoRea)
         return {codNoRea,esNoRea}
     },
     UAprincipal:'' as IdUnidadAnalisis,
@@ -890,11 +889,13 @@ function calcularFeedback(respuestas: Respuestas, forPkRaiz:ForPkRaiz, opts:Opci
     var nuevosRows : {[x in PlainForPk]:FormStructureState<IdVariable,IdFin>}={}
     calcularFeedbackEncuesta(nuevosRows, estructura.formularios, forPkRaiz, respuestas, opts);
     datosByPass.feedbackRowValidator = {...datosByPass.feedbackRowValidator, ...nuevosRows};
-    datosByPass.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!].resumenEstado = calcularResumenVivienda(
+    var {resumenEstado, codNoRea} = calcularResumenVivienda(
         forPkRaiz, 
         nuevosRows,
         respuestas
     );
+    datosByPass.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!].resumenEstado = resumenEstado;
+    datosByPass.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!].codNoRea = codNoRea;
 }
 
 export var getFormulariosForIdVivienda = (idVivienda:number)=>{
@@ -940,9 +941,10 @@ export function calcularResumenVivienda(
     forPkRaiz:ForPkRaiz, 
     feedbackRowValidator:{[formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin>}, 
     respuestas:Respuestas
-){
-    if(defOperativo.esNorea(respuestas).esNoRea){
-        return "no rea";
+):{resumenEstado:ResumenEstado,codNoRea:string|null}{
+    var {codNoRea, esNoRea} = defOperativo.esNorea(respuestas)
+    if(esNoRea){
+        return {resumenEstado: "no rea", codNoRea};
     }
     
     var formsFeedback = getFormulariosForIdVivienda(forPkRaiz.vivienda!);
@@ -989,5 +991,5 @@ export function calcularResumenVivienda(
             minResumen='incompleto';
         }
     }
-    return minResumen;
+    return {resumenEstado: minResumen, codNoRea};
 }

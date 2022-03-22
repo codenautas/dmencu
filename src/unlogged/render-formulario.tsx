@@ -1548,7 +1548,7 @@ export function DesplegarLineaResumenUAPrincipal(props:{
             //con todas las combinaciones de respuestas para cada forPk
             //@ts-ignore vivienda existe
             if(r.vivienda == forPk.vivienda){
-                elemento.setAttribute('resumen-estado',calcularResumenVivienda(forPk, feedbackAll, r));
+                elemento.setAttribute('resumen-estado',calcularResumenVivienda(forPk, feedbackAll, r).resumenEstado);
             }
         }
             

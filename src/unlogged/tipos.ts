@@ -223,6 +223,7 @@ export type Respuestas={
 export type RespuestasRaiz=Respuestas & {
     resumenEstado:ResumenEstado
     $dirty:boolean
+    codNoRea: string|null
 }
 
 /*
