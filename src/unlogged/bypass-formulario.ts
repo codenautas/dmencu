@@ -617,6 +617,60 @@ export var defOperativo = {
         buscarNoReaEnRespuestas(uaPrincipal!,respuestas);
         return {codNoRea,esNoRea}
     },
+    esRealizada:(respuestas:Respuestas)=>{
+        //TODO GENERALIZAR
+        var esRea = false;
+        var codRea:number|null= null;
+        if(!respuestas['entreav' as IdVariable]){
+            return {codRea, esRea}
+        }else if(respuestas['entreav' as IdVariable]==2){
+            codRea = 2;
+            esRea = false;
+        }else{
+            var reahs: number[]=[] ;
+            var respuestasHs = respuestas['hogares'];
+            if(respuestasHs){
+                for(let respuestasH of respuestasHs){
+                    var reah:number;
+                    var selec:number;
+                    if(respuestasH['entrea' ] != 1){
+                        reah=2;
+                    }else{
+                        selec=respuestasH['cr_num_miembro']
+                        if(respuestasH['personas'] && respuestasH.personas[selec-1] ){
+                            var respuestasP = respuestasH.personas[selec-1];
+                            var resp_entrea_ind = respuestasP['entreaind' as IdVariable ];
+                            if(resp_entrea_ind===null){
+                                reah = 3;
+                            }else{
+                                reah = Number(resp_entrea_ind);
+                            }
+                        }else{
+                            reah = 3;
+                        }
+                    }
+                    reahs.push(reah);
+                }
+                if (reahs.every(rh=>rh==1)){
+                    codRea = 1;
+                    esRea = true;
+                }else if(reahs.every(rh=>rh==2)){
+                    codRea = 2;
+                    esRea = false;
+                }else if(reahs.every(rh=>rh==1||rh==3)){
+                    codRea = 3;
+                    esRea = false;
+                }else{
+                    codRea = 4;
+                    esRea = false;
+                }
+            } else{
+                codRea = 3;
+                esRea = false;
+            }
+        }
+        return {codRea,esRea}
+    },
     UAprincipal:'' as IdUnidadAnalisis,
     defUA:{} as {[i in IdUnidadAnalisis]:{pk:IdVariable, incluidas:IdUnidadAnalisis[], idsFor:IdFormulario[]}},
     defFor:{} as {[f in IdFormulario]:{/*arbolUA:IdUnidadAnalisis[], */ hermano?:true}}
@@ -889,13 +943,14 @@ function calcularFeedback(respuestas: Respuestas, forPkRaiz:ForPkRaiz, opts:Opci
     var nuevosRows : {[x in PlainForPk]:FormStructureState<IdVariable,IdFin>}={}
     calcularFeedbackEncuesta(nuevosRows, estructura.formularios, forPkRaiz, respuestas, opts);
     datosByPass.feedbackRowValidator = {...datosByPass.feedbackRowValidator, ...nuevosRows};
-    var {resumenEstado, codNoRea} = calcularResumenVivienda(
+    var {resumenEstado, codNoRea, codRea} = calcularResumenVivienda(
         forPkRaiz, 
         nuevosRows,
         respuestas
     );
     datosByPass.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!].resumenEstado = resumenEstado;
     datosByPass.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!].codNoRea = codNoRea;
+    datosByPass.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!].codRea = codRea;
 }
 
 export var getFormulariosForIdVivienda = (idVivienda:number)=>{
@@ -941,10 +996,11 @@ export function calcularResumenVivienda(
     forPkRaiz:ForPkRaiz, 
     feedbackRowValidator:{[formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin>}, 
     respuestas:Respuestas
-):{resumenEstado:ResumenEstado,codNoRea:string|null}{
+):{resumenEstado:ResumenEstado,codNoRea:string|null,codRea:number|null}{
+    var {codRea, esRea} = defOperativo.esRealizada(respuestas)
     var {codNoRea, esNoRea} = defOperativo.esNorea(respuestas)
     if(esNoRea){
-        return {resumenEstado: "no rea", codNoRea};
+        return {resumenEstado: "no rea", codNoRea, codRea};
     }
     
     var formsFeedback = getFormulariosForIdVivienda(forPkRaiz.vivienda!);
@@ -991,5 +1047,5 @@ export function calcularResumenVivienda(
             minResumen='incompleto';
         }
     }
-    return {resumenEstado: minResumen, codNoRea};
+    return {resumenEstado: minResumen, codNoRea, codRea};
 }
