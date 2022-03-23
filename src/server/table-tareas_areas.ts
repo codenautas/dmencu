@@ -39,7 +39,7 @@ export function tareas_areas(context:TableContext, opt:any):TableDefinition {
             isTable: !opt.mis,
             insertIfNotUpdate:true,
             from:`(
-                select t.tarea, a.area
+                select t.operativo,t.tarea, a.area
                     ${fields.filter(x=>!(x.isPk||x.inTable==false)).map(x=>`, ta.${db.quoteIdent(x.name)}`).join('')}
                     , cargado
                     from tareas t, areas a

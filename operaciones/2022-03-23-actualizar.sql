@@ -1,3 +1,4 @@
+--set role dmencu_owner; --o discon_owner dependiendo de la base.
 set search_path = base;
 
 alter table tareas add column if not exists operativo text;
@@ -20,7 +21,7 @@ alter table tareas_areas drop constraint "tareas_areas tareas REL";
 alter table tareas drop constraint tareas_pkey;
 alter table tareas add CONSTRAINT tareas_pkey PRIMARY KEY (operativo, tarea);
 alter table "tareas_areas" add constraint "tareas_areas areas REL" foreign key ("operativo", "area") references "areas" ("operativo","area")  on update cascade;
-insert into areas (operativo, area) (select operativo, area from tem where operativo <> 'PREJU_2022' group by 1,2)
+insert into areas (operativo, area) (select operativo, area from tem where operativo <> 'PREJU_2022' group by 1,2);
 alter table "tem" add constraint "tem areas REL" foreign key ("operativo","area") references "areas" ("operativo","area")  on update cascade;
 alter table "tareas_tem" add constraint "tareas_tem tareas REL" foreign key ("operativo","tarea") references "tareas" ("operativo","tarea")  on update cascade;
 alter table "tareas_areas" add constraint "tareas_areas tareas REL" foreign key ("operativo","tarea") references "tareas" ("operativo","tarea")  on update cascade;
