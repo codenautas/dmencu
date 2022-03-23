@@ -25,8 +25,8 @@ export function tareas(context:TableContext, opts:any):TableDefinition {
             {references:'operativos' , fields:['operativo']},
         ],        
         detailTables:[
-            {table:`${mis}tareas_areas`     , fields:['tarea'], abr:'A'},
-            {table:`${mis}tareas_tem`       , fields:['tarea'], abr:'E'},
+            {table:`${mis}tareas_areas`     , fields:['operativo','tarea'], abr:'A'},
+            {table:`${mis}tareas_tem`       , fields:['operativo','tarea'], abr:'E'},
             {table:`resultados_tarea`       , fields:['tarea'], abr:'R'},
         ],
         sql:{
