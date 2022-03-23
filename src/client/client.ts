@@ -247,7 +247,7 @@ var crearBotonVer = async (depot:myOwn.Depot, fieldName:string, label:'abrir'|'v
         var openButton = html.button({class:'open-dm-button'},`${label} ${tarea.tarea}`).create();
         depot.rowControls[fieldName].appendChild(openButton);
         openButton.onclick = async function(){
-            var urlAndWindowName = `menu#i=abrir_encuesta&up={"operativo":"${depot.row.operativo}","formulario":"${tarea.main_form}","encuesta":${depot.row.enc}}&autoproced=true`;
+            var urlAndWindowName = `menu#i=abrir_encuesta&up={"operativo":"${depot.row.operativo}","tarea":"${tarea.tarea}","encuesta":${depot.row.enc}}&autoproced=true`;
             window.open(urlAndWindowName,urlAndWindowName);
         }
     })
