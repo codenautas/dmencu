@@ -950,7 +950,7 @@ export function calcularResumenVivienda(
     var formsFeedback = getFormulariosForIdVivienda(forPkRaiz.vivienda!);
     var configuracionSorteoFormulario = estructura.configSorteo && estructura.configSorteo[getMainFormForVivienda(forPkRaiz.vivienda!)]
     var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>{
-        var tieneIndividual = !!(configuracionSorteoFormulario.id_formulario_individual && configuracionSorteoFormulario.id_formulario_padre)
+        var tieneIndividual = configuracionSorteoFormulario && !!(configuracionSorteoFormulario.id_formulario_individual && configuracionSorteoFormulario.id_formulario_padre)
         return JSON.parse(plainPk).vivienda==forPkRaiz.vivienda && 
             formsFeedback.includes(JSON.parse(plainPk).formulario) &&
             (tieneIndividual?
