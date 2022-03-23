@@ -633,7 +633,7 @@ export var defOperativo = {
                 for(let respuestasH of respuestasHs){
                     var reah:number;
                     var selec:number;
-                    if(respuestasH['entrea' ] != 1){
+                    if(respuestasH['entrea' ] != 1||respuestasH['esm1']==2||respuestasH['tp']==0){
                         reah=2;
                     }else{
                         selec=respuestasH['cr_num_miembro']
