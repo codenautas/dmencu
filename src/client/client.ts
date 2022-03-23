@@ -9,7 +9,7 @@ import {cargarEstructura, cargarHojaDeRuta, GLOVAR_DATOSBYPASS, GLOVAR_ESTRUCTUR
 
 //TODO GENERALIZAR
 
-const DEFAULT_MAIN_FORM = 'F:RE';
+const TAREA_DEFAULT = 'encu';
 
 var tareas:any = null;
 
@@ -51,16 +51,15 @@ async function sincronizarDatos(state:CasoState|null, persistentes:DatosByPassPe
 myOwn.wScreens.abrir_encuesta={
     parameters:[
         {name:'operativo' , typeName:'text', defaultValue:'etoi211', references:'operativos'},
-        {name:'formulario', typeName:'text', defaultValue:DEFAULT_MAIN_FORM},
+        {name:'tarea'     , typeName:'text', defaultValue:TAREA_DEFAULT, references: 'tareas'},
         {name:'encuesta'  , typeName:'integer', defaultValue:130031}
     ],
     autoproced:true,
     mainAction:async (params)=>{
         // antes: abrirDirecto
-        var {operativo, encuesta, formulario} = params;
-        let forPkRaiz:ForPkRaiz = {formulario, vivienda:encuesta}
+        var {operativo, encuesta, tarea} = params;
         var estructura = getEstructura();
-        var carga = await my.ajax.dm_forpkraiz_cargar({operativo, forPkRaiz}) as {hojaDeRuta:HojaDeRuta, timestampEstructura:number};
+        var carga = await my.ajax.dm_forpkraiz_cargar({operativo, vivienda:encuesta, tarea}) as {hojaDeRuta:HojaDeRuta, timestampEstructura:number};
         if(!estructura || (estructura.timestamp??0) < carga.timestampEstructura || estructura.operativo != operativo || my.config.config.devel){
             estructura = await traerEstructura({operativo})
             cargarEstructura(estructura);
@@ -75,6 +74,7 @@ myOwn.wScreens.abrir_encuesta={
         delete(datos.respuestas);
         //@ts-ignore la info ya se limpió
         state.datos=datos;
+        var forPkRaiz = {formulario:datos.informacionHdr[encuesta].tarea.main_form, vivienda:encuesta};
         setPersistirDatosByPass(
             async function persistirDatosByPassEnBaseDeDatos(persistentes:DatosByPassPersistibles){
                 if(state.datos.soloLectura){

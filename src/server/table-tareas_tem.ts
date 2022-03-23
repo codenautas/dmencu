@@ -97,7 +97,7 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                     , ${be.sqlNoreaCase('grupo')} as gru_no_rea
                     , case rol_asignante when 'automatico' then null
                         when 'recepcionista' then areas.recepcionista end as asignante
-                    from tareas, tem t left join areas using (area)
+                    from tareas, tem t left join areas using (operativo, area)
                         left join lateral (select * from tareas_tem where tarea=tareas.tarea and operativo=t.operativo and enc=t.enc) tt on true
                     ) x
                     ${opt.mis?`where (asignante = ${db.quoteNullable(context.user.idper)} or asignado = ${db.quoteNullable(context.user.idper)})`:''}

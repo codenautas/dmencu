@@ -116,7 +116,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
         ],
         "primaryKey": [ "operativo", "enc" ],
         foreignKeys:[
-            {references:'areas' , fields:['area']},
+            {references:'areas' , fields:['operativo', 'area']},
         //    {references:'usuarios', fields:[{source:'carga_persona', target:'idper'}], displayFields:['apellido','nombre']},
         ],        
         softForeignKeys:[

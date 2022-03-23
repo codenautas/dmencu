@@ -12,6 +12,7 @@ import {changing, date } from 'best-globals';
 import {promises as  fs} from "fs";
 
 import * as ExpresionParser from 'expre-parser';
+import { tareas } from "./table-tareas";
 
 var path = require('path');
 var sqlTools = require('sql-tools');
@@ -67,6 +68,23 @@ function createStructure(context:ProcedureContext, tableName:string){
 /* fin definicion estructura completa */
 
 type AnyObject = {[k:string]:any}
+
+var getParametersAndSettersForUpdateTem = async (context, operativo, idEnc, respuestasUAPrincipal, tarea)=>{
+    var registraEstadoEnTem = (await context.client.query(
+        `select registra_estado_en_tem
+            from tareas
+            where operativo=$1 and tarea = $2`
+        ,
+        [operativo, tarea]
+    ).fetchUniqueValue()).value;
+    var params = [operativo, idEnc, respuestasUAPrincipal]
+    var setters = `json_encuesta = $3`;
+    if(registraEstadoEnTem){
+        setters+= `, resumen_estado=$4, norea=$5, rea=$6`
+        params = params.concat([respuestasUAPrincipal.resumenEstado, respuestasUAPrincipal.codNoRea, respuestasUAPrincipal.codRea]);
+    }
+    return {setters, params}
+}
 
 var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
     return `
@@ -484,23 +502,31 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         action:'dm_forpkraiz_cargar',
         parameters:[
             {name:'operativo'         , typeName:'text'},
-            {name:'forPkRaiz'         , typeName:'jsonb'},
+            {name:'vivienda'          , typeName:'text'},
+            {name:'tarea'             , typeName:'text', references:"tareas"},
         ],
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             var be=context.be;
-            var {operativo,forPkRaiz} = parameters;
-            
+            var {operativo,vivienda, tarea} = parameters;
+            var main_form = (await context.client.query(
+                `select main_form
+                    from tareas
+                    where operativo= $1 and tarea=$2`
+                ,
+                [operativo, tarea]
+            ).fetchUniqueValue()).value;
             var condviv= ` t.operativo= $1 and t.enc =$2`;
             var soloLectura = !!(await context.client.query(
                 `select *
                     from tareas_tem
                     where operativo= $1 and enc = $2 and cargado_dm is not null`
                 ,
-                [operativo, forPkRaiz.vivienda]
+                [operativo, vivienda]
             ).fetchOneRowIfExists()).rowCount;
-            var {row} = await context.client.query(getHdrQuery(condviv),[operativo,forPkRaiz.vivienda]).fetchUniqueRow();
-            row.informacionHdr[forPkRaiz.vivienda].tarea={
-                main_form: forPkRaiz.formulario
+            var {row} = await context.client.query(getHdrQuery(condviv),[operativo,vivienda]).fetchUniqueRow();
+            row.informacionHdr[vivienda].tarea={
+                tarea,
+                main_form
             } ;
             return {
                 ...row,
@@ -526,12 +552,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 if(respuestasUAPrincipal.s1a1_obs == '!prueba de error al grabar!'){
                     throw new Error('DIO PRUEBA DE ERROR AL GRABAR');
                 }
-                var params = [operativo, idEnc, respuestasUAPrincipal]
-                var setters = `json_encuesta = $3`;
-                if(false /*registra estado en tem*/){
-                    setters+= `, resumen_estado=$4, norea=$5, rea=$6`
-                    params = params.concat([respuestasUAPrincipal.resumenEstado, respuestasUAPrincipal.codNoRea, respuestasUAPrincipal.codRea]);
-                }
+                var {params, setters} = await getParametersAndSettersForUpdateTem(context, operativo, idEnc, respuestasUAPrincipal, persistentes.informacionHdr[idEnc].tarea.tarea);
                 await context.client.query(
                     `update tem
                         set ${setters}
@@ -570,7 +591,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             ).fetchUniqueValue();
             num_sincro=value;
             var condviv= `
-                        operativo= $1 
+                        tt.operativo= $1 
                         and asignado = $2
                         and tt.operacion='cargar' 
                         and tt.habilitada
@@ -591,19 +612,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     ).fetchOneRowIfExists();
                     puedoGuardarEnTEM=queryTareasTem.rowCount==1;
                     if(puedoGuardarEnTEM){
-                        var registraEstadoEnTem = (await context.client.query(
-                            `select registra_estado_en_tem
-                                from tareas
-                                where tarea = $1`
-                            ,
-                            [tarea]
-                        ).fetchUniqueValue()).value;
-                        var params = [OPERATIVO, idEnc, respuestasUAPrincipal]
-                        var setters = `json_encuesta = $3`;
-                        if(registraEstadoEnTem){
-                            setters+= `, resumen_estado=$4, norea=$5, rea=$6`
-                            params = params.concat([respuestasUAPrincipal.resumenEstado, respuestasUAPrincipal.codNoRea, respuestasUAPrincipal.codRea]);
-                        }
+                        var {params, setters} = await getParametersAndSettersForUpdateTem(context, OPERATIVO, idEnc, respuestasUAPrincipal, tarea);
                         await context.client.query(
                             `update tem
                                 set ${setters}
