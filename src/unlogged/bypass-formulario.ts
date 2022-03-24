@@ -2,7 +2,7 @@ import { strict as likeAr, beingArray } from "like-ar";
 
 import { getRowValidator, FormStructureState, OpcionesRowValidator } from "row-validator";
 
-import { date, compareForOrder } from "best-globals";
+import { date, compareForOrder, coalesce } from "best-globals";
 
 import {
     Estructura, 
@@ -22,8 +22,6 @@ import {
     CasoState,
     ConfiguracionSorteoFormulario
 } from "./tipos";
-
-const FORMULARIO_TEM = 'F:TEM';
 
 var especiales = {} as {
     calcularVariables?:(respuestasRaiz:RespuestasRaiz, forPk:ForPk)=>void
@@ -581,9 +579,97 @@ var rowValidator = getRowValidator<IdVariable, Valor, IdFin>({getFuncionHabilita
 //// QUITARLO Y REEMPLAZARLO por buscar en estructura.unidad_analisis y estructura.formulario
 export var defOperativo = {
     //TODO: GENERALIZAR
+    //esNorea:(respuestas:Respuestas)=>{
+    //    const NO_REA_VAR = 'entreav' as IdVariable; 
+    //    return respuestas[NO_REA_VAR] && respuestas[NO_REA_VAR]!=1
+    //},
+    
     esNorea:(respuestas:Respuestas)=>{
-        const NO_REA_VAR = 'entreav' as IdVariable;
-        return respuestas[NO_REA_VAR] && respuestas[NO_REA_VAR]!=1
+        //TODO GENERALIZAR
+        var unidadesARecorrer = ['viviendas','hogares','personas'] as IdUnidadAnalisis[];
+        var uaPrincipal = likeAr(estructura.unidades_analisis).find((ua)=>!ua.padre);
+        var esNoRea = false;
+        var codNoRea:string|null= null;
+
+        var buscarNoReaEnRespuestas = (unidadAnalisis:UnidadAnalisis, respuestas:Respuestas)=>{
+            if(unidadesARecorrer.includes(unidadAnalisis.unidad_analisis)){
+                for(let noRea of estructura.noReas){
+                    var {variable, valor, no_rea} = noRea;
+                    if(respuestas[variable as IdVariable]==valor){
+                        codNoRea = no_rea;
+                        esNoRea = true;
+                        return true
+                    }
+                }
+            }
+            for(let ua of (likeAr(unidadAnalisis?.hijas).array()){
+                if(ua?.unidad_analisis && respuestas[ua.unidad_analisis] instanceof Array){
+                    for(let respuestasHijas of respuestas[ua?.unidad_analisis]){
+                        let result = buscarNoReaEnRespuestas(ua,respuestasHijas);
+                        if(result){
+                            break;
+                        }
+                    }
+                }
+            }
+            return false
+        }
+        buscarNoReaEnRespuestas(uaPrincipal!,respuestas);
+        return {codNoRea,esNoRea}
+    },
+    esRealizada:(respuestas:Respuestas)=>{
+        //TODO GENERALIZAR
+        var esRea = false;
+        var codRea:number|null= null;
+        if(!respuestas['entreav' as IdVariable]){
+            return {codRea, esRea}
+        }else if(respuestas['entreav' as IdVariable]==2){
+            codRea = 2;
+            esRea = false;
+        }else{
+            var reahs: number[]=[] ;
+            var respuestasHs = respuestas['hogares'];
+            if(respuestasHs){
+                for(let respuestasH of respuestasHs){
+                    var reah:number;
+                    var selec:number;
+                    if(respuestasH['entrea' ] != 1||respuestasH['esm1']==2||respuestasH['tp']==0){
+                        reah=2;
+                    }else{
+                        selec=respuestasH['cr_num_miembro']
+                        if(respuestasH['personas'] && respuestasH.personas[selec-1] ){
+                            var respuestasP = respuestasH.personas[selec-1];
+                            var resp_entrea_ind = respuestasP['entreaind' as IdVariable ];
+                            if(resp_entrea_ind===null){
+                                reah = 3;
+                            }else{
+                                reah = Number(resp_entrea_ind);
+                            }
+                        }else{
+                            reah = 3;
+                        }
+                    }
+                    reahs.push(reah);
+                }
+                if (reahs.every(rh=>rh==1)){
+                    codRea = 1;
+                    esRea = true;
+                }else if(reahs.every(rh=>rh==2)){
+                    codRea = 2;
+                    esRea = false;
+                }else if(reahs.every(rh=>rh==1||rh==3)){
+                    codRea = 3;
+                    esRea = false;
+                }else{
+                    codRea = 4;
+                    esRea = false;
+                }
+            } else{
+                codRea = 3;
+                esRea = false;
+            }
+        }
+        return {codRea,esRea}
     },
     UAprincipal:'' as IdUnidadAnalisis,
     defUA:{} as {[i in IdUnidadAnalisis]:{pk:IdVariable, incluidas:IdUnidadAnalisis[], idsFor:IdFormulario[]}},
@@ -857,11 +943,14 @@ function calcularFeedback(respuestas: Respuestas, forPkRaiz:ForPkRaiz, opts:Opci
     var nuevosRows : {[x in PlainForPk]:FormStructureState<IdVariable,IdFin>}={}
     calcularFeedbackEncuesta(nuevosRows, estructura.formularios, forPkRaiz, respuestas, opts);
     datosByPass.feedbackRowValidator = {...datosByPass.feedbackRowValidator, ...nuevosRows};
-    datosByPass.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!].resumenEstado = calcularResumenVivienda(
+    var {resumenEstado, codNoRea, codRea} = calcularResumenVivienda(
         forPkRaiz, 
         nuevosRows,
         respuestas
     );
+    datosByPass.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!].resumenEstado = resumenEstado;
+    datosByPass.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!].codNoRea = codNoRea;
+    datosByPass.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!].codRea = codRea;
 }
 
 export var getFormulariosForIdVivienda = (idVivienda:number)=>{
@@ -882,18 +971,57 @@ export var getFormulariosForIdVivienda = (idVivienda:number)=>{
     return formsFeedback;
 }
 
+export var calcularActualBF = (configSorteoFormulario:ConfiguracionSorteoFormulario|null, numElementoUA: number, numActual:number|null, formulario:IdFormulario, r:Respuestas)=>
+    !!(configSorteoFormulario && 
+    configSorteoFormulario.id_formulario_individual &&
+    configSorteoFormulario.id_formulario_individual == formulario
+    ? 
+        numElementoUA == coalesce(
+            r[configSorteoFormulario.resultado_manual],
+            r[configSorteoFormulario.resultado]
+        )
+    :
+        numActual == numElementoUA
+    )
+
+export var calcularDisabledBF = (configSorteoFormulario:ConfiguracionSorteoFormulario|null, numElementoUA: number, formulario:IdFormulario, r:Respuestas)=>
+    !!(configSorteoFormulario && 
+    configSorteoFormulario.id_formulario_individual == formulario &&
+    numElementoUA != coalesce(
+        r[configSorteoFormulario.resultado_manual],
+        r[configSorteoFormulario.resultado]
+    ))
+
 export function calcularResumenVivienda(
     forPkRaiz:ForPkRaiz, 
     feedbackRowValidator:{[formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin>}, 
     respuestas:Respuestas
-){
-    if(defOperativo.esNorea(respuestas)){
-        return "no rea";
+):{resumenEstado:ResumenEstado,codNoRea:string|null,codRea:number|null}{
+    var {codRea, esRea} = defOperativo.esRealizada(respuestas)
+    var {codNoRea, esNoRea} = defOperativo.esNorea(respuestas)
+    if(esNoRea){
+        return {resumenEstado: "no rea", codNoRea, codRea};
     }
+    
     var formsFeedback = getFormulariosForIdVivienda(forPkRaiz.vivienda!);
-    var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>
-        JSON.parse(plainPk).vivienda==forPkRaiz.vivienda && formsFeedback.includes(JSON.parse(plainPk).formulario)
-    ).array();
+    var configuracionSorteoFormulario = estructura.configSorteo && estructura.configSorteo[getMainFormForVivienda(forPkRaiz.vivienda!)]
+    var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>{
+        var tieneIndividual = configuracionSorteoFormulario && !!(configuracionSorteoFormulario.id_formulario_individual && configuracionSorteoFormulario.id_formulario_padre)
+        return JSON.parse(plainPk).vivienda==forPkRaiz.vivienda && 
+            formsFeedback.includes(JSON.parse(plainPk).formulario) &&
+            (tieneIndividual?
+                !calcularDisabledBF(
+                    configuracionSorteoFormulario, 
+                    JSON.parse(plainPk).persona, 
+                    JSON.parse(plainPk).formulario, 
+                    JSON.parse(plainPk).hogar?respuestasForPk({
+                        vivienda:forPkRaiz.vivienda, 
+                        formulario:configuracionSorteoFormulario.id_formulario_padre!,
+                        hogar:JSON.parse(plainPk).hogar 
+                    }).respuestas:{} as Respuestas
+                )
+            :true)
+    }).array();
     var prioridades:{[key in ResumenEstado]: {prioridad:number, cantidad:number}} = {
         'no rea':{prioridad: 1, cantidad:0},
         'con problemas':{prioridad: 2, cantidad:0},
@@ -919,5 +1047,5 @@ export function calcularResumenVivienda(
             minResumen='incompleto';
         }
     }
-    return minResumen;
+    return {resumenEstado: minResumen, codNoRea, codRea};
 }

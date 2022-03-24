@@ -25,11 +25,11 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
         {name:'cargado_dm'         , typeName:'text'        , editable: false}, //cargar/descargar 
         {name:"cargado"            , typeName: "boolean"    , editable: false},
         {name:'notas'              , typeName:'text'}, // viene de la hoja de ruta
-        //{name:'rea'                , typeName:'integer'     , editable: false  },
-        //{name:'norea'              , typeName:'integer'     , editable: false  },
+        {name:'rea'                , typeName:'integer'     , editable: false  },
+        {name:'norea'              , typeName:'integer'     , editable: false  },
         //{name:'cod_no_rea'         , typeName:'text'        , editable: false   , inTable:false  },
         //{name:'gru_no_rea'         , typeName:'text'        , editable: false   , inTable:false  },
-        //{name:'resumen_estado'     , typeName:'text'        , editable: false  },
+        {name:'resumen_estado'     , typeName:'text'        , editable: false  },
 
         {name:'resultado'          , typeName:'text'}, // fk tareas_resultados 
         {name:'fecha_resultado'    , typeName:'date'}, // fk tareas_resultados 
@@ -97,7 +97,7 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                     , ${be.sqlNoreaCase('grupo')} as gru_no_rea
                     , case rol_asignante when 'automatico' then null
                         when 'recepcionista' then areas.recepcionista end as asignante
-                    from tareas, tem t left join areas using (area)
+                    from tareas, tem t left join areas using (operativo, area)
                         left join lateral (select * from tareas_tem where tarea=tareas.tarea and operativo=t.operativo and enc=t.enc) tt on true
                     ) x
                     ${opt.mis?`where (asignante = ${db.quoteNullable(context.user.idper)} or asignado = ${db.quoteNullable(context.user.idper)})`:''}

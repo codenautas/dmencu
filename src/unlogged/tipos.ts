@@ -223,6 +223,8 @@ export type Respuestas={
 export type RespuestasRaiz=Respuestas & {
     resumenEstado:ResumenEstado
     $dirty:boolean
+    codNoRea: string|null
+    codRea: number|null
 }
 
 /*
@@ -332,8 +334,15 @@ export type Estructura = {
     timestamp:number
     operativo:IdOperativo
     configSorteo: ConfiguracionSorteo
+	noReas: { 
+	      no_rea: string  
+		  descripcion: string
+		  grupo:     string    
+		  variable:  string
+		  valor:     string
+		  grupo0:    string
+	}[]
 }
-
 export type InformacionHdr={[enc in '130031'|'130032'|'etc']: DatosHdrUaPpal}
 
 export type CasoState={
@@ -388,6 +397,7 @@ export type ConfiguracionSorteo = {[key in IdFormulario]:ConfiguracionSorteoForm
 
 export type ConfiguracionSorteoFormulario = {
     unidad_analisis: IdUnidadAnalisis,
+    unidad_analisis_padre: IdUnidadAnalisis,
     //expr_incompletitud: string //"not (p1) or no t (p2) or not(p3)"
     expr_incompletitud: {
         [key in number]:{dominio:number, expr:string}
@@ -419,6 +429,7 @@ export type ConfiguracionSorteoFormulario = {
     variableBotonFormularioUA: IdVariable//'$B.F:S1_P'
     variableBotonFormularioUAIndividual?: IdVariable //'$B.F:I1'
     id_formulario_individual?: IdFormulario // 'F:I1'
+    id_formulario_padre?: IdFormulario // 'F:S1'
 } & (ConfiguracionSorteoHash | ConfiguracionSorteoTabla)
 
 

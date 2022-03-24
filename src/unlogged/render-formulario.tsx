@@ -25,6 +25,8 @@ import {Bloque, BotonFormulario,
     Texto, Estructura, InformacionHdr, DatosHdrUaPpal, ConfiguracionSorteoFormulario
 } from "./tipos";
 import{ 
+    calcularActualBF,
+    calcularDisabledBF,
     calcularResumenVivienda,
     getCasoState,
     getFormulariosForIdVivienda,
@@ -729,27 +731,6 @@ function PreguntaDespliegue(props:{
     </DesplegarCasillero>
 }
 
-var calcularActualBF = (configSorteoFormulario:ConfiguracionSorteoFormulario|null, numElementoUA: number, numActual:number|null, formulario:IdFormulario, r:Respuestas)=>
-    !!(configSorteoFormulario && 
-    configSorteoFormulario.id_formulario_individual &&
-    configSorteoFormulario.id_formulario_individual == formulario
-    ? 
-        numElementoUA == coalesce(
-            r[configSorteoFormulario.resultado_manual],
-            r[configSorteoFormulario.resultado]
-        )
-    :
-        numActual == numElementoUA
-    )
-
-var calcularDisabledBF = (configSorteoFormulario:ConfiguracionSorteoFormulario|null, numElementoUA: number, formulario:IdFormulario, r:Respuestas)=>
-    !!(configSorteoFormulario && 
-    configSorteoFormulario.id_formulario_individual == formulario &&
-    numElementoUA != coalesce(
-        r[configSorteoFormulario.resultado_manual],
-        r[configSorteoFormulario.resultado]
-    ))
-
 var calcularDisabledBFAgregarListo = (configSorteoFormulario:ConfiguracionSorteoFormulario|null, formulario:IdFormulario)=>
     !!(configSorteoFormulario && configSorteoFormulario.id_formulario_individual == formulario)
 
@@ -827,7 +808,7 @@ function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
                 estructura:Estructura
             )=>{
                 elemento.style.display='';
-                if(r["entreav" as IdVariable] == null){
+                if(false && r["entreav" as IdVariable] == null){
                     elemento.textContent = "relevamiento sin empezar";
                 }else{
                     elemento.textContent = "relevamiento empezado";
@@ -1570,7 +1551,7 @@ export function DesplegarLineaResumenUAPrincipal(props:{
             //con todas las combinaciones de respuestas para cada forPk
             //@ts-ignore vivienda existe
             if(r.vivienda == forPk.vivienda){
-                elemento.setAttribute('resumen-estado',calcularResumenVivienda(forPk, feedbackAll, r));
+                elemento.setAttribute('resumen-estado',calcularResumenVivienda(forPk, feedbackAll, r).resumenEstado);
             }
         }
             

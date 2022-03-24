@@ -13,15 +13,12 @@ export function areas(context:TableContext):TableDefinition {
             , 'incompletas_bkp', 'vacias_bkp', 'inhabilitadas_bkp'
         ],
         fields:[
-            /*
             {
-                "name": "operativo",
-                "editable": false,
-                "typeName": "text",
-                "nullable": false,
-                "defaultValue": 'etoi211'
+                name: "operativo",
+                editable: false,
+                typeName: "text",
+                nullable: false
             },
-            */    
             { 
                 name: 'area',
                 typeName: 'integer',
@@ -56,7 +53,7 @@ export function areas(context:TableContext):TableDefinition {
                 {name:x.grupo.replace(/ /g,'_'), typeName:'integer', editable:false}
             ))
         ],
-        primaryKey:['area'],
+        primaryKey:["operativo",'area'],
         foreignKeys:[
             //{references:'operativos', fields:['operativo']},
             //{references:'operaciones', fields:[{source:'operacion_area', target:'operacion'}]},
@@ -70,25 +67,25 @@ export function areas(context:TableContext):TableDefinition {
             //{references:'supervisores', fields:[{source:'supervisor', target:'persona'}], alias:'per_supe'},
         ],
         detailTables:[
-            {table:'tareas_areas'     , fields:['area'], abr:'T', refreshParent:true, label:'tareas'},
-            {table:'tem'              , fields:['area'], abr:'E', refreshParent:true, label:'TEM'},
+            {table:'tareas_areas'     , fields:['operativo','area'], abr:'T', refreshParent:true, label:'tareas'},
+            {table:'tem'              , fields:['operativo','area'], abr:'E', refreshParent:true, label:'TEM'},
         ],
         sql:{
             isTable:true,
             from:` 
-            (select a.area, a.recepcionista, ta.asignado encuestador
+            (select a.operativo, a.area, a.recepcionista, ta.asignado encuestador
                 ,  a.observaciones_hdr, a.verificado_rec, a.obs_recepcionista
                   --a.operacion_area, a.fecha,
                 , a.cargadas_bkp, a.reas_bkp, a.no_reas_bkp, a.incompletas_bkp, a.vacias_bkp, a.inhabilitadas_bkp
                 , t.*
-                from areas a left join tareas_areas ta on ta.tarea='encu' and ta.area=a.area, lateral(
+                from areas a left join tareas_areas ta on ta.tarea='encu' and ta.area=a.area and ta.operativo=a.operativo, lateral(
                     select 
                         bool_or( cargado_dm is not null )       as cargado , 
                         --count( cargado_dm )                     as cargadas,
-                        sum ( rea )                              as reas,
-                        count(*) filter ( where resumen_estado='no rea')       as no_reas,
-                        count(*) filter ( where resumen_estado in ('incompleto', 'con problemas') ) as incompletas, 
-                        count(*) filter ( where resumen_estado in ('vacio' ) ) as vacias,
+                        sum ( tem.rea )                              as reas,
+                        count(*) filter ( where tem.resumen_estado='no rea')       as no_reas,
+                        count(*) filter ( where tem.resumen_estado in ('incompleto', 'con problemas') ) as incompletas, 
+                        count(*) filter ( where tem.resumen_estado in ('vacio' ) ) as vacias,
                         count(*) filter ( where habilitada is not true )    as inhabilitadas,
                         --sum(case when cluster <>4 then null when confirmada is true then 1 else 0 end) as confirmadas,
                         --sum(case when cluster <>4 then null when confirmada is null then 1 else 0 end) as pend_conf,
@@ -99,8 +96,8 @@ export function areas(context:TableContext):TableDefinition {
                         	`, sum(CASE WHEN gru_no_rea=${be.db.quoteLiteral(x.grupo)} THEN 1 ELSE NULL END) as ${be.db.quoteIdent(x.grupo.replace(/ /g,'_'))}`
                         ).join('')}
                         from ( select operativo, enc, cluster, nrocomuna, clase, 
-                                json_encuesta, resumen_estado,  
-                                encuestador, rea, norea, area, dominio, zona
+                                json_encuesta, t.resumen_estado,  
+                                encuestador, t.rea, t.norea, area, dominio, zona
                                 json_backup
                             , tt.habilitada, tt.cargado_dm
                             , ${be.sqlNoreaCase('grupo')} as gru_no_rea from tem t left join tareas_tem tt using(operativo,enc) where t.area=a.area and tt.tarea='encu') tem
