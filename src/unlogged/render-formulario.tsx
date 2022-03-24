@@ -81,6 +81,9 @@ function breakeableText(text:string|null, diccionario?:{[clave:string]:React.Rea
     */
 }
 
+const VER_DOMINIO = false; // el encuestador no necesita ver el dominio en cada encuesta porque el dominio depende del área y se deduce del primer dígito del número de encuesta
+// no poner VER_DOMINIO en true, cambiar por una variable que se fije si el DM está en modo prueba o en modo "diseño conceptual"
+
 var debeSaltar:boolean = false;
 
 window.addEventListener('load', ()=>{
@@ -1409,7 +1412,7 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
             </>
         :null}
         <Typography className="mostrar-forPk" component="span" style={{margin:'0 10px'}}> 
-            <div key={dominio}><span>dominio</span><span>{dominio}</span></div>
+            {VER_DOMINIO?<div key={dominio}><span>dominio</span><span>{dominio}</span></div>:''}
             {likeAr(props.forPk).filter((_,k)=>k!='formulario').map((v,k)=>
                 <div key={k}><span>{k}</span><span>{v}</span></div>
             ).array()} 
