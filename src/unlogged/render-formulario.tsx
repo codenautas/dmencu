@@ -829,10 +829,10 @@ function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
         id={`${id}-externo`}
         casillero={casillero}
     >
-        <EncabezadoDespliegue casillero={casillero} leer={false} forPk={forPk} style={{display:'none'}}/>
+        <EncabezadoDespliegue casillero={casillero} leer={false} forPk={forPk}/>
         <div id={id} style={{display:'none'}}></div>
         {esResumenFormulario?
-        <Button className="special-button" id="boton-ir-resumen-formulario"
+        <Button className="special-button" id="boton-ir-resumen-formulario" style={{display:'none'}}
             onClick={(event)=>{
                 ir(JSON.parse((event.target! as unknown as HTMLButtonElement).getAttribute('def-button')!))
             }}
