@@ -23,7 +23,7 @@ export function areas(context:TableContext):TableDefinition {
                 name: 'area',
                 typeName: 'integer',
                 nullable: false,
-                editable: true
+                editable: false
             },
             {name:'clusters'                , typeName:'text'     },
             {name:'recepcionista'           , typeName:'text', references:'recepcionistas'},

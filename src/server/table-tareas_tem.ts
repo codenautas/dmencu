@@ -45,7 +45,7 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
         hiddenColumns:['cargado_dm','notas'],
         foreignKeys:[
             {references:'tem' , fields:['operativo','enc'], displayFields:[], alias:'te'},
-            {references:'tareas' , fields:['tarea']},
+            {references:'tareas' , fields:['operativo','tarea']},
             {references:'usuarios', fields:[{source:'asignado' , target:'idper'}], alias:'ad'},
             {references:'operaciones' , fields:['operacion']},
         ],

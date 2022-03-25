@@ -11,7 +11,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
     var columnasAreasParaLaTem=['obs_recepcionista','verificado_rec','recepcionista'];
 
     var columnasNoRea=[
-        {name:'cod_no_rea', expr: be.sqlNoreaCase('no_rea')},
+        //{name:'cod_no_rea', expr: be.sqlNoreaCase('no_rea')},
         {name:'gru_no_rea', expr: be.sqlNoreaCase('grupo') }
     ];
     var columnasSoloTem=[
@@ -41,7 +41,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
             {name:'seleccionado'         , typeName:'integer' , editable: false  },
 //            {name:'sexo_sel'             , typeName:'integer' , editable: false  },
 //            {name:'edad_sel'             , typeName:'integer' , editable: false  },
-            {name:'cod_no_rea'           , typeName:'text'    , editable: false , inTable:false  },
+//            {name:'cod_no_rea'           , typeName:'text'    , editable: false , inTable:false  },
             {name:'gru_no_rea'           , typeName:'text'    , editable: false , inTable:false  },
             {name:'resumen_estado'       , typeName:'text'    , editable: false  },
             {name:'cargado'              , typeName:'boolean' , editable: false , inTable: false  },
