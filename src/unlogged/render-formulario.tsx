@@ -22,7 +22,7 @@ import {Bloque, BotonFormulario,
     toPlainForPk,
     IdCasillero,
     PreguntaConSiNo,
-    Texto, Estructura, InformacionHdr, DatosHdrUaPpal, ConfiguracionSorteoFormulario
+    Texto, Estructura, InformacionHdr, DatosHdrUaPpal, ConfiguracionSorteoFormulario, ResumenEstado
 } from "./tipos";
 import{ 
     calcularActualBF,
@@ -808,7 +808,8 @@ function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
                 estructura:Estructura
             )=>{
                 elemento.style.display='';
-                if(false && r["entreav" as IdVariable] == null){
+                //@ts-ignore las respuestas son respuestasRaiz porque ResFor está en el form ppal
+                if(r['resumenEstado'] as ResumenEstado == 'vacio'){
                     elemento.textContent = "relevamiento sin empezar";
                 }else{
                     elemento.textContent = "relevamiento empezado";
