@@ -1682,7 +1682,6 @@ export function DesplegarTem(props:{tem:TEM}){
             <Atributo nombre="casa" valor={tem.casa}/>
             <Atributo nombre="entrada" valor={tem.entrada}/>
             <Atributo nombre="habitacion" valor={tem.habitacion}/>
-            <Atributo nombre="dominio" valor={tem.dominio}/>
         </div>
         <div className="tem-observaciones">
             {tem.observaciones} 
