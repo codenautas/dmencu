@@ -335,7 +335,7 @@ export function setAttrDistinto<N extends string>(
     name:N,
     valor:string
 ){
-    if(objeto.getAttribute(name) != valor){
+    if(objeto && objeto.getAttribute(name) != valor){
         objeto.setAttribute(name, valor);
     }
 }

@@ -379,6 +379,8 @@ function registradorDeVariable(pregunta:Pregunta|OpcionMultiple|ConjuntoPregunta
             for(elementoInput of elementosInput){
                 setValorDistinto(elementoInput, 'value', valorActual == null ? '' : valorActual.toString());
             }
+            var botonNsNc = document.getElementById("nsnc-pregunta-"+pregunta.var_name)!;
+            setAttrDistinto(botonNsNc, 'opcion-seleccionada', valorActual == (pregunta.valor_ns_nc ?? -9) ? "SI" : "NO")
         }
     }
 }
@@ -415,15 +417,22 @@ type CasilleroEncabezable = Formulario|Bloque|Filtro|ConjuntoPreguntas|Pregunta|
 function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?:boolean, leer?:boolean, forPk:ForPk}){
     var {casillero, forPk} = props;
     var conCampoOpciones = useSelector((state:CasoState)=>state.opciones.conCampoOpciones)
+    var handleClickBorrar=()=>{
+        dispatchByPass(accion_registrar_respuesta, {respuesta:null, variable:casillero.var_name as IdVariable, forPk:forPk})
+    };
     var ver_id = casillero.ver_id ?? casillero.casillero;
     // @ts-ignore no está en todos los casilleros pero acá para el despliegue de metadatos no importa
     var calculada = casillero.calculada;
+    var id = `id-div-${casillero.var_name||casillero.casillero}`;
+    var idAcciones = "acciones-"+id;
     return <div 
         className="encabezado" 
         debe-leer={props.leer?'SI':'NO'} 
     >
-        <div id={`id-div-${casillero.var_name||casillero.casillero}`} className="id-div" title={`${casillero.casillero} - ${casillero.var_name}`}
+        <div id={id} className="id-div" title={`${casillero.casillero} - ${casillero.var_name}`}
             onClick={()=>{
+                var div = document.getElementById(idAcciones);
+                div!.setAttribute("accion-visible", (1-Number(div!.getAttribute("accion-visible"))).toString());
                 // TODO. Ver qué hacemos cuando se toca el ID de la pregutna
                 dispatchByPass(accion_id_pregunta, {pregunta: casillero.casillero as IdPregunta, forPk});
             }}
@@ -431,7 +440,29 @@ function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?
             <div className="id">
                 {ver_id}
             </div>
-            {(casillero.tipovar=="si_no"||casillero.tipovar=="opciones")?<Campo disabled={false} pregunta={casillero} forPk={forPk} mini={true} hidden={!conCampoOpciones}/>:null}
+            {(casillero.tipovar=="si_no"||casillero.tipovar=="opciones")?<Campo disabled={false} pregunta={casillero} forPk={forPk} mini={true} hidden={!conCampoOpciones && 'quitar'}/>:null}
+            <div className="acciones-pregunta" id={idAcciones} accion-visible="0">
+                {casillero.var_name?<div><Button
+                    id={"borrar-pregunta-"+casillero.var_name}
+                    mi-variable={casillero.var_name}
+                    variant="outlined"
+                    className="boton-pregunta-borrar"
+                    onClick={handleClickBorrar}
+                >
+                    <ICON.DeleteForever/>
+                </Button></div>:null}
+                {casillero.var_name?<div><Button
+                    id={"nsnc-pregunta-"+casillero.var_name}
+                    mi-variable={casillero.var_name}
+                    variant="outlined"
+                    className="boton-pregunta-nsnc"
+                    onClick={()=>{
+                        dispatchByPass(accion_registrar_respuesta, {respuesta:casillero.valor_ns_nc??-9, variable:casillero.var_name as IdVariable, forPk:forPk})
+                    }}
+                >
+                    NS/NC
+                </Button></div>:null}
+            </div>
         </div>
         <div className="nombre-div">
             <div className="nombre">{breakeableText(casillero.nombre)}</div>
@@ -509,7 +540,7 @@ function enfocarElementoDeVariable(siguienteVariable:IdVariable|IdFin){
     elementoInputVariable?.focus();
 }
 
-function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpciones|PreguntaConSiNo|OpcionMultiple, forPk:ForPk, mini?:boolean, hidden?:boolean}){
+function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpciones|PreguntaConSiNo|OpcionMultiple, forPk:ForPk, mini?:boolean, hidden?:boolean|'quitar'}){
     var {pregunta, disabled, mini } = props;
     var {saltoAutomatico, conCampoOpciones} = useSelector((state:CasoState)=>state.opciones);
     const longitud = mini ? pregunta.casilleros.reduce((acum, o)=>Math.max(o.casillero.toString().length, acum), 0) : 
@@ -530,7 +561,7 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpcio
         }
     };
     var nuestraLongitud = calcularNuestraLongitud(longitud)
-    return <div className="campo" nuestra-longitud={nuestraLongitud} style={props.hidden?{visibility:'hidden'}:undefined}>
+    return <div className="campo" nuestra-longitud={nuestraLongitud} style={props.hidden=='quitar'?{display:'none'}:props.hidden?{visibility:'hidden'}:undefined}>
         {mini?null:<BotonBorrar
             id={`borrar-abierta-${pregunta.var_name}`}
             variable={pregunta.var_name}
@@ -698,7 +729,6 @@ function PreguntaDespliegue(props:{
             pregunta.tipovar==null?
                 (pregunta.casilleros as (OpcionMultiple|Consistencia)[]).map((opcionMultiple)=>
                     opcionMultiple.tipoc=='OM'?                
-
                         <OpcionMultipleDespliegue
                             key={opcionMultiple.id_casillero} 
                             opcionM={opcionMultiple} 

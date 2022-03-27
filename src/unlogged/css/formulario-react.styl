@@ -272,14 +272,27 @@ boton-id-div-invalido()
 // [tiene-valor=invalido]
 //  boton-id-div-invalido()
 
+div.acciones-pregunta
+  z-index 1
+  background-color #EEE
+  color #050
+
 [modo-despliegue=estricto], [modo-despliegue=relevamiento]
   [nuestro-validator=optativa_sd]
     background-color #FfFff8
     color #050
+    div.acciones-pregunta
+      background-color #FfFff8
+      color #050
   [nuestro-validator=valida]
     background-color #EEE
     color #050
+    div.acciones-pregunta
+      background-color #EEE
+      color #050
   [nuestro-validator=actual]
+    > div > div > div.acciones-pregunta
+      background-color #FFF
     background-color #FFF
     .boton-opcion-seleccion
       border-color blue
@@ -710,3 +723,22 @@ div.ua-hijas
 div#mini-console
   width 100%
   max-width 100%
+
+[accion-visible] .btn
+  display:none
+[accion-visible="1"] .btn
+  display:block
+[accion-visible] .btn.boton-pregunta-nsnc
+  padding-left 4px
+  padding-right 4px
+  letter-spacing -2px
+  margin-top 4px
+  &[opcion-seleccionada="SI"]
+    display:block
+    padding 2px
+    font-weight bold
+    font-size 0.9rem
+    &::before
+      content '• '
+.btn.boton-pregunta-borrar      
+  margin-top 4px
