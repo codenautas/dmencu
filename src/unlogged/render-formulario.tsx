@@ -534,7 +534,7 @@ function calcularNuestraLongitud(longitud:string |null){
 function enfocarElementoDeVariable(siguienteVariable:IdVariable|IdFin){
     debeSaltar = false;
     var {top, enfocado, elementoInputVariable} = calcularElementoEnfocado(siguienteVariable);
-    if(top != null && !enfocado){
+    if(top != null && top>0 && !enfocado){
         window.scrollTo({top, left:0, behavior:'smooth'});
     }
     elementoInputVariable?.focus();

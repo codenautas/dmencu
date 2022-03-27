@@ -265,7 +265,7 @@ export function volcadoInicialElementosRegistrados(forPkRaiz:ForPkRaiz){
 }
 
 export function calcularElementoEnfocado(idVariable:IdVariable|IdFin){
-    var elementoVariableAEnfocar = document.getElementById(`var-${idVariable}`)
+    var elementoVariableAEnfocar = document.getElementById(idVariable=='fin'?`boton-volver-2`:`var-${idVariable}`)
         ||document.getElementById(`seccion-boton-formulario-${idVariable}`);
     var elemento = elementoVariableAEnfocar;
     var MARGEN_SCROLL = 64;
@@ -380,6 +380,7 @@ export function accion_registrar_respuesta(payload:{
     var {respuestas, respuestasRaiz, forPkRaiz}  = respuestasForPk(forPk);
     var unidad_analisis = estructura.formularios[forPk.formulario];
     var recentModified = false;
+    var valorAnterior = variable != NO_CAMBIAR__SOLO_TRAER_STATUS ? respuestas[variable] : null;
     if(respuesta !== NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO && variable != NO_CAMBIAR__SOLO_TRAER_STATUS){
         if(respuesta === ''){
             respuesta = null;
@@ -389,7 +390,7 @@ export function accion_registrar_respuesta(payload:{
             }
         }
         // si es un falsy (0 == false) tengo que comparar con !==
-        recentModified = respuesta ? respuestas[variable] != respuesta : respuestas[variable] !== respuesta
+        recentModified = respuesta ? valorAnterior != respuesta : valorAnterior !== respuesta
         if(recentModified){
             respuestas[variable] = respuesta ?? null; // cambio undefined por null
         }
@@ -415,7 +416,13 @@ export function accion_registrar_respuesta(payload:{
         calcularVariablesBotonFormulario(forPk);
         volcadoInicialElementosRegistrados(forPk);
         persistirDatosByPass(datosByPass); // OJO ASYNC DESCONTROLADA
-        siguienteVariable = feedbackRow.feedback[variable].siguiente;
+        siguienteVariable = variable;
+        do{
+            siguienteVariable = feedbackRow.feedback[siguienteVariable].siguiente;
+        }while(valorAnterior == null && recentModified && siguienteVariable != null && siguienteVariable != 'fin' && estructura.formularios[forPk.formulario].estructuraRowValidator.variables[siguienteVariable].funcionAutoIngresar)
+        if(siguienteVariable == null && feedbackRow.feedback[variable].estado == 'valida'){
+            siguienteVariable = 'fin';
+        }
     }
     return {recentModified, siguienteVariable, variableActual: feedbackRow.actual};
 }
@@ -602,7 +609,7 @@ export var defOperativo = {
                     }
                 }
             }
-            for(let ua of (likeAr(unidadAnalisis?.hijas).array()){
+            for(let ua of (likeAr(unidadAnalisis?.hijas).array())){
                 if(ua?.unidad_analisis && respuestas[ua.unidad_analisis] instanceof Array){
                     for(let respuestasHijas of respuestas[ua?.unidad_analisis]){
                         let result = buscarNoReaEnRespuestas(ua,respuestasHijas);
@@ -861,14 +868,18 @@ export function calcularFeedbackUnidadAnalisis(
                 var varName:IdVariable;
                 if(autoIngresadas!=null){
                     for(varName in autoIngresadas){
-                        respuestas[varName] = autoIngresadas[varName] as Valor;
-                        varAutoIngresadas.push(varName);
-                        huboAutoingresos = true;
+                        var cambio = respuestas[varName] !== autoIngresadas[varName] as Valor;
+                        if(cambio){
+                            respuestas[varName] = autoIngresadas[varName] as Valor;
+                            respuestasAumentadas[varName] = autoIngresadas[varName] as Valor;
+                            varAutoIngresadas.push(varName);
+                            huboAutoingresos = true;
+                        }
                     }
                 }
             } while(huboAutoingresos && maxPasosAutoingresadas-->0);
             varAutoIngresadas.forEach(varname=>{
-                feedbackRowValidator[plainForPk].estados[varname as IdVariable] = 'actual';
+                // feedbackRowValidator[plainForPk].estados[varname as IdVariable] = 'actual';
             })
             var BF_varname = '$B.'+formulario as IdVariable
             var formPrincipalForVivienda = getMainFormForVivienda(forPk.vivienda!);
