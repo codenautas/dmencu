@@ -241,7 +241,7 @@ myOwn.clientSides.tareasTemRow={
     prepare: function(){}
 }
 var crearBotonVer = async (depot:myOwn.Depot, fieldName:string, label:'abrir'|'ver')=>{
-    tareas = tareas?tareas:(await myOwn.ajax.table_data({table: `tareas`, fixedFields:[]})).filter((tarea)=>!!tarea.main_form);
+    tareas = tareas?tareas:(await myOwn.ajax.table_data({table: `tareas`, fixedFields:[]})).filter((tarea)=>!!tarea.main_form && tarea.operativo==depot.row.operativo);
     depot.rowControls[fieldName].innerHTML='';
     tareas.forEach((tarea:{tarea:string, nombre:string, main_form:IdFormulario})=>{
         var openButton = html.button({class:'open-dm-button'},`${label} ${tarea.tarea}`).create();

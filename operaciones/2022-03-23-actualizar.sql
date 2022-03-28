@@ -31,3 +31,19 @@ insert into areas (operativo, area) (select operativo, area from tem where opera
 alter table "tem" add constraint "tem areas REL" foreign key ("operativo","area") references "areas" ("operativo","area")  on update cascade;
 alter table "tareas_tem" add constraint "tareas_tem tareas REL" foreign key ("operativo","tarea") references "tareas" ("operativo","tarea")  on update cascade;
 alter table "tareas_areas" add constraint "tareas_areas tareas REL" foreign key ("operativo","tarea") references "tareas" ("operativo","tarea")  on update cascade;
+
+alter table "areas" alter column "operativo" set not null;
+alter table "areas" add constraint "areas operativos REL" foreign key ("operativo") references "operativos" ("operativo")  on update cascade;
+alter table "tareas" add constraint "tareas operativos REL" foreign key ("operativo") references "operativos" ("operativo")  on update cascade;
+create index "operativo 4 areas IDX" ON "areas" ("operativo");
+create index "operativo 4 tareas IDX" ON "tareas" ("operativo");
+create index "operativo,tarea 4 tareas_areas IDX" ON "tareas_areas" ("operativo", "tarea");
+create index "operativo,area 4 tareas_areas IDX" ON "tareas_areas" ("operativo", "area");
+
+do $SQL_ENANCE$
+begin
+PERFORM enance_table('areas','operativo,area');
+PERFORM enance_table('tareas','operativo,tarea');
+PERFORM enance_table('tareas_areas','operativo,tarea,area');
+end
+$SQL_ENANCE$;

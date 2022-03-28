@@ -55,7 +55,7 @@ export function areas(context:TableContext):TableDefinition {
         ],
         primaryKey:["operativo",'area'],
         foreignKeys:[
-            //{references:'operativos', fields:['operativo']},
+            {references:'operativos', fields:['operativo']},
             //{references:'operaciones', fields:[{source:'operacion_area', target:'operacion'}]},
             //{references:'usuarios', fields:[{source:'encuestador'    , target:'idper'}], alias:'per_enc', displayFields:[]},
             {references:'usuarios', fields:[{source:'recepcionista', target:'idper'}], alias:'per_recep', displayFields:[]},
