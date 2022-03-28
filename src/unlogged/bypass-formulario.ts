@@ -912,8 +912,8 @@ export function numberOrStringIncIfArray(numberOrString:number|string, object:ob
     return Number(numberOrString)+(object instanceof Array?1:0);
 }
 
-export var getCasoState=():CasoState=> myOwn.getSessionVar(LOCAL_STORAGE_STATE_NAME);
-export var setCasoState=(casoState:CasoState)=> myOwn.setSessionVar(LOCAL_STORAGE_STATE_NAME, casoState);
+export var getCasoState=():CasoState=> myOwn.getLocalVar(LOCAL_STORAGE_STATE_NAME);
+export var setCasoState=(casoState:CasoState)=> myOwn.setLocalVar(LOCAL_STORAGE_STATE_NAME, casoState);
 
 export var getMainFormForVivienda = (vivienda:number):IdFormulario=>{
     let state = getCasoState();

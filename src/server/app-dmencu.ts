@@ -49,7 +49,7 @@ import { control_resumen     } from './table-control_resumen';
 
 import {defConfig} from "./def-config"
 
-const APP_DM_VERSION="#22-03-22";
+const APP_DM_VERSION="#22-03-28";
 
 export type Constructor<T> = new(...args: any[]) => T;
 export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesamientoType>>(Base:T){
