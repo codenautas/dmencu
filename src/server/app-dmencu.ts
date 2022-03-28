@@ -128,6 +128,8 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             const APP_NAME = (await be.inTransaction(null, (client:pg.Client)=>
                 client.query("select operativo from parametros where unico_registro").fetchUniqueValue()
             )).value;
+            var sufijo = baseUrl.includes('test')?'_test':
+                baseUrl.includes('capa')?'_capa':'';
             try{
                 const content = {
                   "name": `${APP_NAME} Progressive Web App`,
@@ -135,32 +137,32 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                   "description": `Progressive Web App for ${APP_NAME}.`,
                   "icons": [
                     {
-                      "src": `../img/${APP_NAME}-logo-dm-32.png`,
+                      "src": `../img/${APP_NAME}-logo-dm-32${sufijo}.png`,
                       "sizes": "32x32",
                       "type": "image/png"
                     },
                     {
-                      "src": `../img/${APP_NAME}-logo-dm-48.png`,
+                      "src": `../img/${APP_NAME}-logo-dm-48${sufijo}.png`,
                       "sizes": "48x48",
                       "type": "image/png"
                     },
                     {
-                      "src": `../img/${APP_NAME}-logo-dm-64.png`,
+                      "src": `../img/${APP_NAME}-logo-dm-64${sufijo}.png`,
                       "sizes": "64x64",
                       "type": "image/png"
                     },
                     {
-                      "src": `../img/${APP_NAME}-logo-dm-72.png`,
+                      "src": `../img/${APP_NAME}-logo-dm-72${sufijo}.png`,
                       "sizes": "72x72",
                       "type": "image/png"
                     },
                     {
-                      "src": `../img/${APP_NAME}-logo-dm-192.png`,
+                      "src": `../img/${APP_NAME}-logo-dm-192${sufijo}.png`,
                       "sizes": "192x192",
                       "type": "image/png"
                     },
                     {
-                      "src": `../img/${APP_NAME}-logo-dm-512.png`,
+                      "src": `../img/${APP_NAME}-logo-dm-512${sufijo}.png`,
                       "sizes": "512x512",
                       "type": "image/png"
                     }
