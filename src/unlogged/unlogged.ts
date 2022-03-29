@@ -1,9 +1,7 @@
 "use strict";
 import {html}  from 'js-to-html';
-import {LOCAL_STORAGE_STATE_NAME} from "../unlogged/tipos";
 import { desplegarFormularioActual, dmPantallaInicialSinCarga } from './render-formulario';
 import { cargarEstructura, cargarHojaDeRuta, GLOVAR_ESTRUCTURA, GLOVAR_DATOSBYPASS } from './abrir-formulario';
-import { getCasoState } from './bypass-formulario';
 const ServiceWorkerAdmin = require("service-worker-admin");
 
 function siExisteId(id: string, hacer: (arg0: HTMLElement) => void){
@@ -51,12 +49,12 @@ window.addEventListener('load', async function(){
     `;
     if(location.pathname.endsWith(`/${URL_DM}`)){
         var startApp:()=>Promise<void> = async ()=>{};
-        if(hayHojaDeRuta()){
+        var datosByPass = my.getLocalVar(GLOVAR_DATOSBYPASS);
+        if(datosByPass){
             startApp = async ()=>{
                 var version = await swa.getSW('version');
                 myOwn.setLocalVar('app-cache-version', version);
                 //@ts-ignore existe 
-                var datosByPass = my.getLocalVar(GLOVAR_DATOSBYPASS);
                 cargarEstructura(my.getLocalVar(GLOVAR_ESTRUCTURA));
                 cargarHojaDeRuta({ ...datosByPass, modoAlmacenamiento: 'local' });
                 desplegarFormularioActual({modoDemo: false});
@@ -117,9 +115,6 @@ window.addEventListener('load', async function(){
         reloadWithoutHash()
     });
 })
-
-var hayHojaDeRuta = () =>
-    !!getCasoState()
 
 export var awaitForCacheLayout = async function prepareLayoutForCache(){
     await new Promise(function(resolve, _reject){

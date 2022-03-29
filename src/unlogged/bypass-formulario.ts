@@ -7,20 +7,16 @@ import { date, compareForOrder, coalesce } from "best-globals";
 import {
     Estructura, 
     ForPk, ForPkRaiz,
-    HojaDeRuta,  
     IdFin, IdFormulario, IdPregunta, IdTarea, IdVariable, 
     IdUnidadAnalisis,
     InfoFormulario, 
     PlainForPk, Respuestas, RespuestasRaiz, ResumenEstado,
     Valor, Visita, 
     toPlainForPk,
-    ModoAlmacenamiento, 
     UnidadAnalisis,
-    ConfiguracionSorteo,
-    LOCAL_STORAGE_STATE_NAME,
     Formulario,
-    CasoState,
-    ConfiguracionSorteoFormulario
+    ConfiguracionSorteoFormulario,
+    DatosByPassPersistibles
 } from "./tipos";
 
 var especiales = {} as {
@@ -28,11 +24,6 @@ var especiales = {} as {
 }
 export function setCalcularVariables(calcularVariables:(respuestasRaiz:RespuestasRaiz,forPk:ForPk)=>void){
     especiales.calcularVariables = calcularVariables
-}
-
-export type DatosByPassPersistibles = {
-    hojaDeRuta:HojaDeRuta
-    modoAlmacenamiento:ModoAlmacenamiento
 }
 
 type DatosByPass = DatosByPassPersistibles & {
@@ -73,8 +64,7 @@ let encolarBackup:(token:string|undefined, forPkRaiz:ForPkRaiz, respuestasRaiz:R
 
 export var intentarBackup = (forPk:ForPk)=>{
     var {respuestasRaiz, forPkRaiz} = respuestasForPk(forPk, true)
-    let state:CasoState = getCasoState();
-    var token = state.datos.token;
+    var token = datosByPass.token;
     if(token){
         encolarBackup(token, forPkRaiz, respuestasRaiz)
     }else{
@@ -103,12 +93,7 @@ export function setDatosByPass(dbpp:DatosByPassPersistibles & {dirty?:boolean}){
     calcularFeedbackHojaDeRuta();
 }
 
-export function getHojaDeRuta(){
-    if(!datosByPass.hojaDeRuta){
-        throw new Error("NO HAY HDR definida")
-    }
-    return datosByPass.hojaDeRuta;
-}
+export var getDatosByPass = ()=> datosByPass
 
 function objetoVacio(o:object){
     for(var k in o){
@@ -175,7 +160,7 @@ function respuestasForPk(forPk:ForPk, conAumentadas:true, agregarSiFalta?:boolea
 function respuestasForPk(forPk:ForPk, conAumentadas?:boolean, agregarSiFalta?:boolean):RespuestasForPkComun & {respuestasAumentadas?:Respuestas} {
     var respuestasAumentadas = {} as Respuestas;
     // @ts-expect-error lo que sobrar de respuestas no me importa...
-    var respuestas = datosByPass.hojaDeRuta.respuestas as Respuestas;
+    var respuestas = datosByPass.respuestas as Respuestas;
     var respuestasRaiz: RespuestasRaiz; 
     var forPkRaiz: ForPk; 
     var unidad_analisis:IdUnidadAnalisis|undefined = estructura.formularios[forPk.formulario].casilleros.unidad_analisis
@@ -399,7 +384,7 @@ export function accion_registrar_respuesta(payload:{
     var siguienteVariable:IdVariable|IdFin|null|undefined;
     if(variable != NO_CAMBIAR__SOLO_TRAER_STATUS && (recentModified || NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO && feedbackRow.autoIngresadas?.[variable])){
         variablesCalculadas(respuestasRaiz, forPk);
-        if(estructura.configSorteo && !getCasoState().datos.soloLectura){
+        if(estructura.configSorteo && !datosByPass?.soloLectura){
             verificarSorteo({
                 configuracionSorteo: estructura.configSorteo[getMainFormForVivienda(forPk.vivienda!)], 
                 respuestas,
@@ -912,12 +897,9 @@ export function numberOrStringIncIfArray(numberOrString:number|string, object:ob
     return Number(numberOrString)+(object instanceof Array?1:0);
 }
 
-export var getCasoState=():CasoState=> myOwn.getLocalVar(LOCAL_STORAGE_STATE_NAME);
-export var setCasoState=(casoState:CasoState)=> myOwn.setLocalVar(LOCAL_STORAGE_STATE_NAME, casoState);
-
 export var getMainFormForVivienda = (vivienda:number):IdFormulario=>{
-    let state = getCasoState();
-    return state.datos.informacionHdr[vivienda].tarea.main_form
+    //@ts-ignore la vivienda es el parametro correcto
+    return datosByPass.informacionHdr[vivienda].tarea.main_form
 }
 
 export function calcularFeedbackHojaDeRuta(){
@@ -926,7 +908,7 @@ export function calcularFeedbackHojaDeRuta(){
             let formularioPrincipal = getMainFormForVivienda(enc);
             return formularioPrincipal?formularioPrincipal==f.id_casillero:f.formulario_principal
         }
-        var conjuntoRespuestasUA = datosByPass.hojaDeRuta.respuestas[uaDef.unidad_analisis]
+        var conjuntoRespuestasUA = datosByPass.respuestas[uaDef.unidad_analisis]
         beingArray(conjuntoRespuestasUA).forEach((respuestas, valorPkOPosicion)=>{
             var valorPk = numberOrStringIncIfArray(valorPkOPosicion, conjuntoRespuestasUA);
             likeAr(estructura.formularios).filter(f=>f.casilleros.unidad_analisis == uaDef.unidad_analisis && esPrincipal(f.casilleros, valorPk as number)).forEach((_defF, formulario)=>{
@@ -959,9 +941,9 @@ function calcularFeedback(respuestas: Respuestas, forPkRaiz:ForPkRaiz, opts:Opci
         nuevosRows,
         respuestas
     );
-    datosByPass.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!].resumenEstado = resumenEstado;
-    datosByPass.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!].codNoRea = codNoRea;
-    datosByPass.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!].codRea = codRea;
+    datosByPass.respuestas.viviendas[forPkRaiz.vivienda!].resumenEstado = resumenEstado;
+    datosByPass.respuestas.viviendas[forPkRaiz.vivienda!].codNoRea = codNoRea;
+    datosByPass.respuestas.viviendas[forPkRaiz.vivienda!].codRea = codRea;
 }
 
 export var getFormulariosForIdVivienda = (idVivienda:number)=>{

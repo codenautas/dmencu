@@ -530,7 +530,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             } ;
             return {
                 ...row,
-                hojaDeRuta:row,
+                operativo,
                 soloLectura,
                 idPer:context.user.idper,
                 cargas:likeAr.createIndex(row.cargas.map(carga=>({...carga, fecha:carga.fecha?date.iso(carga.fecha).toDmy():null})), 'carga'),
@@ -548,7 +548,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             var be=context.be;
             var {operativo, persistentes} = parameters;
             const UA_PRINCIPAL = await getUAPrincipal(context.client, operativo);
-            await Promise.all(likeAr(persistentes.hojaDeRuta.respuestas[UA_PRINCIPAL]).map(async (respuestasUAPrincipal,idEnc)=>{
+            await Promise.all(likeAr(persistentes.respuestas[UA_PRINCIPAL]).map(async (respuestasUAPrincipal,idEnc)=>{
                 if(respuestasUAPrincipal.s1a1_obs == '!prueba de error al grabar!'){
                     throw new Error('DIO PRUEBA DE ERROR AL GRABAR');
                 }
@@ -568,15 +568,14 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
     {
         action:'dm_sincronizar',
         parameters:[
-            {name:'datos'       , typeName:'jsonb'},
             {name:'persistentes'       , typeName:'jsonb'},
         ],
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             const OPERATIVO = await getOperativoActual(context);
             var be=context.be;
-            var {persistentes, datos} = parameters;
+            var {persistentes} = parameters;
             var num_sincro:number=0;
-            var token:string|null=datos?.token;
+            var token:string|null=persistentes?.token;
             if(!token){
                 token = (await be.procedure.token_get.coreFunction(context, {
                     useragent: context.session.req.useragent, 
@@ -599,8 +598,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             `
             const UA_PRINCIPAL = await getUAPrincipal(context.client, OPERATIVO);
             if(persistentes){
-                await Promise.all(likeAr(persistentes.hojaDeRuta.respuestas[UA_PRINCIPAL]).map(async (respuestasUAPrincipal, idEnc)=>{
-                    var tarea = datos.informacionHdr[idEnc].tarea.tarea;
+                await Promise.all(likeAr(persistentes.respuestas[UA_PRINCIPAL]).map(async (respuestasUAPrincipal, idEnc)=>{
+                    var tarea = persistentes.informacionHdr[idEnc].tarea.tarea;
                     var puedoGuardarEnTEM=true;
                     var queryTareasTem = await context.client.query(
                         `update tareas_tem
@@ -640,6 +639,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             return {
                 ...row,
                 operativo: OPERATIVO, 
+                soloLectura:false,
                 token,
                 num_sincro,
                 idper:context.user.idper,

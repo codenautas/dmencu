@@ -1,8 +1,6 @@
 "use strict";
 import {Structure, Feedback} from "row-validator";
 
-export const LOCAL_STORAGE_STATE_NAME ='hdr-campo-0.6';
-
 export type ModoAlmacenamiento = 'session'| // cuando sea para una sola pestaña, se usa en modo directo,
                                  'local'    // para todo el dispositivo, se usa al cargar hojas de ruta entres
 
@@ -343,19 +341,11 @@ export type Estructura = {
 		  grupo0:    string
 	}[]
 }
-export type InformacionHdr={[enc in '130031'|'130032'|'etc']: DatosHdrUaPpal}
+
+export type IdEnc = '130031'|'130032'|'etc';
+export type InformacionHdr={[enc in IdEnc]: DatosHdrUaPpal}
 
 export type CasoState={
-    datos:{
-        token?:string
-        persona:string
-        tarea:IdTarea
-        num_sincro?:number
-        idper:string
-        cargas: Cargas
-        informacionHdr: InformacionHdr
-        soloLectura?: boolean
-    }
     opciones:{ // datos de navegación que elije el usuario
         forPk:ForPk|null // índice dentro de las unidades de análisis. Null = en hoja de ruta
         pilaForPk:ForPk[]
@@ -371,9 +361,22 @@ export type CasoState={
     }
 }
 
-export type HojaDeRuta = {
+
+
+export type DatosByPassPersistibles = {
     respuestas:{[ua in IdUnidadAnalisis]:RespuestasRaiz[]}
+    modoAlmacenamiento:ModoAlmacenamiento
+    persona:string
+    tarea:IdTarea
+    idper:string
+    cargas: Cargas
+    informacionHdr: InformacionHdr
+    soloLectura: boolean
+    token?:string
+    num_sincro?:number
+    timestampEstructura?:number
 }
+
 type ConfiguracionSorteoTabla = {
     metodo: "tabla",
     param_metodo: {

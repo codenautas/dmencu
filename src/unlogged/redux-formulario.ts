@@ -6,7 +6,7 @@ import { CasillerosImplementados, CasoState,
     ModoDespliegue, 
     Opcion,
     toPlainForPk,
-    IdFin
+    IdFin,
 } from "./tipos";
 import { createReducer, createDispatchers, ActionsFrom } from "redux-typed-reducer";
 import { ModoAlmacenamiento } from "./tipos"
@@ -14,9 +14,10 @@ import * as likeAr from "like-ar";
 import * as bestGlobals from "best-globals";
 
 import { Opcion as RowValidatorOpcion } from "row-validator";
-import { getCasoState, setCasoState } from "./bypass-formulario";
 
 var my=myOwn;
+
+const LOCAL_STORAGE_STATE_NAME ='hdr-state';
 
 function forPkToUrl(forPk:ForPk|null, pilaForPk:ForPk[]){
     var addrParams=myOwn.UriSearchToObject(location.hash||location.search||'');
@@ -70,19 +71,21 @@ var reducers={
         },
     ESTADO_CARGA: (payload: {idCarga:IdCarga, estado_carga:EstadoCarga}) =>
         function(state: CasoState){
-            return {
-                ...state,
-                datos:{
-                    ...state.datos,
-                    cargas:{
-                        ...state.datos.cargas,
-                        [payload.idCarga]: {
-                            ...state.datos.cargas[payload.idCarga],
-                            estado_carga: payload.estado_carga
-                        }
-                    }
-                }
-            }
+            return state
+            //DESACTIVADO
+            //return {
+            //    ...state,
+            //    datos:{
+            //        ...state.datos,
+            //        cargas:{
+            //            ...state.datos.cargas,
+            //            [payload.idCarga]: {
+            //                ...state.datos.cargas[payload.idCarga],
+            //                estado_carga: payload.estado_carga
+            //            }
+            //        }
+            //    }
+            //}
         },
     VOLVER_HDR: (_payload: {}) => 
         function(state: CasoState){
@@ -344,6 +347,9 @@ export async function traerEstructura(params:{operativo: string}){
 }
 
 export async function dmTraerDatosFormulario(opts:{operativo:IdOperativo, modoDemo:boolean, forPkRaiz?:ForPkRaiz}){
+    var getCasoState=():CasoState=> myOwn.getLocalVar(LOCAL_STORAGE_STATE_NAME);
+    var setCasoState=(casoState:CasoState)=> myOwn.setLocalVar(LOCAL_STORAGE_STATE_NAME, casoState);
+    
     var loadState = async function loadState():Promise<CasoState>{
         var casoState:CasoState|null = getCasoState();
         var initialState = {
@@ -362,15 +368,11 @@ export async function dmTraerDatosFormulario(opts:{operativo:IdOperativo, modoDe
                 demo: 
                     // @ts-ignore
                     myOwn.config.config.ambiente=='test' || myOwn.config.config.ambiente=='demo',
-            },
-            datos:{
-                soloLectura:false // TODO: RESTAURAR MODO https://github.com/codenautas/dmencu/issues/7
             }
         } as CasoState;
         if(casoState){
             initialState = {
                 ...initialState, 
-                datos:casoState.datos, 
                 opciones:casoState.opciones,
             }
         }

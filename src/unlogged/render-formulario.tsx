@@ -22,13 +22,13 @@ import {Bloque, BotonFormulario,
     toPlainForPk,
     IdCasillero,
     PreguntaConSiNo,
-    Texto, Estructura, InformacionHdr, DatosHdrUaPpal, ConfiguracionSorteoFormulario, ResumenEstado
+    Texto, Estructura, InformacionHdr, DatosHdrUaPpal, ConfiguracionSorteoFormulario, ResumenEstado, DatosByPassPersistibles
 } from "./tipos";
 import{ 
     calcularActualBF,
     calcularDisabledBF,
     calcularResumenVivienda,
-    getCasoState,
+    getDatosByPass,
     getFormulariosForIdVivienda,
     getMainFormForVivienda,
     intentarBackup,
@@ -982,8 +982,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     //console.log('BotonFormularioDespliegue armoNomSalto ' +armoNomSalto);
     var idFormularioDestino = 'F:'+armoNomSalto! as IdFormulario;
     var estructura = getEstructura();
-    var {soloLectura, formularioAAbrir} = useSelector((state:CasoState)=>({
-        soloLectura:state.datos.soloLectura, 
+    var {formularioAAbrir} = useSelector((state:CasoState)=>({
         formularioAAbrir:estructura.formularios[idFormularioDestino].casilleros,
     }));
     var sufijoIdElemento = toPlainForPk(forPk);
@@ -1323,7 +1322,7 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
     const forPk = props.forPk;
     const {opciones} = useSelectorVivienda(forPk);
     const [confirmaCerrar, setConfirmaCerrar] = useState<boolean|null>(false);
-    var {dominio} = useSelector((state:CasoState)=>({dominio:state.datos.informacionHdr[forPk.vivienda].tem.dominio}));
+    var dominio = getDatosByPass().informacionHdr[forPk.vivienda!].tem.dominio;
     var cerrarDirecto = async function(){
         removeCSSById(BOOTSTRAP_5_1_3_SRC);
         var hash=new URLSearchParams(location.hash?.replace(/^\#/,'').split('&autoproced')[0]);
@@ -1434,7 +1433,7 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
 }
 
 function BotonVolverEnDiv({id}:{id:string}){
-    var {soloLectura, opciones} = useSelector((state:CasoState)=>({soloLectura:state.datos.soloLectura, opciones:state.opciones}));
+    var {opciones} = useSelector((state:CasoState)=>({opciones:state.opciones}));
     const dispatch = useDispatch();
     return <div className="div-boton-volver">
         {opciones.pilaForPk.length>0?
@@ -1449,7 +1448,7 @@ function FormularioDespliegue(props:{forPk:ForPk}){
     var forPk = props.forPk;
     var {formulario, modoDespliegue, modo, opciones} 
         = useSelectorVivienda(props.forPk);
-    var {soloLectura} = useSelector((state:CasoState)=>({soloLectura:state.datos.soloLectura}));
+    var soloLectura = getDatosByPass().soloLectura;
     const dispatch = useDispatch();
     useEffect(()=>{
         var controlScroll=()=>{
@@ -1564,7 +1563,7 @@ export function DesplegarLineaResumenUAPrincipal(props:{
     const {numVivienda, respuestas, formPrincipal, tarea} = props;
     const id='viv-'+numVivienda;
     const forPk:ForPk={formulario:formPrincipal, vivienda:Number(numVivienda)};
-    var {tem} = useSelector((state:CasoState)=>({tem:state.datos.informacionHdr[numVivienda].tem}));
+    var tem = getDatosByPass().informacionHdr[numVivienda].tem;
     var dispatch = useDispatch();
     useEffect(()=>{
         volcadoInicialElementosRegistrados(forPk);
@@ -1618,13 +1617,12 @@ export function DesplegarCarga(props:{
     idCarga:IdCarga, 
     posicion:number,
     informacionHdr:InformacionHdr, 
-    hojaDeRuta:HojaDeRuta,
+    respuestas: Respuestas,
     feedbackRowValidator:{
         [formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin> 
     }
 }){
-    const {carga, idCarga, informacionHdr, hojaDeRuta} = props;
-    const dispatch = useDispatch();
+    const {carga, idCarga, informacionHdr, respuestas} = props;
     return <Paper className="carga">
         <div className="informacion-carga">
             <div className="carga">Área: {idCarga}</div>
@@ -1663,7 +1661,7 @@ export function DesplegarCarga(props:{
                         numVivienda={numVivienda}
                         tarea={informacion.tarea.tarea}
                         formPrincipal={informacion.tarea.main_form}
-                        respuestas={hojaDeRuta.respuestas.viviendas[numVivienda]}
+                        respuestas={respuestas.viviendas[numVivienda]}
                     />
                 ).array()}
             </TableBody>
@@ -1720,8 +1718,8 @@ export function DesplegarTem(props:{tem:TEM}){
 }
 
 export function HojaDeRutaDespliegue(){
-    var {cargas, modo, num_sincro, informacionHdr} = useSelector((state:CasoState)=>({cargas: state.datos.cargas, informacionHdr:state.datos.informacionHdr, modo:state.modo, num_sincro:state.datos.num_sincro}));
-    var hojaDeRuta = getHojaDeRuta();
+    var {cargas, num_sincro, informacionHdr, respuestas} = getDatosByPass();
+    var {modo} = useSelector((state:CasoState)=>({modo:state.modo}));
     var feedbackRowValidator = getFeedbackRowValidator()
     var dispatch = useDispatch();
     const updateOnlineStatus = function(){
@@ -1774,7 +1772,7 @@ export function HojaDeRutaDespliegue(){
                     <div>{my.getLocalVar('app-version')} sincro {num_sincro} - versión {appVersion}</div>
                 </div>
                 {likeAr(cargas).map((carga: Carga, idCarga: IdCarga, _, posicion:number)=>
-                    <DesplegarCarga key={idCarga} carga={carga} idCarga={idCarga} posicion={posicion} informacionHdr={informacionHdr} hojaDeRuta={hojaDeRuta} feedbackRowValidator={feedbackRowValidator}/>
+                    <DesplegarCarga key={idCarga} carga={carga} idCarga={idCarga} posicion={posicion} informacionHdr={informacionHdr} feedbackRowValidator={feedbackRowValidator} respuestas={respuestas}/>
                 ).array()}
             </div>
         </>
@@ -2027,8 +2025,7 @@ setCalcularVariables((respuestasRaiz:RespuestasRaiz, forPk:ForPk)=>{
             }
         }
     })
-    var state = getCasoState();
-    respuestasRaiz.vdominio=state.datos.informacionHdr[forPk.vivienda].tem.dominio;
+    respuestasRaiz.vdominio=getDatosByPass().informacionHdr[forPk.vivienda].tem.dominio;
 })
 
 window.addEventListener('load', function(){

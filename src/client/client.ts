@@ -1,10 +1,10 @@
 import {html} from "js-to-html";
 import {traerEstructura} from "../unlogged/redux-formulario";
 import { CasoState,  
-    ForPkRaiz, HojaDeRuta, IdFormulario
+    IdFormulario, DatosByPassPersistibles, IdEnc,
 } from "../unlogged/tipos";
 import * as likeAr from "like-ar";
-import {getEstructura, setPersistirDatosByPass, DatosByPassPersistibles, setCasoState, getCasoState} from "../unlogged/bypass-formulario"
+import {getEstructura, setPersistirDatosByPass} from "../unlogged/bypass-formulario"
 import {cargarEstructura, cargarHojaDeRuta, GLOVAR_DATOSBYPASS, GLOVAR_ESTRUCTURA, GLOVAR_MODOBYPASS} from "../unlogged/abrir-formulario"
 
 //TODO GENERALIZAR
@@ -27,24 +27,12 @@ var persistirEnMemoria = async (persistentes:DatosByPassPersistibles) => {
         my.setSessionVar(GLOVAR_MODOBYPASS, modoAlmacenamiento)
 }
 
-async function sincronizarDatos(state:CasoState|null, persistentes:DatosByPassPersistibles|null){
-    var datos = await my.ajax.dm_sincronizar({datos:state, persistentes});
+async function sincronizarDatos(persistentes:DatosByPassPersistibles|null){
+    var datos = await my.ajax.dm_sincronizar({persistentes});
     var operativo = datos.operativo;
-    persistirEnMemoria({hojaDeRuta: {respuestas: datos.respuestas}, modoAlmacenamiento:'local'});
+    persistirEnMemoria({...datos, modoAlmacenamiento:'local'});
     var estructura = await traerEstructura({operativo})
     my.setLocalVar(GLOVAR_ESTRUCTURA, estructura);
-    // @ts-ignore
-    if(state==null){
-        //@ts-ignore
-        state={};
-    }
-    if(state){
-        inicializarState(state);
-        state.datos=datos;
-    }
-    
-    delete(state.datos.respuestas);
-    setCasoState(state);
     return datos;
 }
 
@@ -59,34 +47,26 @@ myOwn.wScreens.abrir_encuesta={
         // antes: abrirDirecto
         var {operativo, encuesta, tarea} = params;
         var estructura = getEstructura();
-        var carga = await my.ajax.dm_forpkraiz_cargar({operativo, vivienda:encuesta, tarea}) as {hojaDeRuta:HojaDeRuta, timestampEstructura:number};
-        if(!estructura || (estructura.timestamp??0) < carga.timestampEstructura || estructura.operativo != operativo || my.config.config.devel){
+        var carga = await my.ajax.dm_forpkraiz_cargar({operativo, vivienda:encuesta, tarea}) as DatosByPassPersistibles;
+        if(!estructura || (estructura.timestamp??0) < carga.timestampEstructura! || estructura.operativo != operativo || my.config.config.devel){
             estructura = await traerEstructura({operativo})
             cargarEstructura(estructura);
         }
         //@ts-ignore
         var state:CasoState = {}
         inicializarState(state);
-        var datos = {...carga};
-        //@ts-ignore
-        delete(datos.hojaDeRuta);
-        //@ts-ignore respuestas viene desde la base
-        delete(datos.respuestas);
-        //@ts-ignore la info ya se limpió
-        state.datos=datos;
-        var forPkRaiz = {formulario:datos.informacionHdr[encuesta].tarea.main_form, vivienda:encuesta};
+        var forPkRaiz = {formulario:carga.informacionHdr[encuesta as IdEnc].tarea.main_form, vivienda:encuesta};
         setPersistirDatosByPass(
             async function persistirDatosByPassEnBaseDeDatos(persistentes:DatosByPassPersistibles){
-                if(state.datos.soloLectura){
+                if(persistentes.soloLectura){
                     throw new Error("Está intentando modificar una encuesta abierta como solo lectura, no se guardaron los cambios")
                 }
                 await my.ajax.dm_forpkraiz_descargar({operativo, persistentes});
             }
         )
-        if(!carga.hojaDeRuta.respuestas.viviendas[forPkRaiz.vivienda!]){
+        if(!carga.respuestas.viviendas[forPkRaiz.vivienda!]){
             throw new Error(`No se encuentra la vivienda ${forPkRaiz.vivienda!}`);
         }
-        setCasoState(state);
         cargarHojaDeRuta({...carga, modoAlmacenamiento:'session'});
         // @ts-ignore
         desplegarFormularioActual({operativo, modoDemo:false, forPkRaiz});
@@ -94,14 +74,13 @@ myOwn.wScreens.abrir_encuesta={
 }
 
 var mostrarInfoLocal = (divAvisoSincro:HTMLDivElement, titulo:string, nroSincro:number|null, mostrarLinkHdr: boolean)=>{
-    let state = getCasoState();
-    if(state){
-        let datosByPass = my.getLocalVar(GLOVAR_DATOSBYPASS);
+    let datosByPass = my.getLocalVar(GLOVAR_DATOSBYPASS);
+    if(datosByPass){
         divAvisoSincro.append(html.div({id:'aviso-sincro'}, [
             nroSincro?html.p(["Número de sincronización: ", html.b(""+nroSincro.toString())]):null,
             html.h4(titulo),
-            html.p([htmlNumero(likeAr(state.datos.cargas).array().length),' areas: ',likeAr(state.datos.cargas).keys().join(', ')]),
-            html.p([htmlNumero(likeAr(datosByPass.hojaDeRuta.respuestas.viviendas).array().length),' viviendas']),
+            html.p([htmlNumero(likeAr(datosByPass.cargas).array().length),' areas: ',likeAr(datosByPass.cargas).keys().join(', ')]),
+            html.p([htmlNumero(likeAr(datosByPass.respuestas.viviendas).array().length),' viviendas']),
             mostrarLinkHdr?html.a({href:'./campo'},[html.b('IR A LA HOJA DE RUTA')]):null
         ]).create());
     }else{
@@ -117,9 +96,8 @@ var procederSincroFun = async (button:HTMLButtonElement, divAvisoSincro:HTMLDivE
     button.className='download-dm-button';
     divAvisoSincro.innerHTML='';
     try{
-        var state = getCasoState();
         var datosByPass:DatosByPassPersistibles = my.getLocalVar(GLOVAR_DATOSBYPASS);
-        var datos = await sincronizarDatos(state?.datos || null, datosByPass);
+        var datos = await sincronizarDatos(datosByPass);
         mostrarInfoLocal(divAvisoSincro, 'datos recibidos', datos.num_sincro, true)
     }catch(err){
         alertPromise(err.message)

@@ -1,9 +1,9 @@
-import {Estructura, ForPkRaiz,
-    HojaDeRuta, Respuestas,
-    ModoAlmacenamiento
+import {DatosByPassPersistibles, Estructura, ForPkRaiz,
+    Respuestas,
+    ModoAlmacenamiento,
 } from "./tipos";
 
-import { DatosByPassPersistibles, 
+import { 
     setDatosByPass, setEncolarBackup, setEstructura, setPersistirDatosByPass 
 } from "./bypass-formulario"
 
@@ -37,7 +37,7 @@ export function recuperarDatosByPass(){
     return
 }
 
-export function cargarHojaDeRuta(nuevoPaquete:{hojaDeRuta:HojaDeRuta, modoAlmacenamiento:ModoAlmacenamiento, dirty?:boolean}){
+export function cargarHojaDeRuta(nuevoPaquete:{respuestas:Respuestas, modoAlmacenamiento:ModoAlmacenamiento, dirty?:boolean}){
     var modoActual = my.getSessionVar(GLOVAR_MODOBYPASS);
     if(modoActual && nuevoPaquete.modoAlmacenamiento!=modoActual){
         throw new Error('No se pueden mezclar modos de apertura de encuestas, directo y por hoja de ruta para MD ('+modoActual+', '+nuevoPaquete.modoAlmacenamiento+')');
