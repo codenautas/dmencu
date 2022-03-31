@@ -25,8 +25,8 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
         {name:'cargado_dm'         , typeName:'text'        , editable: false}, //cargar/descargar 
         {name:"cargado"            , typeName: "boolean"    , editable: false},
         {name:'notas'              , typeName:'text'}, // viene de la hoja de ruta
-        {name:'rea'                , typeName:'integer'     , editable: false  },
-        {name:'norea'              , typeName:'integer'     , editable: false  },
+        {name:'rea'                , typeName:'integer'     , editable: puedeEditar},
+        {name:'norea'              , typeName:'integer'     , editable: puedeEditar},
         //{name:'cod_no_rea'         , typeName:'text'        , editable: false   , inTable:false  },
         //{name:'gru_no_rea'         , typeName:'text'        , editable: false   , inTable:false  },
         {name:'resumen_estado'     , typeName:'text'        , editable: false  },
