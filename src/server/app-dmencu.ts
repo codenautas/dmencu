@@ -430,7 +430,6 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             "img/borrar-valor.png",
             "img/fondo-salteado-error.png",
             "img/fondo-salteado.png",
-            "img/fondo-salteado.png",
             "img/background-test.png",
             "client-setup",
             "css/bootstrap.min.css",
