@@ -49,7 +49,7 @@ import { control_resumen     } from './table-control_resumen';
 
 import {defConfig} from "./def-config"
 
-const APP_DM_VERSION="#22-03-29";
+const APP_DM_VERSION="#22-04-04";
 
 export type Constructor<T> = new(...args: any[]) => T;
 export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesamientoType>>(Base:T){
@@ -407,6 +407,13 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             "lib/cliente-en-castellano.js",
             "lib/service-worker-admin.js",
             "lib/redux-typed-reducer.js",
+            "client_modules/operativos.js",
+            "client_modules/varcal.js",
+            "client_modules/form-structure.js",
+            "client_modules/meta-enc.js",
+            "client_modules/datos-ext.js",
+            "client_modules/consistencias.js",
+            "client_modules/procesamiento.js",
             "tipos.js",
             "bypass-formulario.js",
             "redux-formulario.js",
@@ -423,8 +430,19 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             "img/borrar-valor.png",
             "img/fondo-salteado-error.png",
             "img/fondo-salteado.png",
+            "img/fondo-salteado.png",
+            "img/background-test.png",
             "client-setup",
             "css/bootstrap.min.css",
+            "css/formulario-react.css",
+            "pikaday/pikaday.css",
+            "dialog-promise/dialog-promise.css",
+            "rel-enc/estados.css",
+            "css/my-tables.css",
+            "css/my-menu.css",
+            "css/my-things.css",
+            "css/menu.css",
+            "rel-enc/my-things2.css",
             "css/formulario-react.css",
             "css/Roboto-Regular.ttf"
         ]
