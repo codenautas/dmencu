@@ -60,25 +60,24 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
             fields:{
                 ok:{ 
                     expr:` coalesce(nullif(
-                                case when tareas_tem.asignado is null and tareas_tem.verificado is not null then '!asignacion borrada'
-                                    when tareas_tem.verificado is not null and tareas_tem.habilitada then 'deshabilitar!'
+                                case when tareas_tem.asignado is null and tareas_tem.verificado is not null then 'Verificado-asignado vacio'
+                                    when tareas_tem.verificado is not null and tareas_tem.habilitada then 'Falta deshabilitar'
                                 else '' end 
-                                ||case when tareas_tem.asignado is null and tareas_tem.operacion is not null then '!asignacion borrada'
-                                    when tareas_tem.verificado is not null and coalesce(tareas_tem.operacion,'descargar')='cargar' then 'verificado-cargado'
-                                    when tareas_tem.verificado is not null and tareas_tem.operacion is null then 'verificado-nosincro'
-                                else '' end 
-                                --NO FUNCIONA
+                                ||case when tareas_tem.asignado is null and tareas_tem.operacion is not null then 'Operacion sin asignado'
+                                    when tareas_tem.verificado is not null and coalesce(tareas_tem.operacion,'descargar')='cargar' then 'Verificado-cargado'
+                                    when tareas_tem.verificado is not null and tareas_tem.operacion is null then 'Verificado sin operacion'
+                                else '' end
                                 ||(select case
-                                        when tareas_tem.habilitada and tareas_tem.tarea='recu' and count(*) filter(where h.verificado is not null and h.tarea='encu') =0  then '!tarea previa encu sin verif'
-                                        when tareas_tem.habilitada and tareas_tem.tarea='supe' and (count(*) filter (where h.verificado is not null and h.tarea <>'supe') )=0  then '!tarea previa a supe sin verif' 
+                                        when tareas_tem.habilitada and tareas_tem.tarea='recu' and count(*) filter(where h.verificado is not null and h.tarea='encu') =0  then 'T.previa a recu sin verificar'
+                                        when tareas_tem.habilitada and tareas_tem.tarea='supe' and (count(*) filter (where h.verificado is not null and h.tarea <>'supe') )=0  then 'T.previa a supe sin verificar' 
                                     else '' end  
                                     from tareas_tem h 
                                    where h.enc=tareas_tem.enc and h.operativo=tareas_tem.operativo
                                 )
                                 ||(select case 
-                                    when count(cargado_dm)>1  then '!+cargados'
-                                    when count(*) filter (where habilitada is true)>1 then '!+habilitadas'
-                                    when count(*) filter (where operacion='cargar')>1   then '!+opeCargar'
+                                    when count(cargado_dm)>1  then '+cargados'
+                                    when count(*) filter (where habilitada is true)>1 then '+habilitadas'
+                                    when count(*) filter (where operacion='cargar')>1   then '+opeCargar'
                                     else '' end
                             from tareas_tem h 
                             where h.enc=tareas_tem.enc and h.operativo=tareas_tem.operativo
