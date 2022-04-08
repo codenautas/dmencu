@@ -43,7 +43,6 @@ import { tareas_areas        } from './table-tareas_areas';
 import { mis_tareas          } from './table-mis_tareas';
 import { mis_tareas_tem      } from './table-mis_tareas_tem';
 import { mis_tareas_areas    } from './table-mis_tareas_areas';
-import { resultados_tarea    } from './table-resultados_tarea';
 import { control_campo       } from './table-control_campo';
 import { control_resumen     } from './table-control_resumen';
 
@@ -499,7 +498,6 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                         {menuType:'menu', name:'muestra', label:'muestra', menuContent:[
                             {menuType:'table', name:'tem', label: 'TEM'} ,
                             {menuType:'table', name:'tareas'},
-                            {menuType:'table', name:'resultados_tarea'},
                         // {menuType:'table', name:'personal_rol'},
                         ]},
                         {menuType:'menu', name:'metadatos', menuContent:[
@@ -552,7 +550,6 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             , areas
             , sincronizaciones
             , tareas
-            , resultados_tarea
             , tareas_tem: tareas_tem
             , tareas_areas
             , mis_tareas
