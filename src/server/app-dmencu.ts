@@ -29,6 +29,7 @@ import { parametros          } from "./table-parametros";
 import { roles_subordinados  } from "./table-roles_subordinados";
 
 import {no_rea               } from "./table-no_rea";
+import {no_rea_sup           } from "./table-no_rea_sup";
 import {tem                  } from "./table-tem";
 import {tem_recepcion        } from "./table-tem_recepcion";
 import {semanas              } from "./table-semanas";
@@ -541,6 +542,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             , roles_permisos
             , roles_subordinados
             , no_rea
+            , no_rea_sup
             , semanas
             , tem: tem
             , tem_recepcion
