@@ -31,8 +31,8 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
         //{name:'gru_no_rea'         , typeName:'text'        , editable: false   , inTable:false  },
         {name:'resumen_estado'     , typeName:'text'        , editable: false  },
 
-        {name:'resultado'          , typeName:'text'}, // fk tareas_resultados 
-        {name:'fecha_resultado'    , typeName:'date'}, // fk tareas_resultados 
+        //{name:'resultado'          , typeName:'text'}, // fk tareas_resultados 
+        //{name:'fecha_resultado'    , typeName:'date'}, // fk tareas_resultados 
         {name:'verificado'         , typeName:'text'}, 
         {name:'obs_verificado'     , typeName:'text'}, 
     ];
@@ -50,7 +50,6 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
             {references:'operaciones' , fields:['operacion']},
         ],
         softForeignKeys:[
-            {references:'resultados_tarea', fields:['resultado']},
             {references:'usuarios', fields:[{source:'asignante', target:'idper'}], alias:'at'},
             {references:'tem_recepcion' , fields:['operativo','enc'], displayAllFields:true, displayAfterFieldName:'obs_verificado'},
             {references:'tokens', fields:[{source:'cargado_dm', target:'token'}], displayFields:['username'], displayAfterFieldName:'cargado'},

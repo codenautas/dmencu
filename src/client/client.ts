@@ -189,7 +189,7 @@ myOwn.clientSides.tareasTemRow={
             }else if(!row.asignado || !row.fecha_asignacion || !row.operacion){
                 tarea='cargar';
                 esperar=row.asignante!=idper;
-            }else if(!row.resultado){
+            }else if(!row.rea){
                 tarea='realizar';
                 esperar=row.asignado!=idper;
             }else if(!row.verificado){
@@ -202,9 +202,7 @@ myOwn.clientSides.tareasTemRow={
             asignado           :tarea=='cargar'     && (esperar?'esperar':'normal'),
             fecha_asignacion   :tarea=='cargar'     && (esperar?'esperar':'normal'),
             operacion          :tarea=='cargar'     && (esperar?'esperar':'normal'),
-            carga_observaciones:(tarea=='cargar'   || tarea=='realizar' && !row.cargado && !row.resultado && !row.notas) && row.asignante==idper && 'optativo',
-            resultado          :tarea=='realizar'   && (esperar?'esperar':'normal'),
-            notas              :(tarea=='realizar' || tarea=='verificar' && !row.verificado) && row.asignado==idper && 'optativo',
+            carga_observaciones:(tarea=='cargar'     || tarea=='realizar' && !row.cargado && !row.rea ) && row.asignante==idper && 'optativo',
             verificado         :tarea=='verificar'  && (esperar?'esperar':'normal'),
             obs_verificado     :tarea=='verificar'  && (esperar?'esperar':'optativo'),
         }

@@ -27,7 +27,6 @@ export function tareas(context:TableContext, opts:any):TableDefinition {
         detailTables:[
             {table:`${mis}tareas_areas`     , fields:['operativo','tarea'], abr:'A'},
             {table:`${mis}tareas_tem`       , fields:['operativo','tarea'], abr:'E'},
-            {table:`resultados_tarea`       , fields:['tarea'], abr:'R'},
         ],
         sql:{
             isTable:!opts.mis
