@@ -446,7 +446,15 @@ export function accion_borrar_visita(payload: {forPkRaiz:ForPkRaiz, index:number
 }
 
 export function accion_agregar_formulario({forPk}: {forPk:ForPk}, _datosByPass:DatosByPass){
-    var {respuestas, unidadAnalisis, respuestasAumentadas} = respuestasForPk(forPk, true, true);
+    var {respuestas, unidadAnalisis, respuestasAumentadas, respuestasRaiz} = respuestasForPk(forPk, true, true);
+    variablesCalculadas(respuestasRaiz, forPk);
+    calcularFeedbackUnidadAnalisis(datosByPass.feedbackRowValidator, estructura.formularios, respuestas, unidadAnalisis.unidad_analisis, forPk, respuestasAumentadas, null, {})
+    calcularVariablesBotonFormulario(forPk);
+}
+
+export function accion_abrir_formulario({forPk}: {forPk:ForPk}, _datosByPass:DatosByPass){
+    var {respuestas, unidadAnalisis, respuestasAumentadas, respuestasRaiz} = respuestasForPk(forPk, true, true);
+    variablesCalculadas(respuestasRaiz, forPk);
     calcularFeedbackUnidadAnalisis(datosByPass.feedbackRowValidator, estructura.formularios, respuestas, unidadAnalisis.unidad_analisis, forPk, respuestasAumentadas, null, {})
     calcularVariablesBotonFormulario(forPk);
 }

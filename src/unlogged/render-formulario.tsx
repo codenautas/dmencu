@@ -25,6 +25,7 @@ import {Bloque, BotonFormulario,
     Texto, Estructura, InformacionHdr, DatosHdrUaPpal, ConfiguracionSorteoFormulario, ResumenEstado, DatosByPassPersistibles
 } from "./tipos";
 import{ 
+    accion_abrir_formulario,
     calcularActualBF,
     calcularDisabledBF,
     calcularResumenVivienda,
@@ -1103,6 +1104,8 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                 nuevaForPk[nuevoCampoPk] = defBoton.num
                 if(defBoton.esAgregar){
                     dispatchByPass(accion_agregar_formulario,{forPk:nuevaForPk});
+                }else{
+                    dispatchByPass(accion_abrir_formulario,{forPk:nuevaForPk});
                 }
             }
             dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:nuevaForPk, apilarVuelta:true}));
