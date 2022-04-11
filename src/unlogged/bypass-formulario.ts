@@ -621,9 +621,9 @@ export var defOperativo = {
         //TODO GENERALIZAR
         var esRea = false;
         var codRea:number|null= null;
-        if(!respuestas['entreav' as IdVariable]){
+        if(!respuestas['identif' as IdVariable]){
             return {codRea, esRea}
-        }else if(respuestas['entreav' as IdVariable]==2){
+        }else if(respuestas['identif' as IdVariable]==2 ||respuestas['resid_hog' as IdVariable]==2||respuestas['contact' as IdVariable]==2){
             codRea = 2;
             esRea = false;
         }else{
