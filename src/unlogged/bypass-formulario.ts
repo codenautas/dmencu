@@ -640,7 +640,7 @@ export var defOperativo = {
                         if(respuestasH['personas'] && respuestasH.personas[selec-1] ){
                             var respuestasP = respuestasH.personas[selec-1];
                             var resp_entrea_ind = respuestasP['entreaind' as IdVariable ];
-                            if(resp_entrea_ind===null){
+                            if(resp_entrea_ind==null){ //queremos contemplar el undefined
                                 reah = 3;
                             }else{
                                 reah = Number(resp_entrea_ind);
