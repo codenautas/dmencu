@@ -17,7 +17,7 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
         {name:'area'               , typeName: 'integer'    , editable:false   , inTable:false },
         {name:'ok'                 , typeName: 'text'       , editable:false   , inTable:false },
         {name:"habilitada"         , typeName: "boolean"    , editable:puedeEditar},
-        {name:'asignante'          , typeName:'text'        , editable:puedeEditar   , inTable:false}, // va a la hoja de ruta
+        {name:'asignante'          , typeName:'text'        , editable:false   , inTable:false}, // va a la hoja de ruta
         {name:'asignado'           , typeName:'text'}, // va a la hoja de ruta
         {name:'operacion'          , typeName:'text'}, // cargar/descargar
         {name:'fecha_asignacion'   , typeName:'date'}, // cargar/descargar
@@ -35,7 +35,10 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
         //{name:'fecha_resultado'    , typeName:'date'}, // fk tareas_resultados 
         {name:'verificado'         , typeName:'text'}, 
         {name:'obs_verificado'     , typeName:'text'}, 
-    ];
+        {name:'rea_sup'            , typeName:'integer'     , editable: puedeEditar},
+        {name:'norea_sup'          , typeName:'integer'     , editable: puedeEditar},
+        {name:'resumen_estado_sup' , typeName:'text'        , editable: false},
+    ]; 
     return {
         name:`${mis}tareas_tem`,
         tableName:`tareas_tem`,
