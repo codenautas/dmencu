@@ -18,6 +18,9 @@ export function tareas_areas(context:TableContext, opt:any):TableDefinition {
         {name:'fecha_asignacion'        , typeName:'date'},
         {name:'obs_asignante'           , typeName:'text'},
         {name:'cargado'                 , typeName:'boolean', editable: false, inTable: false},
+        {name:'verificado_recepcion'    , typeName:'text'                      },
+        {name:'obs_recepcion'           , typeName:'text'                      },
+
     ];
     return {
         name:`${mis}tareas_areas`,

@@ -43,10 +43,3 @@ update tem
 set obs=obs 
 where json_encuesta is not null;
 */
-
---Ejemplos de uso
---select sincronizacion_tem('ESECO', '400101');
---select sincronizacion_tem('ESECO', '400102');
---select sincronizacion_tem('ESECO', '400102');
---select sincronizacion_tem('ESECO', '400103');
-

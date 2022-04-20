@@ -28,13 +28,14 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
         {name:'rea'                , typeName:'integer'     , editable: puedeEditar},
         {name:'norea'              , typeName:'integer'     , editable: puedeEditar},
         //{name:'cod_no_rea'         , typeName:'text'        , editable: false   , inTable:false  },
-        //{name:'gru_no_rea'         , typeName:'text'        , editable: false   , inTable:false  },
+        {name:'gru_no_rea'         , typeName:'text'        , editable: false   , inTable:false  },
         {name:'resumen_estado'     , typeName:'text'        , editable: false  },
 
         //{name:'resultado'          , typeName:'text'}, // fk tareas_resultados 
         //{name:'fecha_resultado'    , typeName:'date'}, // fk tareas_resultados 
         {name:'verificado'         , typeName:'text'}, 
-        {name:'obs_verificado'     , typeName:'text'}, 
+        {name:'proximo_paso'       , typeName:'text'        , editable:false   , inTable:false} 
+        {name:'obs_verificado'     , typeName:'text'},
         {name:'rea_sup'            , typeName:'integer'     , editable: puedeEditar},
         {name:'norea_sup'          , typeName:'integer'     , editable: puedeEditar},
         {name:'resumen_estado_sup' , typeName:'text'        , editable: false},
@@ -87,21 +88,23 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                             ) 
                          ,''),'✔')
                     `
-                }
+                },
             },
             from:`(
                 select *
                     from (
                 select tareas.tarea, t.operativo, t.enc, t.area
                     ${fields.filter(x=>!(x.isPk || x.inTable===false||x.name=='area')).map(x=>`, tt.${db.quoteIdent(x.name)}`).join('')}
-                    , ${be.sqlNoreaCase('no_rea')} as cod_no_rea
-                    , ${be.sqlNoreaCase('grupo')} as gru_no_rea
+                    , y.grupo as gru_no_rea
                     , case rol_asignante when 'automatico' then null
                         when 'recepcionista' then areas.recepcionista end as asignante
+                    , case when tt.tarea='encu' and  y.grupo0 in ('ausentes','rechazos') then 'recuperacion' else null end proximo_paso   
                     from tareas join  tem t using (operativo) 
                         left join areas using (operativo, area)
                         left join lateral (select * from tareas_tem where tarea=tareas.tarea and operativo=t.operativo and enc=t.enc) tt on true
+                        left join no_rea y on tt.norea=y.no_rea::integer
                     ) x
+                    
                     ${opt.mis?`where (asignante = ${db.quoteNullable(context.user.idper)} or asignado = ${db.quoteNullable(context.user.idper)})`:''}
             )`
         },

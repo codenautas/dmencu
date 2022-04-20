@@ -13,3 +13,11 @@ alter table tem add column if not exists resumen_estado_sup text;
 alter table tareas_tem add column if not exists rea_sup integer;
 alter table tareas_tem add column if not exists norea_sup integer;
 alter table tareas_tem add column if not exists resumen_estado_sup text;
+
+
+--columnas para el recepcionista en tareas_areas
+alter table tareas_areas add column if not exists verificado_recepcion text;
+alter table tareas_areas add column if not exists obs_recepcion text;
+
+alter table "tareas_areas" add constraint "verificado_recepcion<>''" check ("verificado_recepcion"<>'');
+alter table "tareas_areas" add constraint "obs_recepcion<>''" check ("obs_recepcion"<>'');
