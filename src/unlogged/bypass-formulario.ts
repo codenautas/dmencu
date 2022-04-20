@@ -507,12 +507,55 @@ const helpersCasilleros={
         blanco(x:any){
             return x!==0 && !x
         },
+        hoy(){
+            return date.today().toDmy()
+        },
+        informado(x:any){
+            return x!==undefined && x!==null && (!(x instanceof Array)|| x.length!==0 )
+            && (!(x instanceof Object)|| Object.keys(x).length !== 0 )
+        },
         nsnc(x:any){
             return x == -9
         },
-        hoy(){
-            return date.today().toDmy()
-        }
+        par(x:number){
+            return x % 2==0
+        },
+        /*
+        dbo:{
+            datoFamiliar(encu:string,hog:number,per:number, dato:string){
+                var xpersonas=personas;
+                return encu==enc && hog==hogar && informado(xpersonas) && per<= xpersonas.length && per>=1 && !!xpersonas[per-1][dato]? xpersonas[per-1][dato]:null
+            },
+            edadfamiliar(encu:string,hog:number,per:number){
+                var xpersonas=personas;
+                return datoFamiliar(encu:string,hog:number,per:number,'edad')
+            },
+            existeindividual(encu:string,hog:number,per:number){
+                var xpersonas=personas;
+                return encu==enc && hog==hogar && !!personas && per<= personas.length && per>=1 && !!personas[per-1]['entreaind']
+            },
+            existemiembro(encu:string,hog:number,per:number){
+                var xpersonas=personas;
+                return encu==enc && hog==hogar && !!personas && per<= personas.length && per>=1
+            },
+            nroconyuges(encu:string,hog:number){
+                var xpersonas=personas
+                return xpersonas.filter( per->per.p4==2).length
+            },
+            nrojefes(encu:string,hog:number,per:number){
+                return personas.filter( per->per.p4==1).length
+            },
+            parentescofamiliar(encu:string,hog:number,per:number){
+                return datoFamiliar(encu:string,hog:number,per:number,'p4')
+            },
+            sexofamiliar(encu:string,hog:number,per:number){
+                var xpersonas=personas;
+                return encu==enc && hog==hogar && !!xpersonas && per<= xpersonas.length && per>=1 && !!xpersonas[per-1].sexo? xpersonas[per-1]['sexo']:null
+            },
+            sitconyjefe(encu:string,hog:number){
+                return datoFamiliar(encu:string,hog:number,1,'p5')
+            }
+        } */       
     }
 };
 
@@ -670,7 +713,7 @@ export var defOperativo = {
             }
         }
         return {codRea,esRea}
-    },
+    },    
     UAprincipal:'' as IdUnidadAnalisis,
     defUA:{} as {[i in IdUnidadAnalisis]:{pk:IdVariable, incluidas:IdUnidadAnalisis[], idsFor:IdFormulario[]}},
     defFor:{} as {[f in IdFormulario]:{/*arbolUA:IdUnidadAnalisis[], */ hermano?:true}}

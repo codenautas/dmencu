@@ -178,7 +178,8 @@ function compilarExpresion(expresion:string){
         expresion
             .replace(/\bis distinct from\b/gi,' <> ')
             .replace(/!!/gi,' ')
-    )).replace(/helpers\.funs\.blanco\(helpers.null2zero\(/g,'helpers.funs.blanco((');
+    )).replace(/helpers\.funs\.blanco\(helpers.null2zero\(/g,'helpers.funs.blanco((')
+    .replace(/helpers\.funs\.informado\(helpers.null2zero\(/g,'helpers.funs.informado((');
 }
 
 function compilarExpresiones(casillero:CasilleroDeAca){
