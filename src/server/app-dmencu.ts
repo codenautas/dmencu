@@ -46,6 +46,14 @@ import { mis_tareas_tem      } from './table-mis_tareas_tem';
 import { mis_tareas_areas    } from './table-mis_tareas_areas';
 import { control_campo       } from './table-control_campo';
 import { control_resumen     } from './table-control_resumen';
+import { viviendas           } from './table-viviendas';
+import { visitas             } from './table-visitas';
+import { hogares             } from './table-hogares';
+import { personas            } from './table-personas';
+import { visitas_sup         } from './table-visitas_sup';
+import { hogares_sup         } from './table-hogares_sup';
+import { personas_sup        } from './table-personas_sup';
+
 
 import {defConfig} from "./def-config"
 
@@ -579,6 +587,13 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             , control_campo_participacion: context=>control_campo(context, 
                 {nombre:'control_campo_comuna', title:'control campo x participacion', camposCorte:[{name:'participacion', typeName:'bigint'}]}
             ),
+            viviendas,
+            visitas,
+            hogares,      
+            personas,     
+            visitas_sup,  
+            hogares_sup,  
+            personas_sup,         
         }
         be.appendToTableDefinition('consistencias',function(tableDef, context){
             tableDef.fields.forEach(function(field){
