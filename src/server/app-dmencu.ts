@@ -323,6 +323,14 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             this.caches.tableContent.no_rea_groups0 = (await client.query(`
                 select grupo0 as grupo, jsonb_agg(to_json(r.*)) as codigos from no_rea r group by grupo0 order by 1
             `).fetchAll()).rows;
+            this.caches.tableContent.no_rea_sup = (await client.query(`select * from no_rea_sup order by no_rea_sup`).fetchAll()).rows;
+            console.log('caches',this.caches.tableContent.no_rea_sup)
+            this.caches.tableContent.no_rea_sup_groups = (await client.query(`
+            select grupo_sup, jsonb_agg(to_json(r.*)) as codigos from no_rea_sup r group by grupo_sup order by 1
+            `).fetchAll()).rows;
+            this.caches.tableContent.no_rea_sup_groups0 = (await client.query(`
+            select grupo0_sup as grupo, jsonb_agg(to_json(r.*)) as codigos from no_rea_sup r group by grupo0_sup order by 1
+        `).fetchAll()).rows;
         })
         console.log('caches ok');
     }

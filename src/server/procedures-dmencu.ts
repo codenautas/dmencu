@@ -259,7 +259,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     configSorteoFormulario.filtro_js=compilarExpresionesDominios(configSorteoFormulario.filtro)
                 })
             }
-            return {timestamp: be.timestampEstructura, ...result.row, operativo:parameters.operativo, configSorteo,noReas:be.caches.tableContent.no_rea};
+            return {timestamp: be.timestampEstructura, ...result.row, operativo:parameters.operativo, configSorteo,noReas:be.caches.tableContent.no_rea, noReasSup:be.caches.tableContent.no_rea_sup};
         }
     },
     {

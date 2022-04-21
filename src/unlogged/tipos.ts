@@ -340,6 +340,14 @@ export type Estructura = {
 		  valor:     string
 		  grupo0:    string
 	}[]
+    noReasSup: { 
+        no_rea_sup: string  
+        desc_norea_sup: string
+        grupo_sup:     string    
+        variable_sup:  string
+        valor_sup:     string
+        grupo0_sup:    string
+  }[]
 }
 
 export type IdEnc = '130031'|'130032'|'etc';

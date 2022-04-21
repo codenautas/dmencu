@@ -660,6 +660,17 @@ export var defOperativo = {
         buscarNoReaEnRespuestas(uaPrincipal!,respuestas);
         return {codNoRea,esNoRea}
     },
+	/*
+    esNoreaSup:(respuestas:Respuestas)=>{
+        //TODO GENERALIZAR buscarNoreaRespuestas
+       var unidadesARecorrerSup = ['viviendas','hogares_sup','personas_sup'] as IdUnidadAnalisis[];
+       var uaPrincipal = likeAr(estructura.unidades_analisis).find((ua)=>!ua.padre);
+       var esNoReaSup = false;
+       var codNoReaSup:string|null= null;
+      // buscarNoReaEnRespuestas( unidadesARecorrerSup,uaPrincipal!,respuestas,noReasSup,'no_rea_sup');//con los parametros que necesitariamos para generalizar
+      // return {codNoReaSup,esNoReaSup}
+    },
+	*/
     esRealizada:(respuestas:Respuestas)=>{
         //TODO GENERALIZAR
         var esRea = false;
@@ -713,7 +724,52 @@ export var defOperativo = {
             }
         }
         return {codRea,esRea}
-    },    
+    },
+    /*
+    esRealizadaSup:(respuestas:Respuestas)=>{
+        //TODO GENERALIZAR 
+        var esReaSup = false;
+        var codReaSup:number|null= null;
+        if(!respuestas['confir_tel_sup' as IdVariable] && !respuestas['sp1a' as IdVariable]){
+            return {codReaSup, esReaSup}
+        }else if( respuestas['confir_tel_sup' as IdVariable]==2 || respuestas['confir_dom_sup' as IdVariable]==2||respuestas['sp1a' as IdVariable]==2 ||respuestas['sp1b' as IdVariable]==2||respuestas['sp1c' as IdVariable]==2){
+            codReaSup = 2;
+            esReaSup = false;
+        }else{
+            var reahs: number[]=[] ;
+            var respuestasHs = respuestas['hogares_sup'];
+            if(respuestasHs){
+                for(let respuestasH of respuestasHs){
+                    var reah:number;
+                    var selec:number;
+                    if(respuestasH['entrea_sup' ] != 1||respuestasH['spr1_sup']==2||respuestasH['sp4']==3||respuestasH['total_rango_sup']==0){
+                        reah=2;
+                    }else{
+                        reah = 3;
+                    }
+                    reahs.push(reah);
+                }
+                if (reahs.every(rh=>rh==1)){
+                    codReaSup = 1;
+                    esReaSup = true;
+                }else if(reahs.every(rh=>rh==2)){
+                    codReaSup = 2;
+                    esReaSup = false;
+                }else if(reahs.every(rh=>rh==1||rh==3)){
+                    codReaSup = 3;
+                    esReaSup = false;
+                }else{
+                    codReaSup = 4;
+                    esReaSup = false;
+                }
+            } else{
+                codReaSup = 3;
+                esReaSup = false;
+            }
+        }
+        return {codReaSup,esReaSup}
+    },
+    */    
     UAprincipal:'' as IdUnidadAnalisis,
     defUA:{} as {[i in IdUnidadAnalisis]:{pk:IdVariable, incluidas:IdUnidadAnalisis[], idsFor:IdFormulario[]}},
     defFor:{} as {[f in IdFormulario]:{/*arbolUA:IdUnidadAnalisis[], */ hermano?:true}}
@@ -1043,6 +1099,7 @@ export function calcularResumenVivienda(
 ):{resumenEstado:ResumenEstado,codNoRea:string|null,codRea:number|null}{
     var {codRea, esRea} = defOperativo.esRealizada(respuestas)
     var {codNoRea, esNoRea} = defOperativo.esNorea(respuestas)
+   // var {codReaSup,esReaSup} = defOperativo.esRealizadaSup(respuestas)
     if(esNoRea){
         return {resumenEstado: "no rea", codNoRea, codRea};
     }
