@@ -334,12 +334,12 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
         })
         console.log('caches ok');
     }
-    sqlNoreaCase(campoNecesario:string){
-        var be=this;
-        return `CASE ${be.caches.tableContent.no_rea.map(x=>
-            ` WHEN json_encuesta ->> ${be.db.quoteLiteral(x.variable)} = ${be.db.quoteLiteral(x.valor)} THEN ${be.db.quoteLiteral(x[campoNecesario])}`
-        ).join('')} WHEN TRUE THEN NULL END`
-    }
+    //sqlNoreaCase(campoNecesario:string){
+    //    var be=this;
+    //    return `CASE ${be.caches.tableContent.no_rea.map(x=>
+    //        ` WHEN norea  = ${be.db.quoteLiteral(x.no_rea)}::integer THEN ${be.db.quoteLiteral(x[campoNecesario])}`
+    //    ).join('')} WHEN TRUE THEN NULL END`
+    //}    
     getContext(req:Request):Context{
         var be = this;
         var fatherContext = super.getContext(req);

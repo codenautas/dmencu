@@ -11,11 +11,10 @@ export function tem(context:TableContext, opts:any):TableDefinition {
     var columnasAreasParaLaTem=['obs_recepcionista','verificado_rec','recepcionista'];
 
     var columnasNoRea=[
-        //{name:'cod_no_rea', expr: be.sqlNoreaCase('no_rea')},
-        {name:'gru_no_rea', expr: be.sqlNoreaCase('grupo') }
+        {name:'gru_no_rea', expr: 'grupo' }
     ];
     var columnasSoloTem=[
-          'enc_original'   , 'json_encuesta'   , 'rea'     , 'norea'  , 'json_backup'
+          'enc_original'   , 'json_encuesta'      , 'json_backup'
         , 'h4'             , 'x'       , 'y'      , 'fexp'
     ];
     var def: TableDefinition= {
@@ -42,7 +41,6 @@ export function tem(context:TableContext, opts:any):TableDefinition {
             {name:'seleccionado'         , typeName:'text'    , editable: false  },
 //            {name:'sexo_sel'             , typeName:'integer' , editable: false  },
 //            {name:'edad_sel'             , typeName:'integer' , editable: false  },
-//            {name:'cod_no_rea'           , typeName:'text'    , editable: false , inTable:false  },
             {name:'gru_no_rea'           , typeName:'text'    , editable: false , inTable:false  },
             {name:'resumen_estado'       , typeName:'text'    , editable: false  },
             {name:'cargado'              , typeName:'boolean' , editable: false , inTable: false  },
@@ -132,7 +130,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
     };
     if (opts.recepcion) {
         def.fields=def.fields.filter(f=>!columnasSoloTem.includes(f.name) )
-        def.hiddenColumns=[...def.hiddenColumns, ...columnasAreasParaLaTem.map(x=>`areas__${x}`), 'gru_no_rea']
+        def.hiddenColumns=[...def.hiddenColumns, ...columnasAreasParaLaTem.map(x=>`areas__${x}`)]
         def.foreignKeys=def.foreignKeys?.map(function (f) {if (f.references='areas'){f.displayFields=columnasAreasParaLaTem}; return f}) 
     } else {
         def.detailTables?.unshift({table: "tareas_tem", abr: "T", fields: ['operativo', 'enc'], label:'tareas'})
@@ -157,6 +155,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
                     from tem t left join (
                         select tt.operativo, tt.enc, bool_or(cargado) cargado, string_agg(cargado_dm,',') cargado_dm,jsonb_object_agg(tarea,jsonb_build_object('asignado',asignado,'habilitada',habilitada,'cargado',cargado,'cargado_dm',cargado_dm))etareas 
                             from tareas_tem tt group by tt.operativo, tt.enc  )tt on t.operativo=tt.operativo and t.enc=tt.enc
+                            left join no_rea y on y.no_rea::integer=t.norea
                 )
             `     
         };

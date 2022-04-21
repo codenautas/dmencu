@@ -83,7 +83,7 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
                                     `
                                     ).join('')} else null end as klase
                                 from (
-                                    select t.*, tt.verificado, ${be.sqlNoreaCase('no_rea')} as cod_no_rea
+                                    select t.*, tt.verificado, t.norea as cod_no_rea
                                         from tem t left join comunas c on t.nrocomuna=c.comuna
                                             left join tareas_tem tt on t.operativo=tt.operativo and t.enc=tt.enc and tt.tarea='encu'
 
