@@ -13,6 +13,7 @@ import {promises as  fs} from "fs";
 
 import * as ExpresionParser from 'expre-parser';
 import { tareas } from "./table-tareas";
+import { prependListener } from "process";
 
 var path = require('path');
 var sqlTools = require('sql-tools');
@@ -389,15 +390,55 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         }){
             var client=context.client;
             var datos_json=parameters.datos_caso;
+            var be = context.be;
+            var tableStructures_app:TableDefinitions = be.tableStructures;
+        
             var struct_dmencu = createStructure(context, MAIN_TABLENAME);
             datos_json['operativo'] = parameters.operativo;
-            datos_json['enc'] = parameters.id_caso;
-            if (datos_json.personas && datos_json.personas.length>=1) {
-                var personas_con_pk =datos_json.personas.map(function(per: Object,i: number){
-                    return {...per,'persona': i +1}
-                });
-                datos_json.personas=personas_con_pk;
+            //TODO : vivienda ó enc???
+            datos_json['vivienda'] = parameters.id_caso;
+            function completar_ult_pk_en_arr( ult_pk, ua_arr){
+                var con_pk_completa=ua_arr; 
+                if (ua_arr && ua_arr.length>=1){
+                    con_pk_completa= con_pk_completa.map((una_ua,i)=>{
+                        una_ua[ult_pk]=i+1   
+                        return una_ua;
+                    })
+                };
+                return con_pk_completa
             }
+            for( var key1 in datos_json ){
+                var dato_key1 = datos_json[key1];
+                if ( dato_key1 instanceof Array && dato_key1.length >= 1 ) {
+                    var pk1 = tableStructures_app[key1](context).primaryKey;
+                    var ult_pk1 = pk1[pk1.length-1];
+                    datos_json[key1] = completar_ult_pk_en_arr( ult_pk1, datos_json[key1]) 
+                    datos_json[key1].forEach((un_key1, i1)=>{
+                        for ( var key2 in un_key1 ){
+                            if ( un_key1[key2] instanceof Array && un_key1[key2].length >= 1 ){
+                                var pk2 = tableStructures_app[key2](context).primaryKey;
+                                var ult_pk2 = pk2[pk2.length-1];            
+                                datos_json[key1][i1][key2] = completar_ult_pk_en_arr( ult_pk2, datos_json[key1][i1][key2])
+                                datos_json[key1][i1][key2].forEach(un_key2=>{
+                                    Object.keys(un_key2).filter( p2=>p2.startsWith('$')).forEach(pp2=>
+                                        delete un_key2[pp2]
+                                    )                                        
+                                })
+                            }
+                            if (key2.startsWith('$')||key2.startsWith('_')){
+                                delete datos_json[key1][i1][key2];
+                            }
+                        }
+                    }
+                }
+                if (key1.startsWith('$')){
+                    delete datos_json[key1];
+                };
+            }
+            delete datos_json.codRea;
+            delete datos_json.codNoRea;
+            delete datos_json.resumenEstado;
+
             var queries = sqlTools.structuredData.sqlWrite(datos_json, struct_dmencu);
             return await queries.reduce(function(promise, query){
                 return promise.then(function() {
@@ -408,7 +449,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             },Promise.resolve()).then(function(){
                 return "ok";
             }).catch(function(err:Error){
-                console.log("ENTRA EN EL CATCH: ",err)
+                console.log("caso_guardar ENTRA EN EL CATCH: ",err)
                 throw err
             })
            
@@ -472,7 +513,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 throw new Error('HAY DATOS. NO SE PUEDE INICIAR EL PASAJE');
             }
             let resultJson = await context.client.query(
-                `SELECT operativo, enc id_caso, json_encuesta datos_caso from tem WHERE operativo=$1`,
+                `SELECT operativo, enc id_caso, json_encuesta datos_caso from tem 
+                    WHERE operativo=$1 and rea is not null and json_encuesta is not null order by enc  `,
                 [OPERATIVO]
             ).fetchAll();
             var procedureGuardar = be.procedure.caso_guardar;

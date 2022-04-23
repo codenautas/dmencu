@@ -34,7 +34,7 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
         //{name:'resultado'          , typeName:'text'}, // fk tareas_resultados 
         //{name:'fecha_resultado'    , typeName:'date'}, // fk tareas_resultados 
         {name:'verificado'         , typeName:'text'}, 
-        {name:'proximo_paso'       , typeName:'text'        , editable:false   , inTable:false} 
+        {name:'proximo_paso'       , typeName:'text'        , editable:false   , inTable:false}, 
         {name:'obs_verificado'     , typeName:'text'},
         {name:'rea_sup'            , typeName:'integer'     , editable: puedeEditar},
         {name:'norea_sup'          , typeName:'integer'     , editable: puedeEditar},
