@@ -440,19 +440,23 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             delete datos_json.resumenEstado;
 
             var queries = sqlTools.structuredData.sqlWrite(datos_json, struct_dmencu);
-            return await queries.reduce(function(promise, query){
-                return promise.then(function() {
-                    return client.query(query).execute().then(function(result){
-                        return 'ok';
+            try{
+                return await queries.reduce(function(promise, query){
+                    return promise.then(function() {
+                        return client.query(query).execute().then(function(result){
+                            return 'ok';
+                        });
                     });
-                });
-            },Promise.resolve()).then(function(){
-                return "ok";
-            }).catch(function(err:Error){
-                console.log("caso_guardar ENTRA EN EL CATCH: ",err)
-                throw err
-            })
-           
+                },Promise.resolve()).then(function(){
+                    return "ok";
+                }).catch(function(err:Error){
+                    console.log("caso_guardar ENTRA EN EL CATCH1: id_caso "+parameters.id_caso+" err ",err)
+                    //throw err
+                    return "ok";
+                })
+            }catch(err){
+                console.log("caso_guardar ENTRA EN EL CATCH2: id_caso "+parameters.id_caso+" err ",err)
+            }
         }
     },
     {
@@ -467,13 +471,13 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters){
             var client=context.client;
              var struct_dmencu = createStructure(context, MAIN_TABLENAME);
-            var sql = sqlTools.structuredData.sqlRead({operativo: parameters.operativo, enc:parameters.id_caso}, struct_dmencu);
+            var sql = sqlTools.structuredData.sqlRead({operativo: parameters.operativo, vivienda:parameters.id_caso}, struct_dmencu);
             var result = await client.query(sql).fetchUniqueValue();
             var response = {
                 operativo: parameters.operativo,
-                id_caso: parameters.id_caso,
+                vivienda: parameters.id_caso,
                 datos_caso: result.value,
-                formulario: formPrincipal,
+                //formulario: formPrincipal,
             };
             return response;
         }
@@ -514,7 +518,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             }
             let resultJson = await context.client.query(
                 `SELECT operativo, enc id_caso, json_encuesta datos_caso from tem 
-                    WHERE operativo=$1 and rea is not null and json_encuesta is not null order by enc  `,
+                    WHERE operativo=$1 and resumen_estado is distinct from 'vacio' and json_encuesta is not null 
+                     and enc in ('10001','10002') order by enc desc limit 5 `,
                 [OPERATIVO]
             ).fetchAll();
             var procedureGuardar = be.procedure.caso_guardar;
@@ -522,17 +527,20 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 throw new Error('hay que sobreescribir caso_guardar');
             }
             return Promise.all(resultJson.rows.map(async function(row){
-                await procedureGuardar.coreFunction(context, row)
-                if(!('r4_esp' in row.datos_caso)){
-                    row.datos_caso.r4_esp = null;
-                }
-                var {datos_caso, enc, operativo} = await be.procedure.caso_traer.coreFunction(context, {operativo:row.operativo, enc:row.id_caso})
-                var verQueGrabo = {datos_caso, id_caso, operativo}
+                try{
+                    await procedureGuardar.coreFunction(context, row)
+                }catch{
+                    console.log("json2ua error : id_caso "+row.id_caso+" err ",err)
+                }     
+                /*
+                var {datos_caso, vivienda, operativo} = await be.procedure.caso_traer.coreFunction(context, {operativo:row.operativo, id_caso:row.id_caso})
+                var verQueGrabo = {datos_caso, vivienda, operativo}
                 try{
                     discrepances.showAndThrow(verQueGrabo,row)
                 }catch(err){
                     console.log(verQueGrabo,row)
                 }
+                */
                 return 'Ok!';
             })).catch(function(err){
                 throw err;
@@ -727,4 +735,42 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             };
         }
     },
+    /*
+    {
+        action:'test_sql2_falla',
+        parameters:[
+            //{name:'var1'         , typeName:'text'},
+            //{name:'var2'         , typeName:'integer'},
+        ],
+        
+        coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
+            var {be, client} =context;
+            const OPERATIVO = await getOperativoActual(context);
+            await context.client.query(
+                        `update tem
+                            set cluster = $3
+                            where operativo= $1 and enc = $2 
+                            returning 'ok'`
+                        ,
+                        [OPERATIVO, '10001', 1]
+            ).execute();
+            try{
+                await context.client.query(
+                    `update tem
+                        set cluster = $3
+                        where operativo= $1 and enc = $2 
+                        returning 'ok'`
+                    ,
+                    [OPERATIVO, '10001', 'error']
+                ).execute();
+                }catch(err){
+                console.log('****** err sql2',err)
+                }
+        }    
+            return {
+                ok:'ok'
+            };
+        }
+    },
+    */
 ];
