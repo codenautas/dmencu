@@ -191,7 +191,7 @@ export class RenderAndCaptureError extends React.Component<
                     onClick={()=>{
                         gotoSincronizar();
                     }}
-                >Ir a sincronizar</Button>
+                >ir a la pantalla de sincronización</Button>
                 <Typography>Error detectado:</Typography>
                 <Typography>{this.state.error instanceof Error ? this.state.error.message : 'unknown error'}</Typography>
                 <Typography>{JSON.stringify(this.state.info)}</Typography>
