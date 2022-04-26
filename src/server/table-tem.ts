@@ -41,6 +41,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
             {name:'seleccionado'         , typeName:'text'    , editable: false  },
 //            {name:'sexo_sel'             , typeName:'integer' , editable: false  },
 //            {name:'edad_sel'             , typeName:'integer' , editable: false  },
+            {name:'resultado'            , typeName:'text'    , editable: false  },
             {name:'gru_no_rea'           , typeName:'text'    , editable: false , inTable:false  },
             {name:'resumen_estado'       , typeName:'text'    , editable: false  },
             {name:'cargado'              , typeName:'boolean' , editable: false , inTable: false  },
