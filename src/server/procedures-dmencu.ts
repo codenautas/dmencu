@@ -612,6 +612,29 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     ,
                     params
                 ).fetchUniqueRow();
+                //guardar paralelamente en tablas ua
+                var procedureGuardar = be.procedure.caso_guardar;
+                let resultado = `id enc ${idEnc}: `;
+                let param_guardar={operativo: operativo,id_caso:idEnc, datos_caso:respuestasUAPrincipal}
+                let errMessage: string|null;
+                try{
+                    await be.inTransaction(null, async function(client){
+                        resultado+= await procedureGuardar.coreFunction(context, param_guardar, client);    
+                    })
+                }catch(err){
+                    errMessage = resultado + "dm_forpkraiz_descargar. "+ err ;
+                    resultado = errMessage
+                    console.log(errMessage)
+                }                
+                await context.client.query(
+                    `update tem
+                        set pase_tabla= $3
+                        where operativo= $1 and enc = $2
+                        returning 'ok'`
+                    ,
+                    [operativo, idEnc, resultado]
+                ).fetchUniqueRow();                
+
             }).array());
             return 'ok'
         }
