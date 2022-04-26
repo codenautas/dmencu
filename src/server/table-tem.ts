@@ -57,6 +57,8 @@ export function tem(context:TableContext, opts:any):TableDefinition {
             {name:'rea_sup'              , typeName:'integer'     , editable: false},
             {name:'norea_sup'            , typeName:'integer'     , editable: false},
             {name:'resumen_estado_sup'   , typeName:'text'        , editable: false},
+            {name:'fin_campo'            , typeName:'text'    , editable: puedeEditar  },
+            {name:'pase_tabla'           , typeName:'text'    , editable: false  },
             {name:'codcalle'             , typeName:'integer' , editable: false  },
             {name:'nomcalle'             , typeName:'text'    , editable: false  },
             {name:'nrocatastral'         , typeName:'integer' , editable: false  },
