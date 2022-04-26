@@ -440,23 +440,18 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             delete datos_json.resumenEstado;
 
             var queries = sqlTools.structuredData.sqlWrite(datos_json, struct_dmencu);
-            try{
-                return await queries.reduce(function(promise, query){
-                    return promise.then(function() {
-                        return client.query(query).execute().then(function(result){
-                            return 'ok';
-                        });
+            return await queries.reduce(function(promise, query){
+                return promise.then(function() {
+                    return client.query(query).execute().then(function(result){
+                        return 'ok';
                     });
-                },Promise.resolve()).then(function(){
-                    return "ok";
-                }).catch(function(err:Error){
-                    console.log("caso_guardar ENTRA EN EL CATCH1: id_caso "+parameters.id_caso+" err ",err)
-                    //throw err
-                    return "ok";
-                })
-            }catch(err){
-                console.log("caso_guardar ENTRA EN EL CATCH2: id_caso "+parameters.id_caso+" err ",err)
-            }
+                });
+            },Promise.resolve()).then(function(){
+                return "ok";
+            }).catch(function(err:Error){
+                console.log("caso_guardar ENTRA EN EL CATCH: ",err)
+                throw err
+            })
         }
     },
     {
@@ -527,10 +522,13 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 throw new Error('hay que sobreescribir caso_guardar');
             }
             return Promise.all(resultJson.rows.map(async function(row){
+                let resultado = `id caso ${row.id_caso}: `;
                 try{
-                    await procedureGuardar.coreFunction(context, row)
-                }catch{
-                    console.log("json2ua error : id_caso "+row.id_caso+" err ",err)
+                    resultado+= await procedureGuardar.coreFunction(context, row)
+                }catch(err){
+                    let errMessage = resultado + "json2ua error. "+ err ;
+                    resultado = errMessage
+                    console.log(errMessage)
                 }     
                 /*
                 var {datos_caso, vivienda, operativo} = await be.procedure.caso_traer.coreFunction(context, {operativo:row.operativo, id_caso:row.id_caso})
@@ -541,7 +539,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     console.log(verQueGrabo,row)
                 }
                 */
-                return 'Ok!';
+                return resultado;
             })).catch(function(err){
                 throw err;
             }).then(function(result){
