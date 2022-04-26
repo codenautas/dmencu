@@ -19,8 +19,8 @@ begin
       from tem
       where operativo='PREJU_2022' and enc=new.enc;
     
-    new.resultado       = vresultado ;
-    return new;
+    new.resultado= vresultado ;
+    return new; 
 end;
 $BODY$;
 
