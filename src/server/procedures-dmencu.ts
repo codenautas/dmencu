@@ -387,8 +387,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             operativo:string, 
             id_caso:string,
             datos_caso:AnyObject
-        }){
-            var client=context.client;
+        },newClient:Client){
+            var client=newClient || context.client;
             var datos_json=parameters.datos_caso;
             var be = context.be;
             var tableStructures_app:TableDefinitions = be.tableStructures;
@@ -524,7 +524,9 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             return Promise.all(resultJson.rows.map(async function(row){
                 let resultado = `id caso ${row.id_caso}: `;
                 try{
-                    resultado+= await procedureGuardar.coreFunction(context, row)
+                    await be.inTransaction(null, async function(client){
+                        resultado+= await procedureGuardar.coreFunction(context, row, client);    
+                    })
                 }catch(err){
                     let errMessage = resultado + "json2ua error. "+ err ;
                     resultado = errMessage
