@@ -435,23 +435,27 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     delete datos_json[key1];
                 };
             }
+            
             delete datos_json.codRea;
             delete datos_json.codNoRea;
             delete datos_json.resumenEstado;
-
-            var queries = sqlTools.structuredData.sqlWrite(datos_json, struct_dmencu);
-            return await queries.reduce(function(promise, query){
-                return promise.then(function() {
-                    return client.query(query).execute().then(function(result){
-                        return 'ok';
+            if( Object.keys(datos_json).length >2){
+                var queries = sqlTools.structuredData.sqlWrite(datos_json, struct_dmencu);
+                return await queries.reduce(function(promise, query){
+                    return promise.then(function() {
+                        return client.query(query).execute().then(function(result){
+                            return 'ok';
+                        });
                     });
-                });
-            },Promise.resolve()).then(function(){
-                return "ok";
-            }).catch(function(err:Error){
-                console.log("caso_guardar ENTRA EN EL CATCH: ",err)
-                throw err
-            })
+                },Promise.resolve()).then(function(){
+                    return "ok";
+                }).catch(function(err:Error){
+                    console.log("caso_guardar ENTRA EN EL CATCH: ",err)
+                    throw err
+                })
+            }else{
+                return 'vacio';
+            }    
         }
     },
     {
@@ -514,7 +518,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             let resultJson = await context.client.query(
                 `SELECT operativo, enc id_caso, json_encuesta datos_caso from tem 
                     WHERE operativo=$1 and resumen_estado is distinct from 'vacio' and json_encuesta is not null 
-                     and enc in ('10001','10002') order by enc desc limit 5 `,
+                    order by enc `,
                 [OPERATIVO]
             ).fetchAll();
             var procedureGuardar = be.procedure.caso_guardar;
@@ -532,15 +536,15 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     resultado = errMessage
                     console.log(errMessage)
                 }     
-                /*
-                var {datos_caso, vivienda, operativo} = await be.procedure.caso_traer.coreFunction(context, {operativo:row.operativo, id_caso:row.id_caso})
-                var verQueGrabo = {datos_caso, vivienda, operativo}
-                try{
-                    discrepances.showAndThrow(verQueGrabo,row)
-                }catch(err){
-                    console.log(verQueGrabo,row)
+                if(resultado.includes('ok')){ 
+                    var {datos_caso, vivienda, operativo} = await be.procedure.caso_traer.coreFunction(context, {operativo:row.operativo, id_caso:row.id_caso})
+                    var verQueGrabo = {datos_caso, vivienda, operativo}
+                    try{
+                        discrepances.showAndThrow(verQueGrabo,row)
+                    }catch(err){
+                        console.log(verQueGrabo,row)
+                    }
                 }
-                */
                 return resultado;
             })).catch(function(err){
                 throw err;

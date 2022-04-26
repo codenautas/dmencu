@@ -66,8 +66,8 @@ create table "visitas" (
   "rol" text, 
   "per" bigint, 
   "usu" text, 
-  "fecha" date, 
-  "hora" interval, 
+  "fecha" text, --date
+  "hora" text,  --interval 
   "anotacion" text
 , primary key ("operativo", "vivienda", "visita")
 );
@@ -202,8 +202,8 @@ create table "visitas_sup" (
   "rol_sup" text, 
   "per_sup" bigint, 
   "usu_sup" text, 
-  "fecha_sup" date, 
-  "hora_sup" interval, 
+  "fecha_sup" text,   --date 
+  "hora_sup"  text,   --interval
   "anotacion_sup" text
 , primary key ("operativo", "vivienda", "visita")
 );
@@ -335,6 +335,11 @@ alter table "personas_sup" alter column "hogar" set not null;
 alter table "personas_sup" alter column "persona" set not null;
 alter table "personas_sup" add constraint "nombre_sup<>''" check ("nombre_sup"<>'');
 alter table "personas_sup" add constraint "spl0_sup<>''" check ("spl0_sup"<>'');
+alter table "visitas" add constraint "fecha<>''" check ("fecha"<>'');
+alter table "visitas" add constraint "hora<>''" check ("hora"<>'');
+alter table "visitas_sup" add constraint "fecha_sup<>''" check ("fecha_sup"<>'');
+alter table "visitas_sup" add constraint "hora_sup<>''" check ("hora_sup"<>'');
+
 
 -- FKs
 alter table "visitas" add constraint "visitas viviendas REL" foreign key ("operativo", "vivienda") references "viviendas" ("operativo", "vivienda")  on update cascade;
