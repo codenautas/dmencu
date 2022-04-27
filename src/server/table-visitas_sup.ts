@@ -44,12 +44,12 @@ export function visitas_sup(context:TableContext):TableDefinition {
         },
         {
             "name": "fecha_sup",
-            "typeName": "date",
+            "typeName": "text",
             "nullable": true
         },
         {
             "name": "hora_sup",
-            "typeName": "interval",
+            "typeName": "text",
             "nullable": true
         },
         {
