@@ -28,7 +28,9 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
         {name:'sin_novedad'  , typeName:'bigint', aggregate:'sum', visible:opts.agrupado},
         {name:'sin_resultado', typeName:'bigint', aggregate:'sum', visible:!opts.agrupado, condicion:`resumen_estado in ('vacio')`},
        // {name:'cita_pactada' , typeName:'bigint', aggregate:'sum', visible:!opts.agrupado, condicion:`resumen_estado in ('cita pactada')`},
-        {name:'rea'          , typeName:'bigint', aggregate:'sum', condicion:`rea=1`},
+        {name:'rea'          , typeName:'bigint', aggregate:'sum', condicion:`resultado='efectiva'`},
+		{name:'pendiente'    , typeName:'bigint', aggregate:'sum', condicion:`resultado='pendiente'`},
+		{name:'mixta'        , typeName:'bigint', aggregate:'sum', condicion:`resultado='mixta'`},
         /*
         {name:'asuente_viv'  , typeName:'bigint', title:'ausente de vivienda', condicion:`cod_no_rea=7`},
         {name:'asuente_mie'  , typeName:'bigint', title:'ausente de miembro seleccionado', condicion:`cod_no_rea=75`},
@@ -50,10 +52,10 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
             ...camposCorte,
             {name:'total'        , typeName:'bigint', aggregate:'sum'},
             ...camposCalculados.map(f=>{var {condicion, ...fieldDef}=f; return fieldDef}),
-            {name:'otros'           , typeName:'bigint', aggregate:'sum'},
-            {name:'tasa_efectividad', typeName:'decimal'},
-            {name:'incompleto'       , typeName:'bigint', aggregate:'sum', visible:!opts.agrupado, condicion:`resumen_estado in ('incompleto','con problemas')`},
-            {name:'pendiente_verif'  , typeName:'bigint', aggregate:'sum', visible:!opts.agrupado, condicion:`resumen_estado in ('incompleto','con problemas')`},
+            {name:'otros'                , typeName:'bigint', aggregate:'sum'},
+            {name:'tasa_efectividad'     , typeName:'decimal'},
+            {name:'incompleto'           , typeName:'bigint', aggregate:'sum', visible:!opts.agrupado, condicion:`resumen_estado in ('incompleto','con problemas')`},
+            {name:'verif_encu_pendiente' , typeName:'bigint', aggregate:'sum', visible:!opts.agrupado, condicion:`resumen_estado in ('incompleto','con problemas')`},
         ],
         primaryKey:camposCorte.map(f=>f.name),
         sql:{
@@ -75,7 +77,7 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
                             'count(*) filter (where klase is null) as otros'
                         ].join(',')}
                             , count(*) filter (where resumen_estado in ('incompleto','con problema')) as incompleto
-                            , count(*) filter (where resumen_estado in ('no rea','ok') and verificado is null) as pendiente_verif
+                            , count(*) filter (where resumen_estado in ('no rea','ok') and verificado is null) as verif_encu_pendiente
                         from (
                             select t.*,a.participacion_a, a.clase_a, 
                                 case ${camposCalculados.filter(f=>f.condicion).map(f=>
