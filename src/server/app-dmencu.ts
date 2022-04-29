@@ -509,6 +509,17 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                     ]},            
                 )
             }
+            if(context.puede.encuestas.procesar){
+                menu = [ ...menu,
+                    {menuType:'menu', name:'procesar', menuContent:[
+                        {menuType:'table', name:'variables'    },
+                        {menuType:'table', name:'consistencias'},
+                        {menuType:'table', name:'inconsistencias'},
+                        {menuType:'table', name:'tabla_datos'  },
+                        {menuType:'table', name:'diccionario'  , label:'diccionarios' },
+                    ]},
+                ]
+            }
             if(context.superuser){
                 menu = [ ...menu,
                     {menuType:'menu', name:'configurar', menuContent:[
