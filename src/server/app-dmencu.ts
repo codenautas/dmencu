@@ -501,7 +501,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                 menu.push(
                     {menuType:'menu', name:'control', menuContent:[
                         {menuType:'table', name:'resumen', table:'control_resumen', selectedByDefault:true},
-                        {menuType:'table', name:'dominio', table:'control_campo'},
+                        {menuType:'table', name:'dominio', table:'control_campo_dominio'},
                         {menuType:'table', name:'zona'   , table:'control_campo_zona'  },
                         {menuType:'table', name:'comuna' , table:'control_campo_comuna'},
                         {menuType:'table', name:'área'   , table:'control_campo_area'  },
@@ -587,16 +587,19 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             , control_campo
             , control_resumen
             , control_campo_zona: context=>control_campo(context, 
-                {nombre:'control_campo_comuna', title:'control campo x zona solo cemento', camposCorte:[{name:'zona', typeName:'text'}], filtroWhere:'true' }
+                {nombre:'control_campo_comuna', title:'control campo x zona solo cemento', camposCorte:[{name:'zona', typeName:'text'}], filtroWhere:'dominio=3' }
             )
             , control_campo_comuna: context=>control_campo(context, 
-                {nombre:'control_campo_comuna', title:'control campo x comuna solo cemento', camposCorte:[{name:'zona', typeName:'text'},{name:'nrocomuna', typeName:'integer'}], filtroWhere:'true' }
+                {nombre:'control_campo_comuna', title:'control campo x comuna solo cemento', camposCorte:[{name:'zona', typeName:'text'},{name:'nrocomuna', typeName:'integer'}], filtroWhere:'dominio=3' }
             )
             , control_campo_area: context=>control_campo(context, 
                 {nombre:'control_campo_comuna', title:'control campo x area', camposCorte:[{name:'zona', typeName:'text'},{name:'nrocomuna', typeName:'integer'},{name:'area', typeName:'integer'},{name:'participacion_a', typeName:'text'},{name:'clase_a', typeName:'text'}]}
             )
             , control_campo_participacion: context=>control_campo(context, 
                 {nombre:'control_campo_comuna', title:'control campo x participacion', camposCorte:[{name:'participacion', typeName:'bigint'}]}
+            )
+            , control_campo_dominio: context=>control_campo(context, 
+                {nombre:'control_campo_comuna', title:'control campo x dominio', camposCorte:[{name:'dominio', typeName:'integer'}]}
             ),
             viviendas,
             visitas,
