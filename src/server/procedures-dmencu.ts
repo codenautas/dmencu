@@ -788,42 +788,33 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             };
         }
     },
-    /*
     {
-        action:'test_sql2_falla',
-        parameters:[
-            //{name:'var1'         , typeName:'text'},
-            //{name:'var2'         , typeName:'integer'},
+        action: 'consistir_vivienda',
+        parameters: [
+            {name:'operativo'     ,references:'operativos',  typeName:'text'},
+            {name:'vivienda'       ,typeName:'text'},
         ],
-        
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             var {be, client} =context;
-            const OPERATIVO = await getOperativoActual(context);
-            await context.client.query(
-                        `update tem
-                            set cluster = $3
-                            where operativo= $1 and enc = $2 
-                            returning 'ok'`
-                        ,
-                        [OPERATIVO, '10001', 1]
-            ).execute();
+            let param_proc={
+                operativo: parameters.operativo,
+                id_caso: parameters.vivienda
+            } 
+            let errMessage: string|null;
+            let resultado: string|null;
             try{
-                await context.client.query(
-                    `update tem
-                        set cluster = $3
-                        where operativo= $1 and enc = $2 
-                        returning 'ok'`
-                    ,
-                    [OPERATIVO, '10001', 'error']
-                ).execute();
-                }catch(err){
-                console.log('****** err sql2',err)
-                }
-        }    
+                resultado= await be.procedure.consistir_encuesta.coreFunction(context, 
+                        param_proc, client
+                );    
+            }catch(err){
+                errMessage = " consistir_vivienda. "+ err ;
+                console.log(errMessage)
+            } 
+            console.log('****** consistir_vivienda resultado:',resultado)               
             return {
                 ok:'ok'
             };
         }
-    },
-    */
+
+    }
 ];

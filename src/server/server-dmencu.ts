@@ -4,9 +4,9 @@ import { AppBackend, emergeAppMetaEnc, emergeAppOperativos, emergeAppRelEnc } fr
 import { emergeAppConsistencias, emergeAppDatosExt, emergeAppProcesamiento, emergeAppVarCal, OperativoGenerator /*, pgWitheList */} from "procesamiento";
 import { emergeAppDmEncu } from "./app-dmencu";
 
-OperativoGenerator.mainTD = 'defgen';
-OperativoGenerator.mainTDPK = 'id_caso'; // TODO: hacer esto dinámico en paquete consistencias
-OperativoGenerator.orderedIngresoTDNames = [OperativoGenerator.mainTD, 'defgen_calculada'];
+OperativoGenerator.mainTD = 'viviendas';
+OperativoGenerator.mainTDPK = 'vivienda'; // TODO: hacer esto dinámico en paquete consistencias
+OperativoGenerator.orderedIngresoTDNames = [OperativoGenerator.mainTD, 'vivienda_calculada'];
 OperativoGenerator.orderedReferencialesTDNames = ['lotes'];
 
 //pgWitheList.push('abs');

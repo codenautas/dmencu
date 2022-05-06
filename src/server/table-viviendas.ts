@@ -241,7 +241,8 @@ export function viviendas(context:TableContext):TableDefinition {
             "name": "razon_9v_sup",
             "typeName": "bigint",
             "nullable": true
-        }
+        },
+        { name: "consistido"    , label:'consistido'            , typeName: 'timestamp'},
     ],
     "sql": {
         "isReferable": true
