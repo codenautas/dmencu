@@ -899,7 +899,7 @@ export function verificarSorteo(opts:{
                     respuestas[configuracionSorteo.cantidad_sorteables]=0;
                 }
             }
-            respuestas[configuracionSorteo.cantidad_total]=respuestasUA.length;
+            respuestas[configuracionSorteo.cantidad_total]= respuestasUA.length || null; //no queremos el valor 0
             respuestas[configuracionSorteo.variableBotonFormularioUA]='ok';
             if(configuracionSorteo.variableBotonFormularioUAIndividual){
                 respuestas[configuracionSorteo.variableBotonFormularioUAIndividual]='ok';

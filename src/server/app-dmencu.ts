@@ -57,7 +57,7 @@ import { personas_sup        } from './table-personas_sup';
 
 import {defConfig} from "./def-config"
 
-const APP_DM_VERSION="#22-04-29";
+const APP_DM_VERSION="#22-05-09";
 
 export type Constructor<T> = new(...args: any[]) => T;
 export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesamientoType>>(Base:T){
