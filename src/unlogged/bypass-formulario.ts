@@ -617,6 +617,52 @@ export const getFuncionValorar   = getFuncionCompilada(funcionesValorar);
 
 
 var rowValidator = getRowValidator<IdVariable, Valor, IdFin>({getFuncionHabilitar, getFuncionValorar})
+var buscarNoReaEnRespuestas = (unidadesARecorrerPrm:IdUnidadAnalisis[],unidadAnalisis:UnidadAnalisis, respuestas:Respuestas,noReasTarea:{}[],nombNoRea:string)=>{
+    var nrcodigo:string|null= null;
+    var esvalor=false;
+    var rvalor:string|null=null;
+    var rvariable:string;
+   // var result={nrcod:String, esval:Boolean};
+    if(unidadesARecorrerPrm.includes(unidadAnalisis.unidad_analisis)){
+        for(let noRea of noReasTarea){ //estructura.noReas, estructura.noReasSup
+            if (nombNoRea=='no_rea'){
+                var {variable , valor, no_rea} = noRea;
+                rvalor=valor;
+                rvariable=variable;
+            }else{
+                var {variable_sup , valor_sup, no_rea_sup} = noRea;
+                rvalor=valor_sup;
+                rvariable=variable_sup;
+            }
+            if(respuestas[rvariable as IdVariable]==rvalor){
+                nrcodigo =rvalor; //no_rea, no_rea_sup
+                esvalor = true;
+                return {nrcodigo,esvalor}
+            }else{
+                nrcodigo=null;
+                esvalor=false;
+            }
+        }
+    }
+    for(let ua of (likeAr(unidadAnalisis?.hijas).array())){
+        if(ua?.unidad_analisis && respuestas[ua.unidad_analisis] instanceof Array){
+            for(let respuestasHijas of respuestas[ua?.unidad_analisis]){
+               let result= buscarNoReaEnRespuestas(unidadesARecorrerPrm,ua,respuestasHijas,noReasTarea,nombNoRea);
+                if(result.esvalor ){
+                    nrcodigo=result.nrcodigo;
+                    esvalor=result.esvalor;
+                    return {nrcodigo,esvalor}
+                    break;
+                }else {
+                    nrcodigo=null;
+                    esvalor=false;
+                   // return {nrcodigo, esvalor}
+                }
+            }
+        }
+    }
+  return {nrcodigo, esvalor}
+ }
 
 ////// TODOS LOS NOMBRES DE variables o formularios o casilleros deben estar en el objeto operativo
 //// QUITARLO Y REEMPLAZARLO por buscar en estructura.unidad_analisis y estructura.formulario
@@ -633,7 +679,7 @@ export var defOperativo = {
         var uaPrincipal = likeAr(estructura.unidades_analisis).find((ua)=>!ua.padre);
         var esNoRea = false;
         var codNoRea:string|null= null;
-
+  /*
         var buscarNoReaEnRespuestas = (unidadAnalisis:UnidadAnalisis, respuestas:Respuestas)=>{
             if(unidadesARecorrer.includes(unidadAnalisis.unidad_analisis)){
                 for(let noRea of estructura.noReas){
@@ -659,18 +705,23 @@ export var defOperativo = {
         }
         buscarNoReaEnRespuestas(uaPrincipal!,respuestas);
         return {codNoRea,esNoRea}
+ */
+        let resnorea = buscarNoReaEnRespuestas( unidadesARecorrer,uaPrincipal!,respuestas,estructura.noReas,'no_rea');
+        codNoRea=resnorea.nrcodigo;
+        esNoRea=resnorea.esvalor;
+        return {codNoRea, esNoRea};
     },
-	/*
-    esNoreaSup:(respuestas:Respuestas)=>{
+   esNoreaSup:(respuestas:Respuestas)=>{
         //TODO GENERALIZAR buscarNoreaRespuestas
        var unidadesARecorrerSup = ['viviendas','hogares_sup','personas_sup'] as IdUnidadAnalisis[];
        var uaPrincipal = likeAr(estructura.unidades_analisis).find((ua)=>!ua.padre);
        var esNoReaSup = false;
        var codNoReaSup:string|null= null;
-      // buscarNoReaEnRespuestas( unidadesARecorrerSup,uaPrincipal!,respuestas,noReasSup,'no_rea_sup');//con los parametros que necesitariamos para generalizar
-      // return {codNoReaSup,esNoReaSup}
+       let resnorea =buscarNoReaEnRespuestas( unidadesARecorrerSup,uaPrincipal!,respuestas,estructura.noReasSup,'no_rea_sup');//con los parametros que necesitariamos para generalizar
+         codNoReaSup=resnorea.nrcodigo;
+         esNoReaSup=resnorea.esvalor;
+       return {codNoReaSup,esNoReaSup}
     },
-	*/
     esRealizada:(respuestas:Respuestas)=>{
         //TODO GENERALIZAR
         var esRea = false;
@@ -725,7 +776,6 @@ export var defOperativo = {
         }
         return {codRea,esRea}
     },
-    /*
     esRealizadaSup:(respuestas:Respuestas)=>{
         //TODO GENERALIZAR 
         var esReaSup = false;
@@ -769,7 +819,6 @@ export var defOperativo = {
         }
         return {codReaSup,esReaSup}
     },
-    */    
     UAprincipal:'' as IdUnidadAnalisis,
     defUA:{} as {[i in IdUnidadAnalisis]:{pk:IdVariable, incluidas:IdUnidadAnalisis[], idsFor:IdFormulario[]}},
     defFor:{} as {[f in IdFormulario]:{/*arbolUA:IdUnidadAnalisis[], */ hermano?:true}}
@@ -1051,6 +1100,7 @@ function calcularFeedback(respuestas: Respuestas, forPkRaiz:ForPkRaiz, opts:Opci
     datosByPass.respuestas.viviendas[forPkRaiz.vivienda!].resumenEstado = resumenEstado;
     datosByPass.respuestas.viviendas[forPkRaiz.vivienda!].codNoRea = codNoRea;
     datosByPass.respuestas.viviendas[forPkRaiz.vivienda!].codRea = codRea;
+    // datosByPass.respuestas.viviendas[forPkRaiz.vivienda!].codNoReaSup = codNoReaSup;
 }
 
 export var getFormulariosForIdVivienda = (idVivienda:number)=>{
@@ -1096,13 +1146,19 @@ export function calcularResumenVivienda(
     forPkRaiz:ForPkRaiz, 
     feedbackRowValidator:{[formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin>}, 
     respuestas:Respuestas
-):{resumenEstado:ResumenEstado,codNoRea:string|null,codRea:number|null}{
+):{resumenEstado:ResumenEstado,codNoRea:string|null,codRea:number|null,codNoReaSup:string|null}{
     var {codRea, esRea} = defOperativo.esRealizada(respuestas)
     var {codNoRea, esNoRea} = defOperativo.esNorea(respuestas)
    // var {codReaSup,esReaSup} = defOperativo.esRealizadaSup(respuestas)
+   var {codNoReaSup, esNoReaSup} = defOperativo.esNoreaSup(respuestas)
     if(esNoRea){
         return {resumenEstado: "no rea", codNoRea, codRea};
     }
+ /*
+    if(esNoReaSup){
+        return {resumenEstado: "no rea", codNoRea, codRea, codNoReaSup};
+    }
+    */
     
     var formsFeedback = getFormulariosForIdVivienda(forPkRaiz.vivienda!);
     var configuracionSorteoFormulario = estructura.configSorteo && estructura.configSorteo[getMainFormForVivienda(forPkRaiz.vivienda!)]
@@ -1148,5 +1204,5 @@ export function calcularResumenVivienda(
             minResumen='incompleto';
         }
     }
-    return {resumenEstado: minResumen, codNoRea, codRea};
+    return {resumenEstado: minResumen, codNoRea, codRea,codNoReaSup};
 }

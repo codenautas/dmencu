@@ -223,6 +223,8 @@ export type RespuestasRaiz=Respuestas & {
     $dirty:boolean
     codNoRea: string|null
     codRea: number|null
+    codNoReaSup: string|null
+    codReaSup: number|null
 }
 
 /*
