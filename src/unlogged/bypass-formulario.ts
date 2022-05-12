@@ -793,10 +793,14 @@ export var defOperativo = {
                 for(let respuestasH of respuestasHs){
                     var reah:number;
                     var selec:number;
-                    if(respuestasH['entrea_sup' ] != 1||respuestasH['spr1_sup']==2||respuestasH['sp4']==3||respuestasH['total_rango_sup']==0){
+                    if(respuestasH['entrea_sup' ] == 2||respuestasH['spr1_sup']==2||respuestasH['sp4']==3||respuestasH['total_rango_sup']==0){
                         reah=2;
                     }else{
-                        reah = 3;
+                        if(respuestasH['entrea_sup' ]){
+                           reah = 1;
+                        }else {
+                           reah=3;
+                        }     
                     }
                     reahs.push(reah);
                 }
