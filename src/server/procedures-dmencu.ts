@@ -683,13 +683,23 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 await Promise.all(likeAr(persistentes.respuestas[UA_PRINCIPAL]).map(async (respuestasUAPrincipal, idEnc)=>{
                     var tarea = persistentes.informacionHdr[idEnc].tarea.tarea;
                     var puedoGuardarEnTEM=true;
+                    //TODO GENERALIZAR EL HORROR ESTE
+                    var setters=``;
+                    var params = [OPERATIVO, idEnc, tarea, token];
+                    if(tarea=='supe'){
+                        setters+= `, resumen_estado_sup=$5, norea_sup=$6, rea_sup=$7`
+                        params = params.concat([respuestasUAPrincipal.resumenEstadoSup, respuestasUAPrincipal.codNoReaSup, respuestasUAPrincipal.codReaSup]);
+                    }else{
+                        setters+= `, resumen_estado=$5, norea=$6, rea=$7`
+                        params = params.concat([respuestasUAPrincipal.resumenEstado, respuestasUAPrincipal.codNoRea, respuestasUAPrincipal.codRea]);
+                    }
                     var queryTareasTem = await context.client.query(
                         `update tareas_tem
-                            set cargado_dm=null, resumen_estado=$5, norea = $6, rea=$7
+                            set cargado_dm=null ${setters}
                             where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm = $4
                             returning 'ok'`
                         ,
-                        [OPERATIVO, idEnc, tarea, token, respuestasUAPrincipal.resumenEstado, respuestasUAPrincipal.codNoRea, respuestasUAPrincipal.codRea]
+                        params
                     ).fetchOneRowIfExists();
                     puedoGuardarEnTEM=queryTareasTem.rowCount==1;
                     if(puedoGuardarEnTEM){
