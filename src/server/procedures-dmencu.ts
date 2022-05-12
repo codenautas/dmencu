@@ -443,6 +443,10 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             delete datos_json.codRea;
             delete datos_json.codNoRea;
             delete datos_json.resumenEstado;
+            delete datos_json.codReaSup;
+            delete datos_json.codNoReaSup;
+            delete datos_json.resumenEstadoSup;
+
             if( Object.keys(datos_json).length >2){
                 var queries = sqlTools.structuredData.sqlWrite(datos_json, struct_dmencu);
                 return await queries.reduce(function(promise, query){
