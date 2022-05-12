@@ -52,3 +52,9 @@ CREATE OR REPLACE FUNCTION comun.blanco("P_valor" text)
 $BODY$SELECT $1 IS NULL$BODY$
   LANGUAGE sql IMMUTABLE;
 
+--es_par
+CREATE OR REPLACE FUNCTION comun.es_par(p_valor anyelement)
+    RETURNS boolean
+    AS $BODY$select case when mod(p_valor,2)=0 then TRUE else FALSE end$BODY$
+    LANGUAGE 'sql'
+    IMMUTABLE ;

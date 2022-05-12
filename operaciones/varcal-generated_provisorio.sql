@@ -290,7 +290,7 @@ perform gen_fun_var_calc();
 UPDATE operativos SET calculada=now()::timestamp(0) WHERE operativo='PREJU_2022';
 UPDATE tabla_datos SET generada=now()::timestamp(0) WHERE operativo='PREJU_2022' AND tipo='calculada';
 ----
-end
-$SQL_DUMP$--- generado: Tue May 03 2022 19:09:04 GMT-0300 (hora estándar de Argentina)
+end;
+$SQL_DUMP$;--- generado: Tue May 03 2022 19:09:04 GMT-0300 (hora estándar de Argentina)
 
 select update_varcal('PREJU_2022');

@@ -621,8 +621,10 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
         })
         be.appendToTableDefinition('inconsistencias',function(tableDef, context){
             tableDef.fields.splice(2,0,
-                {name:'id_caso', typeName:'text'   , label:'caso'   , editable: false},
-               // {name:'p0'     , typeName:'integer', label:'persona', editable: false}
+                {name:'vivienda'    , typeName:'text'     , editable: false},
+                {name:'hogar'       , typeName:'bigint'   , editable: false},
+                {name:'persona'     , typeName:'bigint'   , editable: false},
+                {name:'visita'      , typeName:'bigint'   , editable: false},
             );
             tableDef.editable=tableDef.editable || context.puede?.encuestas.justificar;
             tableDef.fields.forEach(function(field){
