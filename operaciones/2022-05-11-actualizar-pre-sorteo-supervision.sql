@@ -7,7 +7,7 @@ set role preju2022_owner;
 set search_path=base;
  
 alter table tem add column pre_sorteo integer;
-alter table tem add column supervision_dirigida integer;
+alter table tareas_tem add column supervision_dirigida integer;
 alter table tem add column supervision_aleatoria integer;
 alter table tem add column supervision integer; --se activa con el valor de pre_sorteo si se dan las condiciones
 select count(*) from tem where dominio=3 and operativo='PREJU_2022'; 

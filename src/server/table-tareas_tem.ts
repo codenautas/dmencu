@@ -33,13 +33,15 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
 
         //{name:'resultado'          , typeName:'text'}, // fk tareas_resultados 
         //{name:'fecha_resultado'    , typeName:'date'}, // fk tareas_resultados 
-        {name:'verificado'         , typeName:'text'}, 
-        {name:'proximo_paso'       , typeName:'text'        , editable:false   , inTable:false}, 
-        {name:'obs_verificado'     , typeName:'text'},
-        {name:'rea_sup'            , typeName:'integer'     , editable: puedeEditar},
-        {name:'norea_sup'          , typeName:'integer'     , editable: puedeEditar},
-        {name:'resumen_estado_sup' , typeName:'text'        , editable: false},
-    ]; 
+        {name:'supervision_dirigida'  , typeName:'integer'     , editable: true},
+        {name:'supervision_aleatoria' , typeName:'integer'     , editable: false,  inTable:false},
+        {name:'verificado'            , typeName:'text'}, 
+        {name:'proximo_paso'          , typeName:'text'        , editable:false   , inTable:false}, 
+        {name:'obs_verificado'        , typeName:'text'},
+        {name:'rea_sup'               , typeName:'integer'     , editable: puedeEditar},
+        {name:'norea_sup'             , typeName:'integer'     , editable: puedeEditar},
+        {name:'resumen_estado_sup'    , typeName:'text'        , editable: false},
+        ]; 
     return {
         name:`${mis}tareas_tem`,
         tableName:`tareas_tem`,
@@ -55,7 +57,7 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
         ],
         softForeignKeys:[
             {references:'usuarios', fields:[{source:'asignante', target:'idper'}], alias:'at'},
-            {references:'tem_recepcion' , fields:['operativo','enc'], displayAllFields:true, displayAfterFieldName:'obs_verificado'},
+            {references:'tem_recepcion' , fields:['operativo','enc'], displayAllFields:true, displayAfterFieldName:'resumen_estado_sup'},
             {references:'tokens', fields:[{source:'cargado_dm', target:'token'}], displayFields:['username'], displayAfterFieldName:'cargado'},
         ],
         sql:{
@@ -99,6 +101,7 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                     , case rol_asignante when 'automatico' then null
                         when 'recepcionista' then areas.recepcionista end as asignante
                     , case when tt.tarea='encu' and  y.grupo0 in ('ausentes','rechazos') then 'recuperacion' else null end proximo_paso   
+                    , t.supervision_aleatoria
                     from tareas join  tem t using (operativo) 
                         left join areas using (operativo, area)
                         left join lateral (select * from tareas_tem where tarea=tareas.tarea and operativo=t.operativo and enc=t.enc) tt on true
