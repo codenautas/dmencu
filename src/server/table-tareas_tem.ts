@@ -30,17 +30,22 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
         //{name:'cod_no_rea'         , typeName:'text'        , editable: false   , inTable:false  },
         {name:'gru_no_rea'         , typeName:'text'        , editable: false   , inTable:false  },
         {name:'resumen_estado'     , typeName:'text'        , editable: false  },
-
+        {name:'utl_rea'            , typeName:'integer'     , editable: false   ,  inTable:false},
+        {name:'ult_norea'          , typeName:'integer'     , editable: false   ,  inTable:false},
+        {name:'ult_resumen_estado' , typeName:'text'        , editable: false   ,  inTable:false},
         //{name:'resultado'          , typeName:'text'}, // fk tareas_resultados 
         //{name:'fecha_resultado'    , typeName:'date'}, // fk tareas_resultados 
         {name:'supervision_dirigida'  , typeName:'integer'     , editable: true},
         {name:'supervision_aleatoria' , typeName:'integer'     , editable: false,  inTable:false},
         {name:'verificado'            , typeName:'text'}, 
-        {name:'proximo_paso'          , typeName:'text'        , editable:false   , inTable:false}, 
+        {name:'proximo_paso'          , typeName:'text'        , editable:false , inTable:false}, 
         {name:'obs_verificado'        , typeName:'text'},
         {name:'rea_sup'               , typeName:'integer'     , editable: puedeEditar},
         {name:'norea_sup'             , typeName:'integer'     , editable: puedeEditar},
         {name:'resumen_estado_sup'    , typeName:'text'        , editable: false},
+        {name:'utl_rea_sup'           , typeName:'integer'     , editable: false ,  inTable:false},
+        {name:'ult_norea_sup'         , typeName:'integer'     , editable: false ,  inTable:false},
+        {name:'ult_resumen_estado_sup', typeName:'text'        , editable: false ,  inTable:false},
         ]; 
     return {
         name:`${mis}tareas_tem`,
@@ -102,6 +107,8 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                         when 'recepcionista' then areas.recepcionista end as asignante
                     , case when tt.tarea='encu' and  y.grupo0 in ('ausentes','rechazos') then 'recuperacion' else null end proximo_paso   
                     , t.supervision_aleatoria
+                    , t.rea utl_rea, t.norea as ult_norea, t.resumen_estado ult_resumen_estado
+                    , t.rea_sup utl_rea_sup, t.norea_sup as ult_norea_sup, t.resumen_estado_sup ult_resumen_estado_sup
                     from tareas join  tem t using (operativo) 
                         left join areas using (operativo, area)
                         left join lateral (select * from tareas_tem where tarea=tareas.tarea and operativo=t.operativo and enc=t.enc) tt on true
