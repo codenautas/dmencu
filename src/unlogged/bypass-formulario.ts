@@ -16,7 +16,8 @@ import {
     UnidadAnalisis,
     Formulario,
     ConfiguracionSorteoFormulario,
-    DatosByPassPersistibles
+    DatosByPassPersistibles,
+    IdEnc
 } from "./tipos";
 
 var especiales = {} as {
@@ -1092,15 +1093,14 @@ function calcularFeedback(respuestas: Respuestas, forPkRaiz:ForPkRaiz, opts:Opci
     var nuevosRows : {[x in PlainForPk]:FormStructureState<IdVariable,IdFin>}={}
     calcularFeedbackEncuesta(nuevosRows, estructura.formularios, forPkRaiz, respuestas, opts);
     datosByPass.feedbackRowValidator = {...datosByPass.feedbackRowValidator, ...nuevosRows};
-    var {resumenEstado, codNoRea, codRea} = calcularResumenVivienda(
-        forPkRaiz, 
-        nuevosRows,
-        respuestas
-    );
-    datosByPass.respuestas.viviendas[forPkRaiz.vivienda!].resumenEstado = resumenEstado;
-    datosByPass.respuestas.viviendas[forPkRaiz.vivienda!].codNoRea = codNoRea;
-    datosByPass.respuestas.viviendas[forPkRaiz.vivienda!].codRea = codRea;
-    // datosByPass.respuestas.viviendas[forPkRaiz.vivienda!].codNoReaSup = codNoReaSup;
+    datosByPass.respuestas.viviendas[forPkRaiz.vivienda!] = {
+        ...datosByPass.respuestas.viviendas[forPkRaiz.vivienda!],
+        ...calcularResumenVivienda(
+            forPkRaiz, 
+            nuevosRows,
+            respuestas
+        )
+    };
 }
 
 export var getFormulariosForIdVivienda = (idVivienda:number)=>{
@@ -1142,24 +1142,24 @@ export var calcularDisabledBF = (configSorteoFormulario:ConfiguracionSorteoFormu
         r[configSorteoFormulario.resultado]
     ))
 
+type ResultadoResumen = {
+    resumenEstado:ResumenEstado,
+    resumenEstadoSup:ResumenEstado,
+    codRea:number|null,
+    codNoRea:string|null,
+    codReaSup:number|null
+    codNoReaSup:string|null,
+}
+
 export function calcularResumenVivienda(
     forPkRaiz:ForPkRaiz, 
     feedbackRowValidator:{[formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin>}, 
     respuestas:Respuestas
-):{resumenEstado:ResumenEstado,codNoRea:string|null,codRea:number|null,codNoReaSup:string|null}{
+):ResultadoResumen{
     var {codRea, esRea} = defOperativo.esRealizada(respuestas)
     var {codNoRea, esNoRea} = defOperativo.esNorea(respuestas)
-   // var {codReaSup,esReaSup} = defOperativo.esRealizadaSup(respuestas)
-   var {codNoReaSup, esNoReaSup} = defOperativo.esNoreaSup(respuestas)
-    if(esNoRea){
-        return {resumenEstado: "no rea", codNoRea, codRea};
-    }
- /*
-    if(esNoReaSup){
-        return {resumenEstado: "no rea", codNoRea, codRea, codNoReaSup};
-    }
-    */
-    
+    var {codReaSup,esReaSup} = defOperativo.esRealizadaSup(respuestas)
+    var {codNoReaSup, esNoReaSup} = defOperativo.esNoreaSup(respuestas)
     var formsFeedback = getFormulariosForIdVivienda(forPkRaiz.vivienda!);
     var configuracionSorteoFormulario = estructura.configSorteo && estructura.configSorteo[getMainFormForVivienda(forPkRaiz.vivienda!)]
     var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>{
@@ -1204,5 +1204,25 @@ export function calcularResumenVivienda(
             minResumen='incompleto';
         }
     }
-    return {resumenEstado: minResumen, codNoRea, codRea,codNoReaSup};
+    
+    //TODO ARREGLAR ESTE HORROR, GENERALIZAR
+    var tarea = datosByPass.informacionHdr[forPkRaiz.vivienda as unknown as IdEnc].tarea.tarea;
+    var resumenEstado:ResumenEstado;
+    var resumenEstadoSup:ResumenEstado;
+    if(tarea=='supe'){
+        resumenEstadoSup = esNoReaSup?'no rea':minResumen
+        //para que coloree bien en la hdr del DM (luego en bbdd no se guarda)
+        resumenEstado = resumenEstadoSup
+    }else{
+        resumenEstado = esNoRea?'no rea':minResumen
+    }
+    var resultado:ResultadoResumen = {
+        resumenEstado,
+        resumenEstadoSup,
+        codRea,
+        codNoRea,
+        codReaSup,
+        codNoReaSup
+    }
+    return resultado
 }

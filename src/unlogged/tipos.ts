@@ -220,6 +220,7 @@ export type Respuestas={
 
 export type RespuestasRaiz=Respuestas & {
     resumenEstado:ResumenEstado
+    resumenEstadoSup:ResumenEstado
     $dirty:boolean
     codNoRea: string|null
     codRea: number|null

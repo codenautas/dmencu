@@ -80,7 +80,11 @@ var getParametersAndSettersForUpdateTem = async (context, operativo, idEnc, resp
     ).fetchUniqueValue()).value;
     var params = [operativo, idEnc, respuestasUAPrincipal]
     var setters = `json_encuesta = $3`;
-    if(registraEstadoEnTem){
+    //TODO ARREGLAR ESTE HORROR, GENERALIZAR
+    if(tarea=='supe'){
+        setters+= `, resumen_estado_sup=$4, norea_sup=$5, rea_sup=$6`
+        params = params.concat([respuestasUAPrincipal.resumenEstadoSup, respuestasUAPrincipal.codNoReaSup, respuestasUAPrincipal.codReaSup]);
+    }else{
         setters+= `, resumen_estado=$4, norea=$5, rea=$6`
         params = params.concat([respuestasUAPrincipal.resumenEstado, respuestasUAPrincipal.codNoRea, respuestasUAPrincipal.codRea]);
     }
