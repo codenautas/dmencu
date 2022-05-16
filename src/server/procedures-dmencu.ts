@@ -834,5 +834,24 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             };
         }
 
+    },
+    {
+        action: 'dm_rescatar',
+        parameters:[
+            {name:'localStorageItem'       , typeName:'jsonb'},
+            {name:'localStorageItemKey'    , typeName:'text'},
+        ],
+        unlogged:true,
+        coreFunction:async function(context, params){
+            var {localStorageItemKey, localStorageItem} = params;
+            try{
+                console.log(localStorageItem);
+                await fs.appendFile('local-rescate.txt', JSON.stringify({now:new Date(),user:context.username, itemKey: localStorageItemKey, itemData: localStorageItem})+'\n\n', 'utf8');
+                return 'ok';
+            }catch(err){
+                console.log('ERROR',err);
+                throw err;
+            }
+        }
     }
 ];

@@ -102,6 +102,12 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             }
             next();
         })
+        mainApp.get(baseUrl+'/salvar',async function(req,res,_next){
+            // @ts-ignore sé que voy a recibir useragent por los middlewares de Backend-plus
+            var {useragent} = req;
+            var htmlMain=be.mainPage({useragent}, false, {skipMenu:true}).toHtmlDoc();
+            miniTools.serveText(htmlMain,'html')(req,res);
+        });
         mainApp.get(baseUrl+'/campo',async function(req,res,_next){
             // @ts-ignore sé que voy a recibir useragent por los middlewares de Backend-plus
             var {useragent, user} = req;
