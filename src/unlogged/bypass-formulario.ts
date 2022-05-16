@@ -623,20 +623,23 @@ var buscarNoReaEnRespuestas = (unidadesARecorrerPrm:IdUnidadAnalisis[],unidadAna
     var esvalor=false;
     var rvalor:string|null=null;
     var rvariable:string;
+    var rnorea:string|null=null;
    // var result={nrcod:String, esval:Boolean};
     if(unidadesARecorrerPrm.includes(unidadAnalisis.unidad_analisis)){
         for(let noRea of noReasTarea){ //estructura.noReas, estructura.noReasSup
             if (nombNoRea=='no_rea'){
                 var {variable , valor, no_rea} = noRea;
+                rnorea=no_rea;
                 rvalor=valor;
                 rvariable=variable;
             }else{
                 var {variable_sup , valor_sup, no_rea_sup} = noRea;
+                rnorea=no_rea_sup;
                 rvalor=valor_sup;
                 rvariable=variable_sup;
             }
             if(respuestas[rvariable as IdVariable]==rvalor){
-                nrcodigo =rvalor; //no_rea, no_rea_sup
+                nrcodigo =rnorea;  //no_rea, no_rea_sup
                 esvalor = true;
                 return {nrcodigo,esvalor}
             }else{

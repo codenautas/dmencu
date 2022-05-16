@@ -22,8 +22,9 @@ from (
 select enc, case when vrandom <=0.1 then 1 else 0 end as pre_sorteo --asi da el 10% de elegidas (con valor 1)
 from a
     ) b
-where t.enc=b.enc and t.operativo='PREJU_2022'
-
-select pre_sorteo   
+where t.enc=b.enc and t.operativo='PREJU_2022';
+/*
+select pre_sorteo
   from tem
   where pre_sorteo=1;
+*/
