@@ -29,7 +29,8 @@ create table "preju_2022_hogares_calculada" (
   cant_conyuges bigint,
   edadjefe      bigint,
   sexojefe      bigint,
-  sitconyjefe   bigint 
+  sitconyjefe   bigint,
+  p5b_jefe      bigint 
 , primary key ("operativo", "vivienda", "hogar")
 );
 grant select, insert, update, references on "preju_2022_hogares_calculada" to preju2022_admin;
@@ -52,7 +53,23 @@ create table "preju_2022_personas_calculada" (
   "operativo" text, 
   "vivienda" text, 
   "hogar" bigint, 
-  "persona" bigint
+  "persona" bigint,
+  edad_padre     bigint,
+  sexo_padre     bigint,
+  p4_padre       bigint,
+  p5_padre       bigint,
+  p5b_padre      bigint,
+  edad_madre     bigint,
+  sexo_madre     bigint,
+  p4_madre       bigint,
+  p5_madre       bigint,
+  p5b_madre      bigint,
+  edad_pareja     bigint,
+  sexo_pareja     bigint,
+  p4_pareja       bigint,
+  p5_pareja       bigint,
+  p5b_pareja      bigint
+
 , primary key ("operativo", "vivienda", "hogar", "persona")
 );
 grant select, insert, update, references on "preju_2022_personas_calculada" to preju2022_admin;
@@ -228,14 +245,66 @@ BEGIN
             AND "hogares"."hogar"="preju_2022_hogares_calculada"."hogar" 
             AND "hogares"."operativo"=p_operativo AND "hogares"."vivienda"=p_id_caso;
 
+    UPDATE preju_2022_personas_calculada
+      SET 
+            edad_padre = padre.edad,
+            sexo_padre = padre.sexo,
+            p4_padre = padre.p4,
+            p5_padre = padre.p5,
+            p5b_padre = padre.p5b
+    FROM personas inner join hogares using (operativo,vivienda,hogar) inner join viviendas using (operativo, vivienda) inner join preju_2022_viviendas_calculada using (operativo, vivienda)
+        LEFT JOIN (
+            SELECT operativo, vivienda, hogar, persona, padre.edad, padre.sexo, padre.p4, padre.p5, padre.p5b
+              FROM personas padre
+              --WHERE padre.persona=personas.p6a
+        ) padre ON padre.operativo=personas.operativo AND padre.vivienda=personas.vivienda AND padre.hogar=personas.hogar and padre.persona=personas.p6a
+    WHERE "personas"."operativo"="preju_2022_personas_calculada"."operativo" AND "personas"."vivienda"="preju_2022_personas_calculada"."vivienda" 
+      AND "personas"."hogar"="preju_2022_personas_calculada"."hogar" AND "personas"."persona"="preju_2022_personas_calculada"."persona" 
+      AND "personas"."operativo"=p_operativo AND "personas"."vivienda"=p_id_caso;
+
+    UPDATE preju_2022_personas_calculada
+      SET 
+            edad_madre = madre.edad,
+            sexo_madre = madre.sexo,
+            p4_madre = madre.p4,
+            p5_madre = madre.p5,
+            p5b_madre = madre.p5b
+    FROM personas inner join hogares using (operativo,vivienda,hogar) inner join viviendas using (operativo, vivienda) inner join preju_2022_viviendas_calculada using (operativo, vivienda)
+        LEFT JOIN (
+            SELECT operativo, vivienda, hogar, persona, madre.edad, madre.sexo, madre.p4, madre.p5, madre.p5b
+              FROM personas madre
+              --WHERE madre.persona=personas.p6a           
+        ) madre ON madre.operativo=personas.operativo AND madre.vivienda=personas.vivienda AND madre.hogar=personas.hogar and madre.persona=personas.p6b
+    WHERE "personas"."operativo"="preju_2022_personas_calculada"."operativo" AND "personas"."vivienda"="preju_2022_personas_calculada"."vivienda"
+      AND "personas"."hogar"="preju_2022_personas_calculada"."hogar" AND "personas"."persona"="preju_2022_personas_calculada"."persona"  
+      AND "personas"."operativo"=p_operativo AND "personas"."vivienda"=p_id_caso;
+
+    UPDATE preju_2022_personas_calculada
+      SET 
+            edad_pareja = pareja.edad,
+            sexo_pareja = pareja.sexo,
+            p4_pareja = pareja.p4,
+            p5_pareja = pareja.p5,
+            p5b_pareja = pareja.p5b
+    FROM personas inner join hogares using (operativo,vivienda,hogar) inner join viviendas using (operativo, vivienda) inner join preju_2022_viviendas_calculada using (operativo, vivienda)
+        LEFT JOIN (
+            SELECT operativo, vivienda, hogar, persona, pareja.edad, pareja.sexo, pareja.p4, pareja.p5, pareja.p5b
+              FROM personas pareja
+              limit 1
+        ) pareja ON pareja.operativo=personas.operativo AND pareja.vivienda=personas.vivienda AND pareja.hogar=personas.hogar and pareja.persona=personas.p5b
+    WHERE "personas"."operativo"="preju_2022_personas_calculada"."operativo" AND "personas"."vivienda"="preju_2022_personas_calculada"."vivienda"
+      AND "personas"."hogar"="preju_2022_personas_calculada"."hogar" AND "personas"."persona"="preju_2022_personas_calculada"."persona"  
+      AND "personas"."operativo"=p_operativo AND "personas"."vivienda"=p_id_caso;
+
     UPDATE preju_2022_hogares_calculada
       SET 
             edadjefe = respondiente.edad,
             sexojefe = respondiente.sexo,
-            sitconyjefe = respondiente.p5
+            sitconyjefe = respondiente.p5,
+            p5b_jefe = respondiente.p5b
     FROM hogares inner join viviendas using (operativo, vivienda) inner join preju_2022_viviendas_calculada using (operativo, vivienda)
         LEFT JOIN (
-            SELECT operativo, vivienda, hogar, persona, respondiente.edad, respondiente.sexo, respondiente.p5
+            SELECT operativo, vivienda, hogar, persona, respondiente.edad, respondiente.sexo, respondiente.p5, respondiente.p5b
               FROM personas respondiente
               WHERE respondiente.persona=1
         ) respondiente ON respondiente.operativo=hogares.operativo AND respondiente.vivienda=hogares.vivienda AND respondiente.hogar=hogares.hogar  

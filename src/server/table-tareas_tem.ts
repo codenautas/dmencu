@@ -76,7 +76,7 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                                 else '' end 
                                 ||case when tareas_tem.asignado is null and tareas_tem.operacion is not null then 'Operacion sin asignado'
                                     when tareas_tem.verificado is not null and coalesce(tareas_tem.operacion,'descargar')='cargar' then 'Verificado-cargado'
-                                    when tareas_tem.verificado is not null and tareas_tem.operacion is null then 'Verificado sin operacion'
+                                    when tareas_tem.dominio=3 and tareas_tem.verificado is not null and tareas_tem.operacion is null then 'Verificado sin operacion '
                                 else '' end
                                 ||(select case
                                         when tareas_tem.habilitada and tareas_tem.tarea='recu' and count(*) filter(where h.verificado is not null and h.tarea='encu') =0  then 'T.previa a recu sin verificar'
@@ -109,6 +109,7 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                     , t.supervision_aleatoria
                     , t.rea utl_rea, t.norea as ult_norea, t.resumen_estado ult_resumen_estado
                     , t.rea_sup utl_rea_sup, t.norea_sup as ult_norea_sup, t.resumen_estado_sup ult_resumen_estado_sup
+                    , dominio
                     from tareas join  tem t using (operativo) 
                         left join areas using (operativo, area)
                         left join lateral (select * from tareas_tem where tarea=tareas.tarea and operativo=t.operativo and enc=t.enc) tt on true
