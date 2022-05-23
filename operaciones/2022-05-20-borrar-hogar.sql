@@ -2,7 +2,7 @@
 
 set search_path= base, comun;
 --hogares candidatos a borrar
-select v.total_h, h.*, tt.tarea, tt.verificado,tt.obs_verificado 
+select h.vivienda,h.hogar, v.total_h, h.*, tt.tarea, tt.verificado,tt.obs_verificado 
 from hogares h join viviendas v using (operativo, vivienda)
      join tem t on t.operativo=v.operativo and t.enc=v.vivienda
      join tareas_tem tt on tt.operativo=v.operativo and tt.enc=v.vivienda

@@ -290,7 +290,6 @@ BEGIN
         LEFT JOIN (
             SELECT operativo, vivienda, hogar, persona, pareja.edad, pareja.sexo, pareja.p4, pareja.p5, pareja.p5b
               FROM personas pareja
-              limit 1
         ) pareja ON pareja.operativo=personas.operativo AND pareja.vivienda=personas.vivienda AND pareja.hogar=personas.hogar and pareja.persona=personas.p5b
     WHERE "personas"."operativo"="preju_2022_personas_calculada"."operativo" AND "personas"."vivienda"="preju_2022_personas_calculada"."vivienda"
       AND "personas"."hogar"="preju_2022_personas_calculada"."hogar" AND "personas"."persona"="preju_2022_personas_calculada"."persona"  
