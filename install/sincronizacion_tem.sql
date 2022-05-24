@@ -24,6 +24,10 @@ begin
 
     new.cant_p       = v_cant_p ;
     new.seleccionado = v_seleccionado;
+    if old.json_encuesta is distinct from datos then
+        new.modificado= current_timestamp;
+    end if;
+
     return new;
 end;
 $BODY$;

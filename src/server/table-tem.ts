@@ -119,7 +119,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
             {name:"y"                    , typeName:'decimal' , editable: false  },
             {name:'notas'                , typeName:'text'    , editable: false, inTable:false},
             {name:'cita'                 , typeName:'text'    , editable: false  },
-            //{ name: "modificado"   , label:'modificado'        , typeName: 'timestamp'},
+            {name:"modificado"           , typeName: 'timestamp', editable: false},
             //{name:'obs_sup'        , typeName:'text' , editable: isSupervisor     },
             //{name:'obs_coor'       , typeName:'text' , editable: isCoordinador || isSubCoordinador },  
         ],
