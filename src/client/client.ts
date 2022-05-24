@@ -245,6 +245,55 @@ myOwn.clientSides.abrirRecepcion={
     }
 };
 
+function botonClientSideEnGrilla(opts: { nombreBoton: string, llamada: (depot: myOwn.Depot) => Promise<any> }) {
+    return {
+        prepare: function (depot: myOwn.Depot, fieldName: string) {
+            var td = depot.rowControls[fieldName];
+            var boton = html.button(opts.nombreBoton).create();
+            td.innerHTML = "";
+            td.appendChild(boton);
+            var restaurarBoton = function () {
+                boton.disabled = false;
+                boton.textContent = opts.nombreBoton;
+                boton.style.backgroundColor = '';
+            }
+
+            boton.onclick = function () {
+                boton.disabled = true;
+                boton.textContent = 'procesando...';
+                opts.llamada(depot).then(function(result){
+                    if(result && typeof result === 'object' && 'ok' in result){
+                        if(result.ok){
+                            depot.detailControls.inconsistencias.forceDisplayDetailGrid({});
+                            boton.textContent =  result.message;
+                            boton.title = result;
+                            boton.style.backgroundColor = '#8F8';
+                        }else{
+                            throw new Error(result.message);
+                        }
+                    }
+                    setTimeout(restaurarBoton, 2500);
+                }, function (err) {
+                    boton.textContent = 'error';
+                    boton.style.backgroundColor = '#FF8';
+                    alertPromise(err.message);
+                })
+            }
+        }
+    };
+}
+
+
+myOwn.clientSides.consistir = botonClientSideEnGrilla({
+    nombreBoton: 'consistir',
+    llamada: function (depot: myOwn.Depot) {
+        return depot.row.rea? myOwn.ajax.consistir_encuesta({
+            operativo: depot.row.operativo,
+            id_caso: depot.row.enc
+        }): alertPromise('La encuesta debe tener dato en rea para poder consistirla.');
+    }
+});
+
 myOwn.wScreens.demo=async function(_addrParams){
     // @ts-ignore desplegarFormularioActual global
     window.desplegarFormularioActual({modoDemo:true});

@@ -30,7 +30,8 @@ export function tem(context:TableContext, opts:any):TableDefinition {
         "fields": [
             {name:'operativo'     , typeName:'text'           , editable: false , nullable: false, defaultValue: 'etoi211'},
             {name:'enc'           , typeName:'text'           , editable: false , nullable: false                       },
-            {name: "abrir"        , typeName:'text'           , editable: false, inTable:false, clientSide:'abrir'},
+            {name: "abrir"        , typeName:'text'           , editable: false , inTable:false, clientSide:'abrir'},
+            {name:"consistir"     , typeName: 'text'          , editable:false  , inTable:false, clientSide:'consistir'},
             {name: "cluster"      , typeName:'integer'        , editable: false, isName:true},
             {name:'area'                 , typeName:'integer' , editable: false  },
             {name:'zona'                 , typeName:'text'    , editable: false  },
@@ -131,7 +132,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
             {references:'tokens', fields:[{source:'cargado_dm', target:'token'}], displayFields:['username'], displayAfterFieldName:'cargado'}
         ],
         "detailTables": [
-            //{table: "inconsistencias", abr: "I", fields: ['operativo', 'enc']}
+            {table: "inconsistencias", abr: "I", fields: [{source:'operativo', target:'operativo'},{source:'enc', target:'vivienda'}]}
         ]
     };
     if (opts.recepcion) {

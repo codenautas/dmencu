@@ -14,6 +14,7 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
         {name:'operativo'          , typeName:'text', isPk:2},
         {name:'enc'                , typeName:'text', isPk:3},
         {name:'abrir'              , typeName:'text'        , editable:false   , inTable:false, clientSide:'abrirRecepcion'},
+        {name:"consistir"          , typeName: 'text'       , editable:false   , inTable:false, clientSide:'consistir'},
         {name:'area'               , typeName: 'integer'    , editable:false   , inTable:false },
         {name:'ok'                 , typeName: 'text'       , editable:false   , inTable:false },
         {name:"habilitada"         , typeName: "boolean"    , editable:puedeEditar},
@@ -64,6 +65,9 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
             {references:'usuarios', fields:[{source:'asignante', target:'idper'}], alias:'at'},
             {references:'tem_recepcion' , fields:['operativo','enc'], displayAllFields:true, displayAfterFieldName:'resumen_estado_sup'},
             {references:'tokens', fields:[{source:'cargado_dm', target:'token'}], displayFields:['username'], displayAfterFieldName:'cargado'},
+        ],
+        "detailTables": [
+            {table: "inconsistencias", abr: "I", fields: [{source:'operativo', target:'operativo'},{source:'enc', target:'vivienda'}]}
         ],
         sql:{
             isTable: !opt.mis,
