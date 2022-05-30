@@ -76,7 +76,7 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
                             count(*) filter (where klase=${db.quoteLiteral(f.name)}) as ${f.name}`),
                             'count(*) filter (where klase is null) as otros'
                         ].join(',')}
-                            , count(*) filter (where resumen_estado in ('incompleto','con problema')) as incompleto
+                            , count(*) filter (where resumen_estado in ('incompleto','con problemas')) as incompleto
                             , count(*) filter (where resumen_estado in ('no rea','ok') and verificado is null) as verif_encu_pendiente
                         from (
                             select t.*,a.participacion_a, a.clase_a, 
