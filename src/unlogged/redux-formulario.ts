@@ -309,7 +309,7 @@ export function gotoCampo(){
 }
 
 export function gotoConsistir(operativo:IdOperativo,idEnc:IdEnc){
-    history.replaceState(null, '', `${location.origin+location.pathname}/../menu#w=consistir_encuesta&up={"operativo":${operativo},"encuesta":${idEnc}}&autoproced=true`);
+    history.replaceState(null, '', `${location.origin+location.pathname}/../menu#w=consistir_encuesta&up={"operativo":"${operativo}","encuesta":${idEnc}}&autoproced=true`);
     location.reload();   
 }
 
