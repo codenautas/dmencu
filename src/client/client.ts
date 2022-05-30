@@ -264,7 +264,9 @@ function botonClientSideEnGrilla(opts: { nombreBoton: string, llamada: (depot: m
                 opts.llamada(depot).then(function(result){
                     if(result && typeof result === 'object' && 'ok' in result){
                         if(result.ok){
-                            depot.detailControls.inconsistencias.forceDisplayDetailGrid({});
+                            if (depot.detailControls.inconsistencias){
+                                depot.detailControls.inconsistencias.forceDisplayDetailGrid({});
+                            }  
                             boton.textContent =  result.message;
                             boton.title = result;
                             boton.style.backgroundColor = '#8F8';
@@ -279,7 +281,10 @@ function botonClientSideEnGrilla(opts: { nombreBoton: string, llamada: (depot: m
                     alertPromise(err.message);
                 })
             }
-        }
+            //if ((depot.row.consistido==null  && depot.row.rea!=null) || depot.row.modificado!=null && depot.row.consistido!=null && depot.row.modificado >depot.row.consistido){
+            //    boton.style.backgroundColor='#8CF'
+            //}
+        }        
     };
 }
 

@@ -91,7 +91,7 @@ export function tem(context:TableContext, opts:any):TableDefinition {
             {name:'usodomicilio'         , typeName:'integer' , editable: false  },
             {name:'orden_relevamiento'   , typeName:'integer' , editable: false  },
             {name:'mapa'                 , typeName:'integer' , editable: false  },
-            {name: "consistido"          , typeName: 'timestamp', label:'consistido'   },
+            {name: "consistido"          , typeName: 'timestamp', editable: false , inTable:false  },
             {name:'cargado_dm'           , typeName:'text'    , editable: false , inTable: false  },
             {name:'participacion'        , typeName:'integer' , editable: false  ,visible: true  },
             {name:'rotacion'             , typeName:'integer' , editable: false  ,visible: true  },
@@ -158,11 +158,13 @@ export function tem(context:TableContext, opts:any):TableDefinition {
                     --, (tt.etareas->'supe'->>'cargado')::boolean supe_cargado, tt.etareas->'supe'->>'cargado_dm' supe_cargado_dm, (tt.etareas->'supe'->>'habilitada')::boolean supe_habilitada
                     , tt.etareas->'supe'->>'asignado' as supervisor
                     , null notas
+                    , v.consistido
                     ${opts.recepcion? columnasNoRea.map(v=>'\n     , '+ v.expr +' as '+ v.name).join('') :''}
                     from tem t left join (
                         select tt.operativo, tt.enc, bool_or(cargado) cargado, string_agg(cargado_dm,',') cargado_dm,jsonb_object_agg(tarea,jsonb_build_object('asignado',asignado,'habilitada',habilitada,'cargado',cargado,'cargado_dm',cargado_dm))etareas 
                             from tareas_tem tt group by tt.operativo, tt.enc  )tt on t.operativo=tt.operativo and t.enc=tt.enc
                             left join no_rea y on y.no_rea::integer=t.norea
+                            left join viviendas v on v.vivienda=t.enc 
                 )
             `     
         };

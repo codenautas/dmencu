@@ -67,7 +67,7 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
             {references:'tokens', fields:[{source:'cargado_dm', target:'token'}], displayFields:['username'], displayAfterFieldName:'cargado'},
         ],
         "detailTables": [
-            {table: "inconsistencias", abr: "I", fields: [{source:'operativo', target:'operativo'},{source:'enc', target:'vivienda'}]}
+            {table: "inconsistencias", abr: "I", fields: [{source:'operativo', target:'operativo'},{source:'enc', target:'vivienda'}], refreshParent:true, refreshFromParent:true}
         ],
         sql:{
             isTable: !opt.mis,
@@ -96,7 +96,16 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                                     else '' end
                             from tareas_tem h 
                             where h.enc=tareas_tem.enc and h.operativo=tareas_tem.operativo
-                            ) 
+                            )
+                            /*
+                            || (select case
+                                when count(i.consistencia)>0 then 'falta justificar inconsist' 
+                                else '' end
+                                from inconsistencias i
+                                where i.operativo=tareas_tem.operativo and i.vivienda=tareas_tem.enc and tareas_tem.tarea='encu' 
+                                   and justificacion is null
+                            )
+                            */
                          ,''),'✔')
                     `
                 },
@@ -114,10 +123,12 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                     , t.rea utl_rea, t.norea as ult_norea, t.resumen_estado ult_resumen_estado
                     , t.rea_sup utl_rea_sup, t.norea_sup as ult_norea_sup, t.resumen_estado_sup ult_resumen_estado_sup
                     , dominio
+                    , v.consistido
                     from tareas join  tem t using (operativo) 
                         left join areas using (operativo, area)
                         left join lateral (select * from tareas_tem where tarea=tareas.tarea and operativo=t.operativo and enc=t.enc) tt on true
                         left join no_rea y on tt.norea=y.no_rea::integer
+                        left join viviendas v on v.operativo=t.operativo and v.vivienda=t.enc 
                     ) x
                     
                     ${opt.mis?`where (asignante = ${db.quoteNullable(context.user.idper)} or asignado = ${db.quoteNullable(context.user.idper)})`:''}
