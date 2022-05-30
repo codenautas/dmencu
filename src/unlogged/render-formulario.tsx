@@ -22,7 +22,7 @@ import {Bloque, BotonFormulario,
     toPlainForPk,
     IdCasillero,
     PreguntaConSiNo,
-    Texto, Estructura, InformacionHdr, DatosHdrUaPpal, ConfiguracionSorteoFormulario, ResumenEstado, DatosByPassPersistibles
+    Texto, Estructura, InformacionHdr, DatosHdrUaPpal, ConfiguracionSorteoFormulario, ResumenEstado, DatosByPassPersistibles, IdOperativo, IdEnc
 } from "./tipos";
 import{ 
     accion_abrir_formulario,
@@ -1329,7 +1329,12 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
     var dominio = getDatosByPass().informacionHdr[forPk.vivienda!].tem.dominio;
     var cerrarDirecto = async function(){
         removeCSSById(BOOTSTRAP_5_1_3_SRC);
-        gotoConsistir('PREJU_2022' as IdOperativo,forPk.vivienda!);
+        var estructura = getEstructura();
+        gotoConsistir(
+            estructura.operativo as IdOperativo,
+            getDatosByPass().informacionHdr[forPk.vivienda!].tarea.tarea,
+            forPk.vivienda?.toString() as IdEnc
+        );
         //var hash=new URLSearchParams(location.hash?.replace(/^\#/,'').split('&autoproced')[0]);
         ////hash.delete('autoproced')
         //close();

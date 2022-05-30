@@ -8,6 +8,7 @@ import { CasillerosImplementados, CasoState,
     toPlainForPk,
     IdFin,
     IdEnc,
+    IdTarea,
 } from "./tipos";
 import { createReducer, createDispatchers, ActionsFrom } from "redux-typed-reducer";
 import { ModoAlmacenamiento } from "./tipos"
@@ -308,8 +309,8 @@ export function gotoCampo(){
     location.reload();   
 }
 
-export function gotoConsistir(operativo:IdOperativo,idEnc:IdEnc){
-    history.replaceState(null, '', `${location.origin+location.pathname}/../menu#w=consistir_encuesta&up={"operativo":${operativo},"encuesta":${idEnc}}&autoproced=true`);
+export function gotoConsistir(operativo:IdOperativo,tarea:IdTarea, idEnc:IdEnc){
+    history.replaceState(null, '', `${location.origin+location.pathname}/../menu#w=consistir_encuesta&up={"operativo":"${operativo}","tarea":"${tarea}","encuesta":${idEnc}}&autoproced=true`);
     location.reload();   
 }
 

@@ -1,7 +1,7 @@
 import {html} from "js-to-html";
 import {traerEstructura} from "../unlogged/redux-formulario";
 import { CasoState,  
-    IdFormulario, DatosByPassPersistibles, IdEnc,
+    IdFormulario, DatosByPassPersistibles, IdEnc, IdOperativo, IdTarea,
 } from "../unlogged/tipos";
 import * as likeAr from "like-ar";
 import {getEstructura, setPersistirDatosByPass} from "../unlogged/bypass-formulario"
@@ -10,6 +10,7 @@ import {cargarEstructura, cargarHojaDeRuta, GLOVAR_DATOSBYPASS, GLOVAR_ESTRUCTUR
 //TODO GENERALIZAR
 
 const TAREA_DEFAULT = 'encu';
+const OPERATIVO_DEFAULT = 'PREJU_2022';
 
 var tareas:any = null;
 
@@ -38,7 +39,7 @@ async function sincronizarDatos(persistentes:DatosByPassPersistibles|null){
 
 myOwn.wScreens.abrir_encuesta={
     parameters:[
-        {name:'operativo' , typeName:'text', defaultValue:'etoi211', references:'operativos'},
+        {name:'operativo' , typeName:'text', defaultValue:OPERATIVO_DEFAULT, references:'operativos'},
         {name:'tarea'     , typeName:'text', defaultValue:TAREA_DEFAULT, references: 'tareas'},
         {name:'encuesta'  , typeName:'integer', defaultValue:130031}
     ],
@@ -216,16 +217,30 @@ myOwn.clientSides.tareasTemRow={
     },
     prepare: function(){}
 }
-var crearBotonVer = async (depot:myOwn.Depot, fieldName:string, label:'abrir'|'ver')=>{
+
+var crearBotonVerAbrirEncuesta = (operativo:IdOperativo,tarea:IdTarea,encuesta:number, label:string)=>{
+    var up = {
+        operativo:operativo,
+        tarea:tarea,
+        encuesta:encuesta
+    }
+    let ver = my.createForkeableButton({w:'abrir_encuesta',up, autoproced:true, label},{});
+    ver.style='margin:0px 2px;';
+    return ver
+}
+
+var crearBotonesVerAbrirTareas = async (depot:myOwn.Depot, fieldName:string, label:'abrir'|'ver')=>{
     tareas = tareas?tareas:(await myOwn.ajax.table_data({table: `tareas`, fixedFields:[]})).filter((tarea)=>!!tarea.main_form && tarea.operativo==depot.row.operativo);
     depot.rowControls[fieldName].innerHTML='';
     tareas.forEach((tarea:{tarea:string, nombre:string, main_form:IdFormulario})=>{
-        var openButton = html.button({class:'open-dm-button'},`${label} ${tarea.tarea}`).create();
-        depot.rowControls[fieldName].appendChild(openButton);
-        openButton.onclick = async function(){
-            var urlAndWindowName = `menu#i=abrir_encuesta&up={"operativo":"${depot.row.operativo}","tarea":"${tarea.tarea}","encuesta":${depot.row.enc}}&autoproced=true`;
-            window.open(urlAndWindowName,urlAndWindowName);
-        }
+        let ver = crearBotonVerAbrirEncuesta(
+            depot.row.operativo as IdOperativo,
+            tarea.tarea as IdTarea, 
+            Number(depot.row.enc),
+            `${label} ${tarea.tarea}`
+        );
+        ver.style='margin:0px 2px;';
+        depot.rowControls[fieldName].appendChild(ver);
     })
 }
 
@@ -233,7 +248,7 @@ myOwn.clientSides.abrir={
     prepare: (_depot, _fieldName)=>{},
     update: (depot, fieldName)=>{
         var label:'ver'|'abrir' = depot.row.cargado_dm?'ver':'abrir';
-        crearBotonVer(depot,fieldName,label); //no espero promesa porque no es necesario
+        crearBotonesVerAbrirTareas(depot,fieldName,label); //no espero promesa porque no es necesario
     }
 };
 
@@ -241,7 +256,7 @@ myOwn.clientSides.abrirRecepcion={
     prepare: (_depot, _fieldName)=>{},
     update: (depot, fieldName)=>{
         var label:'ver'|'abrir' = depot.row.cargado?'ver':'abrir';
-        crearBotonVer(depot,fieldName,label); //no espero promesa porque no es necesario
+        crearBotonesVerAbrirTareas(depot,fieldName,label); //no espero promesa porque no es necesario
     }
 };
 
@@ -261,11 +276,11 @@ function botonClientSideEnGrilla(opts: { nombreBoton: string, llamada: (depot: m
             boton.onclick = function () {
                 boton.disabled = true;
                 boton.textContent = 'procesando...';
-                opts.llamada(depot).then(function(result){
+                opts.llamada(depot).then(async function(result){
                     if(result && typeof result === 'object' && 'ok' in result){
                         if(result.ok){
                             var grid=depot.manager;
-                            grid.retrieveRowAndRefresh(depot);
+                            await grid.retrieveRowAndRefresh(depot);
                             if (depot.detailControls.inconsistencias){
                                 depot.detailControls.inconsistencias.forceDisplayDetailGrid({});
                             }  
@@ -303,24 +318,34 @@ myOwn.clientSides.consistir = botonClientSideEnGrilla({
 
 myOwn.wScreens.consistir_encuesta={
     parameters:[
-        {name:'operativo' , typeName:'text', defaultValue:'etoi211', references:'operativos'},
+        {name:'operativo' , typeName:'text', defaultValue:OPERATIVO_DEFAULT, references:'operativos'},
+        {name:'tarea'     , typeName:'text'},
         {name:'encuesta'  , typeName:'integer'}
     ],
     autoproced:true,
     mainAction:async (params)=>{
+        var {operativo, tarea, encuesta } = params;
         var result = await myOwn.ajax.consistir_encuesta({
-            operativo: params.operativo,
-            id_caso: params.encuesta
+            operativo: operativo,
+            id_caso: encuesta
         });
         if(result.ok){
             var fixedFields = [];
-            fixedFields.push({fieldName: 'operativo', value: params.operativo});
-            fixedFields.push({fieldName: 'vivienda', value: params.encuesta});
+            fixedFields.push({fieldName: 'operativo', value: operativo});
+            fixedFields.push({fieldName: 'vivienda', value: encuesta});
             var mainLayout = document.getElementById('main_layout')!;
             var divGrilla = html.div({id:'inconsistencias'}).create();
-            mainLayout.appendChild(divGrilla);
+            mainLayout.insertBefore(divGrilla, mainLayout.firstChild);
+            mainLayout.insertBefore(
+                crearBotonVerAbrirEncuesta(
+                    operativo,
+                    tarea,
+                    encuesta, 
+                    `ir a encuesta ${encuesta}`
+                ), 
+                mainLayout.firstChild
+            );
             my.tableGrid("inconsistencias", divGrilla,{tableDef:{},fixedFields: fixedFields});
-            
         }else{
             throw new Error(result.message);
         }

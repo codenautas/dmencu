@@ -492,7 +492,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
             if(context.puede?.campo?.editar){
                 menu.push(
                     {menuType:'abrir_encuesta', name:'abrir_encuesta'},
-                    {menuType:'consistir_encuesta', name:'consistir_encuesta'},
+                    //{menuType:'consistir_encuesta', name:'consistir_encuesta'},
                 )
                 menu.push(
                     {menuType:'menu', name:'recepcion', label:'recepción' ,menuContent:[
