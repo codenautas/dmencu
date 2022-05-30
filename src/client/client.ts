@@ -264,6 +264,8 @@ function botonClientSideEnGrilla(opts: { nombreBoton: string, llamada: (depot: m
                 opts.llamada(depot).then(function(result){
                     if(result && typeof result === 'object' && 'ok' in result){
                         if(result.ok){
+                            var grid=depot.manager;
+                            grid.retrieveRowAndRefresh(depot);
                             if (depot.detailControls.inconsistencias){
                                 depot.detailControls.inconsistencias.forceDisplayDetailGrid({});
                             }  
@@ -298,6 +300,32 @@ myOwn.clientSides.consistir = botonClientSideEnGrilla({
         }): alertPromise('La encuesta debe tener dato en rea para poder consistirla.');
     }
 });
+
+myOwn.wScreens.consistir_encuesta={
+    parameters:[
+        {name:'operativo' , typeName:'text', defaultValue:'etoi211', references:'operativos'},
+        {name:'encuesta'  , typeName:'integer'}
+    ],
+    autoproced:true,
+    mainAction:async (params)=>{
+        var result = await myOwn.ajax.consistir_encuesta({
+            operativo: params.operativo,
+            id_caso: params.encuesta
+        });
+        if(result.ok){
+            var fixedFields = [];
+            fixedFields.push({fieldName: 'operativo', value: params.operativo});
+            fixedFields.push({fieldName: 'vivienda', value: params.encuesta});
+            var mainLayout = document.getElementById('main_layout')!;
+            var divGrilla = html.div({id:'inconsistencias'}).create();
+            mainLayout.appendChild(divGrilla);
+            my.tableGrid("inconsistencias", divGrilla,{tableDef:{},fixedFields: fixedFields});
+            
+        }else{
+            throw new Error(result.message);
+        }
+    }
+}
 
 myOwn.wScreens.demo=async function(_addrParams){
     // @ts-ignore desplegarFormularioActual global

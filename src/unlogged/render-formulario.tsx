@@ -38,6 +38,7 @@ import{
 import { dmTraerDatosFormulario, dispatchers, 
     gotoSincronizar,
     getCacheVersion,
+    gotoConsistir,
 } from "./redux-formulario";
 import { useState, useEffect, useLayoutEffect } from "react";
 import { useSelector, useDispatch } from "react-redux"; 
@@ -1328,10 +1329,11 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
     var dominio = getDatosByPass().informacionHdr[forPk.vivienda!].tem.dominio;
     var cerrarDirecto = async function(){
         removeCSSById(BOOTSTRAP_5_1_3_SRC);
-        var hash=new URLSearchParams(location.hash?.replace(/^\#/,'').split('&autoproced')[0]);
-        //hash.delete('autoproced')
-        close();
-        location.hash=hash.toString();
+        gotoConsistir('PREJU_2022' as IdOperativo,forPk.vivienda!);
+        //var hash=new URLSearchParams(location.hash?.replace(/^\#/,'').split('&autoproced')[0]);
+        ////hash.delete('autoproced')
+        //close();
+        //location.hash=hash.toString();
     }
     var botonesFormulario=[];
     if(!opciones.modoDirecto){
