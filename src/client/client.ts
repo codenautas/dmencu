@@ -224,8 +224,8 @@ var crearBotonVerAbrirEncuesta = (operativo:IdOperativo,tarea:IdTarea,encuesta:n
         tarea:tarea,
         encuesta:encuesta
     }
-    var href= my.getHRef({w:'abrir_encuesta',up, autoproced:true});
-    return html.a({href:href class:"menu-item"}, label).create();
+    let ver = my.createForkeableButton({w:'abrir_encuesta',up, autoproced:true, label},{});
+    return ver
 }
 
 var crearBotonesVerAbrirTareas = async (depot:myOwn.Depot, fieldName:string, label:'abrir'|'ver')=>{
@@ -240,7 +240,6 @@ var crearBotonesVerAbrirTareas = async (depot:myOwn.Depot, fieldName:string, lab
             buttonLabel
         );
         ver.style='margin:0px 2px;';
-        ver.setAttribute('target','_blank')
         depot.rowControls[fieldName].appendChild(ver);
     })
 }
