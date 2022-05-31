@@ -50,24 +50,24 @@ where t.enc=b.enc and t.operativo='PREJU_2022';
 
 update tem t set supervision_aleatoria=2 where pre_sorteo=2 and operativo='PREJU_2022';
 
-----saco supervision_aleatoria telefónica a aquellos que no tienen telefono o tienen norea porque alli tiene que ser presencial
+----saco supervision_aleatoria telefónica a aquellos que no tienen telefono o tienen norea sin teléfono
 ----y les coloco pre_sorteo=3
 
- --select t.enc, t.pre_sorteo,x.telefono from tem t,
+--select t.enc, t.norea,t.pre_sorteo,x.telefono from tem t,
 update tem t set (supervision_aleatoria, pre_sorteo)=(null, 3)
   from 
-  (select  norea ,/*,asignado,tarea,*/ vivienda,
-       case  when
+  (select  t.norea ,/*,asignado,tarea,*/ t.enc, 
+      case  when
           concat_ws('x', string_agg('h'||hogar||' '||fijo ,',' order by hogar),
                    string_agg('h'||hogar||' '||movil,',' order by hogar) ) ='' then 'sin_telefono' else 'con_telefono' end as telefono
-                                           from hogares
-     inner join tareas_tem tt on tt.enc=vivienda  and asignado is not null
-     and tt.norea is not null
-     group by 1,2
+      from tareas_tem tt 
+      inner join tem t on tt.enc=t.enc
+      left join hogares on tt.enc=vivienda 
+         where t.norea is not null  and asignado is not null 
+      group by 1,2
      )x
-   where operativo='PREJU_2022' and pre_sorteo=2 and t.enc=x.vivienda and t.dominio=3
+   where operativo='PREJU_2022' and pre_sorteo=2 and t.enc=x.enc and t.dominio=3
         and telefono='sin_telefono';
-
 
 --valores pre_sorteo
  -- 1: 10% de la muestra elegida como presencial
