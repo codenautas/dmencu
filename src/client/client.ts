@@ -224,22 +224,23 @@ var crearBotonVerAbrirEncuesta = (operativo:IdOperativo,tarea:IdTarea,encuesta:n
         tarea:tarea,
         encuesta:encuesta
     }
-    let ver = my.createForkeableButton({w:'abrir_encuesta',up, autoproced:true, label},{});
-    ver.style='margin:0px 2px;';
-    return ver
+    var href= my.getHRef({w:'abrir_encuesta',up, autoproced:true});
+    return html.a({href:href class:"menu-item"}, label).create();
 }
 
 var crearBotonesVerAbrirTareas = async (depot:myOwn.Depot, fieldName:string, label:'abrir'|'ver')=>{
     tareas = tareas?tareas:(await myOwn.ajax.table_data({table: `tareas`, fixedFields:[]})).filter((tarea)=>!!tarea.main_form && tarea.operativo==depot.row.operativo);
     depot.rowControls[fieldName].innerHTML='';
     tareas.forEach((tarea:{tarea:string, nombre:string, main_form:IdFormulario})=>{
+        let buttonLabel = `${label} ${tarea.tarea}`;
         let ver = crearBotonVerAbrirEncuesta(
             depot.row.operativo as IdOperativo,
             tarea.tarea as IdTarea, 
             Number(depot.row.enc),
-            `${label} ${tarea.tarea}`
+            buttonLabel
         );
         ver.style='margin:0px 2px;';
+        ver.setAttribute('target','_blank')
         depot.rowControls[fieldName].appendChild(ver);
     })
 }
