@@ -26,6 +26,7 @@ import {Bloque, BotonFormulario,
 } from "./tipos";
 import{ 
     accion_abrir_formulario,
+    accion_borrar_formulario,
     calcularActualBF,
     calcularDisabledBF,
     calcularResumenVivienda,
@@ -899,9 +900,10 @@ function ConsistenciaDespliegue(props:{casillero:Consistencia, forPk:ForPk}){
 type DefinicionFormularioAbrir=
 ({forPk:ForPk, num:number, actual:boolean, previo:boolean} | 
 {forPk:ForPk, num:number, actual:boolean, previo:false, esAgregar:true} | 
-{forPk:ForPk, num:number, actual:boolean, previo:false, esConfirmar:true} | 
+{forPk:ForPk, num:number, actual:boolean, previo:false, permiteBorrar:boolean} |
 {forPk:ForPk, num:false, actual:boolean, previo:true, unico:true})
-& {esConfirmar?:true, esAgregar?:true, disabled?:boolean|undefined};
+& {esConfirmar?:true, esAgregar?:true, permiteBorrar?:boolean, disabled?:boolean|undefined};
+
 
 var botonFormularioConResumen = (
     defBoton:DefinicionFormularioAbrir, 
@@ -955,6 +957,17 @@ var botonFormularioConResumen = (
                     ])
                 ]
             }),
+            (defBoton.permiteBorrar?
+                Button2({
+                    className:"boton-borrar-ua-vacia",
+                    color:"default",
+                    variant:"outlined",
+                    children:
+                        html.svg({class:"MuiSvgIcon-root", focusable:false, viewbox:"0 0 24 24", "aria-hidden":"true"},[
+                            html.path({d:materialIoIconsSvgPath.DeleteForever})
+                        ]), 
+                    onClick:()=>accion_borrar_formulario({forPk, forPkPadre})})
+            :null),
             (defBoton.num !== false && !defBoton.esAgregar && !defBoton.esConfirmar?
                 html.span((casillero.especial?.camposResumen??[defBoton.num.toString()]).map(
                     (campo:string)=>respuestasAumentadas[formularioAAbrir.unidad_analisis][defBoton.num-1][campo as IdVariable]
@@ -1047,6 +1060,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                             num, 
                             actual: calcularActualBF(configSorteoFormulario, num, numActual, idFormularioDestino, respuestasAumentadas),
                             previo: numActual == null, 
+                            permiteBorrar: likeAr(conjunto).array().length == Number(i) + 1 && feedback.resumen == 'vacio',
                             disabled: calcularDisabledBF(configSorteoFormulario, num, idFormularioDestino, respuestasAumentadas)
                         }
                     }).array();

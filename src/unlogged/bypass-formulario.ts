@@ -460,6 +460,23 @@ export function accion_abrir_formulario({forPk}: {forPk:ForPk}, _datosByPass:Dat
     calcularVariablesBotonFormulario(forPk);
 }
 
+export function accion_borrar_formulario({forPk, forPkPadre}: {forPk:ForPk, forPkPadre:ForPk}){
+    var {respuestas, unidadAnalisis, respuestasAumentadas, respuestasRaiz, forPkRaiz} = respuestasForPk(forPk, true, true);
+    var unidad_analisis:IdUnidadAnalisis|undefined = estructura.formularios[forPk.formulario].casilleros.unidad_analisis
+    var uaDef:UnidadAnalisis = estructura.unidades_analisis[unidad_analisis];
+    var index = forPk[uaDef.pk_agregada];
+    respuestasAumentadas[unidad_analisis].pop();
+    variablesCalculadas(respuestasRaiz, forPkPadre);
+    datosByPass.dirty = datosByPass.dirty || true;
+    respuestasRaiz.$dirty = respuestasRaiz.$dirty || true;
+    refrescarMarcaDirty();
+    calcularFeedback(respuestasRaiz, forPkRaiz, {autoIngreso: true});
+    calcularVariablesBotonFormulario(forPkPadre);
+    volcadoInicialElementosRegistrados(forPkPadre);
+    persistirDatosByPass(datosByPass); // OJO ASYNC DESCONTROLADA
+}
+
+
 export function dispatchByPass<T, R>(
     fun:(payload:T, datos:typeof datosByPass)=>R,
     payload:T
