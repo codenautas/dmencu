@@ -1,6 +1,6 @@
 import { strict as likeAr, beingArray } from "like-ar";
 
-import { getRowValidator, FormStructureState, OpcionesRowValidator } from "row-validator";
+import { getRowValidator, FormStructureState, OpcionesRowValidator, Feedback } from "row-validator";
 
 import { date, compareForOrder, coalesce } from "best-globals";
 
@@ -1116,6 +1116,7 @@ function calcularFeedback(respuestas: Respuestas, forPkRaiz:ForPkRaiz, opts:Opci
     // @ts-ignore Partial
     var nuevosRows : {[x in PlainForPk]:FormStructureState<IdVariable,IdFin>}={}
     calcularFeedbackEncuesta(nuevosRows, estructura.formularios, forPkRaiz, respuestas, opts);
+    datosByPass.feedbackRowValidator = likeAr(datosByPass.feedbackRowValidator).filter((_feedback:any, plainPk:PlainForPk)=>JSON.parse(plainPk).vivienda != forPkRaiz.vivienda).plain();
     datosByPass.feedbackRowValidator = {...datosByPass.feedbackRowValidator, ...nuevosRows};
     datosByPass.respuestas.viviendas[forPkRaiz.vivienda!] = {
         ...datosByPass.respuestas.viviendas[forPkRaiz.vivienda!],
