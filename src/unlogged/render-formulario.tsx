@@ -900,6 +900,7 @@ function ConsistenciaDespliegue(props:{casillero:Consistencia, forPk:ForPk}){
 type DefinicionFormularioAbrir=
 ({forPk:ForPk, num:number, actual:boolean, previo:boolean} | 
 {forPk:ForPk, num:number, actual:boolean, previo:false, esAgregar:true} | 
+{forPk:ForPk, num:number, actual:boolean, previo:false, esConfirmar:true} |
 {forPk:ForPk, num:number, actual:boolean, previo:false, permiteBorrar:boolean} |
 {forPk:ForPk, num:false, actual:boolean, previo:true, unico:true})
 & {esConfirmar?:true, esAgregar?:true, permiteBorrar?:boolean, disabled?:boolean|undefined};
