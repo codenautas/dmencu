@@ -29,6 +29,7 @@ import{
     accion_borrar_formulario,
     calcularActualBF,
     calcularDisabledBF,
+    calcularPermiteBorrarBF,
     calcularResumenVivienda,
     getDatosByPass,
     getFormulariosForIdVivienda,
@@ -1061,7 +1062,9 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                             num, 
                             actual: calcularActualBF(configSorteoFormulario, num, numActual, idFormularioDestino, respuestasAumentadas),
                             previo: numActual == null, 
-                            permiteBorrar: likeAr(conjunto).array().length == Number(i) + 1 && feedback.resumen == 'vacio',
+                            permiteBorrar: likeAr(conjunto).array().length == Number(i) + 1 && 
+                                feedback.resumen == 'vacio' && 
+                                calcularPermiteBorrarBF(configSorteoFormulario,idFormularioDestino),
                             disabled: calcularDisabledBF(configSorteoFormulario, num, idFormularioDestino, respuestasAumentadas)
                         }
                     }).array();

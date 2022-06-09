@@ -1167,6 +1167,10 @@ export var calcularDisabledBF = (configSorteoFormulario:ConfiguracionSorteoFormu
         r[configSorteoFormulario.resultado]
     ))
 
+export var calcularPermiteBorrarBF = (configSorteoFormulario:ConfiguracionSorteoFormulario|null, formulario:IdFormulario)=>
+    !(configSorteoFormulario && 
+    configSorteoFormulario.id_formulario_individual == formulario)
+
 type ResultadoResumen = {
     resumenEstado:ResumenEstado,
     resumenEstadoSup:ResumenEstado,
