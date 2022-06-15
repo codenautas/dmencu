@@ -500,6 +500,7 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
                         {menuType:'table', name:'mis_encuestadores'},
                         {menuType:'table', name:'areas'},
                         {menuType:'table', name:'tem_recepcion', label:'TEM'},
+                        {menuType:'table', name:'tareas_tem', label:'TareasTEM'}
                     ]},            
                 )
             }
