@@ -12,6 +12,10 @@ import {cargarEstructura, cargarHojaDeRuta, GLOVAR_DATOSBYPASS, GLOVAR_ESTRUCTUR
 const TAREA_DEFAULT = 'encu';
 const OPERATIVO_DEFAULT = 'PREJU_2022';
 
+function consistir_filtro(tarea, rea_tem, rea){
+    return tarea?rea_tem:rea;
+};
+
 var tareas:any = null;
 
 function htmlNumero(num:number){
@@ -309,7 +313,8 @@ function botonClientSideEnGrilla(opts: { nombreBoton: string, llamada: (depot: m
 myOwn.clientSides.consistir = botonClientSideEnGrilla({
     nombreBoton: 'consistir',
     llamada: function (depot: myOwn.Depot) {
-        return depot.row.rea? myOwn.ajax.consistir_encuesta({
+        var filtroRea=consistir_filtro(depot.row.tarea, depot.row.utl_rea, depot.row.rea)
+        return filtroRea? myOwn.ajax.consistir_encuesta({
             operativo: depot.row.operativo,
             id_caso: depot.row.enc
         }): alertPromise('La encuesta debe tener dato en rea para poder consistirla.');

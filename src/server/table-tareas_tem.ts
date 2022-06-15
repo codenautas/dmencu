@@ -26,11 +26,11 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
         {name:'cargado_dm'         , typeName:'text'        , editable: false}, //cargar/descargar 
         {name:"cargado"            , typeName: "boolean"    , editable: false},
         {name:'notas'              , typeName:'text'}, // viene de la hoja de ruta
-        {name:'rea'                , typeName:'integer'     , editable: puedeEditar},
-        {name:'norea'              , typeName:'integer'     , editable: puedeEditar},
+        {name:'rea'                , typeName:'integer'     , editable: puedeEditar, label:'rea_dm'},
+        {name:'norea'              , typeName:'integer'     , editable: puedeEditar, label:'norea_dm'},
         //{name:'cod_no_rea'         , typeName:'text'        , editable: false   , inTable:false  },
         {name:'gru_no_rea'         , typeName:'text'        , editable: false   , inTable:false  },
-        {name:'resumen_estado'     , typeName:'text'        , editable: false  },
+        {name:'resumen_estado'     , typeName:'text'        , editable: false   , label: 'resumen_estado_dm'},
         {name:'utl_rea'            , typeName:'integer'     , editable: false   ,  inTable:false},
         {name:'ult_norea'          , typeName:'integer'     , editable: false   ,  inTable:false},
         {name:'ult_resumen_estado' , typeName:'text'        , editable: false   ,  inTable:false},
@@ -97,15 +97,13 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                             from tareas_tem h 
                             where h.enc=tareas_tem.enc and h.operativo=tareas_tem.operativo
                             )
-                            /*
                             || (select case
-                                when count(i.consistencia)>0 then 'falta justificar inconsist' 
+                                when count(i.consistencia)>0 then 'Revisar inconsist' 
                                 else '' end
                                 from inconsistencias i
                                 where i.operativo=tareas_tem.operativo and i.vivienda=tareas_tem.enc and tareas_tem.tarea='encu' 
                                    and justificacion is null
                             )
-                            */
                          ,''),'✔')
                     `
                 },
