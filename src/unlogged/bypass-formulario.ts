@@ -528,6 +528,22 @@ const helpersCasilleros={
         hoy(){
             return date.today().toDmy()
         },
+        fecha_valida(x:string){
+            var formato_valido=/^([1-9]|0[1-9]|[12]\d|3[01])\/([1-9]|0[1-9]|1[012])\/20\d\d$/.test(x)
+            var xDate: Date;
+            var conversionOk: boolean;
+            conversionOk = true;
+            if (formato_valido){
+                const [d, m, y] = x.split('/');
+                try {
+                    xDate = new Date(`${y}/${m}/${d}`);
+                } catch(err){
+                    conversionOk = false;
+                }
+            };
+            //faltaria validar que no sea una fecha futura y que sea una fecha en el rango del operativo
+            return formato_valido && conversionOk
+        },
         informado(x:any){
             return x!==undefined && x!==null && (!(x instanceof Array)|| x.length!==0 )
             && (!(x instanceof Object)|| Object.keys(x).length !== 0 )
