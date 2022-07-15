@@ -1,11 +1,11 @@
-set role preju_test2022_owner;
-set role preju_capa2022_owner;
+-- set role preju_test2022_owner;
+-- set role preju_capa2022_owner;
 set role preju2022_owner;
 
 drop schema if exists "comun" cascade;
 create schema "comun";
-grant usage on schema "comun" to "preju_test2022_admin";
-grant create on schema "comun" to "preju_test2022_admin";
+grant usage on schema "comun" to "preju2022_admin";
+grant create on schema "comun" to "preju2022_admin";
 
 CREATE OR REPLACE FUNCTION comun.informado("P_valor" anyelement)
   RETURNS boolean AS
