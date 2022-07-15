@@ -54,7 +54,7 @@ import { visitas_sup         } from './table-visitas_sup';
 import { hogares_sup         } from './table-hogares_sup';
 import { personas_sup        } from './table-personas_sup';
 
-
+export * from "./types-dmencu";
 import {defConfig} from "./def-config"
 
 const APP_DM_VERSION="#22-06-22";

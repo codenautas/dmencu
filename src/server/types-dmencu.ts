@@ -1,5 +1,6 @@
+"use strict";
 
-export * from "backend-plus";
+export * from 'procesamiento';
 import * as BackendPlus from "backend-plus";
 
 export type ProcedureDef = BackendPlus.ProcedureDef & {
