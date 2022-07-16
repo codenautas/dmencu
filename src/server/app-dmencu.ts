@@ -665,5 +665,5 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
   }
 }
 
-export var AppDmEncu = AppDmEncu(emergeAppProcesamiento(emergeAppConsistencias(emergeAppVarCal(emergeAppDatosExt(emergeAppOperativos(AppBackend))))));
+export var AppDmEncu = emergeAppDmEncu(emergeAppProcesamiento(emergeAppConsistencias(emergeAppVarCal(emergeAppDatosExt(emergeAppOperativos(AppBackend))))));
 export type AppAppDmEncuType = InstanceType<typeof AppDmEncu>;
