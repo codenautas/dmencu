@@ -1,6 +1,7 @@
 "use strict";
 
 import * as procesamiento from "procesamiento";
+import {emergeAppProcesamiento, emergeAppConsistencias, emergeAppVarCal, emergeAppDatosExt, emergeAppOperativos, AppBackend} from "procesamiento";
 import {getOperativoActual, ProceduresDmEncu} from "./procedures-dmencu";
 
 import * as pg from "pg-promise-strict";
@@ -59,8 +60,7 @@ import {defConfig} from "./def-config"
 
 const APP_DM_VERSION="#22-06-22";
 
-export type Constructor<T> = new(...args: any[]) => T;
-export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesamientoType>>(Base:T){
+export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamiento.AppProcesamientoType>>(Base:T){
   return class AppDmEncu extends Base{
     constructor(...args:any[]){ 
         super(args); 
@@ -664,3 +664,6 @@ export function emergeAppDmEncu<T extends Constructor<procesamiento.AppProcesami
     }
   }
 }
+
+export var AppDmEncu = AppDmEncu(emergeAppProcesamiento(emergeAppConsistencias(emergeAppVarCal(emergeAppDatosExt(emergeAppOperativos(AppBackend))))));
+export type AppAppDmEncuType = InstanceType<typeof AppDmEncu>;
