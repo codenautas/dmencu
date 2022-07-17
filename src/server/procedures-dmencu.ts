@@ -433,7 +433,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                                 delete datos_json[key1][i1][key2];
                             }
                         }
-                    }
+                    });
                 }
                 if (key1.startsWith('$')){
                     delete datos_json[key1];
