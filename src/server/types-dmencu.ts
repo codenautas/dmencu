@@ -1,18 +1,21 @@
 "use strict";
 
-export * from 'procesamiento';
-import * as BackendPlus from "backend-plus";
+import * as bePlus from "backend-plus";
 
-export type ProcedureDef = BackendPlus.ProcedureDef & {
+export * from 'procesamiento'; //expose Procesamiento types
+
+export type ProcedureDef = bePlus.ProcedureDef & {
     definedIn?:string
 }
 
-export type MenuInfoBase = BackendPlus.MenuInfoBase;
+export type MenuInfoBase = bePlus.MenuInfoBase;
 
 export interface Puedes{
     puede:{
         encuestas:{
-            relevar:boolean
+            relevar:boolean,
+            justificar: boolean,
+            procesar: boolean
         },
         campo:{
             editar:boolean
@@ -22,26 +25,4 @@ export interface Puedes{
     superuser?:true
 }
 
-export interface Context extends BackendPlus.Context, Puedes{}
-
-
-// export interface TableContext extends BackendPlus.TableContext, Puedes{}
-
-namespace BackendPlus{
-    interface TableContext2 extends Puedes{}
-    interface TableContext{
-        puede:{
-            encuestas:{
-                relevar:boolean
-            },
-            lab_resultado:{
-                editar:boolean
-                ver:boolean
-            },
-            campo:{
-                administrar:boolean
-            }
-        }
-        superuser?:true
-    }
-}
+export interface Context extends bePlus.ContextForDump, Puedes{}
