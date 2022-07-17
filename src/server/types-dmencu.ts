@@ -11,7 +11,7 @@ export type ProcedureDef = bePlus.ProcedureDef & {
 export type MenuInfoBase = bePlus.MenuInfoBase;
 
 export interface Puedes{
-    puede:{
+    puede?:{
         encuestas:{
             relevar:boolean,
             justificar: boolean,

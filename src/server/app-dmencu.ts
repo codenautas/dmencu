@@ -1,7 +1,7 @@
 "use strict";
 
 import * as procesamiento from "procesamiento";
-import {emergeAppProcesamiento, emergeAppConsistencias, emergeAppVarCal, emergeAppDatosExt, emergeAppOperativos, AppBackend} from "procesamiento";
+import {emergeAppProcesamiento, emergeAppConsistencias, emergeAppVarCal, emergeAppDatosExt, emergeAppOperativos, AppBackend, ClientModuleDefinition, OptsClientPage} from "procesamiento";
 import {getOperativoActual, ProceduresDmEncu} from "./procedures-dmencu";
 
 import * as pg from "pg-promise-strict";
@@ -273,10 +273,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         super.configStaticConfig();
         this.setStaticConfig(defConfig);
     }
-    clientIncludes(req, opts) {
+    clientIncludes(req:Request, opts:OptsClientPage):ClientModuleDefinition[] {
         var be = this;
         var logged = req && opts && !opts.skipMenu ;
-        var menuedResources=logged ? [
+        var menuedResources:ClientModuleDefinition[]=logged ? [
             { type:'js' , src: 'client/client.js' },
         ]:[
             {type:'js' , src:'unlogged.js' },
@@ -284,7 +284,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         if(opts && opts.extraFiles){
             menuedResources = menuedResources.concat(opts.extraFiles);
         }
-        var resources = [
+        var resources:ClientModuleDefinition[] = [
             { type: 'js', module: 'react', modPath: 'umd', fileDevelopment:'react.development.js', file:'react.production.min.js' },
             { type: 'js', module: 'react-dom', modPath: 'umd', fileDevelopment:'react-dom.development.js', file:'react-dom.production.min.js' },
             { type: 'js', module: '@material-ui/core', modPath: 'umd', fileDevelopment:'material-ui.development.js', file:'material-ui.production.min.js' },
