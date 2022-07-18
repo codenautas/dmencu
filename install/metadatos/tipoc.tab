@@ -1,0 +1,13 @@
+tipoc|denominacion|irrepetible|desp_casillero|desp_hijos|puede_ser_var
+B|bloque|true|||false
+BF|Botón para formulario|true|||
+CONS|consistencia|true|||false
+CP|conjunto de preguntas|true|||false
+F|formulario||||false
+FILTRO|filtro|true|||false
+MATRIZ|matriz (de varias preguntas)|true|||false
+O|opción|||nueva_fila|false
+OM|opción múltiple|||misma_fila|
+P|pregunta|true||tabla|
+PMATRIZ|pregunta en forma de matriz|true||tabla_matriz|false
+TEXTO|texto aclaratorio sin pregunta||||false
