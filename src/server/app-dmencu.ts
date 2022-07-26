@@ -276,10 +276,9 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
     clientIncludes(req:Request, opts:OptsClientPage):ClientModuleDefinition[] {
         var be = this;
         var logged = req && opts && !opts.skipMenu ;
-        var menuedResources:ClientModuleDefinition[]=logged ? [
-            { type:'js' , src: 'client/client.js' },
-        ]:[
-            {type:'js' , src:'unlogged.js' },
+        var menuedResources:ClientModuleDefinition[]= [
+            { type:'js', module: 'dmencu', modPath: '../../client/client', file: 'client.js', path: 'client_modules'},
+            { type:'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'unlogged.js', path: 'client_modules'}
         ];
         if(opts && opts.extraFiles){
             menuedResources = menuedResources.concat(opts.extraFiles);
