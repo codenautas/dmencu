@@ -277,13 +277,14 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         var be = this;
         var logged = req && opts && !opts.skipMenu ;
         var menuedResources:ClientModuleDefinition[]= [
-            { type:'js', module: 'dmencu', modPath: '../../client/client', file: 'client.js', path: 'client_modules'},
-            { type:'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'unlogged.js', path: 'client_modules'}
+            { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'client.js', path: 'client_modules' },
+            { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'menu.js', path: 'client_modules' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'unlogged.js', path: 'client_modules' },
         ];
         if(opts && opts.extraFiles){
             menuedResources = menuedResources.concat(opts.extraFiles);
         }
-        var resources:ClientModuleDefinition[] = [
+        let externalResources:ClientModuleDefinition[] = [
             { type: 'js', module: 'react', modPath: 'umd', fileDevelopment:'react.development.js', file:'react.production.min.js' },
             { type: 'js', module: 'react-dom', modPath: 'umd', fileDevelopment:'react-dom.development.js', file:'react-dom.production.min.js' },
             { type: 'js', module: '@material-ui/core', modPath: 'umd', fileDevelopment:'material-ui.development.js', file:'material-ui.production.min.js' },
@@ -293,34 +294,25 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             { type: 'js', module: 'memoize-one',  file:'memoize-one.js' },
             { type: 'js', module: 'qrcode', modPath: '../build', file: 'qrcode.js'},
             ...super.clientIncludes(req, opts).filter(m=>m.file!='formularios.css')
-                .filter(m=>logged || true
-                                //&& m.file!='operativos.js' 
-                                //&& m.file!='meta-enc.js'
-                                //&& m.file!='datos-ext.js'
-                                //&& m.file!='consistencias.js'
-                                && m.file!='var-cal.js'
-                                && m.file!='var-cal.js'
-                                //&& m.file!='varcal.js'
-                //)
-                //.filter(m=>logged || true
-                //    && m.file!='operativos.js' 
-                //    && m.file!='meta-enc.js'
-                //    && m.file!='datos-ext.js'
-                //    && m.file!='consistencias.js'
-                //    && m.file!='varcal.js'
-                ),
+            .filter(m=>logged || true
+                && m.file!='var-cal.js'
+                && m.file!='var-cal.js'     
+            ),
             { type: 'js', module: 'service-worker-admin',  file:'service-worker-admin.js' },
-            { type: 'js', module: 'redux-typed-reducer', modPath:'../dist', file:'redux-typed-reducer.js' },
-            { type: 'js', src: 'adapt.js' },
-            { type: 'js', src: 'tipos.js' },
-            { type: 'js', src: 'bypass-formulario.js' },
-            { type: 'js', src: 'redux-formulario.js' },
-            { type: 'js', src: 'render-general.js' },
-            { type: 'js', src: 'render-formulario.js' },
-            { type: 'js', src: 'abrir-formulario.js' },
-            { type: 'css', file: 'menu.css' },
-            { type: 'css', file: 'formulario-react.css' },
-            ... menuedResources
+            { type: 'js', module: 'redux-typed-reducer', modPath:'../dist', file:'redux-typed-reducer.js' }
+        ];
+        var resources:ClientModuleDefinition[] = [
+            ...externalResources,
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'adapt.js', path: 'client_modules' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'tipos.js', path: 'client_modules' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'bypass-formulario.js', path: 'client_modules' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'redux-formulario.js', path: 'client_modules' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-general.js', path: 'client_modules' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-formulario.js', path: 'client_modules' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'abrir-formulario.js', path: 'client_modules' },
+            { type: 'css', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'menu.css', path: 'client_modules' },
+            { type: 'css', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'formulario-react.css', path: 'client_modules' },
+            ... menuedResources,
         ]
         return resources
         // .map(m=>({...m, file:m.fileDevelopment||m.file}));
