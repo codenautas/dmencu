@@ -56,7 +56,7 @@
     "dump": "npm start -- --dump-db",
     "bdump": "npm run build && npm run dump",
     "git-commit": "git add package.json && (git commit -m \"upgrading stack dependencies\" || true)",
-    "push-publish": "npm version patch && ncu -u && npm run git-commit && npm publish && git push"
+    "push-publish": "npm version patch && npm run git-commit && npm publish && git push"
   },
   "config": {
     "stackFolder": "../../codenautas"
