@@ -38,6 +38,7 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
         ...(be.caches.tableContent[opts.agrupador]||[]).map(g=>({
             name:g.grupo.replace(/ /g,'_'),
             typeName:'bigint',
+            inTable:false,
             title:g.grupo,
             condicion:`cod_no_rea in (${g.codigos.map(c=>db.quoteLiteral(c.no_rea)).join(',')})`,
             aggregate:'sum',
