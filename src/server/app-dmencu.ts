@@ -310,8 +310,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-general.js', path: 'client_modules' },
             { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-formulario.js', path: 'client_modules' },
             { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'abrir-formulario.js', path: 'client_modules' },
-            { type: 'css', file: 'menu.css'},
-            { type: 'css', file: 'formulario-react.css'},
+            { type: 'css', module: 'dmencu', modPath: '../../client/client/css', file: 'menu.css', path: 'css' },
+            { type: 'css', module: 'dmencu', modPath: '../../unlogged/unlogged/css', file: 'formulario-react.css', path: 'css' },
             ... menuedResources,
         ]
         return resources
