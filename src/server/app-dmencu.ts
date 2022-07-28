@@ -277,9 +277,9 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         var be = this;
         var unlogged = opts && opts.offlineFile;
         var menuedResources:ClientModuleDefinition[]= unlogged?[
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'unlogged.js', path: 'client_modules' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'unlogged.js', path: 'dmencu' },
         ]:[
-            { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'client.js', path: 'client_modules' },
+            { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'client.js', path: 'dmencu' },
         ];
         if(opts && opts.extraFiles){
             menuedResources = menuedResources.concat(opts.extraFiles);
@@ -303,13 +303,13 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         ];
         var resources:ClientModuleDefinition[] = [
             ...externalResources,
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'adapt.js', path: 'client_modules' },
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'tipos.js', path: 'client_modules' },
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'bypass-formulario.js', path: 'client_modules' },
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'redux-formulario.js', path: 'client_modules' },
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-general.js', path: 'client_modules' },
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-formulario.js', path: 'client_modules' },
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'abrir-formulario.js', path: 'client_modules' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'adapt.js', path: 'dmencu' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'tipos.js', path: 'dmencu' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'bypass-formulario.js', path: 'dmencu' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'redux-formulario.js', path: 'dmencu' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-general.js', path: 'dmencu' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-formulario.js', path: 'dmencu' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'abrir-formulario.js', path: 'dmencu' },
             { type: 'css', module: 'dmencu', modPath: '../../client/client/css', file: 'menu.css', path: 'css' },
             { type: 'css', module: 'dmencu', modPath: '../../unlogged/unlogged/css', file: 'formulario-react.css', path: 'css' },
             { type: 'css', module: 'dmencu', modPath: '../../unlogged/unlogged/css', file: 'bootstrap.min.css', path: 'css' },
@@ -394,8 +394,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             "lib/json4all.js",
             "lib/js-to-html.js",
             "lib/redux-typed-reducer.js",
-            "adapt.js",
-            "unlogged.js",
+            "dmencu/adapt.js",
+            "dmencu/unlogged.js",
             "lib/js-yaml.js",
             "lib/xlsx.core.min.js",
             "lib/lazy-some.js",
@@ -429,12 +429,12 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             "client_modules/datos-ext.js",
             "client_modules/consistencias.js",
             "client_modules/procesamiento.js",
-            "tipos.js",
-            "bypass-formulario.js",
-            "redux-formulario.js",
-            "render-general.js",
-            "render-formulario.js",
-            "abrir-formulario.js",
+            "dmencu/tipos.js",
+            "dmencu/bypass-formulario.js",
+            "dmencu/redux-formulario.js",
+            "dmencu/render-general.js",
+            "dmencu/render-formulario.js",
+            "dmencu/abrir-formulario.js",
             "client_modules/row-validator.js",
             "client/menu.js",
             "img/logo.png",
