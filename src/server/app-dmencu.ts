@@ -13,6 +13,7 @@ import { changing } from "best-globals";
 import * as yazl from "yazl";
 import { NextFunction } from "express-serve-static-core";
 import * as likeAr from "like-ar";
+import * as express from "express";
 
 import {promises as fs } from "fs";
 
@@ -96,6 +97,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
     addSchrödingerServices(mainApp:procesamiento.Express, baseUrl:string){
         let be=this;
         super.addSchrödingerServices(mainApp, baseUrl);
+        //permito levantar mis imagenes en aplicaciones dependientes
+        be.app.use('/img', express.static('node_modules/dmencu/dist/unlogged/unlogged/img'))
         mainApp.use(function(req:Request,res:Response, next:NextFunction){
             if(req.session && !req.session.install){
                 req.session.install=Math.random().toString().replace('.','');
