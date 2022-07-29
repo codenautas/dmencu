@@ -237,9 +237,10 @@ var crearBotonVerAbrirEncuesta = (operativo:IdOperativo,tarea:IdTarea,encuesta:n
 }
 
 var crearBotonesVerAbrirTareas = async (depot:myOwn.Depot, fieldName:string, label:'abrir'|'ver')=>{
-    tareas = tareas?tareas:(await myOwn.ajax.table_data({table: `tareas`, fixedFields:[]})).filter((tarea)=>!!tarea.main_form && tarea.operativo==depot.row.operativo);
+    tareas = tareas?tareas:(await myOwn.ajax.table_data({table: `tareas`, fixedFields:[]}));
+    var misTareas = tareas.filter((tarea)=>!!tarea.main_form && tarea.operativo==depot.row.operativo);
     depot.rowControls[fieldName].innerHTML='';
-    tareas.forEach((tarea:{tarea:string, nombre:string, main_form:IdFormulario})=>{
+    misTareas.forEach((tarea:{tarea:string, nombre:string, main_form:IdFormulario})=>{
         let buttonLabel = `${label} ${tarea.tarea}`;
         let ver = crearBotonVerAbrirEncuesta(
             depot.row.operativo as IdOperativo,
