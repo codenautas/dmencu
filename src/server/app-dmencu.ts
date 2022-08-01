@@ -13,6 +13,7 @@ import { changing } from "best-globals";
 import * as yazl from "yazl";
 import { NextFunction } from "express-serve-static-core";
 import * as likeAr from "like-ar";
+import * as express from "express";
 
 import {promises as fs } from "fs";
 
@@ -96,6 +97,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
     addSchrödingerServices(mainApp:procesamiento.Express, baseUrl:string){
         let be=this;
         super.addSchrödingerServices(mainApp, baseUrl);
+        //permito levantar mis imagenes en aplicaciones dependientes
+        be.app.use('/img', express.static('node_modules/dmencu/dist/unlogged/unlogged/img'))
         mainApp.use(function(req:Request,res:Response, next:NextFunction){
             if(req.session && !req.session.install){
                 req.session.install=Math.random().toString().replace('.','');
@@ -105,7 +108,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         mainApp.get(baseUrl+'/salvar',async function(req,res,_next){
             // @ts-ignore sé que voy a recibir useragent por los middlewares de Backend-plus
             var {useragent} = req;
-            var htmlMain=be.mainPage({useragent}, false, {skipMenu:true}).toHtmlDoc();
+            var htmlMain=be.mainPage({useragent}, false, {skipMenu:true, offlineFile:true}).toHtmlDoc();
             miniTools.serveText(htmlMain,'html')(req,res);
         });
         mainApp.get(baseUrl+'/campo',async function(req,res,_next){
@@ -114,7 +117,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             if(user){
                 /** @type {{type:'js', src:string}[]} */
                 var webManifestPath = 'carga-dm/web-manifest.webmanifest';
-                var htmlMain=be.mainPage({useragent, user}, false, {skipMenu:true, webManifestPath}).toHtmlDoc();
+                var htmlMain=be.mainPage({useragent, user}, false, {skipMenu:true, webManifestPath, offlineFile:true}).toHtmlDoc();
                miniTools.serveText(htmlMain,'html')(req,res);
             }else{
                 res.redirect(baseUrl+'/login#w=path&path=/campo')
@@ -275,11 +278,11 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
     }
     clientIncludes(req:Request, opts:OptsClientPage):ClientModuleDefinition[] {
         var be = this;
-        var logged = req && opts && !opts.skipMenu ;
-        var menuedResources:ClientModuleDefinition[]= [
-            { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'client.js', path: 'client_modules' },
-            { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'menu.js', path: 'client_modules' },
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'unlogged.js', path: 'client_modules' },
+        var unlogged = opts && opts.offlineFile;
+        var menuedResources:ClientModuleDefinition[]= unlogged?[
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'unlogged.js', path: 'dmencu' },
+        ]:[
+            { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'client.js', path: 'dmencu' },
         ];
         if(opts && opts.extraFiles){
             menuedResources = menuedResources.concat(opts.extraFiles);
@@ -294,7 +297,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             { type: 'js', module: 'memoize-one',  file:'memoize-one.js' },
             { type: 'js', module: 'qrcode', modPath: '../build', file: 'qrcode.js'},
             ...super.clientIncludes(req, opts).filter(m=>m.file!='formularios.css')
-            .filter(m=>logged || true
+            .filter(m=>!unlogged || true
                 && m.file!='var-cal.js'
                 && m.file!='var-cal.js'     
             ),
@@ -303,15 +306,17 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         ];
         var resources:ClientModuleDefinition[] = [
             ...externalResources,
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'adapt.js', path: 'client_modules' },
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'tipos.js', path: 'client_modules' },
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'bypass-formulario.js', path: 'client_modules' },
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'redux-formulario.js', path: 'client_modules' },
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-general.js', path: 'client_modules' },
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-formulario.js', path: 'client_modules' },
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'abrir-formulario.js', path: 'client_modules' },
-            { type: 'css', file: 'menu.css'},
-            { type: 'css', file: 'formulario-react.css'},
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'adapt.js', path: 'dmencu' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'tipos.js', path: 'dmencu' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'bypass-formulario.js', path: 'dmencu' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'redux-formulario.js', path: 'dmencu' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-general.js', path: 'dmencu' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-formulario.js', path: 'dmencu' },
+            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'abrir-formulario.js', path: 'dmencu' },
+            { type: 'css', module: 'dmencu', modPath: '../../client/client/css', file: 'menu.css', path: 'css' },
+            { type: 'css', module: 'dmencu', modPath: '../../unlogged/unlogged/css', file: 'formulario-react.css', path: 'css' },
+            { type: 'css', module: 'dmencu', modPath: '../../unlogged/unlogged/css', file: 'bootstrap.min.css', path: 'css' },
+            { type: 'ttf', module: 'dmencu', modPath: '../../unlogged/unlogged/css', file: 'Roboto-Regular.ttf', path: 'css' },
             ... menuedResources,
         ]
         return resources
@@ -392,8 +397,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             "lib/json4all.js",
             "lib/js-to-html.js",
             "lib/redux-typed-reducer.js",
-            "adapt.js",
-            "unlogged.js",
+            "dmencu/adapt.js",
+            "dmencu/unlogged.js",
             "lib/js-yaml.js",
             "lib/xlsx.core.min.js",
             "lib/lazy-some.js",
@@ -427,14 +432,13 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             "client_modules/datos-ext.js",
             "client_modules/consistencias.js",
             "client_modules/procesamiento.js",
-            "tipos.js",
-            "bypass-formulario.js",
-            "redux-formulario.js",
-            "render-general.js",
-            "render-formulario.js",
-            "abrir-formulario.js",
+            "dmencu/tipos.js",
+            "dmencu/bypass-formulario.js",
+            "dmencu/redux-formulario.js",
+            "dmencu/render-general.js",
+            "dmencu/render-formulario.js",
+            "dmencu/abrir-formulario.js",
             "client_modules/row-validator.js",
-            "client/menu.js",
             "client/menu.js",
             "img/logo.png",
             //"img/logo-dm.png",
