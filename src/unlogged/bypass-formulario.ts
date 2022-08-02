@@ -22,9 +22,14 @@ import {
 
 var especiales = {} as {
     calcularVariables?:(respuestasRaiz:RespuestasRaiz, forPk:ForPk)=>void
+    calcularVariablesEspecificasOperativo?:(respuestasRaiz:RespuestasRaiz, forPk:ForPk)=>void
 }
 export function setCalcularVariables(calcularVariables:(respuestasRaiz:RespuestasRaiz,forPk:ForPk)=>void){
     especiales.calcularVariables = calcularVariables
+}
+
+export function setCalcularVariablesEspecificasOperativo(calcularVariablesEspecificasOperativo:(respuestasRaiz:RespuestasRaiz,forPk:ForPk)=>void){
+    especiales.calcularVariablesEspecificasOperativo = calcularVariablesEspecificasOperativo
 }
 
 type DatosByPass = DatosByPassPersistibles & {
@@ -554,6 +559,10 @@ const helpersCasilleros={
         par(x:number){
             return x % 2==0
         },
+        //copiar_campo_ua_rama(respuestasOrigen:Respuestas[], posicion:number, variableOrigen: IdVariable, camino:string, condicion:boolean){
+        //    return condicion?(respuestasOrigen && respuestasOrigen[posicion-1] && respuestasOrigen[posicion-1][`${camino}`][variableOrigen]):null
+        //    return condicion?eval(`respuestasOrigen[${posicion-1}].`+camino+'.'+variableOrigen):null;
+        //}
         /*
         dbo:{
             datoFamiliar(encu:string,hog:number,per:number, dato:string){
@@ -1001,6 +1010,9 @@ export function verificarSorteo(opts:{
 function variablesCalculadas(respuestasRaiz: RespuestasRaiz, forPk:ForPk){
     if(especiales.calcularVariables){
         especiales.calcularVariables(respuestasRaiz, forPk);
+    }
+    if(especiales.calcularVariablesEspecificasOperativo){
+        especiales.calcularVariablesEspecificasOperativo(respuestasRaiz, forPk);
     }
 }
 
