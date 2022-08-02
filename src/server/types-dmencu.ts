@@ -3,6 +3,8 @@
 import * as bePlus from "backend-plus";
 
 export * from 'procesamiento'; //expose Procesamiento types
+export {emergeAppMetaEnc, emergeAppRelEnc} from 'meta-enc'; //expose types only in meta-enc stack
+export * from './table-tem';
 
 export type ProcedureDef = bePlus.ProcedureDef & {
     definedIn?:string
