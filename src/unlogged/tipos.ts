@@ -372,7 +372,15 @@ export type CasoState={
     }
 }
 
-
+export type DefOperativo = {
+    esNoRea:(respuestas:Respuestas)=> {codNoRea:string|null, esNoRea:boolean},
+    esNoReaSup:(respuestas:Respuestas)=> {codNoReaSup:string|null, esNoReaSup:boolean},
+    esRealizada:(respuestas:Respuestas)=> {codRea:number|null, esRea:boolean},
+    esRealizadaSup:(respuestas:Respuestas)=> {codReaSup:number|null, esReaSup:boolean},
+    UAprincipal: IdUnidadAnalisis,
+    defUA:{[i in IdUnidadAnalisis]:{pk:IdVariable, incluidas:IdUnidadAnalisis[], idsFor:IdFormulario[]}},
+    defFor:{[f in IdFormulario]:{/*arbolUA:IdUnidadAnalisis[], */ hermano?:true}}
+}
 
 export type DatosByPassPersistibles = {
     respuestas:{[ua in IdUnidadAnalisis]:RespuestasRaiz[]}

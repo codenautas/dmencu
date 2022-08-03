@@ -17,7 +17,8 @@ import {
     Formulario,
     ConfiguracionSorteoFormulario,
     DatosByPassPersistibles,
-    IdEnc
+    IdEnc,
+    DefOperativo
 } from "./tipos";
 
 var especiales = {} as {
@@ -711,8 +712,10 @@ export var buscarNoReaEnRespuestas = (unidadesARecorrerPrm:IdUnidadAnalisis[],un
   return {nrcodigo, esvalor}
  }
 
-export var defOperativo = {
-    esNoRea:(respuestas:Respuestas)=>{
+
+
+export var defOperativo:DefOperativo = {
+    esNoRea:(_respuestas:Respuestas)=>{
         //IMPLEMENTAR EN OPERATIVO
         var esNoRea = false;
         var codNoRea:string|null= null;
@@ -727,7 +730,7 @@ export var defOperativo = {
         //esNoRea=resnorea.esvalor;
         //return {codNoRea, esNoRea};
     },
-   esNoReaSup:(respuestas:Respuestas)=>{
+   esNoReaSup:(_respuestas:Respuestas)=>{
         //IMPLEMENTAR EN OPERATIVO
         var esNoReaSup = false;
         var codNoReaSup:string|null= null;
@@ -743,7 +746,7 @@ export var defOperativo = {
        //  esNoReaSup=resnorea.esvalor;
        //return {codNoReaSup,esNoReaSup}
     },
-    esRealizada:(respuestas:Respuestas)=>{
+    esRealizada:(_respuestas:Respuestas)=>{
         //IMPLEMENTAR EN OPERATIVO
         var esRea = false;
         var codRea:string|null= null;
@@ -801,7 +804,7 @@ export var defOperativo = {
         //}
         //return {codRea,esRea}
     },
-    esRealizadaSup:(respuestas:Respuestas)=>{
+    esRealizadaSup:(_respuestas:Respuestas)=>{
         //IMPLEMENTAR EN OPERATIVO
         var esReaSup = false;
         var codReaSup:number|null= null;
@@ -860,7 +863,7 @@ export var defOperativo = {
 ///// ABAJO de esta línea no puede haber otros nombres de variables o formularios o casilleros en general
 
 
-export  var setCalculoReaNoRea = (
+export var setCalculoReaNoRea = (
     esNoRea:(respuestas:Respuestas)=> {codNoRea:string|null, esNoRea:boolean},
     esNoReaSup:(respuestas:Respuestas)=> {codNoReaSup:string|null, esNoReaSup:boolean},
     esRealizada:(respuestas:Respuestas)=> {codRea:number|null, esRea:boolean},
