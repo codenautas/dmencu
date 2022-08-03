@@ -660,7 +660,8 @@ export const getFuncionValorar   = getFuncionCompilada(funcionesValorar);
 
 
 var rowValidator = getRowValidator<IdVariable, Valor, IdFin>({getFuncionHabilitar, getFuncionValorar})
-var buscarNoReaEnRespuestas = (unidadesARecorrerPrm:IdUnidadAnalisis[],unidadAnalisis:UnidadAnalisis, respuestas:Respuestas,noReasTarea:{}[],nombNoRea:string)=>{
+export var buscarNoReaEnRespuestas = (unidadesARecorrerPrm:IdUnidadAnalisis[],unidadAnalisis:UnidadAnalisis, respuestas:Respuestas,noReasTarea:{}[],nombNoRea:string)
+:{nrocodigo:string|null, esValor:boolean}=>{
     var nrcodigo:string|null= null;
     var esvalor=false;
     var rvalor:string|null=null;
@@ -710,170 +711,169 @@ var buscarNoReaEnRespuestas = (unidadesARecorrerPrm:IdUnidadAnalisis[],unidadAna
   return {nrcodigo, esvalor}
  }
 
-////// TODOS LOS NOMBRES DE variables o formularios o casilleros deben estar en el objeto operativo
-//// QUITARLO Y REEMPLAZARLO por buscar en estructura.unidad_analisis y estructura.formulario
 export var defOperativo = {
-    //TODO: GENERALIZAR
-    //esNorea:(respuestas:Respuestas)=>{
-    //    const NO_REA_VAR = 'entreav' as IdVariable; 
-    //    return respuestas[NO_REA_VAR] && respuestas[NO_REA_VAR]!=1
-    //},
-    
-    esNorea:(respuestas:Respuestas)=>{
-        //TODO GENERALIZAR
-        var unidadesARecorrer = ['viviendas','hogares','personas'] as IdUnidadAnalisis[];
-        var uaPrincipal = likeAr(estructura.unidades_analisis).find((ua)=>!ua.padre);
+    esNoRea:(respuestas:Respuestas)=>{
+        //IMPLEMENTAR EN OPERATIVO
         var esNoRea = false;
         var codNoRea:string|null= null;
-  /*
-        var buscarNoReaEnRespuestas = (unidadAnalisis:UnidadAnalisis, respuestas:Respuestas)=>{
-            if(unidadesARecorrer.includes(unidadAnalisis.unidad_analisis)){
-                for(let noRea of estructura.noReas){
-                    var {variable, valor, no_rea} = noRea;
-                    if(respuestas[variable as IdVariable]==valor){
-                        codNoRea = no_rea;
-                        esNoRea = true;
-                        return true
-                    }
-                }
-            }
-            for(let ua of (likeAr(unidadAnalisis?.hijas).array())){
-                if(ua?.unidad_analisis && respuestas[ua.unidad_analisis] instanceof Array){
-                    for(let respuestasHijas of respuestas[ua?.unidad_analisis]){
-                        let result = buscarNoReaEnRespuestas(ua,respuestasHijas);
-                        if(result){
-                            break;
-                        }
-                    }
-                }
-            }
-            return false
-        }
-        buscarNoReaEnRespuestas(uaPrincipal!,respuestas);
-        return {codNoRea,esNoRea}
- */
-        let resnorea = buscarNoReaEnRespuestas( unidadesARecorrer,uaPrincipal!,respuestas,estructura.noReas,'no_rea');
-        codNoRea=resnorea.nrcodigo;
-        esNoRea=resnorea.esvalor;
         return {codNoRea, esNoRea};
+        //EJEMPLO PREJU_2022
+        //var unidadesARecorrer = ['viviendas','hogares','personas'] as IdUnidadAnalisis[];
+        //var uaPrincipal = likeAr(estructura.unidades_analisis).find((ua)=>!ua.padre);
+        //var esNoRea = false;
+        //var codNoRea:string|null= null;
+        //  let resnorea = buscarNoReaEnRespuestas( unidadesARecorrer,uaPrincipal!,respuestas,estructura.noReas,'no_rea');
+        //codNoRea=resnorea.nrcodigo;
+        //esNoRea=resnorea.esvalor;
+        //return {codNoRea, esNoRea};
     },
-   esNoreaSup:(respuestas:Respuestas)=>{
+   esNoReaSup:(respuestas:Respuestas)=>{
+        //IMPLEMENTAR EN OPERATIVO
+        var esNoReaSup = false;
+        var codNoReaSup:string|null= null;
+        return {codNoReaSup,esNoReaSup}
+        //EJEMPLO PREJU_2022
         //TODO GENERALIZAR buscarNoreaRespuestas
-       var unidadesARecorrerSup = ['viviendas','hogares_sup','personas_sup'] as IdUnidadAnalisis[];
-       var uaPrincipal = likeAr(estructura.unidades_analisis).find((ua)=>!ua.padre);
-       var esNoReaSup = false;
-       var codNoReaSup:string|null= null;
-       let resnorea =buscarNoReaEnRespuestas( unidadesARecorrerSup,uaPrincipal!,respuestas,estructura.noReasSup,'no_rea_sup');//con los parametros que necesitariamos para generalizar
-         codNoReaSup=resnorea.nrcodigo;
-         esNoReaSup=resnorea.esvalor;
-       return {codNoReaSup,esNoReaSup}
+       //var unidadesARecorrerSup = ['viviendas','hogares_sup','personas_sup'] as IdUnidadAnalisis[];
+       //var uaPrincipal = likeAr(estructura.unidades_analisis).find((ua)=>!ua.padre);
+       //var esNoReaSup = false;
+       //var codNoReaSup:string|null= null;
+       //let resnorea =buscarNoReaEnRespuestas( unidadesARecorrerSup,uaPrincipal!,respuestas,estructura.noReasSup,'no_rea_sup');//con los parametros que necesitariamos para generalizar
+       //  codNoReaSup=resnorea.nrcodigo;
+       //  esNoReaSup=resnorea.esvalor;
+       //return {codNoReaSup,esNoReaSup}
     },
     esRealizada:(respuestas:Respuestas)=>{
-        //TODO GENERALIZAR
+        //IMPLEMENTAR EN OPERATIVO
         var esRea = false;
-        var codRea:number|null= null;
-        if(!respuestas['identif' as IdVariable]){
-            return {codRea, esRea}
-        }else if(respuestas['identif' as IdVariable]==2 ||respuestas['resid_hog' as IdVariable]==2||respuestas['contact' as IdVariable]==2){
-            codRea = 2;
-            esRea = false;
-        }else{
-            var reahs: number[]=[] ;
-            var respuestasHs = respuestas['hogares'];
-            if(respuestasHs){
-                for(let respuestasH of respuestasHs){
-                    var reah:number;
-                    var selec:number;
-                    if(respuestasH['entrea' ] != 1||respuestasH['prejue1']==2||respuestasH['tp']==0){
-                        reah=2;
-                    }else{
-                        selec=respuestasH['cr_num_miembro']
-                        if(respuestasH['personas'] && respuestasH.personas[selec-1] ){
-                            var respuestasP = respuestasH.personas[selec-1];
-                            var resp_entrea_ind = respuestasP['entreaind' as IdVariable ];
-                            if(resp_entrea_ind==null){ //queremos contemplar el undefined
-                                reah = 3;
-                            }else{
-                                reah = Number(resp_entrea_ind);
-                            }
-                        }else{
-                            reah = 3;
-                        }
-                    }
-                    reahs.push(reah);
-                }
-                if (reahs.every(rh=>rh==1)){
-                    codRea = 1;
-                    esRea = true;
-                }else if(reahs.every(rh=>rh==2)){
-                    codRea = 2;
-                    esRea = false;
-                }else if(reahs.every(rh=>rh==1||rh==3)){
-                    codRea = 3;
-                    esRea = false;
-                }else{
-                    codRea = 4;
-                    esRea = false;
-                }
-            } else{
-                codRea = 3;
-                esRea = false;
-            }
-        }
+        var codRea:string|null= null;
         return {codRea,esRea}
+        //EJEMPLO PREJU_2022
+        //var esRea = false;
+        //var codRea:number|null= null;
+        //if(!respuestas['identif' as IdVariable]){
+        //    return {codRea, esRea}
+        //}else if(respuestas['identif' as IdVariable]==2 ||respuestas['resid_hog' as IdVariable]==2||respuestas['contact' as IdVariable]==2){
+        //    codRea = 2;
+        //    esRea = false;
+        //}else{
+        //    var reahs: number[]=[] ;
+        //    var respuestasHs = respuestas['hogares'];
+        //    if(respuestasHs){
+        //        for(let respuestasH of respuestasHs){
+        //            var reah:number;
+        //            var selec:number;
+        //            if(respuestasH['entrea' ] != 1||respuestasH['prejue1']==2||respuestasH['tp']==0){
+        //                reah=2;
+        //            }else{
+        //                selec=respuestasH['cr_num_miembro']
+        //                if(respuestasH['personas'] && respuestasH.personas[selec-1] ){
+        //                    var respuestasP = respuestasH.personas[selec-1];
+        //                    var resp_entrea_ind = respuestasP['entreaind' as IdVariable ];
+        //                    if(resp_entrea_ind==null){ //queremos contemplar el undefined
+        //                        reah = 3;
+        //                    }else{
+        //                        reah = Number(resp_entrea_ind);
+        //                    }
+        //                }else{
+        //                    reah = 3;
+        //                }
+        //            }
+        //            reahs.push(reah);
+        //        }
+        //        if (reahs.every(rh=>rh==1)){
+        //            codRea = 1;
+        //            esRea = true;
+        //        }else if(reahs.every(rh=>rh==2)){
+        //            codRea = 2;
+        //            esRea = false;
+        //        }else if(reahs.every(rh=>rh==1||rh==3)){
+        //            codRea = 3;
+        //            esRea = false;
+        //        }else{
+        //            codRea = 4;
+        //            esRea = false;
+        //        }
+        //    } else{
+        //        codRea = 3;
+        //        esRea = false;
+        //    }
+        //}
+        //return {codRea,esRea}
     },
     esRealizadaSup:(respuestas:Respuestas)=>{
-        //TODO GENERALIZAR 
+        //IMPLEMENTAR EN OPERATIVO
         var esReaSup = false;
         var codReaSup:number|null= null;
-        if(!respuestas['confir_tel_sup' as IdVariable] && !respuestas['sp1a' as IdVariable]){
-            return {codReaSup, esReaSup}
-        }else if( respuestas['confir_tel_sup' as IdVariable]==2 || respuestas['confir_dom_sup' as IdVariable]==2||respuestas['sp1a' as IdVariable]==2 ||respuestas['sp1b' as IdVariable]==2||respuestas['sp1c' as IdVariable]==2){
-            codReaSup = 2;
-            esReaSup = false;
-        }else{
-            var reahs: number[]=[] ;
-            var respuestasHs = respuestas['hogares_sup'];
-            if(respuestasHs){
-                for(let respuestasH of respuestasHs){
-                    var reah:number;
-                    var selec:number;
-                    if(respuestasH['entrea_sup' ] == 2||respuestasH['spr1_sup']==2||respuestasH['sp4']==3||respuestasH['total_rango_sup']==0){
-                        reah=2;
-                    }else{
-                        if(respuestasH['entrea_sup' ]){
-                           reah = 1;
-                        }else {
-                           reah=3;
-                        }     
-                    }
-                    reahs.push(reah);
-                }
-                if (reahs.every(rh=>rh==1)){
-                    codReaSup = 1;
-                    esReaSup = true;
-                }else if(reahs.every(rh=>rh==2)){
-                    codReaSup = 2;
-                    esReaSup = false;
-                }else if(reahs.every(rh=>rh==1||rh==3)){
-                    codReaSup = 3;
-                    esReaSup = false;
-                }else{
-                    codReaSup = 4;
-                    esReaSup = false;
-                }
-            } else{
-                codReaSup = 3;
-                esReaSup = false;
-            }
-        }
         return {codReaSup,esReaSup}
+        //EJEMPLO PREJU_2022
+        //TODO GENERALIZAR 
+        //var esReaSup = false;
+        //var codReaSup:number|null= null;
+        //if(!respuestas['confir_tel_sup' as IdVariable] && !respuestas['sp1a' as IdVariable]){
+        //    return {codReaSup, esReaSup}
+        //}else if( respuestas['confir_tel_sup' as IdVariable]==2 || respuestas['confir_dom_sup' as IdVariable]==2||respuestas['sp1a' as IdVariable]==2 ||respuestas['sp1b' as IdVariable]==2||respuestas['sp1c' as IdVariable]==2){
+        //    codReaSup = 2;
+        //    esReaSup = false;
+        //}else{
+        //    var reahs: number[]=[] ;
+        //    var respuestasHs = respuestas['hogares_sup'];
+        //    if(respuestasHs){
+        //        for(let respuestasH of respuestasHs){
+        //            var reah:number;
+        //            var selec:number;
+        //            if(respuestasH['entrea_sup' ] == 2||respuestasH['spr1_sup']==2||respuestasH['sp4']==3||respuestasH['total_rango_sup']==0){
+        //                reah=2;
+        //            }else{
+        //                if(respuestasH['entrea_sup' ]){
+        //                   reah = 1;
+        //                }else {
+        //                   reah=3;
+        //                }     
+        //            }
+        //            reahs.push(reah);
+        //        }
+        //        if (reahs.every(rh=>rh==1)){
+        //            codReaSup = 1;
+        //            esReaSup = true;
+        //        }else if(reahs.every(rh=>rh==2)){
+        //            codReaSup = 2;
+        //            esReaSup = false;
+        //        }else if(reahs.every(rh=>rh==1||rh==3)){
+        //            codReaSup = 3;
+        //            esReaSup = false;
+        //        }else{
+        //            codReaSup = 4;
+        //            esReaSup = false;
+        //        }
+        //    } else{
+        //        codReaSup = 3;
+        //        esReaSup = false;
+        //    }
+        //}
+        //return {codReaSup,esReaSup}
     },
     UAprincipal:'' as IdUnidadAnalisis,
     defUA:{} as {[i in IdUnidadAnalisis]:{pk:IdVariable, incluidas:IdUnidadAnalisis[], idsFor:IdFormulario[]}},
     defFor:{} as {[f in IdFormulario]:{/*arbolUA:IdUnidadAnalisis[], */ hermano?:true}}
 }
 ///// ABAJO de esta línea no puede haber otros nombres de variables o formularios o casilleros en general
+
+
+export  var setCalculoReaNoRea = (
+    esNoRea:(respuestas:Respuestas)=> {codNoRea:string|null, esNoRea:boolean},
+    esNoReaSup:(respuestas:Respuestas)=> {codNoReaSup:string|null, esNoReaSup:boolean},
+    esRealizada:(respuestas:Respuestas)=> {codRea:number|null, esRea:boolean},
+    esRealizadaSup:(respuestas:Respuestas)=> {codReaSup:number|null, esReaSup:boolean}
+)=>{
+    defOperativo = {
+        ...defOperativo,
+        esNoRea,
+        esNoReaSup,
+        esRealizada,
+        esRealizadaSup
+    }
+}
 
 // TODO: GENERALIZAR
 type Persona={p1:string, p2:number, p3:number, p4:number|null, p5:1|null, p6:1|null}
@@ -1214,9 +1214,9 @@ export function calcularResumenVivienda(
     respuestas:Respuestas
 ):ResultadoResumen{
     var {codRea, esRea} = defOperativo.esRealizada(respuestas)
-    var {codNoRea, esNoRea} = defOperativo.esNorea(respuestas)
+    var {codNoRea, esNoRea} = defOperativo.esNoRea(respuestas)
     var {codReaSup,esReaSup} = defOperativo.esRealizadaSup(respuestas)
-    var {codNoReaSup, esNoReaSup} = defOperativo.esNoreaSup(respuestas)
+    var {codNoReaSup, esNoReaSup} = defOperativo.esNoReaSup(respuestas)
     var formsFeedback = getFormulariosForIdVivienda(forPkRaiz.vivienda!);
     var configuracionSorteoFormulario = estructura.configSorteo && estructura.configSorteo[getMainFormForVivienda(forPkRaiz.vivienda!)]
     var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>{
