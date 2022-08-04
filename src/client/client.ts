@@ -6,11 +6,93 @@ import { CasoState,
 import * as likeAr from "like-ar";
 import {getEstructura, setPersistirDatosByPass} from "../unlogged/bypass-formulario"
 import {cargarEstructura, cargarHojaDeRuta, GLOVAR_DATOSBYPASS, GLOVAR_ESTRUCTURA, GLOVAR_MODOBYPASS} from "../unlogged/abrir-formulario"
+import { Operativo } from "meta-enc";
 
 //TODO GENERALIZAR
 
 const TAREA_DEFAULT = 'encu';
-const OPERATIVO_DEFAULT = 'PREJU_2022';
+var OPERATIVO_DEFAULT= null;
+
+myOwn.autoSetupFunctions.push(async ()=>{
+    var my = myOwn;    
+    try{
+        OPERATIVO_DEFAULT = await my.ajax.operativo_get({});
+    }catch(err){
+        OPERATIVO_DEFAULT=null;
+    }
+    myOwn.wScreens.abrir_encuesta={
+        parameters:[
+            {name:'operativo' , typeName:'text', defaultValue:OPERATIVO_DEFAULT, references:'operativos'},
+            {name:'tarea'     , typeName:'text', defaultValue:TAREA_DEFAULT, references: 'tareas'},
+            {name:'encuesta'  , typeName:'integer', defaultValue:130031}
+        ],
+        autoproced:true,
+        mainAction:async (params)=>{
+            // antes: abrirDirecto
+            var {operativo, encuesta, tarea} = params;
+            var estructura = getEstructura();
+            var carga = await my.ajax.dm_forpkraiz_cargar({operativo, vivienda:encuesta, tarea}) as DatosByPassPersistibles;
+            if(!estructura || (estructura.timestamp??0) < carga.timestampEstructura! || estructura.operativo != operativo || my.config.config.devel){
+                estructura = await traerEstructura({operativo})
+                cargarEstructura(estructura);
+            }
+            //@ts-ignore
+            var state:CasoState = {}
+            inicializarState(state);
+            var forPkRaiz = {formulario:carga.informacionHdr[encuesta as IdEnc].tarea.main_form, vivienda:encuesta};
+            setPersistirDatosByPass(
+                async function persistirDatosByPassEnBaseDeDatos(persistentes:DatosByPassPersistibles){
+                    if(persistentes.soloLectura){
+                        throw new Error("Está intentando modificar una encuesta abierta como solo lectura, no se guardaron los cambios")
+                    }
+                    await my.ajax.dm_forpkraiz_descargar({operativo, persistentes});
+                }
+            )
+            if(!carga.respuestas.viviendas[forPkRaiz.vivienda!]){
+                throw new Error(`No se encuentra la vivienda ${forPkRaiz.vivienda!}`);
+            }
+            cargarHojaDeRuta({...carga, modoAlmacenamiento:'session'});
+            // @ts-ignore
+            desplegarFormularioActual({operativo, modoDemo:false, forPkRaiz});
+        }
+    };
+    myOwn.wScreens.consistir_encuesta={
+        parameters:[
+            {name:'operativo' , typeName:'text', defaultValue:OPERATIVO_DEFAULT, references:'operativos'},
+            {name:'tarea'     , typeName:'text'},
+            {name:'encuesta'  , typeName:'integer'}
+        ],
+        autoproced:true,
+        mainAction:async (params)=>{
+            var {operativo, tarea, encuesta } = params;
+            var result = await myOwn.ajax.consistir_encuesta({
+                operativo: operativo,
+                id_caso: encuesta
+            });
+            if(result.ok){
+                var fixedFields = [];
+                fixedFields.push({fieldName: 'operativo', value: operativo});
+                fixedFields.push({fieldName: 'vivienda', value: encuesta});
+                var mainLayout = document.getElementById('main_layout')!;
+                var divGrilla = html.div({id:'inconsistencias'}).create();
+                mainLayout.insertBefore(divGrilla, mainLayout.firstChild);
+                mainLayout.insertBefore(
+                    crearBotonVerAbrirEncuesta(
+                        operativo,
+                        tarea,
+                        encuesta, 
+                        `ir a encuesta ${encuesta}`
+                    ), 
+                    mainLayout.firstChild
+                );
+                my.tableGrid("inconsistencias", divGrilla,{tableDef:{},fixedFields: fixedFields});
+            }else{
+                throw new Error(result.message);
+            }
+        }
+    }
+});
+
 
 //quita bootstrap del head para que no rompa los estilos de BEPlus (solo se usa bootstrap en el form)
 var linkNode = document.querySelectorAll('[href="css/bootstrap.min.css"]');
@@ -45,42 +127,7 @@ async function sincronizarDatos(persistentes:DatosByPassPersistibles|null){
     return datos;
 }
 
-myOwn.wScreens.abrir_encuesta={
-    parameters:[
-        {name:'operativo' , typeName:'text', defaultValue:OPERATIVO_DEFAULT, references:'operativos'},
-        {name:'tarea'     , typeName:'text', defaultValue:TAREA_DEFAULT, references: 'tareas'},
-        {name:'encuesta'  , typeName:'integer', defaultValue:130031}
-    ],
-    autoproced:true,
-    mainAction:async (params)=>{
-        // antes: abrirDirecto
-        var {operativo, encuesta, tarea} = params;
-        var estructura = getEstructura();
-        var carga = await my.ajax.dm_forpkraiz_cargar({operativo, vivienda:encuesta, tarea}) as DatosByPassPersistibles;
-        if(!estructura || (estructura.timestamp??0) < carga.timestampEstructura! || estructura.operativo != operativo || my.config.config.devel){
-            estructura = await traerEstructura({operativo})
-            cargarEstructura(estructura);
-        }
-        //@ts-ignore
-        var state:CasoState = {}
-        inicializarState(state);
-        var forPkRaiz = {formulario:carga.informacionHdr[encuesta as IdEnc].tarea.main_form, vivienda:encuesta};
-        setPersistirDatosByPass(
-            async function persistirDatosByPassEnBaseDeDatos(persistentes:DatosByPassPersistibles){
-                if(persistentes.soloLectura){
-                    throw new Error("Está intentando modificar una encuesta abierta como solo lectura, no se guardaron los cambios")
-                }
-                await my.ajax.dm_forpkraiz_descargar({operativo, persistentes});
-            }
-        )
-        if(!carga.respuestas.viviendas[forPkRaiz.vivienda!]){
-            throw new Error(`No se encuentra la vivienda ${forPkRaiz.vivienda!}`);
-        }
-        cargarHojaDeRuta({...carga, modoAlmacenamiento:'session'});
-        // @ts-ignore
-        desplegarFormularioActual({operativo, modoDemo:false, forPkRaiz});
-    }
-}
+
 
 var mostrarInfoLocal = (divAvisoSincro:HTMLDivElement, titulo:string, nroSincro:number|null, mostrarLinkHdr: boolean)=>{
     let datosByPass = my.getLocalVar(GLOVAR_DATOSBYPASS);
@@ -325,42 +372,6 @@ myOwn.clientSides.consistir = botonClientSideEnGrilla({
         }): alertPromise('La encuesta debe tener dato en rea para poder consistirla.');
     }
 });
-
-myOwn.wScreens.consistir_encuesta={
-    parameters:[
-        {name:'operativo' , typeName:'text', defaultValue:OPERATIVO_DEFAULT, references:'operativos'},
-        {name:'tarea'     , typeName:'text'},
-        {name:'encuesta'  , typeName:'integer'}
-    ],
-    autoproced:true,
-    mainAction:async (params)=>{
-        var {operativo, tarea, encuesta } = params;
-        var result = await myOwn.ajax.consistir_encuesta({
-            operativo: operativo,
-            id_caso: encuesta
-        });
-        if(result.ok){
-            var fixedFields = [];
-            fixedFields.push({fieldName: 'operativo', value: operativo});
-            fixedFields.push({fieldName: 'vivienda', value: encuesta});
-            var mainLayout = document.getElementById('main_layout')!;
-            var divGrilla = html.div({id:'inconsistencias'}).create();
-            mainLayout.insertBefore(divGrilla, mainLayout.firstChild);
-            mainLayout.insertBefore(
-                crearBotonVerAbrirEncuesta(
-                    operativo,
-                    tarea,
-                    encuesta, 
-                    `ir a encuesta ${encuesta}`
-                ), 
-                mainLayout.firstChild
-            );
-            my.tableGrid("inconsistencias", divGrilla,{tableDef:{},fixedFields: fixedFields});
-        }else{
-            throw new Error(result.message);
-        }
-    }
-}
 
 myOwn.wScreens.demo=async function(_addrParams){
     // @ts-ignore desplegarFormularioActual global

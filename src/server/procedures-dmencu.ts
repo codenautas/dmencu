@@ -853,5 +853,13 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 throw err;
             }
         }
+    },
+    {
+        action: 'operativo_get',
+        parameters:[],
+        unlogged:true,
+        coreFunction:async function(context, _params){
+            return getOperativoActual(context)
+        }
     }
 ];
