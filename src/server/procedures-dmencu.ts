@@ -144,6 +144,8 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
 `
 }
 
+export var setHdrQuery = (myFun:(quotedCondViv:string)=>string)=> getHdrQuery=myFun
+
 const getUAPrincipal = async (client:Client, operativo:string)=>
     (await client.query(
         `select unidad_analisis
