@@ -1,7 +1,7 @@
 {
   "name": "dmencu",
   "description": "DM Encu - Encuestas en dispositivo móvil",
-  "version": "0.1.33",
+  "version": "0.1.34",
   "author": "Codenautas <codenautas@googlegroups.com>",
   "license": "MIT",
   "main": "dist/server/server/app-dmencu.js",
@@ -44,7 +44,7 @@
     "node": ">= 14.17.0"
   },
   "scripts": {
-    "prepublish": "npm run build",
+    "prepare": "npm run build",
     "build": "(tsc -p src/unlogged || echo \"continue w/error\") && (tsc -p src/client || echo \"continue w/error\") && (tsc -p src/server || echo \"continue w/error\") && mixin-patch",
     "build-client": "(tsc -p src/client || echo \"continue w/error\") && mixin-patch",
     "build-unlogged": "(tsc -p src/unlogged || echo \"continue w/error\") && mixin-patch",
