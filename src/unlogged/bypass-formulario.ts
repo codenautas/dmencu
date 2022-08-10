@@ -162,9 +162,9 @@ export function registrarElemento<T extends ElementosRegistrables>(def:RegistroE
 
 type RespuestasForPkComun = {respuestas:Respuestas, respuestasRaiz:RespuestasRaiz, forPkRaiz:ForPkRaiz, unidadAnalisis:UnidadAnalisis}
 
-function respuestasForPk(forPk:ForPk):RespuestasForPkComun
-function respuestasForPk(forPk:ForPk, conAumentadas:true, agregarSiFalta?:boolean):RespuestasForPkComun & {respuestasAumentadas:Respuestas}
-function respuestasForPk(forPk:ForPk, conAumentadas?:boolean, agregarSiFalta?:boolean):RespuestasForPkComun & {respuestasAumentadas?:Respuestas} {
+export function respuestasForPk(forPk:ForPk):RespuestasForPkComun
+export function respuestasForPk(forPk:ForPk, conAumentadas:true, agregarSiFalta?:boolean):RespuestasForPkComun & {respuestasAumentadas:Respuestas}
+export function respuestasForPk(forPk:ForPk, conAumentadas?:boolean, agregarSiFalta?:boolean):RespuestasForPkComun & {respuestasAumentadas?:Respuestas} {
     var respuestasAumentadas = {} as Respuestas;
     // @ts-expect-error lo que sobrar de respuestas no me importa...
     var respuestas = datosByPass.respuestas as Respuestas;
