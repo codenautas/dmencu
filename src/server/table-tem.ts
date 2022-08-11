@@ -121,6 +121,8 @@ export function tem(context:Context, opts:any):TableDefinition {
             {name:'notas'                , typeName:'text'    , editable: false, inTable:false},
             {name:'cita'                 , typeName:'text'    , editable: false  },
             {name:"modificado"           , typeName: 'timestamp', editable: false},
+            {name: "libre" , typeName: "boolean", defaultDbValue:"true"  , visible:false, editable:false},
+            {name: "fecha_bloqueo", typeName: "timestamp", visible:false, editable:false}
             //{name:'obs_sup'        , typeName:'text' , editable: isSupervisor     },
             //{name:'obs_coor'       , typeName:'text' , editable: isCoordinador || isSubCoordinador },  
         ],

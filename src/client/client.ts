@@ -11,7 +11,7 @@ import { Operativo } from "meta-enc";
 //TODO GENERALIZAR
 
 const TAREA_DEFAULT = 'encu';
-var OPERATIVO_DEFAULT= null;
+var OPERATIVO_DEFAULT:string|null= null;
 
 myOwn.autoSetupFunctions.push(async ()=>{
     var my = myOwn;    
@@ -34,6 +34,39 @@ myOwn.autoSetupFunctions.push(async ()=>{
             var carga = await my.ajax.dm_forpkraiz_cargar({operativo, vivienda:encuesta, tarea}) as DatosByPassPersistibles;
             if(!estructura || (estructura.timestamp??0) < carga.timestampEstructura! || estructura.operativo != operativo || my.config.config.devel){
                 estructura = await traerEstructura({operativo})
+                cargarEstructura(estructura);
+            }
+            //@ts-ignore
+            var state:CasoState = {}
+            inicializarState(state);
+            var forPkRaiz = {formulario:carga.informacionHdr[encuesta as IdEnc].tarea.main_form, vivienda:encuesta};
+            setPersistirDatosByPass(
+                async function persistirDatosByPassEnBaseDeDatos(persistentes:DatosByPassPersistibles){
+                    if(persistentes.soloLectura){
+                        throw new Error("Está intentando modificar una encuesta abierta como solo lectura, no se guardaron los cambios")
+                    }
+                    await my.ajax.dm_forpkraiz_descargar({operativo, persistentes});
+                }
+            )
+            if(!carga.respuestas.viviendas[forPkRaiz.vivienda!]){
+                throw new Error(`No se encuentra la vivienda ${forPkRaiz.vivienda!}`);
+            }
+            cargarHojaDeRuta({...carga, modoAlmacenamiento:'session'});
+            // @ts-ignore
+            desplegarFormularioActual({operativo, modoDemo:false, forPkRaiz});
+        }
+    };
+    myOwn.wScreens.obtener_telefono={
+        parameters:[],
+        autoproced:true,
+        mainAction:async (_params)=>{
+            const operativo = OPERATIVO_DEFAULT;
+            const tarea = TAREA_DEFAULT;
+            var estructura = getEstructura();
+            let encuesta = await my.ajax.get_random_free_case({operativo}); 
+            var carga = await my.ajax.dm_forpkraiz_cargar({operativo, vivienda:encuesta, tarea}) as DatosByPassPersistibles;
+            if(!estructura || (estructura.timestamp??0) < carga.timestampEstructura! || estructura.operativo != operativo || my.config.config.devel){
+                estructura = await traerEstructura({operativo:<string>operativo})
                 cargarEstructura(estructura);
             }
             //@ts-ignore
