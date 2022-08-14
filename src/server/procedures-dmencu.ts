@@ -868,7 +868,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         action: 'get_random_free_case',
         parameters:[{name:'operativo'    , typeName:'text'}],
         coreFunction:async function(context, params){
-            const minsToExpire = 15;
+            const minsToExpire = 30;
             const minsSinceBloqued = `date_part('min', age(current_timestamp, fecha_bloqueo))`;
             const enc = await context.client.query(`select enc from tem where operativo=$1 and (libre or ${minsSinceBloqued} > ${minsToExpire}) limit 1;`,[params.operativo]).fetchUniqueValue();
             await context.client.query(`UPDATE tem set libre = false, fecha_bloqueo=current_timestamp where operativo=$1 and enc=$2`,[params.operativo, enc.value]).execute();
