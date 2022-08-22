@@ -184,10 +184,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                       "type": "image/png"
                     }
                   ],
-                  "start_url": "../campo",
-                  "display": "standalone",
-                  "theme_color": "#3F51B5",
-                  "background_color": "#6d60ed"
+                  ...be.getColorsJson()
                 }
                 miniTools.serveText(JSON.stringify(content), 'application/json')(req,res);
             }catch(err){
@@ -195,6 +192,14 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 miniTools.serveErr(req, res, next)(err);
             }
         });
+    }
+    getColorsJson(){
+        return {
+            "start_url": "../campo",
+            "display": "standalone",
+            "theme_color": "#3F51B5",
+            "background_color": "#6d60ed"
+        }
     }
     addLoggedServices(){
         var be = this;
