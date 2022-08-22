@@ -184,7 +184,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                       "type": "image/png"
                     }
                   ],
-                  ...be.getColorsJson()
+                  ...be.getColorsJson(sufijo)
                 }
                 miniTools.serveText(JSON.stringify(content), 'application/json')(req,res);
             }catch(err){
@@ -193,7 +193,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             }
         });
     }
-    getColorsJson(){
+    getColorsJson(_sufijo:'_test'|'_capa'|''){
         return {
             "start_url": "../campo",
             "display": "standalone",
