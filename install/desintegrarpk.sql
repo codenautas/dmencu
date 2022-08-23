@@ -1,5 +1,5 @@
 set search_path= base;
-set role preju2022_owner;
+--set role preju2022_owner;
 
 create or replace function desintegrarpk_trg() returns trigger
   language plpgsql SECURITY DEFINER as

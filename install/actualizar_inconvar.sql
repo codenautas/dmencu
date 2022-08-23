@@ -1,5 +1,4 @@
 ﻿set search_path= base;
-set role preju2022_owner;
 
 CREATE OR REPLACE FUNCTION actualizar_inconvar_trg()
   RETURNS trigger AS
