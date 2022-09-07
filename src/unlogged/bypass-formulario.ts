@@ -550,6 +550,10 @@ const helpersCasilleros={
             //faltaria validar que no sea una fecha futura y que sea una fecha en el rango del operativo
             return formato_valido && conversionOk
         },
+        mesanio_valido(x:string){
+            var formato_valido=/^([1-9]|0[1-9]|1[012])\/(19|20)\d\d$/.test(x)
+            return formato_valido 
+        },
         informado(x:any){
             return x!==undefined && x!==null && (!(x instanceof Array)|| x.length!==0 )
             && (!(x instanceof Object)|| Object.keys(x).length !== 0 )
