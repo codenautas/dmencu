@@ -29,17 +29,17 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
         {name:'rea'                , typeName:'integer'     , editable: puedeEditar, label:'rea_dm'},
         {name:'norea'              , typeName:'integer'     , editable: puedeEditar, label:'norea_dm'},
         //{name:'cod_no_rea'         , typeName:'text'        , editable: false   , inTable:false  },
-        {name:'gru_no_rea'         , typeName:'text'        , editable: false   , inTable:false  },
         {name:'resumen_estado'     , typeName:'text'        , editable: false   , label: 'resumen_estado_dm'},
         {name:'utl_rea'            , typeName:'integer'     , editable: false   ,  inTable:false},
         {name:'ult_norea'          , typeName:'integer'     , editable: false   ,  inTable:false},
+        {name:'ult_gru_no_rea'     , typeName:'text'        , editable: false   , inTable:false  },
         {name:'ult_resumen_estado' , typeName:'text'        , editable: false   ,  inTable:false},
         //{name:'resultado'          , typeName:'text'}, // fk tareas_resultados 
         //{name:'fecha_resultado'    , typeName:'date'}, // fk tareas_resultados 
         {name:'supervision_dirigida'  , typeName:'integer'     , editable: true},
         {name:'supervision_aleatoria' , typeName:'integer'     , editable: false,  inTable:false},
         {name:'verificado'            , typeName:'text'}, 
-        {name:'proximo_paso'          , typeName:'text'        , editable:false , inTable:false}, 
+        {name:'a_recuperacion'        , typeName:'text'        , editable:false , inTable:false}, 
         {name:'obs_verificado'        , typeName:'text'},
         {name:'rea_sup'               , typeName:'integer'     , editable: puedeEditar},
         {name:'norea_sup'             , typeName:'integer'     , editable: puedeEditar},
@@ -76,7 +76,7 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                 ok:{ 
                     expr:` coalesce(nullif(
                                 case when tareas_tem.asignado is null and tareas_tem.verificado is not null then 'Verificado-asignado vacio'
-                                    when tareas_tem.verificado is not null and tareas_tem.habilitada then 'Falta deshabilitar'
+                                    --when tareas_tem.verificado is not null and tareas_tem.habilitada then 'Falta deshabilitar'
                                 else '' end 
                                 ||case when tareas_tem.asignado is null and tareas_tem.operacion is not null then 'Operacion sin asignado'
                                     when tareas_tem.verificado is not null and coalesce(tareas_tem.operacion,'descargar')='cargar' then 'Verificado-cargado'
@@ -84,14 +84,15 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                                 else '' end
                                 ||(select case
                                         when tareas_tem.habilitada and tareas_tem.tarea='recu' and count(*) filter(where h.verificado is not null and h.tarea='encu') =0  then 'T.previa a recu sin verificar'
-                                        when tareas_tem.habilitada and tareas_tem.tarea='supe' and (count(*) filter (where h.verificado is not null and h.tarea <>'supe') )=0  then 'T.previa a supe sin verificar' 
+                                        when tareas_tem.habilitada and tareas_tem.tarea='supe' and (count(*) filter (where h.verificado is not null and h.tarea <>'supe') )=0  then 'T.previa a supe sin verificar'
+                                        when tareas_tem.habilitada and tareas_tem.tarea='supe' and (count(*) filter (where not h.habilitada  and h.tarea ='recu' and a_recuperacion='recuperacion') )>0  then 'RECUPERAR antes de Supervisar' 
                                     else '' end  
                                     from tareas_tem h 
                                    where h.enc=tareas_tem.enc and h.operativo=tareas_tem.operativo
                                 )
                                 ||(select case 
                                     when count(cargado_dm)>1  then '+cargados'
-                                    when count(*) filter (where habilitada is true)>1 then '+habilitadas'
+                                    when count(*) filter (where habilitada is true and verificado is null)>1 then '+habilitadas sin verificar'
                                     when count(*) filter (where operacion='cargar')>1   then '+opeCargar'
                                     else '' end
                             from tareas_tem h 
@@ -113,10 +114,10 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                     from (
                 select tareas.tarea, t.operativo, t.enc, t.area
                     ${fields.filter(x=>!(x.isPk || x.inTable===false||x.name=='area')).map(x=>`, tt.${db.quoteIdent(x.name)}`).join('')}
-                    , y.grupo as gru_no_rea
+                    , y.grupo as ult_gru_no_rea
                     , case rol_asignante when 'automatico' then null
                         when 'recepcionista' then areas.recepcionista end as asignante
-                    , case when tt.tarea='encu' and  y.grupo0 in ('ausentes','rechazos') then 'recuperacion' else null end proximo_paso   
+                    , case when tt.tarea='recu' and y.grupo0 in ('ausentes','rechazos') then 'recuperacion' else null end a_recuperacion   
                     , t.supervision_aleatoria
                     , t.rea utl_rea, t.norea as ult_norea, t.resumen_estado ult_resumen_estado
                     , t.rea_sup utl_rea_sup, t.norea_sup as ult_norea_sup, t.resumen_estado_sup ult_resumen_estado_sup
@@ -125,7 +126,7 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                     from tareas join  tem t using (operativo) 
                         left join areas using (operativo, area)
                         left join lateral (select * from tareas_tem where tarea=tareas.tarea and operativo=t.operativo and enc=t.enc) tt on true
-                        left join no_rea y on tt.norea=y.no_rea::integer
+                        left join no_rea y on t.norea=y.no_rea::integer
                         left join viviendas v on v.operativo=t.operativo and v.vivienda=t.enc 
                     ) x
                     
