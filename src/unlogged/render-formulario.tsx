@@ -2047,10 +2047,13 @@ setCalcularVariables((respuestasRaiz:RespuestasRaiz, forPk:ForPk)=>{
                         if(!respuestasHogar[configHogares.uaPersonas]){
                             respuestasHogar[configHogares.uaPersonas]=[];
                         }
-                        respuestasHogar[configHogares.varLosNombres].split(',').forEach((nombre, i)=>{
-                            respuestasHogar[configHogares.uaPersonas][i] = respuestasHogar[configHogares.uaPersonas][i] || {};
-                            respuestasHogar[configHogares.uaPersonas][i][configHogares.varNombrePersona] = nombre.trim();
-                        })
+                        respuestasHogar[configHogares.varLosNombres]
+                            .split(',')
+                            .filter((nombre:string)=>nombre.trim().length > 0)
+                            .forEach((nombre:string, i:number)=>{
+                                respuestasHogar[configHogares.uaPersonas][i] = respuestasHogar[configHogares.uaPersonas][i] || {};
+                                respuestasHogar[configHogares.uaPersonas][i][configHogares.varNombrePersona] = nombre.trim();
+                            })
                     }
                 }
             }
