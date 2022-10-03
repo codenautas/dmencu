@@ -514,7 +514,7 @@ var reemplazosHabilitar:{[key:string]:string}={
     "NOT": '!',
 };
 
-const helpersCasilleros={
+export const helpersCasilleros={
     null2zero(posibleNull:any){
         if(posibleNull==null){
             return 0;
@@ -563,6 +563,20 @@ const helpersCasilleros={
         },
         par(x:number){
             return x % 2==0
+        },
+        edad_mes_annio_valido(edad:number,mesAnnio:string){
+            //edad y mesAnnio ya son válidos
+            var today = date.today();
+            var partes =  mesAnnio.split('/');
+            //@ts-ignore las partes corresponden a una fecha válida
+            var nacimiento = date.ymd(Number(partes[1]), Number(partes[0]),1)
+            //@ts-ignore RealDate es Date y se puede restar
+            var diff = (today - nacimiento)/1000/60/60/24/365; //años
+            var edadEntera = Math.floor(diff);
+            return (
+                edadEntera == edad || 
+                edadEntera > edad && (diff - edadEntera) < 1/12 //mes de tolerancia
+            )
         },
         //copiar_campo_ua_rama(respuestasOrigen:Respuestas[], posicion:number, variableOrigen: IdVariable, camino:string, condicion:boolean){
         //    return condicion?(respuestasOrigen && respuestasOrigen[posicion-1] && respuestasOrigen[posicion-1][`${camino}`][variableOrigen]):null
