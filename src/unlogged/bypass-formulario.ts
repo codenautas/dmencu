@@ -564,15 +564,21 @@ export const helpersCasilleros={
         par(x:number){
             return x % 2==0
         },
-        edad_mes_annio_valido(edad:number,mesAnnio:string){
-            //edad y mesAnnio ya son válidos
-            var today = date.today();
-            var partes =  mesAnnio.split('/');
+        edad_mes_annio_valido(edad:number,mesAnnio:string, fechaRealizacionDDMMYYYY:string){
+            var mesesDiferencia = (d1:Date, d2:Date)=>{
+                var months;
+                months = (d2.getFullYear() - d1.getFullYear()) * 12;
+                months -= d1.getMonth();
+                months += d2.getMonth();
+                return months <= 0 ? 0 : months;
+            }
+            var partesRealizacion = fechaRealizacionDDMMYYYY.split("/");
             //@ts-ignore las partes corresponden a una fecha válida
-            var nacimiento = date.ymd(Number(partes[1]), Number(partes[0]),1)
-            //@ts-ignore RealDate es Date y se puede restar
-            var diff = (today - nacimiento)/1000/60/60/24/365; //años
-            var edadEntera = Math.floor(diff);
+            var today = date.ymd(Number(partesRealizacion[2]), Number(partesRealizacion[1]),Number(partesRealizacion[0]))
+            var partesMesAnnio =  mesAnnio.split('/');
+            //@ts-ignore las partes corresponden a una fecha válida
+            var nacimiento = date.ymd(Number(partesMesAnnio[1]), Number(partesMesAnnio[0]),1)
+            var edadEntera = Math.floor(mesesDiferencia(nacimiento,today)/12);
             return (
                 edadEntera == edad || 
                 edadEntera > edad && today.getMonth() == nacimiento.getMonth() //mes de tolerancia
