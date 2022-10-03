@@ -575,7 +575,7 @@ export const helpersCasilleros={
             var edadEntera = Math.floor(diff);
             return (
                 edadEntera == edad || 
-                edadEntera > edad && (diff - edadEntera) < 1/12 //mes de tolerancia
+                edadEntera > edad && today.getMonth() == nacimiento.getMonth() //mes de tolerancia
             )
         },
         //copiar_campo_ua_rama(respuestasOrigen:Respuestas[], posicion:number, variableOrigen: IdVariable, camino:string, condicion:boolean){
