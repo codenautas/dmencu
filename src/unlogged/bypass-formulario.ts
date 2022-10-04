@@ -578,10 +578,12 @@ export const helpersCasilleros={
             var partesMesAnnio =  mesAnnio.split('/');
             //@ts-ignore las partes corresponden a una fecha válida
             var nacimiento = date.ymd(Number(partesMesAnnio[1]), Number(partesMesAnnio[0]),1)
-            var edadEntera = Math.floor(mesesDiferencia(nacimiento,today)/12);
+            //@ts-ignore RealDate es Date y se puede restar
+            var diferenciaMeses = mesesDiferencia(nacimiento,today);
+            var edadDecimales = diferenciaMeses/12; //ej 36.5
             return (
-                edadEntera == edad || 
-                edadEntera > edad && today.getMonth() == nacimiento.getMonth() //mes de tolerancia
+                Math.floor(edadDecimales) == edad || //misma edad
+                edadDecimales == edad + 1 //mes de tolerancia
             )
         },
         //copiar_campo_ua_rama(respuestasOrigen:Respuestas[], posicion:number, variableOrigen: IdVariable, camino:string, condicion:boolean){
