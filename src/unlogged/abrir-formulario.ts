@@ -1,7 +1,11 @@
 import {DatosByPassPersistibles, Estructura, ForPkRaiz,
     Respuestas,
     ModoAlmacenamiento,
+    PlainForPk,
+    toPlainForPk,
 } from "./tipos";
+
+import * as likeAr from "like-ar";
 
 import { 
     setDatosByPass, setEncolarBackup, setEstructura, setPersistirDatosByPass 
@@ -60,7 +64,7 @@ export function cargarEstructura(estructuraACargar:Estructura){
 type Backups={
     idActual:number,
     token:string|undefined,
-    tem:{idBackup:number, forPkRaiz:ForPkRaiz, respuestasRaiz:Respuestas}[]
+    tem:{[key in PlainForPk]:{idBackup:number, forPkRaiz:ForPkRaiz, respuestasRaiz:Respuestas}}
 }
 
 var backupPendiente = Promise.resolve();
@@ -68,13 +72,10 @@ var backupPendiente = Promise.resolve();
 async function enviarBackup(){
     var backups:Backups = my.getLocalVar('backups');
     var {token, tem} = backups;
-    if(tem.length){
+    if(likeAr(tem).array().length){
         try{
             await my.ajax.dm_backup({token, tem})
-            // tengo que levantarlo de nuevo porque acá hay una interrupción del flujo
-            var backupsALimpiar:Backups = my.getLocalVar('backups');
-            backupsALimpiar.tem=backupsALimpiar.tem.filter(caso=>caso.idBackup>backups.idActual)
-            my.setLocalVar('backups', backupsALimpiar);
+            my.removeLocalVar('backups');
         }catch(err){
             console.log('no se pudo hacer backup', err);
         }
@@ -85,11 +86,12 @@ setEncolarBackup(
     function encolarBackup(token:string|undefined, forPkRaiz:ForPkRaiz, respuestasRaiz:Respuestas){
         var backups:Backups = my.existsLocalVar('backups')?my.getLocalVar('backups'):{
             idActual:0,
-            tem:[]
+            tem:{}
         };
         backups.idActual+=1;
         backups.token=token;
-        backups.tem.push({idBackup:backups.idActual, forPkRaiz, respuestasRaiz});
+        let plainForPk = toPlainForPk(forPkRaiz);
+        backups.tem[plainForPk]={idBackup:backups.idActual, forPkRaiz, respuestasRaiz};
         my.setLocalVar('backups',backups);
         backupPendiente = backupPendiente.then(enviarBackup)
     }

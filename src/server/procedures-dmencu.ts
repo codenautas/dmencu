@@ -792,7 +792,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 }
             }
             if(parameters.tem){
-                await Promise.all(parameters.tem.map(async (backup:any)=>{
+                await Promise.all(likeAr(parameters.tem).map(async (backup:any)=>{
                     context.client.query(
                         `update tem
                             set json_backup = $3
