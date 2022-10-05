@@ -75,7 +75,10 @@ async function enviarBackup(){
     if(likeAr(tem).array().length){
         try{
             await my.ajax.dm_backup({token, tem})
-            my.removeLocalVar('backups');
+            // tengo que levantarlo de nuevo porque acá hay una interrupción del flujo
+            var backupsALimpiar:Backups = my.getLocalVar('backups');
+            backupsALimpiar.tem=likeAr(backupsALimpiar.tem).filter(caso=>caso.idBackup>backups.idActual).plain();
+            my.setLocalVar('backups', backupsALimpiar);
         }catch(err){
             console.log('no se pudo hacer backup', err);
         }

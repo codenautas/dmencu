@@ -801,7 +801,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         ,
                         [OPERATIVO, backup.forPkRaiz.vivienda, backup.respuestasRaiz, backup.respuestasRaiz]
                     ).fetchOneRowIfExists();
-                }));
+                }).array());
             }
             return {
                 ok:'ok'
