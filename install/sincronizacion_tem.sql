@@ -10,14 +10,20 @@ declare
   v_cant_p        integer;
   v_seleccionado  text;
 begin
-       
     select sum (total_m) as cant_p--sum(jsonb_array_length(personas))
-        ,case when sum(jsonb_array_length(datos->'hogares'))>1 then string_agg('h'||ordinality||':'||coalesce(cr_num_miembro::text,'')||'-'||coalesce(msnombre),',') 
-            else min(cr_num_miembro)||'-'||min(msnombre) 
+        ,case when sum(jsonb_array_length(datos->'hogares'))>1
+            then string_agg('h'||ordinality||':'||coalesce(elegido::text,'')||'-'||coalesce(case when elegido_excep then msnombre_excep else msnombre end),',' order by ordinality) 
+            else min(elegido)||'-'||min(case when elegido_excep then msnombre_excep else msnombre end ) 
         end  as seleccionado
         into v_cant_p, v_seleccionado
-        from rows from (jsonb_to_recordset(datos->'hogares')  as (total_m integer, cr_num_miembro integer, msnombre text, personas jsonb)
-        ) with ordinality  as hogares (total_m, cr_num_miembro,msnombre, personas); 
+        from (select * --ordinality, total_m, cr_num_miembro,cr_num_miembro_ing ,msnombre, personas
+            ,coalesce(cr_num_miembro_ing::integer, cr_num_miembro) elegido
+            ,case when (new.dominio=5 or (datos?'soporte' and (datos->>'soporte')='1' )) and cr_num_miembro_ing is not null  then true else null end elegido_excep
+            ,case when (personas->(cr_num_miembro_ing::integer-1))?'nombre' then (personas->cr_num_miembro_ing-1)->>'nombre'  else null end msnombre_excep
+            from rows from (jsonb_to_recordset(datos->'hogares')  as (total_m integer, cr_num_miembro integer, cr_num_miembro_ing integer,msnombre text, personas jsonb)
+            ) with ordinality  
+                    as hogares (total_m, cr_num_miembro, cr_num_miembro_ing, msnombre, personas)
+        ) hogares_plus;
 
     new.cant_h       = (datos ->>'total_h') ::integer ;
     --new.cant_h       = jsonb_array_length(datos ->'hogares');
