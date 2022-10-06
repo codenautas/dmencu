@@ -5,7 +5,7 @@ import { CasoState,
 } from "../unlogged/tipos";
 import * as likeAr from "like-ar";
 import {getEstructura, setPersistirDatosByPass} from "../unlogged/bypass-formulario"
-import {cargarEstructura, cargarHojaDeRuta, GLOVAR_DATOSBYPASS, GLOVAR_ESTRUCTURA, GLOVAR_MODOBYPASS} from "../unlogged/abrir-formulario"
+import {BACKUPS, cargarEstructura, cargarHojaDeRuta, GLOVAR_DATOSBYPASS, GLOVAR_ESTRUCTURA, GLOVAR_MODOBYPASS} from "../unlogged/abrir-formulario"
 import { Operativo } from "meta-enc";
 
 //TODO GENERALIZAR
@@ -134,6 +134,7 @@ async function sincronizarDatos(persistentes:DatosByPassPersistibles|null){
     persistirEnMemoria({...datos, modoAlmacenamiento:'local'});
     var estructura = await traerEstructura({operativo})
     my.setLocalVar(GLOVAR_ESTRUCTURA, estructura);
+    my.removeLocalVar(BACKUPS);
     return datos;
 }
 

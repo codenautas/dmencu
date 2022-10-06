@@ -14,6 +14,7 @@ import {
 export const GLOVAR_DATOSBYPASS='datosbypass';
 export const GLOVAR_MODOBYPASS='modobypass';
 export const GLOVAR_ESTRUCTURA='estructura';
+export const BACKUPS = 'backups';
 
 setPersistirDatosByPass(
     async function persistirEnMemoria(persistentes:DatosByPassPersistibles){
@@ -70,15 +71,15 @@ type Backups={
 var backupPendiente = Promise.resolve();
 
 async function enviarBackup(){
-    var backups:Backups = my.getLocalVar('backups');
+    var backups:Backups = my.getLocalVar(BACKUPS);
     var {token, tem} = backups;
     if(likeAr(tem).array().length){
         try{
             await my.ajax.dm_backup({token, tem})
             // tengo que levantarlo de nuevo porque acá hay una interrupción del flujo
-            var backupsALimpiar:Backups = my.getLocalVar('backups');
+            var backupsALimpiar:Backups = my.getLocalVar(BACKUPS);
             backupsALimpiar.tem=likeAr(backupsALimpiar.tem).filter(caso=>caso.idBackup>backups.idActual).plain();
-            my.setLocalVar('backups', backupsALimpiar);
+            my.setLocalVar(BACKUPS, backupsALimpiar);
         }catch(err){
             console.log('no se pudo hacer backup', err);
         }
@@ -87,7 +88,7 @@ async function enviarBackup(){
 
 setEncolarBackup(
     function encolarBackup(token:string|undefined, forPkRaiz:ForPkRaiz, respuestasRaiz:Respuestas){
-        var backups:Backups = my.existsLocalVar('backups')?my.getLocalVar('backups'):{
+        var backups:Backups = my.existsLocalVar(BACKUPS)?my.getLocalVar(BACKUPS):{
             idActual:0,
             tem:{}
         };
@@ -95,7 +96,7 @@ setEncolarBackup(
         backups.token=token;
         let plainForPk = toPlainForPk(forPkRaiz);
         backups.tem[plainForPk]={idBackup:backups.idActual, forPkRaiz, respuestasRaiz};
-        my.setLocalVar('backups',backups);
+        my.setLocalVar(BACKUPS,backups);
         backupPendiente = backupPendiente.then(enviarBackup)
     }
 )
