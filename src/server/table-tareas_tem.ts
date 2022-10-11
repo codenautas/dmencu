@@ -83,11 +83,12 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                                     when tareas_tem.dominio=3 and tareas_tem.verificado is not null and tareas_tem.operacion is null then 'Verificado sin operacion '
                                 else '' end
                                 ||(select case
-                                        when tareas_tem.habilitada and tareas_tem.tarea='recu' and count(*) filter(where h.verificado is not null and h.tarea='encu') =0  then 'T.previa a recu sin verificar'
-                                        when tareas_tem.habilitada and tareas_tem.tarea='supe' and (count(*) filter (where h.verificado is not null and h.tarea <>'supe') )=0  then 'T.previa a supe sin verificar'
-                                        when tareas_tem.habilitada and tareas_tem.tarea='supe' and (count(*) filter (where not h.habilitada  and h.tarea ='recu' and a_recuperacion='recuperacion') )>0  then 'RECUPERAR antes de Supervisar' 
+                                        when tareas_tem.habilitada and tareas_tem.tarea='recu' and count(*) filter(where h.verificado is not null and h.tarea='encu') =0  then 'Tarea previa a recu sin verificar'
+                                        when tareas_tem.habilitada and tareas_tem.tarea='supe' and (count(*) filter (where h.verificado is not null and h.tarea <>'supe') )=0  then 'Tarea previa a supe sin verificar'
+                                        when tareas_tem.habilitada and tareas_tem.tarea='supe' 
+                                            and (count(*) filter (where not h.habilitada  and h.tarea ='recu' and no_rea.grupo0~*'^ausencia|rechazo' ))>0  then 'RECUPERAR antes de habil. Supervision'
                                     else '' end  
-                                    from tareas_tem h 
+                                    from tareas_tem h join tem  using (operativo, enc) left join no_rea on tem.norea=(no_rea.no_rea)::integer
                                    where h.enc=tareas_tem.enc and h.operativo=tareas_tem.operativo
                                 )
                                 ||(select case 
