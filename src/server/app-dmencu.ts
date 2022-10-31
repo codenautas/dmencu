@@ -643,6 +643,14 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     field.editable=context.forDump || context.puede?.encuestas.justificar;
                 }
             })
+            tableDef.fields.push({name:'fin_campo'      , typeName:'text'   
+                , editable: false, inTable:false
+            })
+            tableDef.sql!.from=`
+                (select i.*, t.fin_campo 
+                  from inconsistencias i join tem t on i.vivienda=t.enc and i.operativo=t.operativo 
+                )  
+            `
         })
         be.appendToTableDefinition('operativos',function(tableDef, context){
             tableDef.fields.splice(2,0,{

@@ -102,9 +102,9 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                             || (select case
                                 when count(i.consistencia)>0 then 'Revisar inconsist' 
                                 else '' end
-                                from inconsistencias i
+                                from inconsistencias i join consistencias c using(operativo, consistencia)
                                 where i.operativo=tareas_tem.operativo and i.vivienda=tareas_tem.enc and tareas_tem.tarea='encu' 
-                                   and justificacion is null
+                                   and i.justificacion is null and c.valida and c.activa
                             )
                          ,''),'✔')
                     `
