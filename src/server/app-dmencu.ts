@@ -59,7 +59,7 @@ import { personas_sup        } from './table-personas_sup';
 export * from "./types-dmencu";
 import {defConfig} from "./def-config"
 
-const APP_DM_VERSION="#22-06-22";
+const APP_DM_VERSION="#22-11-22";
 
 export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamiento.AppProcesamientoType>>(Base:T){
   return class AppDmEncu extends Base{
@@ -120,7 +120,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 var htmlMain=be.mainPage({useragent, user}, false, {skipMenu:true, webManifestPath, offlineFile:true}).toHtmlDoc();
                miniTools.serveText(htmlMain,'html')(req,res);
             }else{
-                res.redirect(baseUrl+'/login#w=path&path=/campo')
+                res.redirect(401, baseUrl+'/login#w=path&path=/campo')
             }
         });
         var createServiceWorker = async function(){
