@@ -457,6 +457,7 @@ export function accion_agregar_formulario({forPk}: {forPk:ForPk}, _datosByPass:D
     variablesCalculadas(respuestasRaiz, forPk);
     calcularFeedbackUnidadAnalisis(datosByPass.feedbackRowValidator, estructura.formularios, respuestas, unidadAnalisis.unidad_analisis, forPk, respuestasAumentadas, null, {})
     calcularVariablesBotonFormulario(forPk);
+    persistirDatosByPass(datosByPass); // OJO ASYNC DESCONTROLADA
 }
 
 export function accion_abrir_formulario({forPk}: {forPk:ForPk}, _datosByPass:DatosByPass){
@@ -464,6 +465,7 @@ export function accion_abrir_formulario({forPk}: {forPk:ForPk}, _datosByPass:Dat
     variablesCalculadas(respuestasRaiz, forPk);
     calcularFeedbackUnidadAnalisis(datosByPass.feedbackRowValidator, estructura.formularios, respuestas, unidadAnalisis.unidad_analisis, forPk, respuestasAumentadas, null, {})
     calcularVariablesBotonFormulario(forPk);
+    persistirDatosByPass(datosByPass); // OJO ASYNC DESCONTROLADA
 }
 
 export function accion_borrar_formulario({forPk, forPkPadre}: {forPk:ForPk, forPkPadre:ForPk}){
