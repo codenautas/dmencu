@@ -56,10 +56,15 @@ import { visitas_sup         } from './table-visitas_sup';
 import { hogares_sup         } from './table-hogares_sup';
 import { personas_sup        } from './table-personas_sup';
 
+import { estados             } from './table-estados';
+import { acciones            } from './table-acciones';
+import { estados_acciones    } from './table-estados_acciones';
+
+
 export * from "./types-dmencu";
 import {defConfig} from "./def-config"
 
-const APP_DM_VERSION="#22-11-22";
+const APP_DM_VERSION="#22-12-15";
 
 export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamiento.AppProcesamientoType>>(Base:T){
   return class AppDmEncu extends Base{
@@ -615,7 +620,11 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             personas,     
             visitas_sup,  
             hogares_sup,  
-            personas_sup,         
+            personas_sup,   
+            
+            estados,
+            acciones,
+            estados_acciones,
         }
         be.appendToTableDefinition('consistencias',function(tableDef, context){
             tableDef.fields.forEach(function(field){
