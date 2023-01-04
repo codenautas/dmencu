@@ -875,5 +875,27 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             return enc.value;
         }
     },
+    {
+        action: 'accion_tem_ejecutar',
+        parameters:[
+            {name:'operativo'       , typeName:'text'},
+            {name:'tarea'           , typeName:'text'},
+            {name:'enc'             , typeName:'text'},
+            {name:'condicion'       , typeName:'text'},
+            {name:'estado_destino'  , typeName:'text'}
+        ],
+        coreFunction:async function(context, params){
+            /* TODO analizar condicion  que viene en params.condicion, ver si se puede meter en la query*/
+            var result = await context.client.query(`
+                UPDATE tareas_tem 
+                    set estado = $1
+                    where operativo=$2 and tarea = $3 and enc=$4
+                    returning *`,
+                [params.estado_destino, params.operativo, params.tarea, params.enc])
+            .fetchUniqueRow();            
+            return result.row;
+
+        }
+    },
     
 ];

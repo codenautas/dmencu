@@ -584,7 +584,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , no_rea
             , no_rea_sup
             , semanas
-            , tem: tem
+            , estados
+            , acciones
+            , estados_acciones
+            , tem
             , tem_recepcion
             , parametros
             , operaciones
@@ -592,7 +595,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , areas
             , sincronizaciones
             , tareas
-            , tareas_tem: tareas_tem
+            , tareas_tem
             , tareas_areas
             , mis_tareas
             , mis_tareas_tem
@@ -613,18 +616,14 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             )
             , control_campo_dominio: context=>control_campo(context, 
                 {nombre:'control_campo_comuna', title:'control campo x dominio', camposCorte:[{name:'dominio', typeName:'integer'}]}
-            ),
-            viviendas,
-            visitas,
-            hogares,      
-            personas,     
-            visitas_sup,  
-            hogares_sup,  
-            personas_sup,   
-            
-            estados,
-            acciones,
-            estados_acciones,
+            )
+            , viviendas
+            , visitas
+            , hogares
+            , personas
+            , visitas_sup
+            , hogares_sup
+            , personas_sup
         }
         be.appendToTableDefinition('consistencias',function(tableDef, context){
             tableDef.fields.forEach(function(field){

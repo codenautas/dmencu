@@ -28,11 +28,11 @@ export function tem(context:Context, opts:any):TableDefinition {
             , 'cargado_dm'
         ],
         "fields": [
-            {name:'operativo'     , typeName:'text'           , editable: false , nullable: false, defaultValue: 'etoi211'},
-            {name:'enc'           , typeName:'text'           , editable: false , nullable: false                       },
-            {name: "abrir"        , typeName:'text'           , editable: false , inTable:false, clientSide:'abrir'},
-            {name:"consistir"     , typeName: 'text'          , editable:false  , inTable:false, clientSide:'consistir'},
-            {name: "cluster"      , typeName:'integer'        , editable: false, isName:true},
+            {name:'operativo'            , typeName:'text'    , editable: false  , nullable: false, defaultValue: 'etoi211'},
+            {name:'enc'                  , typeName:'text'    , editable: false  , nullable: false                       },
+            {name: "abrir"               , typeName:'text'    , editable: false  , inTable:false, clientSide:'abrir'},
+            {name:"consistir"            , typeName: 'text'   , editable: false  , inTable:false, clientSide:'consistir'},
+            {name: "cluster"             , typeName:'integer' , editable: false, isName:true},
             {name:'area'                 , typeName:'integer' , editable: false  },
             {name:'zona'                 , typeName:'text'    , editable: false  },
             {name:'rea'                  , typeName:'integer' , editable: false  },
@@ -128,7 +128,7 @@ export function tem(context:Context, opts:any):TableDefinition {
         ],
         "primaryKey": [ "operativo", "enc" ],
         foreignKeys:[
-            {references:'areas' , fields:['operativo', 'area']},
+            {references:'areas'   , fields:['operativo', 'area']},
         //    {references:'usuarios', fields:[{source:'carga_persona', target:'idper'}], displayFields:['apellido','nombre']},
         ],        
         softForeignKeys:[
@@ -141,7 +141,7 @@ export function tem(context:Context, opts:any):TableDefinition {
     if (opts.recepcion) {
         def.fields=def.fields.filter(f=>!columnasSoloTem.includes(f.name) )
         def.hiddenColumns=[...def.hiddenColumns, ...columnasAreasParaLaTem.map(x=>`areas__${x}`)]
-        def.foreignKeys=def.foreignKeys?.map(function (f) {if (f.references='areas'){f.displayFields=columnasAreasParaLaTem}; return f}) 
+        def.foreignKeys=def.foreignKeys?.map(function (f) {if (f.references=='areas'){f.displayFields=columnasAreasParaLaTem}; return f}) 
     } else {
         def.detailTables?.unshift({table: "tareas_tem", abr: "T", fields: ['operativo', 'enc'], label:'tareas'})
         def.fields=def.fields.filter(f=>!columnasNoRea.map(fn=>fn.name).includes(f.name) )

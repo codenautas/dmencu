@@ -32,7 +32,7 @@ create table "estados_acciones" (
   "condicion" text, 
   "estado_destino" text, 
   "eaccion_direccion" text
-, primary key ("operativo", "tarea", "estado", "eaccion")
+, primary key ("operativo", "tarea", "estado", "eaccion" , "estado_destino")
 );
 grant select, insert, update, delete on "estados_acciones" to ggs2022_admin;
 grant all on "estados_acciones" to ggs2022_owner;
@@ -64,6 +64,7 @@ alter table "estados" add constraint "estados operativos REL" foreign key ("oper
 alter table "acciones" add constraint "acciones operativos REL" foreign key ("operativo") references "operativos" ("operativo")  on update cascade;
 alter table "estados_acciones" add constraint "estados_acciones tareas REL" foreign key ("operativo", "tarea") references "tareas" ("operativo", "tarea")  on update cascade;
 alter table "estados_acciones" add constraint "estados_acciones estados REL" foreign key ("operativo", "estado") references "estados" ("operativo", "estado")  on update cascade;
+alter table "estados_acciones" add constraint "estados_acciones dest REL" foreign key ("operativo", "estado_destino") references "estados" ("operativo", "estado")  on update cascade;
 alter table "estados_acciones" add constraint "estados_acciones acciones REL" foreign key ("operativo", "eaccion") references "acciones" ("operativo", "eaccion")  on update cascade;
 
 create index "operativo 4 estados IDX" ON "estados" ("operativo");
@@ -80,3 +81,20 @@ begin
 end
 $SQL_ENANCE$;
 
+alter table "tareas_tem" add column "estado" text not null default '0D';
+
+alter table "tareas_tem" add constraint "estado<>''" check ("estado"<>'');
+alter table "tareas_tem" alter column "estado" set not null;
+alter table "tareas_tem" add constraint "tareas_tem estados REL" foreign key ("operativo", "estado") references "estados" ("operativo", "estado")  on update cascade;
+create index "operativo,estado 4 tareas_tem IDX" ON "tareas_tem" ("operativo", "estado");
+
+update tareas_tem set estado = 'A' where enc = '10002' and operativo = 'GGS_2022';
+update tareas_tem set estado = 'AC' where enc = '10003' and operativo = 'GGS_2022';
+update tareas_tem set estado = 'C' where enc = '10004' and operativo = 'GGS_2022';
+update tareas_tem set estado = 'CD' where enc = '10005' and operativo = 'GGS_2022';
+update tareas_tem set estado = 'D' where enc = '10006' and operativo = 'GGS_2022';
+update tareas_tem set estado = 'P' where enc = '10007' and operativo = 'GGS_2022';
+update tareas_tem set estado = 'V' where enc = '10008' and operativo = 'GGS_2022';
+
+alter table "estados_acciones" drop constraint "estados_acciones_pkey";
+alter table "estados_acciones" ADD PRIMARY KEY ("operativo", "tarea", "estado", "eaccion" , "estado_destino");

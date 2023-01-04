@@ -7,6 +7,7 @@ import * as likeAr from "like-ar";
 import {getEstructura, setPersistirDatosByPass} from "../unlogged/bypass-formulario"
 import {BACKUPS, cargarEstructura, cargarHojaDeRuta, GLOVAR_DATOSBYPASS, GLOVAR_ESTRUCTURA, GLOVAR_MODOBYPASS} from "../unlogged/abrir-formulario"
 import { Operativo } from "meta-enc";
+import {sleep, coalesce} from "best-globals";
 
 //TODO GENERALIZAR
 
@@ -296,7 +297,7 @@ var crearBotonVerAbrirEncuesta = (operativo:IdOperativo,tarea:IdTarea,encuesta:n
 
 var crearBotonesVerAbrirTareas = async (depot:myOwn.Depot, fieldName:string, label:'abrir'|'ver')=>{
     tareas = tareas?tareas:(await myOwn.ajax.table_data({table: `tareas`, fixedFields:[]}));
-    var misTareas = tareas.filter((tarea)=>!!tarea.main_form && tarea.operativo==depot.row.operativo);
+    var misTareas = tareas.filter((tarea)=>!!tarea.main_form && tarea.operativo==depot.row.operativo && depot.row.tarea?depot.row.tarea == tarea.tarea:true);
     depot.rowControls[fieldName].innerHTML='';
     misTareas.forEach((tarea:{tarea:string, nombre:string, main_form:IdFormulario})=>{
         let buttonLabel = `${label} ${tarea.tarea}`;
@@ -324,6 +325,66 @@ myOwn.clientSides.abrirRecepcion={
     update: (depot, fieldName)=>{
         var label:'ver'|'abrir' = depot.row.cargado?'ver':'abrir';
         crearBotonesVerAbrirTareas(depot,fieldName,label); //no espero promesa porque no es necesario
+    }
+};
+
+type EstadoAccion = {
+    operativo: string
+    tarea: 'encu'|'recu'|'supe'
+    estado: string
+    eaccion: string
+    condicion: string
+    estado_destino: string
+    eaccion_direccion: 'avance' | 'retroceso'
+}
+
+var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
+    let button = html.button(action.eaccion).create();
+    button.onclick = ()=> {
+        confirmPromise(`confirma acción "${action.eaccion}"?`).then(async ()=>{
+            button.disabled=true;
+            try{
+                var result = await my.ajax.accion_tem_ejecutar({
+                    operativo: depot.row.operativo,
+                    tarea: depot.row.tarea,
+                    enc: depot.row.enc,
+                    condicion: action.condicion,
+                    estado_destino: action.estado_destino
+                });
+                console.log(result)
+                var grid=depot.manager;
+                grid.retrieveRowAndRefresh(depot)
+            }catch(err){
+                alertPromise(err.message)
+                throw err
+            }finally{
+                button.disabled=false;
+            }
+        })
+    }
+    return button
+}
+
+var crearBotonesAcciones = async (opts:{depot:myOwn.Depot, fieldName:string, direccion:'avance'|'retroceso'})=>{
+    let {depot,fieldName,direccion} = opts;
+    let td = depot.rowControls[fieldName];
+    td.innerHTML='';
+    (depot.row.acciones||[])
+        .filter((action:EstadoAccion)=>action.eaccion_direccion==direccion)
+        .forEach((action:EstadoAccion)=>td.appendChild(crearBotonAccion(depot, action)));
+}
+
+myOwn.clientSides.accionesAvance={
+    prepare: (_depot, _fieldName)=>{},
+    update: (depot, fieldName)=>{
+        crearBotonesAcciones({depot,fieldName,direccion:'avance'});
+    }
+};
+
+myOwn.clientSides.accionesRetroceso={
+    prepare: (_depot, _fieldName)=>{},
+    update: (depot, fieldName)=>{
+        crearBotonesAcciones({depot,fieldName,direccion:'retroceso'});
     }
 };
 

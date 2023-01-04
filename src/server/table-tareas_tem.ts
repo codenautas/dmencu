@@ -10,43 +10,47 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
     var db=be.db;
     var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';       
     var fields:FieldDefinition[]=[
-        {name:'tarea'              , typeName:'text', isPk:1},
-        {name:'operativo'          , typeName:'text', isPk:2},
-        {name:'enc'                , typeName:'text', isPk:3},
-        {name:'abrir'              , typeName:'text'        , editable:false   , inTable:false, clientSide:'abrirRecepcion'},
-        {name:"consistir"          , typeName: 'text'       , editable:false   , inTable:false, clientSide:'consistir'},
-        {name:'area'               , typeName: 'integer'    , editable:false   , inTable:false },
-        {name:'ok'                 , typeName: 'text'       , editable:false   , inTable:false },
-        {name:"habilitada"         , typeName: "boolean"    , editable:puedeEditar},
-        {name:'asignante'          , typeName:'text'        , editable:false   , inTable:false}, // va a la hoja de ruta
-        {name:'asignado'           , typeName:'text'}, // va a la hoja de ruta
-        {name:'operacion'          , typeName:'text'}, // cargar/descargar
-        {name:'fecha_asignacion'   , typeName:'date'}, // cargar/descargar
-        {name:"carga_observaciones", typeName: "text"       , editable: true},        
-        {name:'cargado_dm'         , typeName:'text'        , editable: false}, //cargar/descargar 
-        {name:"cargado"            , typeName: "boolean"    , editable: false},
-        {name:'notas'              , typeName:'text'}, // viene de la hoja de ruta
-        {name:'rea'                , typeName:'integer'     , editable: puedeEditar, label:'rea_dm'},
-        {name:'norea'              , typeName:'integer'     , editable: puedeEditar, label:'norea_dm'},
-        //{name:'cod_no_rea'         , typeName:'text'        , editable: false   , inTable:false  },
-        {name:'resumen_estado'     , typeName:'text'        , editable: false   , label: 'resumen_estado_dm'},
-        {name:'utl_rea'            , typeName:'integer'     , editable: false   ,  inTable:false},
-        {name:'ult_norea'          , typeName:'integer'     , editable: false   ,  inTable:false},
-        {name:'ult_gru_no_rea'     , typeName:'text'        , editable: false   , inTable:false  },
-        {name:'ult_resumen_estado' , typeName:'text'        , editable: false   ,  inTable:false},
-        //{name:'resultado'          , typeName:'text'}, // fk tareas_resultados 
-        //{name:'fecha_resultado'    , typeName:'date'}, // fk tareas_resultados 
-        {name:'supervision_dirigida'  , typeName:'integer'     , editable: true},
-        {name:'supervision_aleatoria' , typeName:'integer'     , editable: false,  inTable:false},
-        {name:'verificado'            , typeName:'text'}, 
-        {name:'a_recuperacion'        , typeName:'text'        , editable:false , inTable:false}, 
-        {name:'obs_verificado'        , typeName:'text'},
-        {name:'rea_sup'               , typeName:'integer'     , editable: puedeEditar},
-        {name:'norea_sup'             , typeName:'integer'     , editable: puedeEditar},
-        {name:'resumen_estado_sup'    , typeName:'text'        , editable: false},
-        {name:'utl_rea_sup'           , typeName:'integer'     , editable: false ,  inTable:false},
-        {name:'ult_norea_sup'         , typeName:'integer'     , editable: false ,  inTable:false},
-        {name:'ult_resumen_estado_sup', typeName:'text'        , editable: false ,  inTable:false},
+        {name:'tarea'                       , typeName:'text', isPk:1},
+        {name:'operativo'                   , typeName:'text', isPk:2},
+        {name:'enc'                         , typeName:'text', isPk:3},
+        {name:'abrir'                       , typeName:'text'        , editable:false   , inTable:false, clientSide:'abrirRecepcion'},
+        {name:'estado'                      , typeName:'text'        , editable:false   , nullable: false},
+        {name:"acciones"                    , typeName: 'jsonb'      , editable:false   , inTable:false},
+        {name:"botones_acciones_avance"     , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesAvance'},
+        {name:"botones_acciones_retroceso"  , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesRetroceso'},
+        {name:"consistir"                   , typeName: 'text'       , editable:false   , inTable:false, clientSide:'consistir'},
+        {name:'area'                        , typeName: 'integer'    , editable:false   , inTable:false },
+        {name:'ok'                          , typeName: 'text'       , editable:false   , inTable:false },
+        {name:"habilitada"                  , typeName: "boolean"    , editable:puedeEditar},
+        {name:'asignante'                   , typeName:'text'        , editable:false   , inTable:false}, // va a la hoja de ruta
+        {name:'asignado'                    , typeName:'text'}, // va a la hoja de ruta
+        {name:'operacion'                   , typeName:'text'}, // cargar/descargar
+        {name:'fecha_asignacion'            , typeName:'date'}, // cargar/descargar
+        {name:"carga_observaciones"         , typeName: "text"       , editable: true},        
+        {name:'cargado_dm'                  , typeName:'text'        , editable: false}, //cargar/descargar 
+        {name:"cargado"                     , typeName: "boolean"    , editable: false},
+        {name:'notas'                       , typeName:'text'}, // viene de la hoja de ruta
+        {name:'rea'                         , typeName:'integer'     , editable: puedeEditar, label:'rea_dm'},
+        {name:'norea'                       , typeName:'integer'     , editable: puedeEditar, label:'norea_dm'},
+        //{name:'cod_no_rea'                , typeName:'text'        , editable: false   , inTable:false  },
+        {name:'resumen_estado'              , typeName:'text'        , editable: false   , label: 'resumen_estado_dm'},
+        {name:'utl_rea'                     , typeName:'integer'     , editable: false   ,  inTable:false},
+        {name:'ult_norea'                   , typeName:'integer'     , editable: false   ,  inTable:false},
+        {name:'ult_gru_no_rea'              , typeName:'text'        , editable: false   , inTable:false  },
+        {name:'ult_resumen_estado'          , typeName:'text'        , editable: false   ,  inTable:false},
+        //{name:'resultado'                 , typeName:'text'}, // fk tareas_resultados 
+        //{name:'fecha_resultado'           , typeName:'date'}, // fk tareas_resultados 
+        {name:'supervision_dirigida'        , typeName:'integer'     , editable: true},
+        {name:'supervision_aleatoria'       , typeName:'integer'     , editable: false,  inTable:false},
+        {name:'verificado'                  , typeName:'text'}, 
+        {name:'a_recuperacion'              , typeName:'text'        , editable:false , inTable:false}, 
+        {name:'obs_verificado'              , typeName:'text'},
+        {name:'rea_sup'                     , typeName:'integer'     , editable: puedeEditar},
+        {name:'norea_sup'                   , typeName:'integer'     , editable: puedeEditar},
+        {name:'resumen_estado_sup'          , typeName:'text'        , editable: false},
+        {name:'utl_rea_sup'                 , typeName:'integer'     , editable: false ,  inTable:false},
+        {name:'ult_norea_sup'               , typeName:'integer'     , editable: false ,  inTable:false},
+        {name:'ult_resumen_estado_sup'      , typeName:'text'        , editable: false ,  inTable:false},
         ]; 
     return {
         name:`${mis}tareas_tem`,
@@ -60,6 +64,7 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
             {references:'tareas' , fields:['operativo','tarea']},
             {references:'usuarios', fields:[{source:'asignado' , target:'idper'}], alias:'ad'},
             {references:'operaciones' , fields:['operacion']},
+            {references:'estados' , fields:['operativo','estado']},
         ],
         softForeignKeys:[
             {references:'usuarios', fields:[{source:'asignante', target:'idper'}], alias:'at'},
@@ -130,7 +135,11 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                         left join no_rea y on t.norea=y.no_rea::integer
                         left join viviendas v on v.operativo=t.operativo and v.vivienda=t.enc 
                     ) x
-                    
+                    , lateral (
+                        select jsonb_agg(ea.*) as acciones 
+                            from estados_acciones ea
+                            where ea.operativo = x.operativo and ea.tarea = x.tarea and ea.estado = x.estado
+                    ) y
                     ${opt.mis?`where (asignante = ${db.quoteNullable(context.user.idper)} or asignado = ${db.quoteNullable(context.user.idper)})`:''}
             )`
         },

@@ -17,9 +17,8 @@ export function estados_acciones(context:TableContext):TableDefinition {
             {name:'condicion'               , typeName:'text'},
             {name:'estado_destino'          , typeName:'text'},
             {name:'eaccion_direccion'       , typeName:'text'},
-            
         ],
-        primaryKey:['operativo', 'tarea', 'estado','eaccion'],
+        primaryKey:['operativo', 'tarea', 'estado','eaccion', 'estado_destino'],
         foreignKeys: [
             {
                 'references': 'tareas',
@@ -38,6 +37,14 @@ export function estados_acciones(context:TableContext):TableDefinition {
                 'fields': [
                     'operativo','eaccion'
                 ]
+            },
+            {
+                'references': 'estados',
+                'fields': [
+                    'operativo',
+                    {source:'estado_destino'     , target:'estado'}
+                ], 
+                alias:'dest'
             },
         ]
     };
