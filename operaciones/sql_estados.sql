@@ -32,7 +32,7 @@ create table "estados_acciones" (
   "condicion" text, 
   "estado_destino" text, 
   "eaccion_direccion" text
-, primary key ("operativo", "tarea", "estado", "eaccion" , "estado_destino")
+, primary key ("operativo", "tarea", "estado", "eaccion")
 );
 grant select, insert, update, delete on "estados_acciones" to ggs2022_admin;
 grant all on "estados_acciones" to ggs2022_owner;
@@ -95,6 +95,3 @@ update tareas_tem set estado = 'CD' where enc = '10005' and operativo = 'GGS_202
 update tareas_tem set estado = 'D' where enc = '10006' and operativo = 'GGS_2022';
 update tareas_tem set estado = 'P' where enc = '10007' and operativo = 'GGS_2022';
 update tareas_tem set estado = 'V' where enc = '10008' and operativo = 'GGS_2022';
-
-alter table "estados_acciones" drop constraint "estados_acciones_pkey";
-alter table "estados_acciones" ADD PRIMARY KEY ("operativo", "tarea", "estado", "eaccion" , "estado_destino");
