@@ -1,7 +1,7 @@
 import {html} from "js-to-html";
 import {traerEstructura} from "../unlogged/redux-formulario";
 import { CasoState,  
-    IdFormulario, DatosByPassPersistibles, IdEnc, IdOperativo, IdTarea,
+    IdFormulario, DatosByPassPersistibles, IdEnc, IdOperativo, IdTarea, EstadoAccion,
 } from "../unlogged/tipos";
 import * as likeAr from "like-ar";
 import {getEstructura, setPersistirDatosByPass} from "../unlogged/bypass-formulario"
@@ -328,28 +328,33 @@ myOwn.clientSides.abrirRecepcion={
     }
 };
 
-type EstadoAccion = {
-    operativo: string
-    tarea: 'encu'|'recu'|'supe'
-    estado: string
-    eaccion: string
-    condicion: string
-    estado_destino: string
-    eaccion_direccion: 'avance' | 'retroceso'
-}
-
 var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
-    let button = html.button(action.eaccion).create();
+    let button = html.button({},[
+        action.eaccion,
+        action.path_icono_svg?html.svg({
+            class:"svg-acciones"
+        },[
+            html.path({
+                d:action.path_icono_svg
+            })
+        ]):null,
+    ]).create();
     button.onclick = ()=> {
-        confirmPromise(`confirma acción "${action.eaccion}"?`).then(async ()=>{
+        confirmPromise(`confirma acción "${action.eaccion}"?`,{
+            askForNoRepeat:'no volver a mostrar', //muestra mensaje por default pero anda igual
+            buttonsDef:[
+                {label:'sí', value:true},
+                {label:'no', value:false}
+            ]
+        }).then(async ()=>{
             button.disabled=true;
             try{
-                var result = await my.ajax.accion_tem_ejecutar({
+                var result = await my.ajax.accion_tareas_tem_ejecutar({
                     operativo: depot.row.operativo,
                     tarea: depot.row.tarea,
                     enc: depot.row.enc,
                     condicion: action.condicion,
-                    estado_destino: action.estado_destino
+                    accion: action
                 });
                 console.log(result)
                 var grid=depot.manager;

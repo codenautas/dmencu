@@ -468,3 +468,15 @@ declare global {
         }
     }
 }
+
+export type EstadoAccion = {
+    operativo: string
+    tarea: 'encu'|'recu'|'supe'
+    estado: string
+    eaccion: string
+    condicion: string
+    estado_destino: string
+    eaccion_direccion: 'avance' | 'retroceso'
+    path_icono_svg: string;
+    nombre_procedure: string;
+}

@@ -4,7 +4,7 @@ import { ProcedureDef, TableDefinition, Client } from "./types-dmencu";
 import { ProcedureContext, CoreFunctionParameters, ForeignKey } from "meta-enc";
 import * as likeAr from "like-ar";
 export * from "./types-dmencu";
-import { IdUnidadAnalisis, UnidadAnalisis } from "../unlogged/tipos";
+import { IdUnidadAnalisis, UnidadAnalisis, EstadoAccion } from "../unlogged/tipos";
 
 import {json, jsono} from "pg-promise-strict";
 
@@ -325,7 +325,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name: 'nombre', typeName: 'text'},
         ],
         files:{count:1},
-        coreFunction:function(context, parameters, files){
+        coreFunction:function(context:ProcedureContext, parameters:CoreFunctionParameters, files){
             let be=context.be;
             let client=context.client;
             context.informProgress({message:be.messages.fileUploaded});
@@ -515,7 +515,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         action:'pasar_json2ua',
         parameters:[
         ],
-        coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, _parameters:CoreFunctionParameters){
             /* GENERALIZAR: */
             var be=context.be;
             /* FIN-GENERALIZAR: */
@@ -844,7 +844,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'localStorageItemKey'    , typeName:'text'},
         ],
         unlogged:true,
-        coreFunction:async function(context, params){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var {localStorageItemKey, localStorageItem} = params;
             try{
                 console.log(localStorageItem);
@@ -860,14 +860,14 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         action: 'operativo_get',
         parameters:[],
         unlogged:true,
-        coreFunction:async function(context, _params){
+        coreFunction:async function(context:ProcedureContext, _parameters:CoreFunctionParameters){
             return getOperativoActual(context)
         }
     },
     {
         action: 'get_random_free_case',
         parameters:[{name:'operativo'    , typeName:'text'}],
-        coreFunction:async function(context, params){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             const minsToExpire = 30;
             const minsSinceBloqued = `date_part('min', age(current_timestamp, fecha_bloqueo))`;
             const enc = await context.client.query(`select enc from tem where operativo=$1 and (libre or ${minsSinceBloqued} > ${minsToExpire}) limit 1;`,[params.operativo]).fetchUniqueValue();
@@ -876,23 +876,33 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         }
     },
     {
-        action: 'accion_tem_ejecutar',
+        action: 'accion_tareas_tem_ejecutar',
         parameters:[
             {name:'operativo'       , typeName:'text'},
             {name:'tarea'           , typeName:'text'},
             {name:'enc'             , typeName:'text'},
             {name:'condicion'       , typeName:'text'},
-            {name:'estado_destino'  , typeName:'text'}
+            {name:'accion'          , typeName:'jsonb'},
         ],
-        coreFunction:async function(context, params){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            var be =  context.be;
+            var accion = params.accion as EstadoAccion;
             /* TODO analizar condicion  que viene en params.condicion, ver si se puede meter en la query*/
             var result = await context.client.query(`
                 UPDATE tareas_tem 
                     set estado = $1
                     where operativo=$2 and tarea = $3 and enc=$4
                     returning *`,
-                [params.estado_destino, params.operativo, params.tarea, params.enc])
-            .fetchUniqueRow();            
+                [accion.estado_destino, params.operativo, params.tarea, params.enc])
+            .fetchUniqueRow();
+            if(accion.nombre_procedure){
+                if(be.procedure[accion.nombre_procedure]){
+                    await be.procedure[accion.nombre_procedure].coreFunction(context, params)
+                }else{
+                    throw Error(`No existe el procedure "${accion.nombre_procedure}" definido en la tabla "estados_acciones" para el
+                    operativo: ${accion.operativo}, tarea: ${accion.tarea}, estado: ${accion.estado}, eaccion: ${accion.eaccion}.`)
+                }
+            }
             return result.row;
 
         }

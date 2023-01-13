@@ -17,6 +17,8 @@ export function estados_acciones(context:TableContext):TableDefinition {
             {name:'condicion'               , typeName:'text'},
             {name:'estado_destino'          , typeName:'text'},
             {name:'eaccion_direccion'       , typeName:'text'},
+            {name:'path_icono_svg'          , typeName:'text'},
+            {name:'nombre_procedure'        , typeName:'text'},
         ],
         primaryKey:['operativo', 'tarea', 'estado','eaccion', 'estado_destino'],
         foreignKeys: [

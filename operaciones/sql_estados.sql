@@ -95,3 +95,8 @@ update tareas_tem set estado = 'CD' where enc = '10005' and operativo = 'GGS_202
 update tareas_tem set estado = 'D' where enc = '10006' and operativo = 'GGS_2022';
 update tareas_tem set estado = 'P' where enc = '10007' and operativo = 'GGS_2022';
 update tareas_tem set estado = 'V' where enc = '10008' and operativo = 'GGS_2022';
+
+alter table "estados_acciones" add column "path_icono_svg" text;
+alter table "estados_acciones" add constraint "path_icono_svg<>''" check ("path_icono_svg"<>'');
+alter table "estados_acciones" add column "nombre_procedure" text;
+alter table "estados_acciones" add constraint "nombre_procedure<>''" check ("nombre_procedure"<>'');
