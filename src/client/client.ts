@@ -329,17 +329,20 @@ myOwn.clientSides.abrirRecepcion={
 };
 
 var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
+    var svg = html.svg({
+        class:"svg-acciones"
+    },[
+        html.path({
+            d:action.path_icono_svg
+        })
+    ]).create();
+    svg.setAttribute("viewBox","0 0 50 50");
     let button = html.button({
         class:`boton-accion boton-accion-${action.eaccion_direccion}`
     },[
         action.eaccion,
-        action.path_icono_svg?html.svg({
-            class:"svg-acciones"
-        },[
-            html.path({
-                d:action.path_icono_svg
-            })
-        ]):null,
+        //@ts-ignore svg es htmlelement
+        action.path_icono_svg?svg:null,
     ]).create();
     button.onclick = ()=> {
         var buttonsDef = [
