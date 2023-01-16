@@ -329,7 +329,9 @@ myOwn.clientSides.abrirRecepcion={
 };
 
 var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
-    let button = html.button({},[
+    let button = html.button({
+        class:`boton-accion boton-accion-${action.eaccion_direccion}`
+    },[
         action.eaccion,
         action.path_icono_svg?html.svg({
             class:"svg-acciones"
