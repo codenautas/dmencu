@@ -340,13 +340,16 @@ var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
         ]):null,
     ]).create();
     button.onclick = ()=> {
-        confirmPromise(`confirma acción "${action.eaccion}"?`,{
-            askForNoRepeat:'no volver a mostrar', //muestra mensaje por default pero anda igual
-            buttonsDef:[
-                {label:'sí', value:true},
-                {label:'no', value:false}
-            ]
-        }).then(async ()=>{
+        var buttonsDef = [
+            {label:'sí', value:true},
+            {label:'no', value:false}
+        ]
+        var confirmPromiseOpts: DialogOptions = {}
+        if(action.eaccion_direccion=='avance'){
+            confirmPromiseOpts.askForNoRepeat = 'no volver a mostrar'; //muestra mensaje por default pero anda igual
+        }
+        
+        confirmPromise(`confirma acción "${action.eaccion}"?`, {...confirmPromiseOpts, buttonsDef}).then(async ()=>{
             button.disabled=true;
             try{
                 var result = await my.ajax.accion_tareas_tem_ejecutar({
