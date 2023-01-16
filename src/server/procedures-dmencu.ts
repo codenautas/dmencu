@@ -891,7 +891,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             var result = await context.client.query(`
                 UPDATE tareas_tem 
                     set estado = $1
-                    where operativo=$2 and tarea = $3 and enc=$4
+                    where operativo=$2 and tarea = $3 and enc=$4 and ${params.condicion}
                     returning *`,
                 [accion.estado_destino, params.operativo, params.tarea, params.enc])
             .fetchUniqueRow();
