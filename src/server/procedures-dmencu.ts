@@ -887,11 +887,23 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var be =  context.be;
             var accion = params.accion as EstadoAccion;
-            /* TODO analizar condicion  que viene en params.condicion, ver si se puede meter en la query*/
+            const ANALIZAR_CONDICION = false;
+            if(ANALIZAR_CONDICION){
+                try{
+                    await context.client.query(`
+                        select * 
+                            from tareas_tem join tem using (operativo, enc)
+                            where operativo=$1 and tarea = $2 and enc=$3 and ${params.condicion}`,
+                        [params.operativo, params.tarea, params.enc])
+                    .fetchUniqueRow();
+                }catch(err){
+                    throw Error(`No se cumple la condición ${params.condicion}. ${err.message}`)
+                }
+            }
             var result = await context.client.query(`
                 UPDATE tareas_tem 
                     set estado = $1
-                    where operativo=$2 and tarea = $3 and enc=$4 and ${params.condicion}
+                    where operativo=$2 and tarea = $3 and enc=$4
                     returning *`,
                 [accion.estado_destino, params.operativo, params.tarea, params.enc])
             .fetchUniqueRow();
