@@ -100,3 +100,17 @@ alter table "estados_acciones" add column "path_icono_svg" text;
 alter table "estados_acciones" add constraint "path_icono_svg<>''" check ("path_icono_svg"<>'');
 alter table "estados_acciones" add column "nombre_procedure" text;
 alter table "estados_acciones" add constraint "nombre_procedure<>''" check ("nombre_procedure"<>'');
+
+update estados_acciones set condicion='verificado=''1''' where operativo = 'GGS_2022' and tarea='encu' and estado='P' and eaccion='verificar';
+update estados_acciones set condicion='asignado is not null' where operativo = 'GGS_2022' and tarea='encu' and estado='0D' and eaccion='asignar';
+update estados_acciones set condicion='cargado_dm is not null and cuando is not null' where operativo = 'GGS_2022' and tarea='encu' and estado='AC' and eaccion='sincronizar';
+update estados_acciones set condicion='cargado_dm is not null and operacion is not null and cuando is not null and asignado is not null' where operativo = 'GGS_2022' and tarea='encu' and estado='AC' and eaccion='disponibilizar';
+
+update estados_acciones set condicion='cargado_dm is not null and cuando is not null' where operativo = 'GGS_2022' and tarea='encu' and estado='CD' and eaccion='sincronizar';
+update estados_acciones set condicion='consistido is not null'  where operativo = 'GGS_2022' and tarea='encu' and estado='D' and eaccion='analizar';
+
+update estados_acciones set condicion='operacion=''cargar'' and asignado is not null'  where operativo = 'GGS_2022' and tarea='encu' and estado='D' and eaccion='cargar';
+update estados_acciones set condicion='verificado_encu is not null and operacion=''cargar'' and asignado is not null'  where operativo = 'GGS_2022' and tarea='encu' and estado='P' and eaccion='cargar';
+INSERT INTO base.estados_acciones(
+    operativo, tarea, estado, eaccion, condicion, estado_destino, eaccion_direccion)
+    VALUES ('GGS_2022','encu', 'CD' , 'no_descargar', 'cargado_dm is not null and cuando is null', 'C', 'retroceso');
