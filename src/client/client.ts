@@ -328,6 +328,25 @@ myOwn.clientSides.abrirRecepcion={
     }
 };
 
+myOwn.clientSides.verIconoSvg={
+    prepare: (_depot, _fieldName)=>{},
+    update: (depot, fieldName)=>{
+        let td = depot.rowControls[fieldName];
+        td.innerHTML='';
+        if(depot.row.path_icono_svg){
+            var svg = html.svg({
+                class:"svg-acciones"
+            },[
+                html.path({
+                    d:depot.row.path_icono_svg
+                })
+            ]).create();
+            svg.setAttribute("viewBox","0 0 50 50");
+            td.appendChild(svg);
+        }
+    }
+};
+
 var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
     var svg = html.svg({
         class:"svg-acciones"
