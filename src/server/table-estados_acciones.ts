@@ -1,6 +1,6 @@
 'use strict';
 
-import {TableDefinition, TableContext} from './types-ggs';
+import {TableDefinition, TableContext} from './types-dmencu';
 
 export function estados_acciones(context:TableContext):TableDefinition {
     //var puedeEditar = context.forDump || context.puede?.campo?.administrar;
@@ -17,7 +17,6 @@ export function estados_acciones(context:TableContext):TableDefinition {
             {name:'condicion'               , typeName:'text'},
             {name:'estado_destino'          , typeName:'text'},
             {name:'eaccion_direccion'       , typeName:'text'},
-            {name:'path_icono_svg'          , typeName:'text'},
             {name:'nombre_procedure'        , typeName:'text'},
         ],
         primaryKey:['operativo', 'tarea', 'estado','eaccion', 'estado_destino'],

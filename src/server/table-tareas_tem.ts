@@ -136,9 +136,12 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                         left join viviendas v on v.operativo=t.operativo and v.vivienda=t.enc 
                     ) x
                     , lateral (
-                        select jsonb_agg(ea.*) as acciones 
-                            from estados_acciones ea
-                            where ea.operativo = x.operativo and ea.tarea = x.tarea and ea.estado = x.estado
+                        select jsonb_agg(z.*) as acciones
+                            from (
+                                select ea.*, ac.path_icono_svg 
+                                    from estados_acciones ea join acciones ac using (operativo, eaccion)
+                                    where ea.operativo = x.operativo and ea.tarea = x.tarea and ea.estado = x.estado
+                            ) z
                     ) y
                     ${opt.mis?`where (asignante = ${db.quoteNullable(context.user.idper)} or asignado = ${db.quoteNullable(context.user.idper)})`:''}
             )`

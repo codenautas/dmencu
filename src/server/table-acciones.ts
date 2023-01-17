@@ -13,6 +13,7 @@ export function acciones(context:TableContext):TableDefinition {
             {name:'operativo'                , typeName:'text',  nullable: false},
             {name:'eaccion'                  , typeName:'text',  nullable: false},
             {name:'abr_eaccion'              , typeName:'text'},
+            {name:'path_icono_svg'          , typeName:'text'},
             {name:'desc_eaccion'             , typeName:'text'},
         ],
         primaryKey:['operativo', 'eaccion'],

@@ -1,6 +1,6 @@
 "use strict";
 
-import {TableDefinition, TableContext} from "./types-ggs";
+import {TableDefinition, TableContext} from "./types-dmencu";
 
 export function estados(context:TableContext):TableDefinition {
     //var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';
