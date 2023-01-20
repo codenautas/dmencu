@@ -142,7 +142,7 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                                 select ea.*, ac.path_icono_svg 
                                     from estados_acciones ea join acciones ac using (operativo, eaccion)
                                     where ea.operativo = x.operativo and ea.tarea = x.tarea and ea.estado = x.estado
-                                      and exists (${getCondicionAccionTareasTemQuery('ea.condicion','ea.operativo','ea.tarea','x.enc')})
+                                      and accion_cumple_condicion(x.operativo, ea.estado, x.enc, x.tarea, ea.eaccion,ea.condicion)
                             ) z
                     ) y
                     ${opt.mis?`where (asignante = ${db.quoteNullable(context.user.idper)} or asignado = ${db.quoteNullable(context.user.idper)})`:''}

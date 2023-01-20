@@ -145,3 +145,31 @@ update acciones
 update acciones
   set path_icono_svg = 'M19.03 43.08c-4.68,-8.63 -9.49,-15.22 -14.83,-18.72 2.65,-0.8 5.15,-1.48 7.8,-2.29 3.25,1.35 5.34,3.12 7.03,5.02 4.42,-7.47 10.45,-14.23 18.44,-20.13 2.78,-0.01 5.56,-0.02 8.34,-0.03 -10.61,11.31 -19.74,23.27 -26.78,36.15z '
   where operativo = 'GGS_2022' and eaccion = 'verificar';
+
+  set search_path=base;	
+
+create or replace function accion_cumple_condicion(operativo text, estado text, enc text, tarea text, eaccion text,condicion text)
+RETURNS boolean AS
+$BODY$
+DECLARE
+    vsent text; 
+	vcond text;
+	vsalida integer;
+BEGIN
+ vcond=condicion;
+ vsent=' select 1 
+	from base.tareas_tem t
+	join base.estados_acciones ea on ea.operativo=ea.operativo and ea.eaccion='''||$5 ||''' and ea.estado=t.estado and ea.tarea=t.tarea 
+	where t.operativo='''||$1||''' and t.estado='''||$2||'''  and t.enc='''||$3||'''  and t.tarea='''||$4||''' and '||vcond||';';
+ raise notice 'esto %',vsent;
+ execute vsent into vsalida;
+ IF vsalida=1 THEN
+    return true;
+ ELSE
+    return false;
+ END IF;
+
+END;
+$BODY$
+ LANGUAGE plpgsql VOLATILE;
+ ALTER FUNCTION accion_cumple_condicion(text, text, text, text,text,text) owner to ggs2022_owner;

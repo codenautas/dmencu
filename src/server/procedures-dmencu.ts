@@ -144,21 +144,6 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
 `
 }
 
-export var getCondicionAccionTareasTemQuery =  function getCondicionAccionTareasTemQuery(
-    condicion:string,
-    operativo:string, 
-    tarea:string,
-    enc :string
-){
-    //TODO ver como quotear todo (mas que nada condicion)
-    return `
-        select * 
-            from tareas_tem join tem using (operativo, enc)
-            where tareas_tem.operativo=${operativo} and tareas_tem.tarea = ${tarea} and 
-                tareas_tem.enc=${enc} and ${condicion}
-    `
-}
-
 export var setHdrQuery = (myFun:(quotedCondViv:string)=>string)=> getHdrQuery=myFun
 
 const getUAPrincipal = async (client:Client, operativo:string)=>
@@ -902,16 +887,19 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var be =  context.be;
             var accion = params.accion as EstadoAccion;
-            const ANALIZAR_CONDICION = false;
+            const ANALIZAR_CONDICION = true;
             if(ANALIZAR_CONDICION){
-                try{
-                    //TODO Falta quotear condicion
-                    await context.client.query(
-                        getCondicionAccionTareasTemQuery(params.operativo, params.tarea, params.enc, params.condicion),
-                        [])
-                    .fetchUniqueRow();
-                }catch(err){
-                    throw Error(`No se cumple la condición ${params.condicion}. ${err.message}`)
+                var cumple:boolean = (await context.client.query(
+                    `select accion_cumple_condicion($6, $7, $8, $9, $10, (
+                        select condicion 
+                          from estados_acciones 
+                          where operativo = $1 and tarea = $2 and estado = $3 and eaccion = $4 and estado_destino = $5
+                    )
+                )`, [params.operativo, params.tarea, accion.estado, accion.eaccion, accion.estado_destino,
+                params.operativo, accion.estado, params.enc, params.tarea, accion.eaccion])
+                .fetchUniqueValue()).value;
+                if(!cumple){
+                    throw Error(`No se cumple la condición ${params.condicion}.`)
                 }
             }
             var result = await context.client.query(`
