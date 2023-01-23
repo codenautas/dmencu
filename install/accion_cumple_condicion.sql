@@ -26,5 +26,3 @@ BEGIN
 END;
 $BODY$
  LANGUAGE plpgsql VOLATILE;
- 
-ALTER FUNCTION accion_cumple_condicion(text, text, text, text,text,text) owner to ggs2022_owner; --reemplazar por el owner del operativo correspondiente
