@@ -1,17 +1,21 @@
-create or replace function accion_cumple_condicion(operativo text, estado text, enc text, tarea text, eaccion text,condicion text)
+--set role to ggs2022_owner;
+--set search_path=base;
+CREATE OR REPLACE FUNCTION accion_cumple_condicion(operativo text, estado text, enc text, tarea text, eaccion text,condicion text)
 RETURNS boolean AS
 $BODY$
 DECLARE
     vsent text; 
-	vcond text;
-	vsalida integer;
+    vcond text;
+    vsalida integer;
 BEGIN
  vcond=condicion;
  vsent=' select 1 
-	from base.tareas_tem t
-	join base.estados_acciones ea on ea.operativo=ea.operativo and ea.eaccion='''||$5 ||''' and ea.estado=t.estado and ea.tarea=t.tarea 
-	where t.operativo='''||$1||''' and t.estado='''||$2||'''  and t.enc='''||$3||'''  and t.tarea='''||$4||''' and '||vcond||';';
- raise notice 'esto %',vsent;
+    from base.tareas_tem t
+    inner join tem te on t.operativo=te.operativo and t.enc=te.enc
+    inner join base.estados_acciones ea on ea.operativo=t.operativo and ea.estado=t.estado and ea.tarea=t.tarea
+    left join sincronizaciones s on t.cargado_dm=s.token
+    where t.operativo='''||$1||''' and t.estado='''||$2||'''  and t.enc='''||$3||'''  and t.tarea='''||$4||''' and ea.eaccion='''||$5 ||''' and '||vcond||';';
+ --raise notice 'esto %',vsent;
  execute vsent into vsalida;
  IF vsalida=1 THEN
     return true;
@@ -21,3 +25,6 @@ BEGIN
 
 END;
 $BODY$
+ LANGUAGE plpgsql VOLATILE;
+ 
+ALTER FUNCTION accion_cumple_condicion(text, text, text, text,text,text) owner to ggs2022_owner; --reemplazar por el owner del operativo correspondiente
