@@ -159,9 +159,10 @@ BEGIN
  vcond=condicion;
  vsent=' select 1 
     from base.tareas_tem t
-    inner join tem te on t.operativo=te.operativo and t.enc=te.enc
-    inner join base.estados_acciones ea on ea.operativo=t.operativo and ea.estado=t.estado and ea.tarea=t.tarea
+    inner join tem te using (operativo,enc)
+    inner join base.estados_acciones ea using (operativo, estado, tarea)
     left join sincronizaciones s on t.cargado_dm=s.token
+	left join viviendas v on (te.operativo =  v.operativo and te.enc = v.vivienda)
     where t.operativo='''||$1||''' and t.estado='''||$2||'''  and t.enc='''||$3||'''  and t.tarea='''||$4||''' and ea.eaccion='''||$5 ||''' and '||vcond||';';
  --raise notice 'esto %',vsent;
  execute vsent into vsalida;
@@ -176,6 +177,8 @@ $BODY$
  LANGUAGE plpgsql VOLATILE;
  ALTER FUNCTION accion_cumple_condicion(text, text, text, text,text,text) owner to ggs2022_owner;
 
-
-
 update estados_acciones set condicion='verificado is null' where operativo = 'GGS_2022' and tarea='encu' and estado='V' and eaccion='verificar';
+
+alter table "estados" add column "permite_asignar_encuestador" boolean not null default 'false';
+
+update estados set permite_asignar_encuestador = true where operativo = 'GGS_2022' and estado = '0D';

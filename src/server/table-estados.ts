@@ -10,10 +10,11 @@ export function estados(context:TableContext):TableDefinition {
         elementName:'estado',
         editable:esEditable,
         fields:[
-            {name:'operativo'               , typeName:'text',  nullable: false},
-            {name:'estado'                  , typeName:'text',  nullable: false},
-            {name:'desc_estado'             , typeName:'text'},
-            {name:'orden_estado'            , typeName:'text'},
+            {name:'operativo'                    , typeName:'text',  nullable: false},
+            {name:'estado'                       , typeName:'text',  nullable: false},
+            {name:'desc_estado'                  , typeName:'text'},
+            {name:'orden_estado'                 , typeName:'text'},
+            {name:'permite_asignar_encuestador'  , typeName:'boolean', nullable:false, defaultDbValue:'false'},
         ],
         primaryKey:['operativo', 'estado'],
         foreignKeys: [
@@ -36,4 +37,3 @@ export function estados(context:TableContext):TableDefinition {
         ],
     };
 }
-
