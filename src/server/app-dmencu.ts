@@ -45,6 +45,7 @@ import { tareas_tem          } from './table-tareas_tem';
 import { tareas_areas        } from './table-tareas_areas';
 import { mis_tareas          } from './table-mis_tareas';
 import { mis_tareas_tem      } from './table-mis_tareas_tem';
+import { tareas_tem_asignables } from './table-tareas_tem_asignables';
 import { mis_tareas_areas    } from './table-mis_tareas_areas';
 import { control_campo       } from './table-control_campo';
 import { control_resumen     } from './table-control_resumen';
@@ -599,6 +600,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , tareas_areas
             , mis_tareas
             , mis_tareas_tem
+            , tareas_tem_asignables
             , mis_tareas_areas
             , control_campo
             , control_resumen

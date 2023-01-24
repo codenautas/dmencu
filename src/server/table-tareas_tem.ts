@@ -2,7 +2,6 @@
 
 import {TableDefinition, TableContext} from "./types-dmencu";
 import { FieldDefinition } from "rel-enc";
-import { getCondicionAccionTareasTemQuery } from "./procedures-dmencu";
 
 export function tareas_tem(context:TableContext, opt:any):TableDefinition {
     var opt=opt||{}
@@ -130,11 +129,13 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                     , t.rea_sup utl_rea_sup, t.norea_sup as ult_norea_sup, t.resumen_estado_sup ult_resumen_estado_sup
                     , dominio
                     , v.consistido
+                    , e.permite_asignar_encuestador
                     from tareas join  tem t using (operativo) 
                         left join areas using (operativo, area)
                         left join lateral (select * from tareas_tem where tarea=tareas.tarea and operativo=t.operativo and enc=t.enc) tt on true
                         left join no_rea y on t.norea=y.no_rea::integer
                         left join viviendas v on v.operativo=t.operativo and v.vivienda=t.enc 
+                        join estados e on t.operativo = e.operativo and tt.estado = e.estado
                     ) x
                     , lateral (
                         select jsonb_agg(z.*) as acciones
@@ -145,7 +146,8 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                                       and accion_cumple_condicion(x.operativo, ea.estado, x.enc, x.tarea, ea.eaccion,ea.condicion)
                             ) z
                     ) y
-                    ${opt.mis?`where (asignante = ${db.quoteNullable(context.user.idper)} or asignado = ${db.quoteNullable(context.user.idper)})`:''}
+                    where permite_asignar_encuestador = ${(!!opt.asigna).toString()}
+                    ${opt.mis?`and where (asignante = ${db.quoteNullable(context.user.idper)} or asignado = ${db.quoteNullable(context.user.idper)})`:''}
             )`
         },
         clientSide:'tareasTemRow'
