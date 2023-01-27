@@ -20,6 +20,10 @@ export function tem(context:Context, opts:any):TableDefinition {
     var def: TableDefinition= {
         name:`tem${recepcion}`,
         tableName:'tem',
+        allow:{
+            insert:false,
+            delete:false,
+        },
         editable: puedeEditar,
         hiddenColumns:[
             'cita','notas', 'cluster',
@@ -33,6 +37,8 @@ export function tem(context:Context, opts:any):TableDefinition {
             {name: "abrir"               , typeName:'text'    , editable: false  , inTable:false, clientSide:'abrir'},
             {name:"consistir"            , typeName: 'text'   , editable: false  , inTable:false, clientSide:'consistir'},
             {name: "cluster"             , typeName:'integer' , editable: false, isName:true},
+            {name:'tarea'                , typeName:'text'    , editable: false  , nullable: false},
+            {name:'estado'               , typeName:'text'    , editable:false   , nullable: false},
             {name:'area'                 , typeName:'integer' , editable: false  },
             {name:'zona'                 , typeName:'text'    , editable: false  },
             {name:'rea'                  , typeName:'integer' , editable: false  },
@@ -129,6 +135,8 @@ export function tem(context:Context, opts:any):TableDefinition {
         "primaryKey": [ "operativo", "enc" ],
         foreignKeys:[
             {references:'areas'   , fields:['operativo', 'area']},
+            {references:'tareas' , fields:['operativo','tarea']},
+            {references:'estados' , fields:['operativo','estado']},
         //    {references:'usuarios', fields:[{source:'carga_persona', target:'idper'}], displayFields:['apellido','nombre']},
         ],        
         softForeignKeys:[

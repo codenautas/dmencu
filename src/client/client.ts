@@ -297,7 +297,7 @@ var crearBotonVerAbrirEncuesta = (operativo:IdOperativo,tarea:IdTarea,encuesta:n
 
 var crearBotonesVerAbrirTareas = async (depot:myOwn.Depot, fieldName:string, label:'abrir'|'ver')=>{
     tareas = tareas?tareas:(await myOwn.ajax.table_data({table: `tareas`, fixedFields:[]}));
-    var misTareas = tareas.filter((tarea)=>!!tarea.main_form && tarea.operativo==depot.row.operativo && depot.row.tarea?depot.row.tarea == tarea.tarea:true);
+    var misTareas = tareas.filter((tarea)=>!!tarea.main_form && tarea.operativo==depot.row.operativo && depot.manager.def.tableName=='tem'?true:depot.row.tarea == tarea.tarea);
     depot.rowControls[fieldName].innerHTML='';
     misTareas.forEach((tarea:{tarea:string, nombre:string, main_form:IdFormulario})=>{
         let buttonLabel = `${label} ${tarea.tarea}`;
@@ -364,16 +364,7 @@ var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
         action.path_icono_svg?svg:null,
     ]).create();
     button.onclick = ()=> {
-        var buttonsDef = [
-            {label:'sí', value:true},
-            {label:'no', value:false}
-        ]
-        var confirmPromiseOpts: DialogOptions = {}
-        if(action.eaccion_direccion=='avance'){
-            confirmPromiseOpts.askForNoRepeat = 'no volver a mostrar'; //muestra mensaje por default pero anda igual
-        }
-        
-        confirmPromise(`confirma acción "${action.eaccion}"?`, {...confirmPromiseOpts, buttonsDef}).then(async ()=>{
+        var actionFun = async ()=>{
             button.disabled=true;
             try{
                 var result = await my.ajax.accion_tareas_tem_ejecutar({
@@ -392,7 +383,19 @@ var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
             }finally{
                 button.disabled=false;
             }
-        })
+        }
+        
+        var confirmPromiseOpts: DialogOptions = {}
+        if(action.eaccion_direccion=='avance'){
+            actionFun();
+        }else{
+            confirmPromiseOpts.askForNoRepeat = 'no volver a mostrar'; //muestra mensaje por default pero anda igual
+            var buttonsDef = [
+                {label:'sí', value:true},
+                {label:'no', value:false}
+            ]
+            confirmPromise(`confirma acción "${action.eaccion}"?`, {...confirmPromiseOpts, buttonsDef}).then(actionFun);
+        }
     }
     return button
 }
@@ -401,7 +404,7 @@ var crearBotonesAcciones = async (opts:{depot:myOwn.Depot, fieldName:string, dir
     let {depot,fieldName,direccion} = opts;
     let td = depot.rowControls[fieldName];
     td.innerHTML='';
-    (depot.row.acciones||[])
+    (depot.rowControls.acciones.getTypedValue()||[])
         .filter((action:EstadoAccion)=>action.eaccion_direccion==direccion)
         .forEach((action:EstadoAccion)=>td.appendChild(crearBotonAccion(depot, action)));
 }

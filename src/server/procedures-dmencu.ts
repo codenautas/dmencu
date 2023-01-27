@@ -902,6 +902,13 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     throw Error(`No se cumple la condición ${params.condicion}.`)
                 }
             }
+            await context.client.query(`
+                UPDATE tem 
+                    set estado = $3 , tarea = $4
+                    where operativo=$1 and enc=$2
+                    returning *`,
+                [params.operativo, params.enc, accion.estado_destino, params.tarea])
+            .fetchUniqueRow();
             var result = await context.client.query(`
                 UPDATE tareas_tem 
                     set estado = $1

@@ -2,9 +2,7 @@
 
 import {TableDefinition, FieldDefinition, TableContext} from "./types-dmencu";
 
-export function tareas_areas(context:TableContext, opt:any):TableDefinition {
-    var opt=opt||{}
-    var mis=opt.mis?'mis_':'';
+export function tareas_areas(context:TableContext):TableDefinition {
     var be=context.be;
     var db=be.db;
     var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';
@@ -23,7 +21,7 @@ export function tareas_areas(context:TableContext, opt:any):TableDefinition {
 
     ];
     return {
-        name:`${mis}tareas_areas`,
+        name:`tareas_areas`,
         tableName:`tareas_areas`,
         editable:puedeEditar,
         fields,
@@ -36,10 +34,10 @@ export function tareas_areas(context:TableContext, opt:any):TableDefinition {
             {references:'operaciones' , fields:['operacion']},
         ],
         detailTables:[
-            {table:`${mis}tareas_tem`       , fields:['operativo','tarea', 'area'], abr:'T', refreshParent:true, refreshFromParent:true},
+            {table:`tareas_tem`   , fields:['operativo','tarea', 'area'], abr:'T', refreshParent:true, refreshFromParent:true},
         ],
         sql:{
-            isTable: !opt.mis,
+            isTable: true,
             insertIfNotUpdate:true,
             from:`(
                 select t.operativo,t.tarea, a.area

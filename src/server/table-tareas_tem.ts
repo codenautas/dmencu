@@ -3,18 +3,16 @@
 import {TableDefinition, TableContext} from "./types-dmencu";
 import { FieldDefinition } from "rel-enc";
 
-export function tareas_tem(context:TableContext, opt:any):TableDefinition {
-    var opt=opt||{}
-    var mis=opt.mis?'mis_':'';
+export function tareas_tem(context:TableContext):TableDefinition {
     var be=context.be;
     var db=be.db;
     var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';       
     var fields:FieldDefinition[]=[
-        {name:'tarea'                       , typeName:'text', isPk:1},
         {name:'operativo'                   , typeName:'text', isPk:2},
         {name:'enc'                         , typeName:'text', isPk:3},
-        {name:'abrir'                       , typeName:'text'        , editable:false   , inTable:false, clientSide:'abrirRecepcion'},
+        {name:'tarea'                       , typeName:'text', isPk:1},
         {name:'estado'                      , typeName:'text'        , editable:false   , nullable: false},
+        {name:'abrir'                       , typeName:'text'        , editable:false   , inTable:false, clientSide:'abrirRecepcion'},
         {name:"acciones"                    , typeName: 'jsonb'      , editable:false   , inTable:false},
         {name:"botones_acciones_avance"     , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesAvance'},
         {name:"botones_acciones_retroceso"  , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesRetroceso'},
@@ -53,8 +51,12 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
         {name:'ult_resumen_estado_sup'      , typeName:'text'        , editable: false ,  inTable:false},
         ]; 
     return {
-        name:`${mis}tareas_tem`,
+        name:`tareas_tem`,
         tableName:`tareas_tem`,
+        allow:{
+            insert:false,
+            delete:false,
+        },
         editable:puedeEditar,
         fields,
         primaryKey:['tarea','operativo','enc'],
@@ -75,7 +77,7 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
             {table: "inconsistencias", abr: "I", fields: [{source:'operativo', target:'operativo'},{source:'enc', target:'vivienda'}], refreshParent:true, refreshFromParent:true}
         ],
         sql:{
-            isTable: !opt.mis,
+            isTable: true,
             insertIfNotUpdate:true,
             fields:{
                 ok:{ 
@@ -132,7 +134,8 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                     , e.permite_asignar_encuestador
                     from tareas join  tem t using (operativo) 
                         left join areas using (operativo, area)
-                        left join lateral (select * from tareas_tem where tarea=tareas.tarea and operativo=t.operativo and enc=t.enc) tt on true
+                        left join lateral (select * from tareas_tem where tarea=tareas.tarea and operativo=t.operativo and enc=t.enc) tt on 
+                            (t.operativo = tt.operativo and t.tarea = tt. tarea and t.estado = tt.estado) --muestro segun tarea y estado actual en la tem
                         left join no_rea y on t.norea=y.no_rea::integer
                         left join viviendas v on v.operativo=t.operativo and v.vivienda=t.enc 
                         join estados e on t.operativo = e.operativo and tt.estado = e.estado
@@ -146,9 +149,8 @@ export function tareas_tem(context:TableContext, opt:any):TableDefinition {
                                       and accion_cumple_condicion(x.operativo, ea.estado, x.enc, x.tarea, ea.eaccion,ea.condicion)
                             ) z
                     ) y
-                    where permite_asignar_encuestador = ${(!!opt.asigna).toString()}
-                    ${opt.mis?`and where (asignante = ${db.quoteNullable(context.user.idper)} or asignado = ${db.quoteNullable(context.user.idper)})`:''}
-            )`
+            )`,
+            where: `not tareas_tem.permite_asignar_encuestador`
         },
         clientSide:'tareasTemRow'
     };
