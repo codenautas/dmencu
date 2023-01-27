@@ -477,6 +477,7 @@ export type EstadoAccion = {
     condicion: string
     estado_destino: string
     eaccion_direccion: 'avance' | 'retroceso'
-    path_icono_svg: string;
-    nombre_procedure: string;
+    path_icono_svg: string
+    nombre_procedure: string
+    desactiva_boton: boolean
 }

@@ -60,7 +60,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
         editable:puedeEditar,
         fields,
         primaryKey:['tarea','operativo','enc'],
-        hiddenColumns:['cargado_dm','notas'],
+        hiddenColumns:['cargado_dm','notas', 'acciones'],
         foreignKeys:[
             {references:'tem' , fields:['operativo','enc'], displayFields:[], alias:'te'},
             {references:'tareas' , fields:['operativo','tarea']},
@@ -143,7 +143,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
                     , lateral (
                         select jsonb_agg(z.*) as acciones
                             from (
-                                select ea.*, ac.path_icono_svg 
+                                select ea.*, ac.path_icono_svg, ac.desactiva_boton
                                     from estados_acciones ea join acciones ac using (operativo, eaccion)
                                     where ea.operativo = x.operativo and ea.tarea = x.tarea and ea.estado = x.estado
                                       and accion_cumple_condicion(x.operativo, ea.estado, x.enc, x.tarea, ea.eaccion,ea.condicion)

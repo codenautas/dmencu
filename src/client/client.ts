@@ -347,15 +347,20 @@ myOwn.clientSides.verIconoSvg={
     }
 };
 
-var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
-    var svg = html.svg({
-        class:"svg-acciones"
-    },[
+var crearSVG = (path:string,props:any) => {
+    var svg = html.svg(props || {},[
         html.path({
-            d:action.path_icono_svg
+            d:path
         })
     ]).create();
     svg.setAttribute("viewBox","0 0 50 50");
+    return svg
+}
+var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
+    var svg = crearSVG(action.path_icono_svg,{class:"svg-acciones"})
+    if(action.desactiva_boton){
+        return svg
+    }
     let button = html.button({
         class:`boton-accion boton-accion-${action.eaccion_direccion}`
     },[

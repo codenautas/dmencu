@@ -660,6 +660,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         ],
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             const OPERATIVO = await getOperativoActual(context);
+            const ESTADO_POSTERIOR_CARGA = 'C';
+            const ESTADO_POSTERIOR_DESCARGA = 'D';
             var be=context.be;
             var {persistentes} = parameters;
             var num_sincro:number=0;
@@ -701,7 +703,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     }
                     var queryTareasTem = await context.client.query(
                         `update tareas_tem
-                            set cargado_dm=null ${setters}
+                            set estado = ${context.be.db.quoteLiteral(ESTADO_POSTERIOR_DESCARGA)}, cargado_dm=null ${setters}
                             where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm = $4
                             returning 'ok'`
                         ,
@@ -712,7 +714,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         var {params, setters} = await getParametersAndSettersForUpdateTem(context, OPERATIVO, idEnc, respuestasUAPrincipal, tarea);
                         await context.client.query(
                             `update tem
-                                set ${setters}
+                                set estado = ${context.be.db.quoteLiteral(ESTADO_POSTERIOR_DESCARGA)}, ${setters}
                                 where operativo= $1 and enc = $2
                                 returning 'ok'`
                             ,
@@ -741,8 +743,6 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                             ,
                             [OPERATIVO, idEnc, resultado]
                         ).fetchUniqueRow();
-
-
                     }else{
                         await fs.appendFile('local-recibido-sin-token.txt', JSON.stringify({now:new Date(),user:context.username,idCaso: idEnc,vivienda: respuestasUAPrincipal})+'\n\n', 'utf8');
                     }
@@ -755,10 +755,10 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             // console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxx',getHdrQuery(condviv));
             await context.client.query(
                 `update tareas_tem tt
-                    set  cargado_dm=$3::text
+                    set  estado = $4, cargado_dm=$3::text
                     where ${condviv} `
                 ,
-                [OPERATIVO, parameters.enc?parameters.enc:context.user.idper, token]
+                [OPERATIVO, parameters.enc?parameters.enc:context.user.idper, token, ESTADO_POSTERIOR_CARGA]
             ).execute();
             return {
                 ...row,
@@ -926,6 +926,66 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             }
             return result.row;
 
+        }
+    },
+    {
+        action: 'encuesta_carga_preparar',
+        parameters:[
+            {name:'operativo'       , typeName:'text'},
+            {name:'tarea'           , typeName:'text'},
+            {name:'enc'             , typeName:'text'},
+        ],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            var be =  context.be;
+            const ANALIZAR_CONDICION = true;
+            await context.client.query(`
+                UPDATE tareas_tem
+                    set operacion = 'cargar'
+                    where operativo=$1 and tarea= $2 and enc=$3
+                    returning *`,
+                [params.operativo, params.tarea, params.enc])
+            .fetchUniqueRow();
+            return 'ok';
+        }
+    },
+    {
+        action: 'encuesta_disponibilizar',
+        parameters:[
+            {name:'operativo'       , typeName:'text'},
+            {name:'tarea'           , typeName:'text'},
+            {name:'enc'             , typeName:'text'},
+        ],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            var be =  context.be;
+            const ANALIZAR_CONDICION = true;
+            await context.client.query(`
+                UPDATE tareas_tem
+                    set asignado = null
+                    where operativo=$1 and tarea= $2 and enc=$3
+                    returning *`,
+                [params.operativo, params.tarea, params.enc])
+            .fetchUniqueRow();
+            return 'ok';
+        }
+    },
+    {
+        action: 'encuesta_no_cargar',
+        parameters:[
+            {name:'operativo'       , typeName:'text'},
+            {name:'tarea'           , typeName:'text'},
+            {name:'enc'             , typeName:'text'},
+        ],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            var be =  context.be;
+            const ANALIZAR_CONDICION = true;
+            await context.client.query(`
+                UPDATE tareas_tem
+                    set operacion = null
+                    where operativo=$1 and tarea= $2 and enc=$3
+                    returning *`,
+                [params.operativo, params.tarea, params.enc])
+            .fetchUniqueRow();
+            return 'ok';
         }
     },
     
