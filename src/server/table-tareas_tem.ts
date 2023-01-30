@@ -16,6 +16,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
         {name:"acciones"                    , typeName: 'jsonb'      , editable:false   , inTable:false},
         {name:"botones_acciones_avance"     , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesAvance'},
         {name:"botones_acciones_retroceso"  , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesRetroceso'},
+        {name:"permite_asignar_encuestador" , typeName: "boolean"    , editable:false   , inTable:false, visible:false },
         {name:"consistir"                   , typeName: 'text'       , editable:false   , inTable:false, clientSide:'consistir'},
         {name:'area'                        , typeName: 'integer'    , editable:false   , inTable:false },
         {name:'ok'                          , typeName: 'text'       , editable:false   , inTable:false },
@@ -61,6 +62,9 @@ export function tareas_tem(context:TableContext):TableDefinition {
         fields,
         primaryKey:['tarea','operativo','enc'],
         hiddenColumns:['cargado_dm','notas', 'acciones'],
+        filterColumns:[
+            {column:'permite_asignar_encuestador', operator:'=', value:false}
+        ],
         foreignKeys:[
             {references:'tem' , fields:['operativo','enc'], displayFields:[], alias:'te'},
             {references:'tareas' , fields:['operativo','tarea']},
@@ -150,7 +154,6 @@ export function tareas_tem(context:TableContext):TableDefinition {
                             ) z
                     ) y
             )`,
-            where: `not tareas_tem.permite_asignar_encuestador`
         },
         clientSide:'tareasTemRow'
     };

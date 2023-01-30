@@ -7,7 +7,10 @@ import {tareas_tem} from "./table-tareas_tem";
 export function tareas_tem_asignables(context:TableContext):TableDefinition {
     var tableDef = tareas_tem(context);
     tableDef.name = `tareas_tem_asignables`;
-    tableDef.sql!.where = `tareas_tem.permite_asignar_encuestador`;
+    tableDef.filterColumns=[
+        {column:'permite_asignar_encuestador', operator:'=', value:true}
+    ];
+
     return tableDef
 }
 
