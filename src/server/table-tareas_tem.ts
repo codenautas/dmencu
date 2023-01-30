@@ -16,7 +16,8 @@ export function tareas_tem(context:TableContext):TableDefinition {
         {name:"acciones"                    , typeName: 'jsonb'      , editable:false   , inTable:false},
         {name:"botones_acciones_avance"     , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesAvance'},
         {name:"botones_acciones_retroceso"  , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesRetroceso'},
-        {name:"permite_asignar_encuestador" , typeName: "boolean"    , editable:false   , inTable:false, visible:false },
+        {name:"permite_asignar_encuestador" , typeName: "boolean"    , editable:false   , inTable:false, visible:false, defaultDbValue:'false' },
+        {name:"permite_manipular_encuesta"  , typeName: "boolean"    , editable:false   , inTable:false, visible:false, defaultDbValue:'true' },
         {name:"consistir"                   , typeName: 'text'       , editable:false   , inTable:false, clientSide:'consistir'},
         {name:'area'                        , typeName: 'integer'    , editable:false   , inTable:false },
         {name:'ok'                          , typeName: 'text'       , editable:false   , inTable:false },
@@ -63,7 +64,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
         primaryKey:['tarea','operativo','enc'],
         hiddenColumns:['cargado_dm','notas', 'acciones'],
         filterColumns:[
-            {column:'permite_asignar_encuestador', operator:'=', value:false}
+            {column:'permite_manipular_encuesta', operator:'=', value:true}
         ],
         foreignKeys:[
             {references:'tem' , fields:['operativo','enc'], displayFields:[], alias:'te'},
@@ -136,6 +137,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
                     , dominio
                     , v.consistido
                     , e.permite_asignar_encuestador
+                    , e.permite_manipular_encuesta
                     from tareas join  tem t using (operativo) 
                         left join areas using (operativo, area)
                         left join lateral (select * from tareas_tem where tarea=tareas.tarea and operativo=t.operativo and enc=t.enc) tt on 
@@ -155,6 +157,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
                     ) y
             )`,
         },
+        //refrescable: true, //no está permitido aún
         clientSide:'tareasTemRow'
     };
 }

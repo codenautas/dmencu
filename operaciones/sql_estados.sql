@@ -198,3 +198,7 @@ create index "operativo,tarea 4 tem IDX" ON "tem" ("operativo", "tarea");
 alter table "acciones" add column "desactiva_boton" boolean not null default 'false';
 
 update acciones set desactiva_boton = true where operativo = 'GGS_2022' and eaccion = 'sincronizar';
+
+alter table "estados" add column "permite_manipular_encuesta" boolean not null default 'true';
+
+update estados set permite_manipular_encuesta = false where operativo = 'GGS_2022' and estado in ('0D');
