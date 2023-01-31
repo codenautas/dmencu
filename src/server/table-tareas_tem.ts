@@ -21,6 +21,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
         {name:"consistir"                   , typeName: 'text'       , editable:false   , inTable:false, clientSide:'consistir'},
         {name:'area'                        , typeName: 'integer'    , editable:false   , inTable:false },
         {name:'ok'                          , typeName: 'text'       , editable:false   , inTable:false },
+        {name:"habilitar"                   , typeName: "boolean"    , editable:false   , inTable:false, clientSide:'habilitar'},
         {name:"habilitada"                  , typeName: "boolean"    , editable:puedeEditar},
         {name:'asignante'                   , typeName:'text'        , editable:false   , inTable:false}, // va a la hoja de ruta
         {name:'asignado'                    , typeName:'text'}, // va a la hoja de ruta

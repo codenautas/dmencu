@@ -414,6 +414,48 @@ var crearBotonesAcciones = async (opts:{depot:myOwn.Depot, fieldName:string, dir
         .forEach((action:EstadoAccion)=>td.appendChild(crearBotonAccion(depot, action)));
 }
 
+var crearSwitch = (opts:{round?:boolean, disabled?:boolean, checked?:boolean, onClickFun:Function, onErrFun?:Function})=>{
+    var checkbox = html.input({type:'checkbox', checked:opts.checked}).create();
+    checkbox.onclick = async()=>{
+        try{
+            checkbox.disabled=true;
+            await opts.onClickFun()
+        }catch(err){
+            alertPromise(err.message)
+            throw err
+        }finally{
+            checkbox.disabled=false;
+        }
+    }
+    return html.label({class:'switch'},[
+        checkbox,
+        html.span({class:`slider ${opts.round?'round':''}`}),
+    ]).create();
+}
+
+myOwn.clientSides.habilitar={
+    prepare: (_depot, _fieldName)=>{},
+    update: (depot, fieldName)=>{
+        var td = depot.rowControls[fieldName];
+        td.innerHTML = "";
+        td.appendChild(
+            crearSwitch({
+                round:true,
+                checked:depot.row.habilitada,
+                onClickFun: async ()=>{
+                    await my.ajax.encuesta_habilitar_deshabilitar({
+                        operativo: depot.row.operativo,
+                        tarea: depot.row.tarea,
+                        enc: depot.row.enc
+                    });
+                    var grid=depot.manager;
+                    grid.retrieveRowAndRefresh(depot)
+                }
+            })
+        );
+    }
+};
+
 myOwn.clientSides.accionesAvance={
     prepare: (_depot, _fieldName)=>{},
     update: (depot, fieldName)=>{

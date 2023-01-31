@@ -1057,7 +1057,6 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             return 'ok';
         }
     },
-    ,
     {
         action: 'encuesta_no_verificar',
         parameters:[
@@ -1076,7 +1075,6 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             return 'ok';
         }
     },
-    ,
     {
         action: 'encuesta_dpt',
         parameters:[
@@ -1086,6 +1084,24 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         ],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             //TODO acá hay que preparar la siguiente tarea
+            return 'ok';
+        }
+    },
+    {
+        action: 'encuesta_habilitar_deshabilitar',
+        parameters:[
+            {name:'operativo'       , typeName:'text'},
+            {name:'tarea'           , typeName:'text'},
+            {name:'enc'             , typeName:'text'},
+        ],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            await context.client.query(`
+                UPDATE tareas_tem
+                    set habilitada = not habilitada
+                    where operativo=$1 and tarea= $2 and enc=$3
+                    returning *`,
+                [params.operativo, params.tarea, params.enc])
+            .fetchUniqueRow();
             return 'ok';
         }
     },
