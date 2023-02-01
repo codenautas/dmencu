@@ -449,7 +449,7 @@ myOwn.clientSides.habilitar={
                         enc: depot.row.enc
                     });
                     var grid=depot.manager;
-                    grid.retrieveRowAndRefresh(depot)
+                    setTimeout(()=>grid.retrieveRowAndRefresh(depot),300);//para que se vea el efecto
                 }
             })
         );
