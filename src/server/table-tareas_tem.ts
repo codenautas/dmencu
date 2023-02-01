@@ -14,9 +14,9 @@ export function tareas_tem(context:TableContext):TableDefinition {
         {name:'estado'                      , typeName:'text'        , editable:false   , nullable: false},
         {name:'abrir'                       , typeName:'text'        , editable:false   , inTable:false, clientSide:'abrirRecepcion'},
         {name:"acciones"                    , typeName: 'jsonb'      , editable:false   , inTable:false},
-        {name:"botones_acciones_avance"     , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesAvance'},
-        {name:"botones_acciones_retroceso"  , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesRetroceso'},
-        {name:"botones_acciones_blanqueo"   , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesBlanqueo'},
+        {name:"acciones_avance"     , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesAvance'},
+        {name:"acciones_retroceso"  , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesRetroceso'},
+        {name:"acciones_blanqueo"   , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesBlanqueo'},
         {name:"permite_asignar_encuestador" , typeName: "boolean"    , editable:false   , inTable:false, visible:false, defaultDbValue:'false' },
         {name:"permite_manipular_encuesta"  , typeName: "boolean"    , editable:false   , inTable:false, visible:false, defaultDbValue:'true' },
         {name:"consistir"                   , typeName: 'text'       , editable:false   , inTable:false, clientSide:'consistir'},
@@ -160,7 +160,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
             )`,
         },
         //refrescable: true, //no está permitido aún
-        clientSide:'tareasTemRow'
+        //clientSide:'tareasTemRow' //desactivo para borrar los íconos de las celdas
     };
 }
 
