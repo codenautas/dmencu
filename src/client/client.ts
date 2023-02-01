@@ -1,7 +1,7 @@
 import {html} from "js-to-html";
 import {traerEstructura} from "../unlogged/redux-formulario";
 import { CasoState,  
-    IdFormulario, DatosByPassPersistibles, IdEnc, IdOperativo, IdTarea, EstadoAccion,
+    IdFormulario, DatosByPassPersistibles, IdEnc, IdOperativo, IdTarea, EstadoAccion, DireccionAccion,
 } from "../unlogged/tipos";
 import * as likeAr from "like-ar";
 import {getEstructura, setPersistirDatosByPass} from "../unlogged/bypass-formulario"
@@ -405,7 +405,7 @@ var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
     return button
 }
 
-var crearBotonesAcciones = async (opts:{depot:myOwn.Depot, fieldName:string, direccion:'avance'|'retroceso'})=>{
+var crearBotonesAcciones = async (opts:{depot:myOwn.Depot, fieldName:string, direccion: DireccionAccion})=>{
     let {depot,fieldName,direccion} = opts;
     let td = depot.rowControls[fieldName];
     td.innerHTML='';
@@ -467,6 +467,13 @@ myOwn.clientSides.accionesRetroceso={
     prepare: (_depot, _fieldName)=>{},
     update: (depot, fieldName)=>{
         crearBotonesAcciones({depot,fieldName,direccion:'retroceso'});
+    }
+};
+
+myOwn.clientSides.accionesBlanqueo={
+    prepare: (_depot, _fieldName)=>{},
+    update: (depot, fieldName)=>{
+        crearBotonesAcciones({depot,fieldName,direccion:'blanqueo'});
     }
 };
 
