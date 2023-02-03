@@ -202,3 +202,9 @@ update acciones set desactiva_boton = true where operativo = 'GGS_2022' and eacc
 alter table "estados" add column "permite_manipular_encuesta" boolean not null default 'true';
 
 update estados set permite_manipular_encuesta = false where operativo = 'GGS_2022' and estado in ('0D');
+
+alter table "acciones" add column "asigna" boolean not null default 'false';
+alter table "acciones" add column "recepciona" boolean not null default 'false';
+
+alter table "estados" rename column "permite_manipular_encuesta" to "visible_en_recepcion";
+alter table "estados" rename column "permite_asignar_encuestador" to "visible_en_asignacion";

@@ -34,7 +34,7 @@ export function tareas_areas(context:TableContext):TableDefinition {
             {references:'operaciones' , fields:['operacion']},
         ],
         detailTables:[
-            {table:`tareas_tem`   , fields:['operativo','tarea', 'area'], abr:'T', refreshParent:true, refreshFromParent:true},
+            {table:`tareas_tem_recepcion`   , fields:['operativo','tarea', 'area'], abr:'T', refreshParent:true, refreshFromParent:true},
         ],
         sql:{
             isTable: true,

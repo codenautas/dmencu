@@ -68,7 +68,7 @@ export function areas(context:TableContext):TableDefinition {
         ],
         detailTables:[
             {table:'tareas_tem_asignables' , fields:['operativo','area'], abr:'A', refreshParent:true, label:'asignables'},
-            {table:`tareas_tem`   , fields:['operativo', 'area'], abr:'T', refreshParent:true, refreshFromParent:true},
+            {table:`tareas_tem_recepcion`  , fields:['operativo', 'area'], abr:'R', refreshParent:true, label:'recepcion'},
         ],
         sql:{
             isTable:true,

@@ -13,16 +13,9 @@ export function tareas_tem(context:TableContext):TableDefinition {
         {name:'tarea'                       , typeName:'text', isPk:1},
         {name:'estado'                      , typeName:'text'        , editable:false   , nullable: false},
         {name:'abrir'                       , typeName:'text'        , editable:false   , inTable:false, clientSide:'abrirRecepcion'},
-        {name:"acciones"                    , typeName: 'jsonb'      , editable:false   , inTable:false},
-        {name:"acciones_avance"     , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesAvance'},
-        {name:"acciones_retroceso"  , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesRetroceso'},
-        {name:"acciones_blanqueo"   , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesBlanqueo'},
-        {name:"permite_asignar_encuestador" , typeName: "boolean"    , editable:false   , inTable:false, visible:false, defaultDbValue:'false' },
-        {name:"permite_manipular_encuesta"  , typeName: "boolean"    , editable:false   , inTable:false, visible:false, defaultDbValue:'true' },
         {name:"consistir"                   , typeName: 'text'       , editable:false   , inTable:false, clientSide:'consistir'},
         {name:'area'                        , typeName: 'integer'    , editable:false   , inTable:false },
         {name:'ok'                          , typeName: 'text'       , editable:false   , inTable:false },
-        {name:"habilitar"                   , typeName: "boolean"    , editable:false   , inTable:false, clientSide:'habilitar'},
         {name:"habilitada"                  , typeName: "boolean"    , editable:puedeEditar},
         {name:'asignante'                   , typeName:'text'        , editable:false   , inTable:false}, // va a la hoja de ruta
         {name:'asignado'                    , typeName:'text'}, // va a la hoja de ruta
@@ -64,10 +57,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
         editable:puedeEditar,
         fields,
         primaryKey:['tarea','operativo','enc'],
-        hiddenColumns:['cargado_dm','notas', 'acciones'],
-        filterColumns:[
-            {column:'permite_manipular_encuesta', operator:'=', value:true}
-        ],
+        hiddenColumns:['cargado_dm','notas'],
         foreignKeys:[
             {references:'tem' , fields:['operativo','enc'], displayFields:[], alias:'te'},
             {references:'tareas' , fields:['operativo','tarea']},
@@ -138,8 +128,8 @@ export function tareas_tem(context:TableContext):TableDefinition {
                     , t.rea_sup utl_rea_sup, t.norea_sup as ult_norea_sup, t.resumen_estado_sup ult_resumen_estado_sup
                     , dominio
                     , v.consistido
-                    , e.permite_asignar_encuestador
-                    , e.permite_manipular_encuesta
+                    , e.visible_en_asignacion
+                    , e.visible_en_recepcion
                     from tareas join  tem t using (operativo) 
                         left join areas using (operativo, area)
                         left join lateral (select * from tareas_tem where tarea=tareas.tarea and operativo=t.operativo and enc=t.enc) tt on 
@@ -148,15 +138,6 @@ export function tareas_tem(context:TableContext):TableDefinition {
                         left join viviendas v on v.operativo=t.operativo and v.vivienda=t.enc 
                         join estados e on t.operativo = e.operativo and tt.estado = e.estado
                     ) x
-                    , lateral (
-                        select jsonb_agg(z.*) as acciones
-                            from (
-                                select ea.*, ac.path_icono_svg, ac.desactiva_boton
-                                    from estados_acciones ea join acciones ac using (operativo, eaccion)
-                                    where ea.operativo = x.operativo and ea.tarea = x.tarea and ea.estado = x.estado
-                                      and accion_cumple_condicion(x.operativo, ea.estado, x.enc, x.tarea, ea.eaccion,ea.condicion)
-                            ) z
-                    ) y
             )`,
         },
         //refrescable: true, //no está permitido aún
