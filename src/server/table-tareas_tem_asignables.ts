@@ -16,6 +16,20 @@ export function addButtons(tableDef:TableDefinition){
     return tableDef
 }
 
+export function checkMyActions(tableDef:TableDefinition, myField:string){
+    tableDef.sql!.from=`(select * from (${tableDef.sql!.from}) aux
+        , lateral (
+            select jsonb_agg(z.*) as acciones
+                from (
+                    select ea.*, ac.path_icono_svg, ac.desactiva_boton
+                        from estados_acciones ea join acciones ac using (operativo, eaccion)
+                        where ea.operativo = aux.operativo and ea.tarea = aux.tarea and ea.estado = aux.estado and ac.${myField}
+                        and accion_cumple_condicion(aux.operativo, ea.estado, aux.enc, aux.tarea, ea.eaccion,ea.condicion)
+                ) z
+            ) y
+        )`
+}
+
 export function tareas_tem_asignables(context:TableContext):TableDefinition {
     var tableDef = tareas_tem(context);
     tableDef.name = `tareas_tem_asignables`;
@@ -27,17 +41,7 @@ export function tareas_tem_asignables(context:TableContext):TableDefinition {
         {name:"habilitar"                   , typeName: "boolean"    , editable:false   , inTable:false, clientSide:'habilitar'},
     );
     tableDef.hiddenColumns=['cargado_dm','notas', 'acciones'];
-    tableDef.sql!.from=`(select * from (${tableDef.sql!.from}) aux
-        , lateral (
-            select jsonb_agg(z.*) as acciones
-                from (
-                    select ea.*, ac.path_icono_svg, ac.desactiva_boton
-                        from estados_acciones ea join acciones ac using (operativo, eaccion)
-                        where ea.operativo = aux.operativo and ea.tarea = aux.tarea and ea.estado = aux.estado and ac.asigna
-                        and accion_cumple_condicion(aux.operativo, ea.estado, aux.enc, aux.tarea, ea.eaccion,ea.condicion)
-                ) z
-            ) y
-        )`
+    checkMyActions(tableDef,'asigna');
     return tableDef
 }
 
