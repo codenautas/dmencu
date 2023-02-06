@@ -714,7 +714,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         var {params, setters} = await getParametersAndSettersForUpdateTem(context, OPERATIVO, idEnc, respuestasUAPrincipal, tarea);
                         await context.client.query(
                             `update tem
-                                set estado = ${context.be.db.quoteLiteral(ESTADO_POSTERIOR_DESCARGA)}, ${setters}
+                                set ${setters}
                                 where operativo= $1 and enc = $2
                                 returning 'ok'`
                             ,
@@ -761,13 +761,6 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 ,
                 [OPERATIVO, parameters.enc?parameters.enc:context.user.idper, token, ESTADO_POSTERIOR_CARGA]
             ).fetchAll();
-            await context.client.query(
-                `update tem
-                    set  estado = $3
-                    where enc in (select enc from tareas_tem tt where ${condviv})`
-                ,
-                [OPERATIVO, context.user.idper, ESTADO_POSTERIOR_CARGA]
-            ).execute();
             return {
                 ...row,
                 operativo: OPERATIVO, 
@@ -910,19 +903,21 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     throw Error(`No se cumple la condición ${params.condicion}.`)
                 }
             }
-            await context.client.query(`
-                UPDATE tem 
-                    set estado = $3 , tarea = $4
-                    where operativo=$1 and enc=$2
-                    returning *`,
-                [params.operativo, params.enc, accion.estado_destino, params.tarea])
-            .fetchUniqueRow();
             var result = await context.client.query(`
                 UPDATE tareas_tem 
-                    set estado = $1
-                    where operativo=$2 and tarea = $3 and enc=$4
+                    set estado = $6
+                    where operativo=$1 and enc=$2 and tarea = $3
+                           and tarea = (select tarea from tem where operativo = $4 and enc = $5)
                     returning *`,
-                [accion.estado_destino, params.operativo, params.tarea, params.enc])
+                [params.operativo, params.enc, params.tarea, params.operativo, params.enc, accion.estado_destino])
+            .fetchUniqueRow();
+            //estado se actualiza por trigger
+            await context.client.query(`
+                UPDATE tem 
+                    set tarea = $3
+                    where operativo=$1 and enc=$2
+                    returning *`,
+                [params.operativo, params.enc, accion.tarea_destino])
             .fetchUniqueRow();
             if(accion.nombre_procedure){
                 if(be.procedure[accion.nombre_procedure]){

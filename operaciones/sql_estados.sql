@@ -208,3 +208,36 @@ alter table "acciones" add column "recepciona" boolean not null default 'false';
 
 alter table "estados" rename column "permite_manipular_encuesta" to "visible_en_recepcion";
 alter table "estados" rename column "permite_asignar_encuestador" to "visible_en_asignacion";
+
+alter table estados_acciones alter column condicion set not null;
+alter table estados_acciones alter column estado_destino set not null;
+alter table estados_acciones alter column eaccion_direccion set not null; 
+
+alter table estados_acciones add column tarea_destino text;
+
+alter table "estados_acciones" add constraint "tarea_destino<>''" check ("tarea_destino"<>'');
+alter table "estados_acciones" add constraint "estados_acciones tareadest REL" foreign key ("operativo", "tarea_destino") references "tareas" ("operativo", "tarea")  on update cascade;
+
+update estados_acciones set tarea_destino = 'encu';
+
+alter table estados_acciones alter column tarea_destino set not null;
+
+CREATE OR REPLACE FUNCTION base.actualizar_estado_tem_trg()
+    RETURNS trigger
+    LANGUAGE 'plpgsql'
+AS $BODY$
+
+begin
+    update tem set estado = new.estado where operativo = new.operativo and enc = new.enc;
+    return new;
+end;
+$BODY$;
+
+ALTER FUNCTION base.actualizar_estado_tem_trg()
+    OWNER TO ggs2022_owner;
+
+CREATE TRIGGER actualizar_estado_tem_trg
+    AFTER INSERT OR UPDATE OF estado
+    ON base.tareas_tem
+    FOR EACH ROW
+    EXECUTE FUNCTION base.actualizar_estado_tem_trg();

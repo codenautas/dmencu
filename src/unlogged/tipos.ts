@@ -478,6 +478,7 @@ export type EstadoAccion = {
     eaccion: string
     condicion: string
     estado_destino: string
+    tarea_destino: string
     eaccion_direccion: DireccionAccion
     path_icono_svg: string
     nombre_procedure: string

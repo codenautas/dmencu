@@ -51,6 +51,7 @@ install:
       - control_disform_cerrado_trg.sql
       - control_cargado_tareas_tem_trg.sql
       - accion_cumple_condicion.sql
+      - actualizar_estado_tem_trg.sql
 login:
   infoFieldList: [usuario, rol, idper]
   table: usuarios
