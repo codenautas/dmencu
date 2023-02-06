@@ -5,7 +5,7 @@ import { FieldDefinition } from "rel-enc";
 
 export function tareas_tem(context:TableContext):TableDefinition {
     var be=context.be;
-    var db=be.db;
+    var db=be.db; 
     var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';       
     var fields:FieldDefinition[]=[
         {name:'operativo'                   , typeName:'text', isPk:2},
@@ -15,9 +15,10 @@ export function tareas_tem(context:TableContext):TableDefinition {
         {name:'abrir'                       , typeName:'text'        , editable:false   , inTable:false, clientSide:'abrirRecepcion'},
         {name:"consistir"                   , typeName: 'text'       , editable:false   , inTable:false, clientSide:'consistir'},
         {name:'area'                        , typeName: 'integer'    , editable:false   , inTable:false },
-        {name:'ok'                          , typeName: 'text'       , editable:false   , inTable:false },
+      //  {name:'ok'                          , typeName: 'text'       , editable:false   , inTable:false },
         {name:"habilitada"                  , typeName: "boolean"    , editable:puedeEditar},
-        {name:'asignante'                   , typeName:'text'        , editable:false   , inTable:false}, // va a la hoja de ruta
+        {name:'asignante'                   , typeName:'text'        , editable:false, inTable:false}, // va a la hoja de ruta
+        {name:'recepcionista_tarea'         , typeName:'text'        , editable:true,  references:'recepcionistas' }, 
         {name:'asignado'                    , typeName:'text'}, // va a la hoja de ruta
         {name:'operacion'                   , typeName:'text'}, // cargar/descargar
         {name:'fecha_asignacion'            , typeName:'date'}, // cargar/descargar
@@ -46,7 +47,41 @@ export function tareas_tem(context:TableContext):TableDefinition {
         {name:'utl_rea_sup'                 , typeName:'integer'     , editable: false ,  inTable:false},
         {name:'ult_norea_sup'               , typeName:'integer'     , editable: false ,  inTable:false},
         {name:'ult_resumen_estado_sup'      , typeName:'text'        , editable: false ,  inTable:false},
-        ]; 
+        ];
+        var ok_string=` coalesce(nullif(
+            case when tareas_tem.asignado is null and tareas_tem.verificado is not null then 'Verificado-asignado vacio'
+                --when tareas_tem.verificado is not null and tareas_tem.habilitada then 'Falta deshabilitar'
+            else '' end 
+            ||case when tareas_tem.asignado is null and tareas_tem.operacion is not null then 'Operacion sin asignado'
+                when tareas_tem.verificado is not null and coalesce(tareas_tem.operacion,'descargar')='cargar' then 'Verificado-cargado'
+                when tareas_tem.dominio=3 and tareas_tem.verificado is not null and tareas_tem.operacion is null then 'Verificado sin operacion '
+            else '' end
+            ||(select case
+                    when tareas_tem.habilitada and tareas_tem.tarea='recu' and count(*) filter(where h.verificado is not null and h.tarea='encu') =0  then 'Tarea previa a recu sin verificar'
+                    when tareas_tem.habilitada and tareas_tem.tarea='supe' and (count(*) filter (where h.verificado is not null and h.tarea <>'supe') )=0  then 'Tarea previa a supe sin verificar'
+                    when tareas_tem.habilitada and tareas_tem.tarea='supe' 
+                        and (count(*) filter (where not h.habilitada  and h.tarea ='recu' and no_rea.grupo0~*'^ausencia|rechazo' ))>0  then 'RECUPERAR antes de habil. Supervision'
+                else '' end  
+                from tareas_tem h join tem  using (operativo, enc) left join no_rea on tem.norea=(no_rea.no_rea)::integer
+               where h.enc=tareas_tem.enc and h.operativo=tareas_tem.operativo
+            )
+            ||(select case 
+                when count(cargado_dm)>1  then '+cargados'
+                when count(*) filter (where habilitada is true and verificado is null)>1 then '+habilitadas sin verificar'
+                when count(*) filter (where operacion='cargar')>1   then '+opeCargar'
+                else '' end
+        from tareas_tem h 
+        where h.enc=tareas_tem.enc and h.operativo=tareas_tem.operativo
+        )
+        || (select case
+            when count(i.consistencia)>0 then 'Revisar inconsist' 
+            else '' end
+            from inconsistencias i join consistencias c using(operativo, consistencia)
+            where i.operativo=tareas_tem.operativo and i.vivienda=tareas_tem.enc and tareas_tem.tarea='encu' 
+               and i.justificacion is null and c.valida and c.activa
+        )
+     ,''),'✔')
+    `; // a determinar si es necesario mantenerla
     return {
         name:`tareas_tem`,
         tableName:`tareas_tem`,
@@ -69,6 +104,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
             {references:'usuarios', fields:[{source:'asignante', target:'idper'}], alias:'at'},
             {references:'tem_recepcion' , fields:['operativo','enc'], displayAllFields:true, displayAfterFieldName:'resumen_estado_sup'},
             {references:'tokens', fields:[{source:'cargado_dm', target:'token'}], displayFields:['username'], displayAfterFieldName:'cargado'},
+           // {references:'recepcionistas', fields:[{source:'recepcionista_tarea', target:'persona'}], alias:'rec'},
         ],
         "detailTables": [
             {table: "inconsistencias", abr: "I", fields: [{source:'operativo', target:'operativo'},{source:'enc', target:'vivienda'}], refreshParent:true, refreshFromParent:true}
@@ -78,40 +114,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
             insertIfNotUpdate:true,
             fields:{
                 ok:{ 
-                    expr:` coalesce(nullif(
-                                case when tareas_tem.asignado is null and tareas_tem.verificado is not null then 'Verificado-asignado vacio'
-                                    --when tareas_tem.verificado is not null and tareas_tem.habilitada then 'Falta deshabilitar'
-                                else '' end 
-                                ||case when tareas_tem.asignado is null and tareas_tem.operacion is not null then 'Operacion sin asignado'
-                                    when tareas_tem.verificado is not null and coalesce(tareas_tem.operacion,'descargar')='cargar' then 'Verificado-cargado'
-                                    when tareas_tem.dominio=3 and tareas_tem.verificado is not null and tareas_tem.operacion is null then 'Verificado sin operacion '
-                                else '' end
-                                ||(select case
-                                        when tareas_tem.habilitada and tareas_tem.tarea='recu' and count(*) filter(where h.verificado is not null and h.tarea='encu') =0  then 'Tarea previa a recu sin verificar'
-                                        when tareas_tem.habilitada and tareas_tem.tarea='supe' and (count(*) filter (where h.verificado is not null and h.tarea <>'supe') )=0  then 'Tarea previa a supe sin verificar'
-                                        when tareas_tem.habilitada and tareas_tem.tarea='supe' 
-                                            and (count(*) filter (where not h.habilitada  and h.tarea ='recu' and no_rea.grupo0~*'^ausencia|rechazo' ))>0  then 'RECUPERAR antes de habil. Supervision'
-                                    else '' end  
-                                    from tareas_tem h join tem  using (operativo, enc) left join no_rea on tem.norea=(no_rea.no_rea)::integer
-                                   where h.enc=tareas_tem.enc and h.operativo=tareas_tem.operativo
-                                )
-                                ||(select case 
-                                    when count(cargado_dm)>1  then '+cargados'
-                                    when count(*) filter (where habilitada is true and verificado is null)>1 then '+habilitadas sin verificar'
-                                    when count(*) filter (where operacion='cargar')>1   then '+opeCargar'
-                                    else '' end
-                            from tareas_tem h 
-                            where h.enc=tareas_tem.enc and h.operativo=tareas_tem.operativo
-                            )
-                            || (select case
-                                when count(i.consistencia)>0 then 'Revisar inconsist' 
-                                else '' end
-                                from inconsistencias i join consistencias c using(operativo, consistencia)
-                                where i.operativo=tareas_tem.operativo and i.vivienda=tareas_tem.enc and tareas_tem.tarea='encu' 
-                                   and i.justificacion is null and c.valida and c.activa
-                            )
-                         ,''),'✔')
-                    `
+                    expr:ok_string
                 },
             },
             from:`(

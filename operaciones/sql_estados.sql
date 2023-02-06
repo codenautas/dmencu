@@ -241,3 +241,5 @@ CREATE TRIGGER actualizar_estado_tem_trg
     ON base.tareas_tem
     FOR EACH ROW
     EXECUTE FUNCTION base.actualizar_estado_tem_trg();
+
+alter table "tareas_tem" add column "recepcionista_tarea" text ;

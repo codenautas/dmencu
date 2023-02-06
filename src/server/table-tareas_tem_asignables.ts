@@ -40,7 +40,7 @@ export function tareas_tem_asignables(context:TableContext):TableDefinition {
     tableDef.fields.splice(14,0,
         {name:"habilitar"                   , typeName: "boolean"    , editable:false   , inTable:false, clientSide:'habilitar'},
     );
-    tableDef.hiddenColumns=['cargado_dm','notas', 'acciones'];
+    tableDef.hiddenColumns=['cargado_dm','notas', 'acciones','fecha_asignacion'];
     checkMyActions(tableDef,'asigna');
     return tableDef
 }
