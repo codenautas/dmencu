@@ -391,15 +391,15 @@ var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
         }
         
         var confirmPromiseOpts: DialogOptions = {}
-        if(action.eaccion_direccion=='avance'){
-            actionFun();
-        }else{
+        if(action.confirma){
             confirmPromiseOpts.askForNoRepeat = 'no volver a mostrar'; //muestra mensaje por default pero anda igual
             var buttonsDef = [
                 {label:'sí', value:true},
                 {label:'no', value:false}
             ]
             confirmPromise(`confirma acción "${action.eaccion}"?`, {...confirmPromiseOpts, buttonsDef}).then(actionFun);
+        }else{
+            actionFun();
         }
     }
     return button

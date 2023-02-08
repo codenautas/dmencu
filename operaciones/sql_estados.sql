@@ -243,3 +243,5 @@ CREATE TRIGGER actualizar_estado_tem_trg
     EXECUTE FUNCTION base.actualizar_estado_tem_trg();
 
 alter table "tareas_tem" add column "recepcionista_tarea" text ;
+
+alter table "acciones" add column "confirma" boolean not null default 'false';

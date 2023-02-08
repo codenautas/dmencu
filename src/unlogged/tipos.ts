@@ -483,4 +483,5 @@ export type EstadoAccion = {
     path_icono_svg: string
     nombre_procedure: string
     desactiva_boton: boolean
+    confirma: boolean
 }
