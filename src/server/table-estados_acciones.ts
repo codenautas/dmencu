@@ -20,7 +20,7 @@ export function estados_acciones(context:TableContext):TableDefinition {
             {name:'eaccion_direccion'       , typeName:'text' ,  nullable: false},
             {name:'nombre_procedure'        , typeName:'text'},
         ],
-        primaryKey:['operativo', 'tarea', 'estado','eaccion', 'estado_destino'],
+        primaryKey:['operativo', 'tarea', 'estado','eaccion','tarea_destino', 'estado_destino'],
         foreignKeys: [
             {references: 'tareas',fields: ['operativo','tarea']},
             {references: 'estados',fields: ['operativo','estado']},

@@ -148,7 +148,7 @@ update acciones
 
 set search_path=base;
 
-CREATE OR REPLACE FUNCTION accion_cumple_condicion(operativo text, estado text, enc text, tarea text, eaccion text,condicion text)
+CREATE OR REPLACE FUNCTION accion_cumple_condicion(operativo text, estado text, enc text, tarea text, eaccion text, tarea_destino text, condicion text)
 RETURNS boolean AS
 $BODY$
 DECLARE
@@ -162,8 +162,9 @@ BEGIN
     inner join base.estados_acciones ea using (operativo, estado, tarea)
     inner join tem te using (operativo,enc)
     left join sincronizaciones s on t.cargado_dm=s.token
-	left join viviendas v on (te.operativo =  v.operativo and te.enc = v.vivienda)
-    where t.operativo='''||$1||''' and t.estado='''||$2||'''  and t.enc='''||$3||'''  and t.tarea='''||$4||''' and ea.eaccion='''||$5 ||''' and '||vcond||';';
+	  left join viviendas v on (te.operativo =  v.operativo and te.enc = v.vivienda)
+    left join no_rea nr on (te.norea::text = nr.no_rea)
+    where t.operativo='''||$1||''' and t.estado='''||$2||'''  and t.enc='''||$3||'''  and t.tarea='''||$4||''' and ea.eaccion='''||$5 ||''' and ea.tarea_destino='''||$6 ||''' and '||vcond||';';
  --raise notice 'esto %',vsent;
  execute vsent into vsalida;
  IF vsalida=1 THEN
@@ -175,7 +176,7 @@ BEGIN
 END;
 $BODY$
  LANGUAGE plpgsql VOLATILE;
- ALTER FUNCTION accion_cumple_condicion(text, text, text, text,text,text) owner to ggs2022_owner;
+ ALTER FUNCTION accion_cumple_condicion(text, text, text, text,text,text, text) owner to ggs2022_owner;
 
 update estados_acciones set condicion='verificado is null' where operativo = 'GGS_2022' and tarea='encu' and estado='V' and eaccion='verificar';
 
@@ -228,16 +229,14 @@ CREATE OR REPLACE FUNCTION base.actualizar_estado_tem_trg()
 AS $BODY$
 
 begin
-    update tem set estado = new.estado where operativo = new.operativo and enc = new.enc;
+    update tem set estado = new.estado, tarea = new.tarea where operativo = new.operativo and enc = new.enc;
     return new;
 end;
 $BODY$;
 
-ALTER FUNCTION base.actualizar_estado_tem_trg()
-    OWNER TO ggs2022_owner;
-
+DROP trigger if exists actualizar_estado_tem_trg  on base.tareas_tem;
 CREATE TRIGGER actualizar_estado_tem_trg
-    AFTER INSERT OR UPDATE OF estado
+    AFTER INSERT OR UPDATE OF estado, tarea
     ON base.tareas_tem
     FOR EACH ROW
     EXECUTE FUNCTION base.actualizar_estado_tem_trg();
@@ -245,3 +244,7 @@ CREATE TRIGGER actualizar_estado_tem_trg
 alter table "tareas_tem" add column "recepcionista_tarea" text ;
 
 alter table "acciones" add column "confirma" boolean not null default 'false';
+
+alter table base.estados_acciones DROP CONSTRAINT IF EXISTS estados_acciones_pkey;
+ALTER TABLE IF EXISTS base.estados_acciones
+    ADD CONSTRAINT estados_acciones_pkey PRIMARY KEY (operativo, tarea, estado, eaccion, tarea_destino, estado_destino);

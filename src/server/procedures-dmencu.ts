@@ -891,34 +891,50 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             const ANALIZAR_CONDICION = true;
             if(ANALIZAR_CONDICION){
                 var cumple:boolean = (await context.client.query(
-                    `select accion_cumple_condicion($6, $7, $8, $9, $10, (
+                    `select accion_cumple_condicion($7, $8, $9, $10, $11, $12, (
                         select condicion 
                           from estados_acciones 
-                          where operativo = $1 and tarea = $2 and estado = $3 and eaccion = $4 and estado_destino = $5
+                          where operativo = $1 and tarea = $2 and estado = $3 and eaccion = $4 and estado_destino = $5 and tarea_destino = $6
                     )
-                )`, [params.operativo, params.tarea, accion.estado, accion.eaccion, accion.estado_destino,
-                params.operativo, accion.estado, params.enc, params.tarea, accion.eaccion])
+                )`, [
+                    params.operativo, 
+                    params.tarea, 
+                    accion.estado, 
+                    accion.eaccion, 
+                    accion.estado_destino,
+                    accion.tarea_destino,
+                    params.operativo, 
+                    accion.estado, 
+                    params.enc, 
+                    params.tarea, 
+                    accion.eaccion,
+                    accion.tarea_destino
+                ])
                 .fetchUniqueValue()).value;
                 if(!cumple){
                     throw Error(`No se cumple la condición ${params.condicion}.`)
                 }
             }
+            var myParams = [
+                params.operativo, 
+                params.enc, 
+                accion.tarea_destino == params.tarea?params.tarea:accion.tarea_destino, 
+                accion.estado_destino
+            ];
+            if(accion.tarea_destino == params.tarea){
+                myParams = myParams.concat([
+                    params.operativo, 
+                    params.enc
+                ])
+            }
             var result = await context.client.query(`
                 UPDATE tareas_tem 
-                    set estado = $6
+                    set estado = $4
                     where operativo=$1 and enc=$2 and tarea = $3
-                           and tarea = (select tarea from tem where operativo = $4 and enc = $5)
+                        ${accion.tarea_destino == params.tarea?'and tarea = (select tarea from tem where operativo = $5 and enc = $6)':''}
                     returning *`,
-                [params.operativo, params.enc, params.tarea, params.operativo, params.enc, accion.estado_destino])
-            .fetchUniqueRow();
-            //estado se actualiza por trigger
-            await context.client.query(`
-                UPDATE tem 
-                    set tarea = $3
-                    where operativo=$1 and enc=$2
-                    returning *`,
-                [params.operativo, params.enc, accion.tarea_destino])
-            .fetchUniqueRow();
+                myParams
+            ).fetchUniqueRow();
             if(accion.nombre_procedure){
                 if(be.procedure[accion.nombre_procedure]){
                     await be.procedure[accion.nombre_procedure].coreFunction(context, params)

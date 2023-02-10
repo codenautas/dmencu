@@ -1,6 +1,6 @@
 --set role to ggs2022_owner;
 --set search_path=base;
-CREATE OR REPLACE FUNCTION accion_cumple_condicion(operativo text, estado text, enc text, tarea text, eaccion text,condicion text)
+CREATE OR REPLACE FUNCTION accion_cumple_condicion(operativo text, estado text, enc text, tarea text, eaccion text, tarea_destino text, condicion text)
 RETURNS boolean AS
 $BODY$
 DECLARE
@@ -14,8 +14,9 @@ BEGIN
     inner join base.estados_acciones ea using (operativo, estado, tarea)
     inner join tem te using (operativo,enc)
     left join sincronizaciones s on t.cargado_dm=s.token
-	left join viviendas v on (te.operativo =  v.operativo and te.enc = v.vivienda)
-    where t.operativo='''||$1||''' and t.estado='''||$2||'''  and t.enc='''||$3||'''  and t.tarea='''||$4||''' and ea.eaccion='''||$5 ||''' and '||vcond||';';
+	  left join viviendas v on (te.operativo =  v.operativo and te.enc = v.vivienda)
+    left join no_rea nr on (te.norea::text = nr.no_rea)
+    where t.operativo='''||$1||''' and t.estado='''||$2||'''  and t.enc='''||$3||'''  and t.tarea='''||$4||''' and ea.eaccion='''||$5 ||''' and ea.tarea_destino='''||$6 ||''' and '||vcond||';';
  --raise notice 'esto %',vsent;
  execute vsent into vsalida;
  IF vsalida=1 THEN

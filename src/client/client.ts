@@ -364,7 +364,7 @@ var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
     let button = html.button({
         class:`boton-accion boton-accion-${action.eaccion_direccion}`
     },[
-        action.eaccion,
+        `${action.eaccion}${action.tarea != action.tarea_destino?' '+ action.tarea_destino:''}`,
         //@ts-ignore svg es htmlelement
         action.path_icono_svg?svg:null,
     ]).create();
@@ -477,7 +477,8 @@ myOwn.clientSides.accionesBlanqueo={
     }
 };
 
-function botonClientSideEnGrilla(opts: { nombreBoton: string, llamada: (depot: myOwn.Depot) => Promise<any> }) {
+function 
+botonClientSideEnGrilla(opts: { nombreBoton: string, llamada: (depot: myOwn.Depot) => Promise<any> }) {
     return {
         prepare: function (depot: myOwn.Depot, fieldName: string) {
             var td = depot.rowControls[fieldName];

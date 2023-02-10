@@ -24,7 +24,8 @@ export function checkMyActions(tableDef:TableDefinition, myField:string){
                     select ea.*, ac.path_icono_svg, ac.desactiva_boton, ac.confirma
                         from estados_acciones ea join acciones ac using (operativo, eaccion)
                         where ea.operativo = aux.operativo and ea.tarea = aux.tarea and ea.estado = aux.estado and ac.${myField}
-                        and accion_cumple_condicion(aux.operativo, ea.estado, aux.enc, aux.tarea, ea.eaccion,ea.condicion)
+                        and accion_cumple_condicion(aux.operativo, ea.estado, aux.enc, aux.tarea, ea.eaccion, ea.tarea_destino, ea.condicion)
+                    order by ac.eaccion
                 ) z
             ) y
         )`

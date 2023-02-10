@@ -111,7 +111,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
         ],
         sql:{
             isTable: true,
-            insertIfNotUpdate:true,
+            //insertIfNotUpdate:true,
             fields:{
                 ok:{ 
                     expr:ok_string
@@ -135,6 +135,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
                     , e.visible_en_recepcion
                     from tareas join  tem t using (operativo) 
                         left join areas using (operativo, area)
+                        --left join lateral (select * from tareas_tem where tarea=tareas.tarea and operativo=t.operativo and enc=t.enc) tt on true
                         left join lateral (select * from tareas_tem where tarea=tareas.tarea and operativo=t.operativo and enc=t.enc) tt on 
                             (t.operativo = tt.operativo and t.tarea = tt. tarea and t.estado = tt.estado) --muestro segun tarea y estado actual en la tem
                         left join no_rea y on t.norea=y.no_rea::integer
