@@ -526,7 +526,8 @@ function botonClientSideEnGrilla(opts: { nombreBoton: string, llamada: (depot: m
 myOwn.clientSides.consistir = botonClientSideEnGrilla({
     nombreBoton: 'consistir',
     llamada: function (depot: myOwn.Depot) {
-        var filtroRea=consistir_filtro(depot.row.tarea, depot.row.utl_rea, depot.row.rea)
+        var myReaFieldName = depot.manager.def.tableName=="tem"?'rea':'ult_rea';
+        var filtroRea=consistir_filtro(depot.row.tarea, depot.row[myReaFieldName], depot.row.rea)
         return filtroRea? myOwn.ajax.consistir_encuesta({
             operativo: depot.row.operativo,
             id_caso: depot.row.enc

@@ -30,7 +30,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
         {name:'norea'                       , typeName:'integer'     , editable: puedeEditar, label:'norea_dm'},
         //{name:'cod_no_rea'                , typeName:'text'        , editable: false   , inTable:false  },
         {name:'resumen_estado'              , typeName:'text'        , editable: false   , label: 'resumen_estado_dm'},
-        {name:'utl_rea'                     , typeName:'integer'     , editable: false   ,  inTable:false},
+        {name:'ult_rea'                     , typeName:'integer'     , editable: false   ,  inTable:false},
         {name:'ult_norea'                   , typeName:'integer'     , editable: false   ,  inTable:false},
         {name:'ult_gru_no_rea'              , typeName:'text'        , editable: false   , inTable:false  },
         {name:'ult_resumen_estado'          , typeName:'text'        , editable: false   ,  inTable:false},
@@ -44,7 +44,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
         {name:'rea_sup'                     , typeName:'integer'     , editable: puedeEditar},
         {name:'norea_sup'                   , typeName:'integer'     , editable: puedeEditar},
         {name:'resumen_estado_sup'          , typeName:'text'        , editable: false},
-        {name:'utl_rea_sup'                 , typeName:'integer'     , editable: false ,  inTable:false},
+        {name:'ult_rea_sup'                 , typeName:'integer'     , editable: false ,  inTable:false},
         {name:'ult_norea_sup'               , typeName:'integer'     , editable: false ,  inTable:false},
         {name:'ult_resumen_estado_sup'      , typeName:'text'        , editable: false ,  inTable:false},
         ];
@@ -127,8 +127,8 @@ export function tareas_tem(context:TableContext):TableDefinition {
                         when 'recepcionista' then areas.recepcionista end as asignante
                     , case when tt.tarea='recu' and y.grupo0 in ('ausentes','rechazos') then 'recuperacion' else null end a_recuperacion   
                     , t.supervision_aleatoria
-                    , t.rea utl_rea, t.norea as ult_norea, t.resumen_estado ult_resumen_estado
-                    , t.rea_sup utl_rea_sup, t.norea_sup as ult_norea_sup, t.resumen_estado_sup ult_resumen_estado_sup
+                    , t.rea ult_rea, t.norea as ult_norea, t.resumen_estado ult_resumen_estado
+                    , t.rea_sup ult_rea_sup, t.norea_sup as ult_norea_sup, t.resumen_estado_sup ult_resumen_estado_sup
                     , dominio
                     , v.consistido
                     , e.visible_en_asignacion
