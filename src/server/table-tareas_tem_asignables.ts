@@ -1,6 +1,6 @@
 "use strict";
 
-import {TableDefinition, TableContext} from "./types-dmencu";
+import {TableDefinition, TableContext, FieldDefinition} from "./types-dmencu";
 
 import {tareas_tem} from "./table-tareas_tem";
 
@@ -13,6 +13,10 @@ export function addButtons(tableDef:TableDefinition){
         {name:"visible_en_asignacion" , typeName: "boolean"    , editable:false   , inTable:false, visible:false, defaultDbValue:'false' },
         {name:"visible_en_recepcion"  , typeName: "boolean"    , editable:false   , inTable:false, visible:false, defaultDbValue:'true' },
     );
+    tableDef.fields.forEach((field:FieldDefinition)=>field.table='tareas_tem');
+    tableDef.selfRefresh = true;
+    tableDef.primaryKey = ['operativo','enc'];
+    tableDef.isTable = false;
     return tableDef
 }
 
