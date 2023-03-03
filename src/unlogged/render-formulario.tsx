@@ -22,7 +22,7 @@ import {Bloque, BotonFormulario,
     toPlainForPk,
     IdCasillero,
     PreguntaConSiNo,
-    Texto, Estructura, InformacionHdr, DatosHdrUaPpal, ConfiguracionSorteoFormulario, ResumenEstado, DatosByPassPersistibles, IdOperativo, IdEnc
+    Texto, Estructura, InformacionHdr, DatosHdrUaPpal, ConfiguracionSorteoFormulario, ResumenEstado, DatosByPassPersistibles, IdOperativo, IdEnc, Libre
 } from "./tipos";
 import{ 
     accion_abrir_formulario,
@@ -107,6 +107,15 @@ window.addEventListener('load', ()=>{
 
 type CommonAttributes = {className?:string,style?:CSSProperties,id?:string, tabIndex?:number} // CSSProperties
 type ColorValues = 'primary'|'secondary'|'default'|'inherit'
+
+export type LibreDespliegueType = (props:{
+    key:string
+    casillero:Libre
+    formulario:Formulario
+    forPk:ForPk
+})=>JSX.Element;
+
+var LibreDespliegue: LibreDespliegueType
 
 const Button = ({variant, onClick, disabled, children, className, color, size, 
         disableElevation, disableFocusRipple, disableRipple, fullWidth, 
@@ -858,6 +867,7 @@ function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
         // var nuevaForPk={...forPk, formulario:idFormularioDestino};
         // nuevaForPk[nuevoCampoPk] = defBoton.num
         dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:defBoton.forPk, apilarVuelta:true}));
+        dispatchByPass(accion_abrir_formulario,{forPk:defBoton.forPk})
     }
     return <DesplegarCasillero 
         id={`${id}-externo`}
@@ -1248,6 +1258,7 @@ function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Blo
                     casillero.tipoc == "CONS"?<ConsistenciaDespliegue key={key} casillero={casillero} forPk={props.forPk}/>:
                     casillero.tipoc == "CP"?<ConjuntoPreguntasDespliegue key={key} casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
                     casillero.tipoc == "TEXTO"?<TextoDespliegue key={key} casillero={casillero} forPk={props.forPk}/>:
+                    casillero.tipoc == "LIBRE"?<LibreDespliegue key={key} casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
                     <CasilleroDesconocido key={key} casillero={casillero} forPk={props.forPk}/>
                 )
             :i==limiteNoVerTodo?
@@ -2014,6 +2025,15 @@ function loadInstance(){
     })
     //mostrarQuienesSomos();
 }
+
+export const setLibreDespliegue = (libre:LibreDespliegueType)=>LibreDespliegue = libre
+
+setLibreDespliegue((props:{
+    key:string
+    casillero:Libre
+    formulario:Formulario
+    forPk:ForPk
+})=><div key={props.key} id={props.casillero.id_casillero}>este casillero debe redefinirse en la APP final y su uso es exclusivo del área informática</div>)
 
 setCalcularVariables((respuestasRaiz:RespuestasRaiz, forPk:ForPk)=>{
     //TODO GENERALIZAR

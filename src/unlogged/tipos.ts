@@ -20,7 +20,7 @@ export type IdFin = 'fin'; // never // TODO: poder poner 'FIN'
 export type IdDestino = IdPregunta | IdBloque | IdFin | IdFiltro 
 export type Valor = string|number|null;
 export type TipocDestinos = 'P'|'CP'|'B'|'FILTRO'|'BF'
-export type Tipoc = TipocDestinos | 'F'|'O'|'OM'|'CONS' |'TEXTO'
+export type Tipoc = TipocDestinos | 'F'|'O'|'OM'|'CONS' |'TEXTO' | 'LIBRE'
 
 export type IdTarea = 'encu'|'recu'|'supe';
 
@@ -171,6 +171,13 @@ export type Texto = CasilleroBase & {
     tipovar?:null
     primera_variable?:null
 }
+export type Libre = CasilleroBase & {
+    tipoc:'LIBRE'
+    casillero:IdTexto
+    var_name?:null
+    tipovar?:null
+    primera_variable?:null
+}
 export type BotonFormulario = CasilleroBase & {
     tipoc:'BF'
     casillero:IdBotonFormulario
@@ -192,7 +199,7 @@ export type Formulario = CasilleroBase & {
     unidad_analisis:IdUnidadAnalisis
 }
 
-export type CasillerosImplementados=Formulario|Bloque|Filtro|ConjuntoPreguntas|Pregunta|OpcionMultiple|Opcion|BotonFormulario|Consistencia|Texto
+export type CasillerosImplementados=Formulario|Bloque|Filtro|ConjuntoPreguntas|Pregunta|OpcionMultiple|Opcion|BotonFormulario|Consistencia|Texto|Libre
 
 export type CampoPkRaiz = 'vivienda'|'etc...';
 
