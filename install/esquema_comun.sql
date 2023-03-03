@@ -4,8 +4,8 @@
 
 drop schema if exists "comun" cascade;
 create schema "comun";
-grant usage on schema "comun" to "preju2022_admin";
-grant create on schema "comun" to "preju2022_admin";
+--grant usage on schema "comun" to "preju2022_admin";
+--grant create on schema "comun" to "preju2022_admin";
 
 CREATE OR REPLACE FUNCTION comun.informado("P_valor" anyelement)
   RETURNS boolean AS
