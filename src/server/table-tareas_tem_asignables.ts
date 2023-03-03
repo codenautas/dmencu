@@ -4,7 +4,7 @@ import {TableDefinition, TableContext, FieldDefinition} from "./types-dmencu";
 
 import {tareas_tem} from "./table-tareas_tem";
 
-export function addButtons(tableDef:TableDefinition){
+export function addButtonsAndSetDefinition(tableDef:TableDefinition){
     tableDef.fields.splice(4,0,
         {name:"acciones"                    , typeName: 'jsonb'      , editable:false   , inTable:false},
         {name:"acciones_avance"             , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesAvance'},
@@ -14,7 +14,8 @@ export function addButtons(tableDef:TableDefinition){
         {name:"visible_en_recepcion"  , typeName: "boolean"    , editable:false   , inTable:false, visible:false, defaultDbValue:'true' },
     );
     tableDef.fields.forEach((field:FieldDefinition)=>field.table='tareas_tem');
-    tableDef.selfRefresh = true;
+    //tableDef.selfRefresh = true;
+    //tableDef.refrescable = true;
     tableDef.primaryKey = ['operativo','enc'];
     tableDef.isTable = false;
     return tableDef
@@ -41,7 +42,7 @@ export function tareas_tem_asignables(context:TableContext):TableDefinition {
     tableDef.filterColumns=[
         {column:'visible_en_asignacion', operator:'=', value:true}
     ];
-    addButtons(tableDef);
+    addButtonsAndSetDefinition(tableDef);
     tableDef.fields.splice(14,0,
         {name:"habilitar"                   , typeName: "boolean"    , editable:false   , inTable:false, clientSide:'habilitar'},
     );

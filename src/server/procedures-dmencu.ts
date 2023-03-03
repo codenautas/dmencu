@@ -912,7 +912,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 ])
                 .fetchUniqueValue()).value;
                 if(!cumple){
-                    throw Error(`No se cumple la condición ${params.condicion}.`)
+                    throw Error(`No se pudo ejecutar la acción, no se cumple la condición "${params.condicion}" o bien el estado está desactualizado, refresque la grilla.`)
                 }
             }
             var myParams = [
