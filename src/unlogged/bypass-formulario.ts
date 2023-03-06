@@ -53,7 +53,7 @@ export function setPersistirDatosByPass(persistirDatosByPassFun:typeof persistir
     persistirDatosByPassInterno = persistirDatosByPassFun;
 }
 
-async function persistirDatosByPass(dbpp:DatosByPassPersistibles){
+export async function persistirDatosByPass(dbpp:DatosByPassPersistibles){
     await persistirDatosByPassInterno(dbpp);
     datosByPass.dirty = false
     refrescarMarcaDirty();
