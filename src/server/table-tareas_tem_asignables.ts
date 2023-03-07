@@ -15,7 +15,7 @@ export function addButtonsAndSetDefinition(tableDef:TableDefinition){
     );
     tableDef.fields.forEach((field:FieldDefinition)=>field.table='tareas_tem');
     //tableDef.selfRefresh = true;
-    //tableDef.refrescable = true;
+    tableDef.refrescable = true;
     tableDef.primaryKey = ['operativo','enc'];
     tableDef.isTable = false;
     return tableDef
