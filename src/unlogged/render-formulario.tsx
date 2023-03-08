@@ -867,6 +867,7 @@ function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
         // var nuevaForPk={...forPk, formulario:idFormularioDestino};
         // nuevaForPk[nuevoCampoPk] = defBoton.num
         dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:defBoton.forPk, apilarVuelta:true}));
+        dispatchByPass(accion_abrir_formulario,{forPk:defBoton.forPk})
     }
     return <DesplegarCasillero 
         id={`${id}-externo`}
