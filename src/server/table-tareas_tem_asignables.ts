@@ -17,7 +17,7 @@ export function addButtonsAndSetDefinition(tableDef:TableDefinition){
     //tableDef.selfRefresh = true;
     tableDef.refrescable = true;
     tableDef.primaryKey = ['operativo','enc'];
-    tableDef.isTable = false;
+    tableDef.sql.isTable = false;
     return tableDef
 }
 
