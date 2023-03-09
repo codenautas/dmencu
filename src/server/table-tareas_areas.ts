@@ -48,7 +48,6 @@ export function tareas_areas(context:TableContext):TableDefinition {
                         left join lateral (select bool_or( tt.cargado_dm is not null ) as cargado 
                             from tareas_tem tt join tem t using (operativo, enc)  where tt.operativo=t.operativo and tt.enc=t.enc and tt.tarea=ta.tarea and t.area=ta.area and t.operativo = ta.operativo
                         ) tt on true
-                   ${opt.mis?`where (asignante = ${db.quoteNullable(context.user.idper)} or asignado = ${db.quoteNullable(context.user.idper)})`:''}
             )`
         }
     };
