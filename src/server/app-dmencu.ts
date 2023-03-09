@@ -44,7 +44,8 @@ import { tareas              } from './table-tareas';
 import { tareas_tem          } from './table-tareas_tem';
 import { tareas_areas        } from './table-tareas_areas';
 import { mis_tareas          } from './table-mis_tareas';
-import { mis_tareas_tem      } from './table-mis_tareas_tem';
+import { tareas_tem_asignables } from './table-tareas_tem_asignables';
+import { tareas_tem_recepcion  } from './table-tareas_tem_recepcion';
 import { mis_tareas_areas    } from './table-mis_tareas_areas';
 import { control_campo       } from './table-control_campo';
 import { control_resumen     } from './table-control_resumen';
@@ -56,10 +57,15 @@ import { visitas_sup         } from './table-visitas_sup';
 import { hogares_sup         } from './table-hogares_sup';
 import { personas_sup        } from './table-personas_sup';
 
+import { estados             } from './table-estados';
+import { acciones            } from './table-acciones';
+import { estados_acciones    } from './table-estados_acciones';
+
+
 export * from "./types-dmencu";
 import {defConfig} from "./def-config"
 
-const APP_DM_VERSION="#22-11-22";
+const APP_DM_VERSION="#22-12-15";
 
 export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamiento.AppProcesamientoType>>(Base:T){
   return class AppDmEncu extends Base{
@@ -579,7 +585,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , no_rea
             , no_rea_sup
             , semanas
-            , tem: tem
+            , estados
+            , acciones
+            , estados_acciones
+            , tem
             , tem_recepcion
             , parametros
             , operaciones
@@ -587,10 +596,11 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , areas
             , sincronizaciones
             , tareas
-            , tareas_tem: tareas_tem
+            , tareas_tem
             , tareas_areas
             , mis_tareas
-            , mis_tareas_tem
+            , tareas_tem_asignables
+            , tareas_tem_recepcion
             , mis_tareas_areas
             , control_campo
             , control_resumen
@@ -608,14 +618,14 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             )
             , control_campo_dominio: context=>control_campo(context, 
                 {nombre:'control_campo_comuna', title:'control campo x dominio', camposCorte:[{name:'dominio', typeName:'integer'}]}
-            ),
-            viviendas,
-            visitas,
-            hogares,      
-            personas,     
-            visitas_sup,  
-            hogares_sup,  
-            personas_sup,         
+            )
+            , viviendas
+            , visitas
+            , hogares
+            , personas
+            , visitas_sup
+            , hogares_sup
+            , personas_sup
         }
         be.appendToTableDefinition('consistencias',function(tableDef, context){
             tableDef.fields.forEach(function(field){

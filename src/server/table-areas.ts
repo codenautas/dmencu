@@ -67,8 +67,8 @@ export function areas(context:TableContext):TableDefinition {
             //{references:'supervisores', fields:[{source:'supervisor', target:'persona'}], alias:'per_supe'},
         ],
         detailTables:[
-            {table:'tareas_areas'     , fields:['operativo','area'], abr:'T', refreshParent:true, label:'tareas'},
-            {table:'tem'              , fields:['operativo','area'], abr:'E', refreshParent:true, label:'TEM'},
+            {table:'tareas_tem_asignables' , fields:['operativo','area'], abr:'A', refreshParent:true, label:'asignables'},
+            {table:`tareas_tem_recepcion`  , fields:['operativo', 'area'], abr:'R', refreshParent:true, label:'recepcion'},
         ],
         sql:{
             isTable:true,
