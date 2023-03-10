@@ -11,7 +11,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
         {name:'operativo'                   , typeName:'text', isPk:2},
         {name:'enc'                         , typeName:'text', isPk:3},
         {name:'tarea'                       , typeName:'text', isPk:1},
-        {name:'estado'                      , typeName:'text'        , editable:false   , nullable: false},
+        {name:'estado'                      , typeName:'text'        , editable:false   , nullable: false, defaultDbValue:'0D'},
         {name:'abrir'                       , typeName:'text'        , editable:false   , inTable:false, clientSide:'abrirRecepcion'},
         {name:"consistir"                   , typeName: 'text'       , editable:false   , inTable:false, clientSide:'consistir'},
         {name:'area'                        , typeName: 'integer'    , editable:false   , inTable:false },
