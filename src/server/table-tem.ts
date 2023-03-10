@@ -38,7 +38,7 @@ export function tem(context:Context, opts:any):TableDefinition {
             {name:"consistir"            , typeName: 'text'   , editable: false  , inTable:false, clientSide:'consistir'},
             {name: "cluster"             , typeName:'integer' , editable: false, isName:true},
             {name:'tarea'                , typeName:'text'    , editable: false  },
-            {name:'estado'               , typeName:'text'    , editable:false   , nullable: false},
+            {name:'estado'               , typeName:'text'    , editable:false   , nullable: false, defaultDbValue:"'0D'"},
             {name:'area'                 , typeName:'integer' , editable: false  },
             {name:'zona'                 , typeName:'text'    , editable: false  },
             {name:'rea'                  , typeName:'integer' , editable: false  },
