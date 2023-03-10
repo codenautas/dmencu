@@ -475,3 +475,20 @@ declare global {
         }
     }
 }
+
+export type DireccionAccion = 'avance' | 'retroceso' | 'blanqueo'
+
+export type EstadoAccion = {
+    operativo: string
+    tarea: 'encu'|'recu'|'supe'
+    estado: string
+    eaccion: string
+    condicion: string
+    estado_destino: string
+    tarea_destino: string
+    eaccion_direccion: DireccionAccion
+    path_icono_svg: string
+    nombre_procedure: string
+    desactiva_boton: boolean
+    confirma: boolean
+}

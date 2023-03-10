@@ -73,3 +73,6 @@ defunciones.tab
 /install/actualizaciones/actualizar2019-05-08.sql
 /install/actualizaciones
 /src/server/%1
+
+#backups de notepad++
+*.bak

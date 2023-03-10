@@ -1,12 +1,13 @@
 import {html} from "js-to-html";
 import {traerEstructura} from "../unlogged/redux-formulario";
 import { CasoState,  
-    IdFormulario, DatosByPassPersistibles, IdEnc, IdOperativo, IdTarea,
+    IdFormulario, DatosByPassPersistibles, IdEnc, IdOperativo, IdTarea, EstadoAccion, DireccionAccion,
 } from "../unlogged/tipos";
 import * as likeAr from "like-ar";
 import {getEstructura, setPersistirDatosByPass} from "../unlogged/bypass-formulario"
 import {BACKUPS, cargarEstructura, cargarHojaDeRuta, GLOVAR_DATOSBYPASS, GLOVAR_ESTRUCTURA, GLOVAR_MODOBYPASS} from "../unlogged/abrir-formulario"
 import { Operativo } from "meta-enc";
+import {sleep, coalesce} from "best-globals";
 
 //TODO GENERALIZAR
 
@@ -296,7 +297,7 @@ var crearBotonVerAbrirEncuesta = (operativo:IdOperativo,tarea:IdTarea,encuesta:n
 
 var crearBotonesVerAbrirTareas = async (depot:myOwn.Depot, fieldName:string, label:'abrir'|'ver')=>{
     tareas = tareas?tareas:(await myOwn.ajax.table_data({table: `tareas`, fixedFields:[]}));
-    var misTareas = tareas.filter((tarea)=>!!tarea.main_form && tarea.operativo==depot.row.operativo);
+    var misTareas = tareas.filter((tarea)=>!!tarea.main_form && tarea.operativo==depot.row.operativo && depot.manager.def.tableName=='tem'?true:depot.row.tarea == tarea.tarea);
     depot.rowControls[fieldName].innerHTML='';
     misTareas.forEach((tarea:{tarea:string, nombre:string, main_form:IdFormulario})=>{
         let buttonLabel = `${label} ${tarea.tarea}`;
@@ -327,7 +328,157 @@ myOwn.clientSides.abrirRecepcion={
     }
 };
 
-function botonClientSideEnGrilla(opts: { nombreBoton: string, llamada: (depot: myOwn.Depot) => Promise<any> }) {
+myOwn.clientSides.verIconoSvg={
+    prepare: (_depot, _fieldName)=>{},
+    update: (depot, fieldName)=>{
+        let td = depot.rowControls[fieldName];
+        td.innerHTML='';
+        if(depot.row.path_icono_svg){
+            var svg = html.svg({
+                class:"svg-acciones"
+            },[
+                html.path({
+                    d:depot.row.path_icono_svg
+                })
+            ]).create();
+            svg.setAttribute("viewBox","0 0 50 50");
+            td.appendChild(svg);
+        }
+    }
+};
+
+var crearSVG = (path:string,props:any) => {
+    var svg = html.svg(props || {},[
+        html.path({
+            d:path
+        })
+    ]).create();
+    svg.setAttribute("viewBox","0 0 50 50");
+    return svg
+}
+var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
+    var svg = crearSVG(action.path_icono_svg,{class:"svg-acciones"})
+    if(action.desactiva_boton){
+        return svg
+    }
+    let button = html.button({
+        class:`boton-accion boton-accion-${action.eaccion_direccion}`
+    },[
+        `${action.eaccion}${action.tarea != action.tarea_destino?' '+ action.tarea_destino:''}`,
+        //@ts-ignore svg es htmlelement
+        action.path_icono_svg?svg:null,
+    ]).create();
+    button.onclick = ()=> {
+        var actionFun = async ()=>{
+            button.disabled=true;
+            try{
+                var result = await my.ajax.accion_tareas_tem_ejecutar({
+                    operativo: depot.row.operativo,
+                    tarea: depot.row.tarea,
+                    enc: depot.row.enc,
+                    condicion: action.condicion,
+                    accion: action
+                });
+                console.log(result)
+                var grid=depot.manager;
+                grid.retrieveRowAndRefresh(depot)
+            }catch(err){
+                alertPromise(err.message)
+                throw err
+            }finally{
+                button.disabled=false;
+            }
+        }
+        
+        var confirmPromiseOpts: DialogOptions = {}
+        if(action.confirma){
+            confirmPromiseOpts.askForNoRepeat = 'no volver a mostrar'; //muestra mensaje por default pero anda igual
+            var buttonsDef = [
+                {label:'sí', value:true},
+                {label:'no', value:false}
+            ]
+            confirmPromise(`confirma acción "${action.eaccion}"?`, {...confirmPromiseOpts, buttonsDef}).then(actionFun);
+        }else{
+            actionFun();
+        }
+    }
+    return button
+}
+
+var crearBotonesAcciones = async (opts:{depot:myOwn.Depot, fieldName:string, direccion: DireccionAccion})=>{
+    let {depot,fieldName,direccion} = opts;
+    let td = depot.rowControls[fieldName];
+    td.innerHTML='';
+    (depot.rowControls.acciones.getTypedValue()||[])
+        .filter((action:EstadoAccion)=>action.eaccion_direccion==direccion)
+        .forEach((action:EstadoAccion)=>td.appendChild(crearBotonAccion(depot, action)));
+}
+
+var crearSwitch = (opts:{round?:boolean, disabled?:boolean, checked?:boolean, onClickFun:Function, onErrFun?:Function})=>{
+    var checkbox = html.input({type:'checkbox', checked:opts.checked}).create();
+    checkbox.onclick = async()=>{
+        try{
+            checkbox.disabled=true;
+            await opts.onClickFun()
+        }catch(err){
+            alertPromise(err.message)
+            throw err
+        }finally{
+            checkbox.disabled=false;
+        }
+    }
+    return html.label({class:'switch'},[
+        checkbox,
+        html.span({class:`slider ${opts.round?'round':''}`}),
+    ]).create();
+}
+
+myOwn.clientSides.habilitar={
+    prepare: (_depot, _fieldName)=>{},
+    update: (depot, fieldName)=>{
+        var td = depot.rowControls[fieldName];
+        td.innerHTML = "";
+        td.appendChild(
+            crearSwitch({
+                round:true,
+                checked:depot.row.habilitada,
+                onClickFun: async ()=>{
+                    await my.ajax.encuesta_habilitar_deshabilitar({
+                        operativo: depot.row.operativo,
+                        tarea: depot.row.tarea,
+                        enc: depot.row.enc
+                    });
+                    var grid=depot.manager;
+                    setTimeout(()=>grid.retrieveRowAndRefresh(depot),300);//para que se vea el efecto
+                }
+            })
+        );
+    }
+};
+
+myOwn.clientSides.accionesAvance={
+    prepare: (_depot, _fieldName)=>{},
+    update: (depot, fieldName)=>{
+        crearBotonesAcciones({depot,fieldName,direccion:'avance'});
+    }
+};
+
+myOwn.clientSides.accionesRetroceso={
+    prepare: (_depot, _fieldName)=>{},
+    update: (depot, fieldName)=>{
+        crearBotonesAcciones({depot,fieldName,direccion:'retroceso'});
+    }
+};
+
+myOwn.clientSides.accionesBlanqueo={
+    prepare: (_depot, _fieldName)=>{},
+    update: (depot, fieldName)=>{
+        crearBotonesAcciones({depot,fieldName,direccion:'blanqueo'});
+    }
+};
+
+function 
+botonClientSideEnGrilla(opts: { nombreBoton: string, llamada: (depot: myOwn.Depot) => Promise<any> }) {
     return {
         prepare: function (depot: myOwn.Depot, fieldName: string) {
             var td = depot.rowControls[fieldName];
@@ -376,7 +527,8 @@ function botonClientSideEnGrilla(opts: { nombreBoton: string, llamada: (depot: m
 myOwn.clientSides.consistir = botonClientSideEnGrilla({
     nombreBoton: 'consistir',
     llamada: function (depot: myOwn.Depot) {
-        var filtroRea=consistir_filtro(depot.row.tarea, depot.row.utl_rea, depot.row.rea)
+        var myReaFieldName = depot.manager.def.tableName=="tem"?'rea':'ult_rea';
+        var filtroRea=consistir_filtro(depot.row.tarea, depot.row[myReaFieldName], depot.row.rea)
         return filtroRea? myOwn.ajax.consistir_encuesta({
             operativo: depot.row.operativo,
             id_caso: depot.row.enc
