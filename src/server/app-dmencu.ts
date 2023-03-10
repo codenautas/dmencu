@@ -549,6 +549,11 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                             {menuType:'table', name:'tipoc'       , label:'tipos de celdas'},
                             {menuType:'table', name:'tipoc_tipoc' , label:'inclusiones de celdas'},
                         ]},
+                        {menuType:'menu', name:'estados_acciones', label:'estados/acciones' menuContent:[
+                            {menuType:'table', name:'estados'},
+                            {menuType:'table', name:'acciones'},
+                            {menuType:'table', name:'estados_acciones'},
+                        ]},
                         {menuType:'table', name:'parametros'},
                     ]},
                     {menuType:'menu', name:'usuarios', menuContent:[
