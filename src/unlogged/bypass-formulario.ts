@@ -18,7 +18,8 @@ import {
     ConfiguracionSorteoFormulario,
     DatosByPassPersistibles,
     IdEnc,
-    DefOperativo
+    DefOperativo,
+    iterator
 } from "./tipos";
 
 var especiales = {} as {
@@ -690,7 +691,7 @@ export const getFuncionValorar   = getFuncionCompilada(funcionesValorar);
 
 var rowValidator = getRowValidator<IdVariable, Valor, IdFin>({getFuncionHabilitar, getFuncionValorar})
 export var buscarNoReaEnRespuestas = (unidadesARecorrerPrm:IdUnidadAnalisis[],unidadAnalisis:UnidadAnalisis, respuestas:Respuestas,noReasTarea:{}[],nombNoRea:string)
-:{nrocodigo:string|null, esValor:boolean}=>{
+:{nrcodigo:string|null, esvalor:boolean}=>{
     var nrcodigo:string|null= null;
     var esvalor=false;
     var rvalor:string|null=null;
@@ -722,7 +723,7 @@ export var buscarNoReaEnRespuestas = (unidadesARecorrerPrm:IdUnidadAnalisis[],un
     }
     for(let ua of (likeAr(unidadAnalisis?.hijas).array())){
         if(ua?.unidad_analisis && respuestas[ua.unidad_analisis] instanceof Array){
-            for(let respuestasHijas of respuestas[ua?.unidad_analisis]){
+            for(let respuestasHijas of iterator(respuestas[ua?.unidad_analisis] ?? [])){
                let result= buscarNoReaEnRespuestas(unidadesARecorrerPrm,ua,respuestasHijas,noReasTarea,nombNoRea);
                 if(result.esvalor ){
                     nrcodigo=result.nrcodigo;
@@ -737,7 +738,7 @@ export var buscarNoReaEnRespuestas = (unidadesARecorrerPrm:IdUnidadAnalisis[],un
             }
         }
     }
-  return {nrcodigo, esvalor}
+    return {nrcodigo, esvalor}
  }
 
 
@@ -934,7 +935,7 @@ export function verificarSorteo(opts:{
         configuracionSorteo.sorteado_mostrar?.forEach((mostrar)=>respuestas[mostrar.target]=null);
         if('var_letra' in configuracionSorteo.param_metodo){
             if(respuestas[unidadAnalisis] && respuestas[unidadAnalisis] instanceof Array){
-                for(var per of respuestas[unidadAnalisis]){
+                for(var per of iterator(respuestas[unidadAnalisis])){
                     per[configuracionSorteo.param_metodo.var_letra] = null;
                 }
             }
@@ -983,15 +984,15 @@ export function verificarSorteo(opts:{
             }
             
             respuestas[configuracionSorteo.incompletas] = respuestasUA.filter(p=>expr_incompletitud_fun(p)).length;
-            
+            var var$p0 = "$p0" as IdVariable
             if(respuestas[configuracionSorteo.disparador]==1 &&
                 !respuestas[configuracionSorteo.resultado] &&
                 respuestas[configuracionSorteo.incompletas]==0
             ){
                 var sortear=respuestasUA.filter(p=>filtro_fun(p));
                 if(sortear.length){
-                    respuestasUA.forEach((per, i)=>per.$p0=i+1);
-                    configuracionSorteo.orden.push({variable:"$p0" as IdVariable, orden:1});
+                    respuestasUA.forEach((per, i)=>per[var$p0]=i+1);
+                    configuracionSorteo.orden.push({variable:var$p0, orden:1});
                     sortear.sort(compareForOrder(configuracionSorteo.orden.map(elem => ({column:elem.variable, order:elem.orden}))));
                     var posicionSorteada = null;
                     if(configuracionSorteo.metodo=='hash'){
@@ -1006,7 +1007,7 @@ export function verificarSorteo(opts:{
                         var letra = 'A';
                         const varLetra:IdVariable = configuracionSorteo.param_metodo.var_letra;
                         for(var persona of sortear){
-                            respuestasUA.find((_per,i)=>i==persona.$p0-1)![varLetra] = letra;
+                            respuestasUA.find((_per,i)=>i==persona[var$p0] as number - 1)![varLetra] = letra;
                             persona[varLetra]=letra;
                             letra = String.fromCharCode(letra.charCodeAt(0)+1);   
                         }
@@ -1152,7 +1153,7 @@ export function calcularFeedbackHojaDeRuta(){
         beingArray(conjuntoRespuestasUA).forEach((respuestas, valorPkOPosicion)=>{
             var valorPk = numberOrStringIncIfArray(valorPkOPosicion, conjuntoRespuestasUA);
             likeAr(estructura.formularios).filter(f=>f.casilleros.unidad_analisis == uaDef.unidad_analisis && esPrincipal(f.casilleros, valorPk as number)).forEach((_defF, formulario)=>{
-                var forPkRaiz = {formulario, [uaDef.pk_agregada]:valorPk}
+                var forPkRaiz = {formulario, [uaDef.pk_agregada]:valorPk} as ForPkRaiz
                 calcularFeedback(respuestas, forPkRaiz, {});
             })
         })
@@ -1296,7 +1297,7 @@ export function calcularResumenVivienda(
     //TODO ARREGLAR ESTE HORROR, GENERALIZAR
     var tarea = datosByPass.informacionHdr[forPkRaiz.vivienda as unknown as IdEnc].tarea.tarea;
     var resumenEstado:ResumenEstado;
-    var resumenEstadoSup:ResumenEstado;
+    var resumenEstadoSup:ResumenEstado = 'vacio';
     if(tarea=='supe'){
         resumenEstadoSup = esNoReaSup?'no rea':minResumen
         //para que coloree bien en la hdr del DM (luego en bbdd no se guarda)

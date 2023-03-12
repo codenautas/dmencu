@@ -1,5 +1,6 @@
 "use strict";
 import {Structure, Feedback} from "row-validator";
+import * as LikeAr from "like-ar";
 
 export type ModoAlmacenamiento = 'session'| // cuando sea para una sola pestaña, se usa en modo directo,
                                  'local'    // para todo el dispositivo, se usa al cargar hojas de ruta entres
@@ -82,6 +83,7 @@ export type OpcionMultiple=CasilleroBase & {
     casilleros:[OpcionSi, OpcionNo]
     calculada?:boolean
     libre?:boolean
+    valor_ns_nc: any
 }
 
 export type PreguntaBase = CasilleroBase & {
@@ -90,6 +92,7 @@ export type PreguntaBase = CasilleroBase & {
     casillero:IdPregunta
     calculada: boolean|null
     libre: boolean|null
+    valor_ns_nc: any
 }
 
 export type PreguntaSimple = PreguntaBase & {
@@ -205,6 +208,7 @@ export type CampoPkRaiz = 'vivienda'|'etc...';
 
 export type ForPkRaiz={
     formulario:IdFormulario, 
+    vivienda:IdEnc
 } & {
     [campo in CampoPkRaiz]?:number
 }
@@ -212,6 +216,7 @@ export type ForPkRaiz={
 export type CampoPk = 'vivienda'|'hogar'|'persona'|'etc...';
 export type ForPk = {
     formulario:IdFormulario, 
+    vivienda:IdEnc
 } & {
     [campo in CampoPk]?:number
 }
@@ -219,11 +224,15 @@ export type PlainForPk='{"formulario":"F:F1","vivienda":"10202","persona":null}'
 
 export type ObjetoNumeradoOArray<T> = T[] | {[n in number]:T}
 
-export type Respuestas={
-        [pregunta in IdVariable]:Valor
-    } & {
-        [ua in IdUnidadAnalisis]:ObjetoNumeradoOArray<Respuestas>
-    }
+export type RespuestasUnaUA = {
+    [pregunta in IdVariable]:Valor
+}
+
+export type RespuestaLasUA = {
+    [ua in IdUnidadAnalisis]:ObjetoNumeradoOArray<Respuestas>
+}
+
+export type Respuestas= RespuestasUnaUA & RespuestaLasUA
 
 export type RespuestasRaiz=Respuestas & {
     resumenEstado:ResumenEstado
@@ -270,7 +279,7 @@ export type TEM = {
 export type ResumenEstado = 'vacio' | 'con problemas' | 'incompleto' | 'ok' | 'no rea' | 'cita pactada';
 
 export type InfoTarea= {
-    tarea?: IdTarea
+    tarea: IdTarea
     notas?:string
     fecha_asignacion?:Date
     asignado?:string
@@ -360,7 +369,7 @@ export type Estructura = {
   }[]
 }
 
-export type IdEnc = '130031'|'130032'|'etc';
+export type IdEnc = 130031|130032;
 export type InformacionHdr={[enc in IdEnc]: DatosHdrUaPpal}
 
 export type CasoState={
@@ -466,6 +475,9 @@ export function toPlainForPk(forPk:ForPk):PlainForPk{
     // @ts-ignore sabemos que hay que hacer un JSON
     return JSON.stringify(forPk);
 }
+
+export var iterator:<T>(o:ObjetoNumeradoOArray<T>)=>Iterable<T> = LikeAr.iterator
+export var empty:<T>(o:ObjetoNumeradoOArray<T>|null|undefined)=>boolean = LikeAr.empty
 
 declare global {
     namespace myOwn{

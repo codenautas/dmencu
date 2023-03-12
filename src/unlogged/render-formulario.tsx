@@ -13,16 +13,16 @@ import {Bloque, BotonFormulario,
     CasilleroBase, CasoState, ConjuntoPreguntas, Consistencia, 
     EstadoCarga, Filtro, ForPk, ForPkRaiz, Formulario, 
     IdFormulario, IdPregunta, IdTarea, IdVariable, InfoFormulario,
-    HojaDeRuta,
     ModoDespliegue,
     Opcion, OpcionMultiple, PlainForPk, 
     Pregunta, PreguntaConOpciones, PreguntaSimple, 
-    Respuestas, RespuestasRaiz, Valor, TEM, IdCarga, Carga, IdFin, IdUnidadAnalisis,
+    Respuestas, RespuestaLasUA, RespuestasRaiz, Valor, TEM, IdCarga, Carga, IdFin, IdUnidadAnalisis,
     ModoAlmacenamiento,
     toPlainForPk,
     IdCasillero,
     PreguntaConSiNo,
-    Texto, Estructura, InformacionHdr, DatosHdrUaPpal, ConfiguracionSorteoFormulario, ResumenEstado, DatosByPassPersistibles, IdOperativo, IdEnc, Libre
+    Texto, Estructura, InformacionHdr, DatosHdrUaPpal, ConfiguracionSorteoFormulario, ResumenEstado, DatosByPassPersistibles, IdOperativo, IdEnc, Libre, UnidadAnalisis,
+    iterator, empty
 } from "./tipos";
 import{ 
     accion_abrir_formulario,
@@ -60,7 +60,7 @@ import { CSSProperties } from "@material-ui/core/styles/withStyles";
 
 import { 
     registrarElemento, setAttrDistinto, setValorDistinto, dispatchByPass, 
-    getDirty, getHojaDeRuta, getFeedbackRowValidator,
+    getDirty, getFeedbackRowValidator,
     getFuncionHabilitar, 
     getEstructura, 
     defOperativo,
@@ -118,7 +118,7 @@ export type LibreDespliegueType = (props:{
 var LibreDespliegue: LibreDespliegueType
 
 const Button = ({variant, onClick, disabled, children, className, color, size, 
-        disableElevation, disableFocusRipple, disableRipple, fullWidth, 
+        disableElevation, disableFocusRipple, disableRipple, 
         ...other
     }:{
     variant?:string,
@@ -169,7 +169,8 @@ const TextField = (props:{
     onChange?:(event:any)=>void,
     onFocus?:(event:any)=>void,
     onBlur?:(event:any, valor:any)=>void,
-    onKeyDown?:(event:KeyboardEvent)=>void
+    // onKeyDown?:(event:KeyboardEvent)=>void // KeyboardEventHandler<HTMLInputElement>
+    onKeyDown?:React.KeyboardEventHandler<HTMLInputElement>
 })=><input
     id={props.id}
     disabled={props.disabled}
@@ -464,17 +465,17 @@ function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?
                 >
                     <ICON.DeleteForever/>
                 </Button></div>:null}
-                {casillero.var_name?<div><Button
+                {casillero.var_name?(ns_nc=><div><Button
                     id={"nsnc-pregunta-"+casillero.var_name}
                     mi-variable={casillero.var_name}
                     variant="outlined"
                     className="boton-pregunta-nsnc"
                     onClick={()=>{
-                        dispatchByPass(accion_registrar_respuesta, {respuesta:casillero.valor_ns_nc??-9, variable:casillero.var_name as IdVariable, forPk:forPk})
+                        dispatchByPass(accion_registrar_respuesta, {respuesta:ns_nc, variable:casillero.var_name as IdVariable, forPk:forPk})
                     }}
                 >
                     NS/NC
-                </Button></div>:null}
+                </Button></div>)(casillero.valor_ns_nc??-9):null}
             </div>
         </div>
         <div className="nombre-div">
@@ -589,7 +590,7 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpcio
                 fullWidth={true}
                 inputProps={inputProps}
                 type={pregunta.despliegueTipoInput??adaptarTipoVarCasillero(pregunta.tipovar)}
-                onKeyDown={(event:KeyboardEvent)=>{
+                onKeyDown={(event:React.KeyboardEvent)=>{
                     var esEnter = (event.key == 'Enter' || event.keyCode == 13)
                     debeSaltar = esEnter && (saltoAutomatico || conCampoOpciones);
                     if(esEnter){
@@ -685,8 +686,8 @@ function DesplegarCasillero(props:{
     id?:string,
     style?:React.CSSProperties,
     despliegueEncabezado?:'lateral'|'superior'
-    children:React.ReactNode|Element[],
-    "ocultar-salteada"?:boolean
+    children:React.ReactNode|React.ReactNode[],
+    "ocultar-salteada"?:'SI'|'NO'|'INHABILITAR'|undefined
 }){
     return <div 
         key={`${props.casillero.tipoc}-${props.id||props.casillero.id_casillero}`}
@@ -778,7 +779,7 @@ var calcularDisabledBFAgregarListo = (configSorteoFormulario:ConfiguracionSorteo
     !!(configSorteoFormulario && configSorteoFormulario.id_formulario_individual == formulario)
 
 function botonesDelFormulario(r:Respuestas, unidad_analisis:IdUnidadAnalisis, estructura:Estructura, forPkPadre:ForPk, feedbackAll:{[formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin>}):HtmlTag<HTMLDivElement>{
-    var formsVivienda = getFormulariosForIdVivienda(forPkPadre.vivienda!);
+    var formsVivienda = getFormulariosForIdVivienda(forPkPadre.vivienda);
     var uaDef = estructura.unidades_analisis[unidad_analisis];
     var arrayEstructuraFormularios = (likeAr(estructura.formularios)).array();
     var x = likeAr(uaDef.hijas).filter(uaHija=>
@@ -1004,11 +1005,11 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
     var habilitador = casillero.expresion_habilitar_js?getFuncionHabilitar(casillero.expresion_habilitar_js):()=>true;
     var {opciones} = useSelectorVivienda(forPk);
     //var idFormularioDestino = 'F:'+casillero.salto! as IdFormulario;   //original
-    var armoNomSalto=casillero.salto!.substr(0,2)=='F:'?casillero.salto.slice(2):casillero.salto;
+    var armoNomSalto=casillero.salto?.substring(0,2)=='F:'?casillero.salto.slice(2):casillero.salto;
     //console.log('BotonFormularioDespliegue armoNomSalto ' +armoNomSalto);
     var idFormularioDestino = 'F:'+armoNomSalto! as IdFormulario;
     var estructura = getEstructura();
-    var {formularioAAbrir} = useSelector((state:CasoState)=>({
+    var {formularioAAbrir} = useSelector((_state:CasoState)=>({
         formularioAAbrir:estructura.formularios[idFormularioDestino].casilleros,
     }));
     var sufijoIdElemento = toPlainForPk(forPk);
@@ -1057,7 +1058,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                   //  var estadoDelBoton = feedbackRow.feedback['$B.F:'+casillero.salto as IdVariable].estado   //original
                       var estadoDelBoton = feedbackRow.feedback['$B.F:'+armoNomSalto as IdVariable].estado
                    // console.log('BotonFormularioDespliegue estadoDelBoton ' +estadoDelBoton  );
-                    var configSorteoFormulario = estructura.configSorteo?estructura.configSorteo[getMainFormForVivienda(forPk.vivienda!)]:null
+                    var configSorteoFormulario = estructura.configSorteo?estructura.configSorteo[getMainFormForVivienda(forPk.vivienda)]:null
                     listaDeBotonesAbrir = likeAr(conjunto).map((_, i)=>{
                         let num:number = numberOrStringIncIfArray(i, conjunto) as number;
                         let forPk={...props.forPk, formulario:idFormularioDestino, [nuevoCampoPk]:num};
@@ -1213,7 +1214,7 @@ function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Blo
             setForPkActual(props.bloqueOFormulario.casillero)
         }
         useEffect(()=>{
-            var timer:NodeJS.Timeout|null = setTimeout(()=>{
+            var timer = setTimeout(()=>{
                 setVerTodo(true);
             },250)
             return ()=>{
@@ -1354,14 +1355,14 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
     const forPk = props.forPk;
     const {opciones} = useSelectorVivienda(forPk);
     const [confirmaCerrar, setConfirmaCerrar] = useState<boolean|null>(false);
-    var dominio = getDatosByPass().informacionHdr[forPk.vivienda!].tem.dominio;
+    var dominio = getDatosByPass().informacionHdr[forPk.vivienda].tem.dominio;
     var cerrarDirecto = async function(){
         removeCSSById(BOOTSTRAP_5_1_3_SRC);
         var estructura = getEstructura();
         gotoConsistir(
             estructura.operativo as IdOperativo,
-            getDatosByPass().informacionHdr[forPk.vivienda!].tarea.tarea,
-            forPk.vivienda?.toString() as IdEnc
+            getDatosByPass().informacionHdr[forPk.vivienda].tarea.tarea,
+            forPk.vivienda
         );
         //var hash=new URLSearchParams(location.hash?.replace(/^\#/,'').split('&autoproced')[0]);
         ////hash.delete('autoproced')
@@ -1528,6 +1529,8 @@ function FormularioDespliegue(props:{forPk:ForPk}){
             feedbackForm.resumen
         )})
     })
+    // @ts-expect-error especial hay que leerlo en el parser de casilleros si esto termina quedando así
+    var pantallaCompleta = formulario.especial?.pantallaCompleta;
     return (
         <>
             <AppBar position="fixed" color={soloLectura?'secondary':'primary'}>
@@ -1548,10 +1551,10 @@ function FormularioDespliegue(props:{forPk:ForPk}){
                         )}
                         </ButtonGroup>
                     </div>:null}
-                    <BotonVolverEnDiv id="boton-volver-1"/>
-                    <FormularioEncabezado casillero={formulario}/>
+                    {pantallaCompleta?null:<BotonVolverEnDiv id="boton-volver-1"/>}
+                    {pantallaCompleta?null:<FormularioEncabezado casillero={formulario}/>}
                     <DesplegarContenidoInternoBloqueOFormulario bloqueOFormulario={formulario} formulario={formulario} forPk={forPk} multiple={false}/>
-                    <BotonVolverEnDiv id="boton-volver-2"/>
+                    {pantallaCompleta?null:<BotonVolverEnDiv id="boton-volver-2"/>}
                 </Paper>
                 <Fab id='fab-activo-arriba' color="primary" aria-label="add" onClick={onClickSaltarActual}>
                     <ICON.KeyboardArrowUp />
@@ -1593,14 +1596,14 @@ resumidores.push(
 )
 
 export function DesplegarLineaResumenUAPrincipal(props:{
-    numVivienda:number,
+    numVivienda:IdEnc,
     formPrincipal:IdFormulario,
     tarea: string,
     respuestas:RespuestasRaiz,
 }){
     const {numVivienda, respuestas, formPrincipal, tarea} = props;
     const id='viv-'+numVivienda;
-    const forPk:ForPk={formulario:formPrincipal, vivienda:Number(numVivienda)};
+    const forPk:ForPk={formulario:formPrincipal, vivienda:numVivienda};
     var tem = getDatosByPass().informacionHdr[numVivienda].tem;
     var dispatch = useDispatch();
     useEffect(()=>{
@@ -1655,7 +1658,7 @@ export function DesplegarCarga(props:{
     idCarga:IdCarga, 
     posicion:number,
     informacionHdr:InformacionHdr, 
-    respuestas: Respuestas,
+    respuestas: RespuestaLasUA,
     feedbackRowValidator:{
         [formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin> 
     }
@@ -1693,13 +1696,13 @@ export function DesplegarCarga(props:{
                 </TableRow>
             </TableHead>
             <TableBody>
-                {beingArray(informacionHdr).filter((informacion:DatosHdrUaPpal, _numVivienda:number)=>informacion.tem.carga==idCarga).map((informacion:DatosHdrUaPpal, numVivienda:number)=>
+                {likeAr(informacionHdr).filter((informacion)=>informacion.tem.carga==idCarga).map((informacion, numVivienda)=>
                     <DesplegarLineaResumenUAPrincipal 
                         key={numVivienda} 
                         numVivienda={numVivienda}
                         tarea={informacion.tarea.tarea}
                         formPrincipal={informacion.tarea.main_form}
-                        respuestas={respuestas.viviendas[numVivienda]}
+                        respuestas={respuestas.viviendas[numVivienda] as RespuestasRaiz}
                     />
                 ).array()}
             </TableBody>
@@ -1809,7 +1812,7 @@ export function HojaDeRutaDespliegue(){
                     <div>Dirección General de Estadística y Censos - C.A.B.A.</div>
                     <div>{my.getLocalVar('app-version')} sincro {num_sincro} - versión {appVersion}</div>
                 </div>
-                {likeAr(cargas).map((carga: Carga, idCarga: IdCarga, _, posicion:number)=>
+                {likeAr(cargas).map((carga, idCarga, _, posicion)=>
                     <DesplegarCarga key={idCarga} carga={carga} idCarga={idCarga} posicion={posicion} informacionHdr={informacionHdr} feedbackRowValidator={feedbackRowValidator} respuestas={respuestas}/>
                 ).array()}
             </div>
@@ -1963,7 +1966,7 @@ export async function dmPantallaInicialSinCarga(){
     )
 }
 
-export async function desplegarFormularioActual(opts:{modoDemo:boolean, forPkRaiz?:ForPkRaiz}){
+export async function desplegarFormularioActual(opts:{modoDemo:boolean, forPkRaiz?:ForPkRaiz, operativo:IdOperativo}){
     // traer los metadatos en una "estructura"
     // traer los datos de localStorage
     // verificar el main Layout
@@ -2038,8 +2041,9 @@ setCalcularVariables((respuestasRaiz:RespuestasRaiz, forPk:ForPk)=>{
     //TODO GENERALIZAR
     var uasIterar:{
         [key in IdUnidadAnalisis]:{
-            uaPersonas: IdUnidadAnalisis,
-            varSexoPersona: IdVariable,
+            uaPersonas: IdUnidadAnalisis
+            varSexoPersona: IdVariable
+            varNombrePersona: IdVariable
             varLosNombres: IdVariable
         }
     } = {
@@ -2049,8 +2053,7 @@ setCalcularVariables((respuestasRaiz:RespuestasRaiz, forPk:ForPk)=>{
             varNombrePersona: 'nombre' as IdVariable,
             varLosNombres: "los_nombres" as IdVariable
         },
-        //@ts-ignore es unidad de analisis
-        hogares_sup: {
+        ["hogares_sup" as IdUnidadAnalisis] : {
             uaPersonas: 'personas_sup' as IdUnidadAnalisis,
             varSexoPersona: 'sexo_sup'  as IdVariable,
             varNombrePersona: 'nombre_sup'  as IdVariable,
@@ -2060,13 +2063,14 @@ setCalcularVariables((respuestasRaiz:RespuestasRaiz, forPk:ForPk)=>{
     likeAr(uasIterar).forEach((configHogares,uaHogares)=>{
         var estructura = getEstructura();
         if(estructura.unidades_analisis[uaHogares]){
-            for(var respuestasHogar of respuestasRaiz[uaHogares]||[]){
-                if(!respuestasHogar[configHogares.uaPersonas] || respuestasHogar[configHogares.uaPersonas].length==0 || respuestasHogar[configHogares.uaPersonas][0][configHogares.varSexoPersona] == null){
-                    if(respuestasHogar[configHogares.varLosNombres]){
+            for(var respuestasHogar of iterator(respuestasRaiz[uaHogares]??[])){
+                if(!respuestasHogar[configHogares.uaPersonas] || empty(respuestasHogar[configHogares.uaPersonas]) || respuestasHogar[configHogares.uaPersonas][0][configHogares.varSexoPersona] == null){
+                    var losNombres = respuestasHogar[configHogares.varLosNombres] as string
+                    if(losNombres != null){
                         if(!respuestasHogar[configHogares.uaPersonas]){
                             respuestasHogar[configHogares.uaPersonas]=[];
                         }
-                        respuestasHogar[configHogares.varLosNombres]
+                        losNombres
                             .split(',')
                             .filter((nombre:string)=>nombre.trim().length > 0)
                             .forEach((nombre:string, i:number)=>{

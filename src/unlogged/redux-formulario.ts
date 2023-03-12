@@ -14,6 +14,7 @@ import { createReducer, createDispatchers, ActionsFrom } from "redux-typed-reduc
 import { ModoAlmacenamiento } from "./tipos"
 import * as likeAr from "like-ar";
 import * as bestGlobals from "best-globals";
+import * as JSON4all from "json4all";
 
 import { Opcion as RowValidatorOpcion } from "row-validator";
 
@@ -309,8 +310,10 @@ export function gotoCampo(){
     location.reload();   
 }
 
-export function gotoConsistir(operativo:IdOperativo,tarea:IdTarea, idEnc:IdEnc){
-    history.replaceState(null, '', `${location.origin+location.pathname}/../menu#w=consistir_encuesta&up={"operativo":"${operativo}","tarea":"${tarea}","encuesta":${idEnc}}&autoproced=true`);
+export function gotoConsistir(operativo:IdOperativo,tarea:IdTarea, encuesta:IdEnc){
+    // TODO-2023-03: probar con esto:
+    history.replaceState(null, '', `${location.origin+location.pathname}/../menu#w=consistir_encuesta&up=${JSON4all.toUrl({operativo, tarea, encuesta})}&autoproced=true`);
+    // history.replaceState(null, '', `${location.origin+location.pathname}/../menu#w=consistir_encuesta&up={"operativo":"${operativo}","tarea":"${tarea}","encuesta":${encuesta}}&autoproced=true`);
     location.reload();   
 }
 
@@ -393,7 +396,7 @@ export async function dmTraerDatosFormulario(opts:{operativo:IdOperativo, modoDe
             initialState.opciones.forPk=JSON.parse(addrParams.state_forPk);
         }
         if(addrParams.state_pilaForPk){
-            initialState.opciones.pilaForPk=addrParams.state_pilaForPk.split('|').map(j=>JSON.parse(j));
+            initialState.opciones.pilaForPk=(addrParams.state_pilaForPk as string).split('|').map(j=>JSON4all.parse(j));
         }
         return initialState;
     }
