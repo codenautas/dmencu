@@ -139,16 +139,16 @@ type RegistroElemento<T extends ElementosRegistrables> = {
     fun: DirectFunction<T, any>
 } & ({
     prop:keyof T
-    fun: DirectFunction<T, T[keyof T]>
+    fun: DirectFunction<T, T[keyof T]> // Lo que retorna la fun(ción) se usa para la prop(erty) del elemento
 }|{
     attr:string
-    fun: DirectFunction<T, string>
+    fun: DirectFunction<T, string> // Lo que retorna la fun(ción) se usa para el valor del attr(ibuto)
 }|{
-    style:keyof CSSStyleDeclaration
-    fun: DirectFunction<T, string>
+    style:keyof CSSStyleDeclaration 
+    fun: DirectFunction<T, string> // Lo que retorna la fun(ción) se usa para el valor del style
 }|{
     direct:true
-    fun: DirectFunction<T, void>
+    fun: DirectFunction<T, void> // La función va a tocar directamente el elemento y hacer todo lo que tenga que hacer
 })
 
 type RegistroElementos<T extends ElementosRegistrables> = { [id:string]: RegistroElemento<T> & {elemento?:T} };
@@ -377,7 +377,7 @@ export function accion_registrar_respuesta(payload:{
     if(respuesta !== NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO && variable != NO_CAMBIAR__SOLO_TRAER_STATUS){
         if(respuesta === ''){
             respuesta = null;
-        }else if(estructura.formularios[forPk.formulario].estructuraRowValidator.variables[variable].tipo=='numero'){
+        }else if(estructura.formularios[forPk.formulario].estructuraRowValidator.variables[variable]?.tipo=='numero'){
             if(respuesta != null){
                 respuesta = Number(respuesta);
             }
@@ -411,9 +411,9 @@ export function accion_registrar_respuesta(payload:{
         persistirDatosByPass(datosByPass); // OJO ASYNC DESCONTROLADA
         siguienteVariable = variable;
         do{
-            siguienteVariable = feedbackRow.feedback[siguienteVariable].siguiente;
+            siguienteVariable = feedbackRow.feedback[siguienteVariable]?.siguiente;
         }while(valorAnterior == null && recentModified && siguienteVariable != null && siguienteVariable != 'fin' && estructura.formularios[forPk.formulario].estructuraRowValidator.variables[siguienteVariable].funcionAutoIngresar)
-        if(siguienteVariable == null && feedbackRow.feedback[variable].estado == 'valida'){
+        if(siguienteVariable == null && feedbackRow.feedback[variable]?.estado == 'valida'){
             siguienteVariable = 'fin';
         }
     }
