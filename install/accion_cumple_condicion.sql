@@ -11,7 +11,7 @@ BEGIN
  v_cond=p_condicion;
  v_sent=' select 1 
     from base.tareas_tem t
-    inner join base.estados_acciones ea using (operativo, estado, tarea)
+    inner join base.estados_acciones ea using (operativo, estado)
     inner join tem te using (operativo,enc)
     left join sincronizaciones s on t.cargado_dm=s.token
 	  left join viviendas v on (te.operativo =  v.operativo and te.enc = v.vivienda)
