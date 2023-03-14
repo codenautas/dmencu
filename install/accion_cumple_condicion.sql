@@ -1,6 +1,6 @@
 --set role to ggs2022_owner;
 --set search_path=base;
-CREATE OR REPLACE FUNCTION accion_cumple_condicion(p_operativo text, p_estado text, p_enc text, p_tarea text, p_eaccion text, p_tarea_destino text)
+CREATE OR REPLACE FUNCTION accion_cumple_condicion(p_operativo text, p_estado text, p_enc text, p_eaccion text, p_condicion text)
 RETURNS boolean AS
 $BODY$
 DECLARE
@@ -18,10 +18,9 @@ BEGIN
     left join no_rea nr on (te.norea::text = nr.no_rea)
     where t.operativo='||quote_literal(p_operativo)||
     ' and t.estado='||quote_literal(p_estado)||
-    ' and t.enc='||qote_literal(p_enc)||
-    ' and t.tarea='||quote_literal(p_enc)||
+    ' and t.enc='||quote_literal(p_enc)||
     ' and ea.eaccion='||quote_literal(p_eaccion)||
-    ' and ea.tarea_destino='||qote_literal(p_destino)||' and '||v_cond||';';
+    ' and '||v_cond||';';
  --raise notice 'esto %',vsent;
  execute v_sent into v_salida;
  IF v_salida=1 THEN

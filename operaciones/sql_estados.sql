@@ -148,36 +148,6 @@ update acciones
 
 set search_path=base;
 
-CREATE OR REPLACE FUNCTION accion_cumple_condicion(operativo text, estado text, enc text, tarea text, eaccion text, tarea_destino text, condicion text)
-RETURNS boolean AS
-$BODY$
-DECLARE
-    vsent text; 
-    vcond text;
-    vsalida integer;
-BEGIN
- vcond=condicion;
- vsent=' select 1 
-    from base.tareas_tem t
-    inner join base.estados_acciones ea using (operativo, estado, tarea)
-    inner join tem te using (operativo,enc)
-    left join sincronizaciones s on t.cargado_dm=s.token
-	  left join viviendas v on (te.operativo =  v.operativo and te.enc = v.vivienda)
-    left join no_rea nr on (te.norea::text = nr.no_rea)
-    where t.operativo='''||$1||''' and t.estado='''||$2||'''  and t.enc='''||$3||'''  and t.tarea='''||$4||''' and ea.eaccion='''||$5 ||''' and ea.tarea_destino='''||$6 ||''' and '||vcond||';';
- --raise notice 'esto %',vsent;
- execute vsent into vsalida;
- IF vsalida=1 THEN
-    return true;
- ELSE
-    return false;
- END IF;
-
-END;
-$BODY$
- LANGUAGE plpgsql VOLATILE;
- ALTER FUNCTION accion_cumple_condicion(text, text, text, text,text,text, text) owner to ggs2022_owner;
-
 update estados_acciones set condicion='verificado is null' where operativo = 'GGS_2022' and tarea='encu' and estado='V' and eaccion='verificar';
 
 alter table "estados" add column "permite_asignar_encuestador" boolean not null default 'false';
@@ -248,3 +218,44 @@ alter table "acciones" add column "confirma" boolean not null default 'false';
 alter table base.estados_acciones DROP CONSTRAINT IF EXISTS estados_acciones_pkey;
 ALTER TABLE IF EXISTS base.estados_acciones
     ADD CONSTRAINT estados_acciones_pkey PRIMARY KEY (operativo, tarea, estado, eaccion, tarea_destino, estado_destino);
+
+alter table "estados_acciones" drop column if exists "tarea";
+alter table "estados_acciones" drop column if exists "tarea_destino";
+
+DROP FUNCTION IF EXISTS accion_cumple_condicion(text, text, text, text, text, text, text);
+
+--set role to ggs2022_owner;
+--set search_path=base;
+CREATE OR REPLACE FUNCTION accion_cumple_condicion(p_operativo text, p_estado text, p_enc text, p_eaccion text, p_condicion text)
+RETURNS boolean AS
+$BODY$
+DECLARE
+    v_sent text; 
+    v_cond text;
+    v_salida integer;
+BEGIN
+ v_cond=p_condicion;
+ v_sent=' select 1 
+    from base.tareas_tem t
+    inner join base.estados_acciones ea using (operativo, estado)
+    inner join tem te using (operativo,enc)
+    left join sincronizaciones s on t.cargado_dm=s.token
+	  left join viviendas v on (te.operativo =  v.operativo and te.enc = v.vivienda)
+    left join no_rea nr on (te.norea::text = nr.no_rea)
+    where t.operativo='||quote_literal(p_operativo)||
+    ' and t.estado='||quote_literal(p_estado)||
+    ' and t.enc='||quote_literal(p_enc)||
+    ' and ea.eaccion='||quote_literal(p_eaccion)||
+    ' and '||v_cond||';';
+ --raise notice 'esto %',vsent;
+ execute v_sent into v_salida;
+ IF v_salida=1 THEN
+    return true;
+ ELSE
+    return false;
+ END IF;
+
+END;
+$BODY$
+ LANGUAGE plpgsql VOLATILE;
+ALTER FUNCTION accion_cumple_condicion(text, text, text, text,text) owner to ggs2022_owner;
