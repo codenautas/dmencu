@@ -3,38 +3,7 @@
 import {TableDefinition, TableContext, FieldDefinition} from "./types-dmencu";
 
 import {tareas_tem} from "./table-tareas_tem";
-
-export function addButtonsAndSetDefinition(tableDef:TableDefinition){
-    tableDef.fields.splice(4,0,
-        {name:"acciones"                    , typeName: 'jsonb'      , editable:false   , inTable:false},
-        {name:"acciones_avance"             , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesAvance'},
-        {name:"acciones_retroceso"          , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesRetroceso'},
-        {name:"acciones_blanqueo"           , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesBlanqueo'},
-        {name:"visible_en_asignacion" , typeName: "boolean"    , editable:false   , inTable:false, visible:false, defaultDbValue:'false' },
-        {name:"visible_en_recepcion"  , typeName: "boolean"    , editable:false   , inTable:false, visible:false, defaultDbValue:'true' },
-    );
-    tableDef.fields.forEach((field:FieldDefinition)=>field.table='tareas_tem');
-    //tableDef.selfRefresh = true;
-    tableDef.refrescable = true;
-    tableDef.primaryKey = ['operativo','enc'];
-    tableDef.sql.isTable = false;
-    return tableDef
-}
-
-export function checkMyActions(tableDef:TableDefinition, myField:string){
-    tableDef.sql!.from=`(select * from (${tableDef.sql!.from}) aux
-        , lateral (
-            select jsonb_agg(z.*) as acciones
-                from (
-                    select ea.*, ac.path_icono_svg, ac.desactiva_boton, ac.confirma
-                        from estados_acciones ea join acciones ac using (operativo, eaccion)
-                        where ea.operativo = aux.operativo and ea.estado = aux.estado and ac.${myField}
-                        and accion_cumple_condicion(aux.operativo, ea.estado, aux.enc, ea.eaccion, ea.condicion)
-                    order by ac.eaccion
-                ) z
-            ) y
-        )`
-}
+import { addButtonsAndSetDefinition, checkMyActions } from "./table-tareas_tem_recepcion";
 
 export function tareas_tem_asignables(context:TableContext):TableDefinition {
     var tableDef = tareas_tem(context);
@@ -43,10 +12,7 @@ export function tareas_tem_asignables(context:TableContext):TableDefinition {
         {column:'visible_en_asignacion', operator:'=', value:true}
     ];
     addButtonsAndSetDefinition(tableDef);
-    tableDef.fields.splice(14,0,
-        {name:"habilitar"                   , typeName: "boolean"    , editable:false   , inTable:false, clientSide:'habilitar'},
-    );
-    tableDef.hiddenColumns=['cargado_dm','notas', 'acciones','fecha_asignacion'];
+    tableDef.hiddenColumns=['cargado_dm','notas', 'acciones','fecha_asignacion', 'acciones', 'acciones_avance','acciones_retroceso','acciones_blanqueo'];
     checkMyActions(tableDef,'asigna');
     return tableDef
 }

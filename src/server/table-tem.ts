@@ -37,8 +37,11 @@ export function tem(context:Context, opts:any):TableDefinition {
             {name: "abrir"               , typeName:'text'    , editable: false  , inTable:false, clientSide:'abrir'},
             {name:"consistir"            , typeName: 'text'   , editable: false  , inTable:false, clientSide:'consistir'},
             {name: "cluster"             , typeName:'integer' , editable: false, isName:true},
-            {name:'tarea'                , typeName:'text'    , editable: false  },
-            {name:'estado'               , typeName:'text'    , editable:false   , nullable: false, defaultDbValue:"'0D'"},
+            {name:'tarea_actual'         , typeName:'text'    , editable: false  },
+            {name:'estado_actual'        , typeName:'text'    , editable: false   , nullable: false, defaultDbValue:"'0D'"},
+            {name:"habilitar"            , typeName: "text"   , editable:false   , inTable:false, clientSide:'habilitar'},
+            {name:"habilitada"           , typeName: 'boolean', editable:puedeEditar, nullable: false},
+            {name:'tarea_proxima'        , typeName:'text'    , editable: false  },
             {name:'area'                 , typeName:'integer' , editable: false  },
             {name:'zona'                 , typeName:'text'    , editable: false  },
             {name:'rea'                  , typeName:'integer' , editable: false  },
@@ -135,8 +138,19 @@ export function tem(context:Context, opts:any):TableDefinition {
         "primaryKey": [ "operativo", "enc" ],
         foreignKeys:[
             {references:'areas'   , fields:['operativo', 'area']},
-            {references:'tareas' , fields:['operativo','tarea']},
-            {references:'estados' , fields:['operativo','estado']},
+            {references:'tareas' , fields:[
+                {source:'operativo', target:'operativo'},
+                {source:'tarea_actual', target:'tarea'}
+            ],
+                alias:'taract'
+            },
+            {references:'tareas' , fields:[
+                {source:'operativo', target:'operativo'},
+                {source:'tarea_proxima', target:'tarea'}
+            ], 
+                alias:'tarprox'
+            },
+            {references:'estados' , fields:[{source:'operativo', target:'operativo'},{source:'estado_actual', target:'estado'}]},
         //    {references:'usuarios', fields:[{source:'carga_persona', target:'idper'}], displayFields:['apellido','nombre']},
         ],        
         softForeignKeys:[
@@ -172,7 +186,7 @@ export function tem(context:Context, opts:any):TableDefinition {
                     , v.consistido
                     ${opts.recepcion? columnasNoRea.map(v=>'\n     , '+ v.expr +' as '+ v.name).join('') :''}
                     from tem t left join (
-                        select tt.operativo, tt.enc, bool_or(cargado) cargado, string_agg(cargado_dm,',') cargado_dm,jsonb_object_agg(tarea,jsonb_build_object('asignado',asignado,'habilitada',habilitada,'cargado',cargado,'cargado_dm',cargado_dm))etareas 
+                        select tt.operativo, tt.enc, bool_or(cargado) cargado, string_agg(cargado_dm,',') cargado_dm,jsonb_object_agg(tarea,jsonb_build_object('asignado',asignado,'cargado',cargado,'cargado_dm',cargado_dm))etareas 
                             from tareas_tem tt group by tt.operativo, tt.enc  )tt on t.operativo=tt.operativo and t.enc=tt.enc
                             left join no_rea y on y.no_rea::integer=t.norea
                             left join viviendas v on v.vivienda=t.enc 

@@ -86,7 +86,7 @@ export function areas(context:TableContext):TableDefinition {
                         count(*) filter ( where tem.resumen_estado='no rea')       as no_reas,
                         count(*) filter ( where tem.resumen_estado in ('incompleto', 'con problemas') ) as incompletas, 
                         count(*) filter ( where tem.resumen_estado in ('vacio' ) ) as vacias,
-                        count(*) filter ( where tthabilitada is not true )    as inhabilitadas,
+                        count(*) filter ( where thabilitada is not true )    as inhabilitadas,
                         --sum(case when cluster <>4 then null when confirmada is true then 1 else 0 end) as confirmadas,
                         --sum(case when cluster <>4 then null when confirmada is null then 1 else 0 end) as pend_conf,
                         string_agg(distinct clase,', ' order by clase desc) as clases,
@@ -99,7 +99,7 @@ export function areas(context:TableContext):TableDefinition {
                                     json_encuesta, t.resumen_estado,  
                                     encuestador, t.rea, t.norea, area, dominio, zona,
                                     json_backup, grupo as gru_no_rea
-                                    , bool_or(tt.habilitada) tthabilitada, string_agg(tt.cargado_dm,'-') ttcargado_dm                             
+                                    , bool_or(t.habilitada) thabilitada, string_agg(tt.cargado_dm,'-') ttcargado_dm                             
                                 from tem t left join tareas_tem tt using(operativo,enc) 
                                     left join no_rea y on y.no_rea::integer=t.norea
                                 where t.area=a.area /*and tt.tarea='encu'*/    

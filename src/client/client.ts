@@ -243,7 +243,7 @@ function mostrarDatosPersona(hayDatos:boolean, datos:any, divResult:HTMLDivEleme
     )
 }
 */
-myOwn.clientSides.tareasTemRow={
+/*myOwn.clientSides.tareasTemRow={
     update:(depot)=>{
         var tarea:'nada'|'preasignar'|'cargar'|'realizar'|'verificar'='nada';
         var row=depot.row;
@@ -284,6 +284,7 @@ myOwn.clientSides.tareasTemRow={
     },
     prepare: function(){}
 }
+*/
 
 var crearBotonVerAbrirEncuesta = (operativo:IdOperativo,tarea:IdTarea,encuesta:number, label:string)=>{
     var up = {
@@ -364,7 +365,7 @@ var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
     let button = html.button({
         class:`boton-accion boton-accion-${action.eaccion_direccion}`
     },[
-        `${action.eaccion}${action.tarea != action.tarea_destino?' '+ action.tarea_destino:''}`,
+        `${action.eaccion}`,
         //@ts-ignore svg es htmlelement
         action.path_icono_svg?svg:null,
     ]).create();
@@ -386,7 +387,9 @@ var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
                 alertPromise(err.message)
                 throw err
             }finally{
-                button.disabled=false;
+                //retraso la habilitación porque a veces tarda en redibujarse la botonera y puede traer problemas si dan doble click 
+                //ya que ejecuta nuevamente una acción que ya se ejecutó (y terminó) antes
+                setTimeout(()=>button.disabled=false,3000)
             }
         }
         
@@ -445,7 +448,6 @@ myOwn.clientSides.habilitar={
                 onClickFun: async ()=>{
                     await my.ajax.encuesta_habilitar_deshabilitar({
                         operativo: depot.row.operativo,
-                        tarea: depot.row.tarea,
                         enc: depot.row.enc
                     });
                     var grid=depot.manager;

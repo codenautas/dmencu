@@ -259,3 +259,56 @@ END;
 $BODY$
  LANGUAGE plpgsql VOLATILE;
 ALTER FUNCTION accion_cumple_condicion(text, text, text, text,text) owner to ggs2022_owner;
+
+alter table tareas_tem drop column habilitada;
+alter table tem add column habilitada boolean not null default true;
+
+ALTER TABLE tem RENAME COLUMN tarea TO tarea_actual;
+ALTER TABLE tem RENAME COLUMN estado TO estado_actual;
+
+alter table "tem" add column "tarea_proxima" text;
+alter table "tem" add constraint "tarea_proxima<>''" check ("tarea_proxima"<>'');
+alter table "tem" add constraint "tem tarprox REL" foreign key ("operativo", "tarea_proxima") references "tareas" ("operativo", "tarea")  on update cascade;
+create index "operativo,tarea_proxima 4 tem IDX" ON "tem" ("operativo", "tarea_proxima");
+
+alter table "tareas_tem" add column "tarea_anterior" text;
+alter table "tareas_tem" add constraint "tarea_anterior<>''" check ("tarea_anterior"<>'');
+alter table "tareas_tem" add constraint "tem tarant REL" foreign key ("operativo", "tarea_anterior") references "tareas" ("operativo", "tarea")  on update cascade;
+create index "operativo,tarea_anterior 4 tareas_tem IDX" ON "tareas_tem" ("operativo", "tarea_anterior");
+
+alter table "estados" add column "permite_asignar_encuestador" boolean not null default 'false';
+
+CREATE OR REPLACE FUNCTION base.actualizar_estado_tem_trg()
+    RETURNS trigger
+    LANGUAGE 'plpgsql'
+AS $BODY$
+
+begin
+    update tem set estado_actual = new.estado, tarea_actual = new.tarea where operativo = new.operativo and enc = new.enc;
+    return new;
+end;
+$BODY$;
+
+CREATE OR REPLACE FUNCTION sincro_tareas_areas_tareas_tem_trg()
+    RETURNS trigger
+    LANGUAGE 'plpgsql'
+AS $BODY$
+begin
+    update tareas_tem tt
+        set operacion        = case when new.operacion        is not null and new.operacion        is distinct from old.operacion        then new.operacion        else operacion        end,
+            asignado         = case when new.asignado         is not null and new.asignado         is distinct from old.asignado         then new.asignado         else asignado         end,
+            fecha_asignacion = case when new.fecha_asignacion is not null and new.fecha_asignacion is distinct from old.fecha_asignacion then new.fecha_asignacion else fecha_asignacion end
+        from tem t   
+        where t.operativo=tt.operativo and t.enc=tt.enc 
+            and area=t.area and t.habilitada
+            and tt.tarea=new.tarea
+            and area=new.area;            
+    return new;
+end;
+$BODY$;
+
+update estados set permite_asignar_encuestador = true where estado in ('0D','A','ACD','ACP');
+
+update estados set visible_en_asignacion = true;
+
+update acciones set asigna = false;

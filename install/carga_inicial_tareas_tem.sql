@@ -19,12 +19,12 @@ insert into tareas_areas(operativo, tarea, area, asignado, asignante, obs_asigna
         order by 1,2,3;
 */
 --delete from tareas_tem;
-insert into tareas_tem (operativo, enc, tarea, habilitada)
-    select ta.operativo, ta.enc, ta.tarea, case when ta.tarea='encu' then true else false end 
+insert into tareas_tem (operativo, enc, tarea)
+    select ta.operativo, ta.enc, ta.tarea
       from (select ta.*, t.enc,t.area from tareas ta, tem t where ta.operativo=t.operativo) ta 
       where ta.operativo= (select operativo from parametros where unico_registro) 
           and not (ta.operativo, ta.enc, ta.tarea) in (select operativo, enc, tarea from tareas_tem)
           and ta.main_form is not null
     order by 1,3,2;
   
-update tem set tarea='encu';  
+update tem set tarea_actual='encu', habilitada = true;  

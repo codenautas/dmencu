@@ -94,7 +94,7 @@ var getParametersAndSettersForUpdateTem = async (context, operativo, idEnc, resp
 var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
     return `
     with viviendas as 
-        (select enc, t.json_encuesta as respuestas, t.resumen_estado as "resumenEstado", 
+        (select t.enc, t.json_encuesta as respuestas, t.resumen_estado as "resumenEstado", 
             jsonb_build_object(
                 'dominio'       , dominio       ,
                 'nomcalle'      , nomcalle      ,
@@ -113,15 +113,16 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
             ) as tem, t.area,
             --TODO: GENERALIZAR
             jsonb_build_object(
-                'tarea', tarea,
+                'tarea', tt.tarea,
                 'fecha_asignacion', fecha_asignacion,
                 'asignado', asignado,
                 'main_form', main_form
             ) as tarea,
             min(fecha_asignacion) as fecha_asignacion
-            from tem t left join tareas_tem tt using (operativo, enc, tarea) left join tareas using (tarea)
+            from tem t left join tareas_tem tt on (t.operativo = tt.operativo and t.enc = tt.enc and t.tarea_actual = tt.tarea)
+                       left join tareas ta on t.tarea_actual = ta.tarea
             where ${quotedCondViv}
-            group by t.enc, t.json_encuesta, t.resumen_estado, dominio, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area, tarea, fecha_asignacion, asignado, main_form
+            group by t.enc, t.json_encuesta, t.resumen_estado, dominio, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area, tt.tarea, fecha_asignacion, asignado, main_form
         )
         select jsonb_build_object(
                 'viviendas', ${jsono(
@@ -683,7 +684,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         tt.operativo= $1 
                         and asignado = $2
                         and tt.operacion='cargar' 
-                        and tt.habilitada
+                        and t.habilitada
                         and (tt.cargado_dm is null or tt.cargado_dm = ${context.be.db.quoteLiteral(token)})
             `
             const UA_PRINCIPAL = await getUAPrincipal(context.client, OPERATIVO);
@@ -1095,16 +1096,15 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         action: 'encuesta_habilitar_deshabilitar',
         parameters:[
             {name:'operativo'       , typeName:'text'},
-            {name:'tarea'           , typeName:'text'},
             {name:'enc'             , typeName:'text'},
         ],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             await context.client.query(`
-                UPDATE tareas_tem
+                UPDATE tem
                     set habilitada = not habilitada
-                    where operativo=$1 and tarea= $2 and enc=$3
+                    where operativo=$1 and enc=$2
                     returning *`,
-                [params.operativo, params.tarea, params.enc])
+                [params.operativo, params.enc])
             .fetchUniqueRow();
             return 'ok';
         }

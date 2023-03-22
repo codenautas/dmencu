@@ -4,7 +4,7 @@ CREATE OR REPLACE FUNCTION base.actualizar_estado_tem_trg()
 AS $BODY$
 
 begin
-    update tem set estado = new.estado, tarea = new.tarea where operativo = new.operativo and enc = new.enc;
+    update tem set estado_actual = new.estado, tarea_actual = new.tarea where operativo = new.operativo and enc = new.enc;
     return new;
 end;
 $BODY$;

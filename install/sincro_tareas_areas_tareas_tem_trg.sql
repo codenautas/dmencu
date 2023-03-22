@@ -13,7 +13,7 @@ begin
             fecha_asignacion = case when new.fecha_asignacion is not null and new.fecha_asignacion is distinct from old.fecha_asignacion then new.fecha_asignacion else fecha_asignacion end
         from tem t   
         where t.operativo=tt.operativo and t.enc=tt.enc 
-            and area=t.area and tt.habilitada
+            and area=t.area and t.habilitada
             and tt.tarea=new.tarea
             and area=new.area;            
     return new;

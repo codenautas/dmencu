@@ -18,8 +18,8 @@ insert into tareas_areas(operativo, tarea, area, asignado, asignante, obs_asigna
         order by 1,2,3;
 
 --delete from tareas_tem;
-insert into tareas_tem (operativo, enc, tarea, habilitada, operacion, fecha_asignacion,asignado)
-    select ta.operativo, ta.enc, ta.tarea, case when ta.tarea='encu' then true else false end , operacion, fecha_asignacion,asignado
+insert into tareas_tem (operativo, enc, tarea, operacion, fecha_asignacion,asignado)
+    select ta.operativo, ta.enc, ta.tarea, operacion, fecha_asignacion,asignado
       from (select ta.*, t.enc,t.area from tareas ta, tem t where ta.operativo=t.operativo) ta 
         left join tareas_areas x on x.operativo=ta.operativo and x.tarea=ta.tarea and x.area=ta.area
       where x.operativo= (select operativo from parametros where unico_registro) 

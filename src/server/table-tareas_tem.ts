@@ -15,8 +15,8 @@ export function tareas_tem(context:TableContext):TableDefinition {
         {name:'abrir'                       , typeName:'text'        , editable:false   , inTable:false, clientSide:'abrirRecepcion'},
         {name:"consistir"                   , typeName: 'text'       , editable:false   , inTable:false, clientSide:'consistir'},
         {name:'area'                        , typeName: 'integer'    , editable:false   , inTable:false },
+        {name:'tarea_anterior'              , typeName:'text'        , editable:false},
       //  {name:'ok'                          , typeName: 'text'       , editable:false   , inTable:false },
-        {name:"habilitada"                  , typeName: "boolean"    , editable:puedeEditar},
         {name:'asignante'                   , typeName:'text'        , editable:false, inTable:false}, // va a la hoja de ruta
         {name:'recepcionista_tarea'         , typeName:'text'        , editable:true,  references:'recepcionistas' }, 
         {name:'asignado'                    , typeName:'text'}, // va a la hoja de ruta
@@ -96,6 +96,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
         foreignKeys:[
             {references:'tem' , fields:['operativo','enc'], displayFields:[], alias:'te'},
             {references:'tareas' , fields:['operativo','tarea']},
+            {references:'tareas' , fields:[{source:'operativo', target:'operativo'}, {source: 'tarea_anterior', target:'tarea'}], alias:'tarant'},
             {references:'usuarios', fields:[{source:'asignado' , target:'idper'}], alias:'ad'},
             {references:'operaciones' , fields:['operacion']},
             {references:'estados' , fields:['operativo','estado']},
@@ -112,11 +113,11 @@ export function tareas_tem(context:TableContext):TableDefinition {
         sql:{
             isTable: true,
             //insertIfNotUpdate:true,
-            fields:{
+            /*fields:{
                 ok:{ 
                     expr:ok_string
                 },
-            },
+            },*/
             from:`(
                 select *
                     from (
@@ -137,7 +138,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
                         left join areas using (operativo, area)
                         --left join lateral (select * from tareas_tem where tarea=tareas.tarea and operativo=t.operativo and enc=t.enc) tt on true
                         left join lateral (select * from tareas_tem where tarea=tareas.tarea and operativo=t.operativo and enc=t.enc) tt on 
-                            (t.operativo = tt.operativo and t.tarea = tt. tarea and t.estado = tt.estado) --muestro segun tarea y estado actual en la tem
+                            (t.operativo = tt.operativo and t.tarea_actual = tt. tarea and t.estado_actual = tt.estado) --muestro segun tarea y estado actual en la tem
                         left join no_rea y on t.norea=y.no_rea::integer
                         left join viviendas v on v.operativo=t.operativo and v.vivienda=t.enc 
                         join estados e on t.operativo = e.operativo and tt.estado = e.estado
