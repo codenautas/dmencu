@@ -1603,7 +1603,7 @@ export function DesplegarLineaResumenUAPrincipal(props:{
 }){
     const {numVivienda, respuestas, formPrincipal, tarea} = props;
     const id='viv-'+numVivienda;
-    const forPk:ForPk={formulario:formPrincipal, vivienda:numVivienda};
+    const forPk:ForPk={formulario:formPrincipal, vivienda:Number(numVivienda) as IdEnc}; //no quitar el casteo porque viene como texto y necesito que sea número
     var tem = getDatosByPass().informacionHdr[numVivienda].tem;
     var dispatch = useDispatch();
     useEffect(()=>{

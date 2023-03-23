@@ -121,7 +121,7 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
             min(fecha_asignacion) as fecha_asignacion
             from tem t left join tareas_tem tt on (t.operativo = tt.operativo and t.enc = tt.enc and t.tarea_actual = tt.tarea)
                        left join tareas ta on t.tarea_actual = ta.tarea
-            where ${quotedCondViv}
+            where t.habilitada and ${quotedCondViv}
             group by t.enc, t.json_encuesta, t.resumen_estado, dominio, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area, tt.tarea, fecha_asignacion, asignado, main_form
         )
         select jsonb_build_object(
@@ -137,7 +137,7 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
                     group by area, observaciones_hdr`, 
                 'fecha')} as cargas,
             ${jsono(
-                `select enc, jsonb_build_object('tem', tem, 'tarea', tarea) as otras from viviendas`,
+                `select enc::integer, jsonb_build_object('tem', tem, 'tarea', tarea) as otras from viviendas`,
                  'enc',
                  `otras ||'{}'::jsonb`
                 )}
@@ -684,7 +684,6 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         tt.operativo= $1 
                         and asignado = $2
                         and tt.operacion='cargar' 
-                        and t.habilitada
                         and (tt.cargado_dm is null or tt.cargado_dm = ${context.be.db.quoteLiteral(token)})
             `
             const UA_PRINCIPAL = await getUAPrincipal(context.client, OPERATIVO);
