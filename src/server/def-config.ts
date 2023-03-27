@@ -53,6 +53,7 @@ install:
       - accion_cumple_condicion.sql
       - actualizar_estado_tem_trg.sql
       - carga_inicial_tareas_tem.sql
+      - permite_modificar_tareas_tem_trg.sql
 login:
   infoFieldList: [usuario, rol, idper]
   table: usuarios
