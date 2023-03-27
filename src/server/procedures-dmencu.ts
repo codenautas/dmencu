@@ -917,15 +917,12 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     where operativo=$1 
                         and enc=$2 
                         and tarea = $3
-                        and tarea = (select tarea from tem where operativo = $5 and enc = $6)
                     returning *`,
                 [
                     params.operativo, 
                     params.enc, 
                     params.tarea, 
-                    accion.estado_destino,
-                    params.operativo, 
-                    params.enc
+                    accion.estado_destino
                 ]
             ).fetchUniqueRow();
             if(accion.nombre_procedure){
