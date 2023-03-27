@@ -150,9 +150,9 @@ set search_path=base;
 
 update estados_acciones set condicion='verificado is null' where operativo = 'GGS_2022' and tarea='encu' and estado='V' and eaccion='verificar';
 
-alter table "estados" add column "permite_asignar_encuestador" boolean not null default 'false';
+alter table "estados" add column "permite_asignar" boolean not null default 'false';
 
-update estados set permite_asignar_encuestador = true where operativo = 'GGS_2022' and estado in ('0D','A');
+update estados set permite_asignar = true where operativo = 'GGS_2022' and estado in ('0D','A');
 
 alter table "tem" add column "estado" text not null default '0D';
 alter table "tem" add constraint "estado<>''" check ("estado"<>'');
@@ -178,7 +178,7 @@ alter table "acciones" add column "asigna" boolean not null default 'false';
 alter table "acciones" add column "recepciona" boolean not null default 'false';
 
 alter table "estados" rename column "permite_manipular_encuesta" to "visible_en_recepcion";
-alter table "estados" rename column "permite_asignar_encuestador" to "visible_en_asignacion";
+alter table "estados" rename column "permite_asignar" to "visible_en_asignacion";
 
 alter table estados_acciones alter column condicion set not null;
 alter table estados_acciones alter column estado_destino set not null;
@@ -276,7 +276,7 @@ alter table "tareas_tem" add constraint "tarea_anterior<>''" check ("tarea_anter
 alter table "tareas_tem" add constraint "tem tarant REL" foreign key ("operativo", "tarea_anterior") references "tareas" ("operativo", "tarea")  on update cascade;
 create index "operativo,tarea_anterior 4 tareas_tem IDX" ON "tareas_tem" ("operativo", "tarea_anterior");
 
-alter table "estados" add column "permite_asignar_encuestador" boolean not null default 'false';
+alter table "estados" add column "permite_asignar" boolean not null default 'false';
 
 CREATE OR REPLACE FUNCTION base.actualizar_estado_tem_trg()
     RETURNS trigger
@@ -307,7 +307,7 @@ begin
 end;
 $BODY$;
 
-update estados set permite_asignar_encuestador = true where estado in ('0D','A','ACD','ACP');
+update estados set permite_asignar = true where estado in ('0D','A','ACD','ACP');
 
 update estados set visible_en_asignacion = true;
 

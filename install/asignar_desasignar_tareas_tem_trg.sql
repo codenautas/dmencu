@@ -7,7 +7,7 @@ CREATE OR REPLACE FUNCTION asignar_desasignar_tareas_tem_trg()
     LANGUAGE 'plpgsql'
 AS $BODY$
 begin
-    --pensar si va una guarda
+    
     --habilitado (new.habilitado)
         --si asigna persona y antes no habia y el estado in (0D) está ok -> pasa a A
         --si cambia persona y el estado in (A, ACD, ACP) está ok -> mantiene estado (definir si se puede cambiar el asignado desde recepcion)
@@ -30,7 +30,7 @@ $BODY$;
 
 DROP TRIGGER IF EXISTS asignar_desasignar_tareas_tem_trg ON tareas_tem;
 CREATE TRIGGER asignar_desasignar_tareas_tem_trg
-   BEFORE UPDATE OF habilitado, asignado
+   BEFORE UPDATE OF asignado
    ON tareas_tem
    FOR EACH ROW
    EXECUTE PROCEDURE asignar_desasignar_tareas_tem_trg();   

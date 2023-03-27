@@ -137,7 +137,7 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
                     group by area, observaciones_hdr`, 
                 'fecha')} as cargas,
             ${jsono(
-                `select enc::integer, jsonb_build_object('tem', tem, 'tarea', tarea) as otras from viviendas`,
+                `select enc, jsonb_build_object('tem', tem, 'tarea', tarea) as otras from viviendas`,
                  'enc',
                  `otras ||'{}'::jsonb`
                 )}
