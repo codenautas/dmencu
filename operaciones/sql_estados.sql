@@ -350,3 +350,8 @@ CREATE TRIGGER permite_modificar_tareas_tem_trg
    ON tareas_tem
    FOR EACH ROW
    EXECUTE PROCEDURE permite_modificar_tareas_tem_trg();   
+
+  alter table "estados" add column "estado_al_asignar" text;  
+  alter table "estados" add constraint "estado_al_asignar<>''" check ("estado_al_asignar"<>'');
+  alter table "estados" add constraint "estados estdest REL" foreign key ("operativo", "estado_al_asignar") references "estados" ("operativo", "estado")  on update cascade;
+  create index "operativo,estado_al_asignar 4 estados IDX" ON "estados" ("operativo", "estado_al_asignar");

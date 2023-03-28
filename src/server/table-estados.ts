@@ -14,7 +14,8 @@ export function estados(context:TableContext):TableDefinition {
             {name:'estado'                       , typeName:'text',  nullable: false},
             {name:'desc_estado'                  , typeName:'text'},
             {name:'orden_estado'                 , typeName:'text'},
-            {name:'permite_asignar'  , typeName:'boolean', nullable:false, defaultDbValue:'false'},
+            {name:'permite_asignar'              , typeName:'boolean', nullable:false, defaultDbValue:'false'},
+            {name:'estado_al_asignar'            , typeName:'text'   },
             {name:'visible_en_asignacion'        , typeName:'boolean', nullable:false, defaultDbValue:'false'},
             {name:'visible_en_recepcion'         , typeName:'boolean', nullable:false, defaultDbValue:'true'},
             
@@ -26,6 +27,13 @@ export function estados(context:TableContext):TableDefinition {
                 "fields": [
                     "operativo",
                 ]
+            },
+            {
+                references: "estados", "fields": [
+                    {source: "operativo", target:"operativo"},
+                    {source: "estado_al_asignar", target:"estado"}
+                ]
+                , alias: 'estdest'
             }
         ],
         "detailTables": [
