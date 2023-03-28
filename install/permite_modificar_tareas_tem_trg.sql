@@ -19,7 +19,7 @@ begin
         from estados
         where operativo = new.operativo and estado =  new.estado;
     if v_habilitada then
-        if not (old.asignado <> new.asignado and v_permite_asignar) then 
+        if old.asignado <> new.asignado and not v_permite_asignar then 
             raise exception 'Error: no es posible asignar en la encuesta % del operativo % ya que su estado no lo permite', new.enc, new.operativo;
         end if;
         if not (new.tarea = v_tarea_actual or old.asignado <> new.asignado and new.tarea = v_tarea_proxima) then
