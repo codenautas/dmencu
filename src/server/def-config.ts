@@ -54,6 +54,7 @@ install:
       - actualizar_estado_tem_trg.sql
       - carga_inicial_tareas_tem.sql
       - permite_modificar_tareas_tem_trg.sql
+      - asignar_desasignar_tareas_tem_trg.sql
 login:
   infoFieldList: [usuario, rol, idper]
   table: usuarios
