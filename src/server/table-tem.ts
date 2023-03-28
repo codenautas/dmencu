@@ -176,11 +176,8 @@ export function tem(context:Context, opts:any):TableDefinition {
                 (select
                     ${def.fields.filter(f=>f.inTable==undefined && !f.clientSide).map(f=>'t.'+q(f.name)).join(',')}
                     , tt.cargado, tt.cargado_dm
-                    --, (tt.etareas->'encu'->>'cargado')::boolean encu_cargado, tt.etareas->'encu'->>'cargado_dm' enc_cargado_dm, (tt.etareas->'encu'->>'habilitada')::boolean encu_habilitada
                     , tt.etareas->'encu'->>'asignado' as encuestador
-                    --, (tt.etareas->'recu'->>'cargado')::boolean recu_cargado, tt.etareas->'recu'->>'cargado_dm' recu_cargado_dm, (tt.etareas->'recu'->>'habilitada')::boolean recu_habilitada
                     , tt.etareas->'recu'->>'asignado' as recuperador
-                    --, (tt.etareas->'supe'->>'cargado')::boolean supe_cargado, tt.etareas->'supe'->>'cargado_dm' supe_cargado_dm, (tt.etareas->'supe'->>'habilitada')::boolean supe_habilitada
                     , tt.etareas->'supe'->>'asignado' as supervisor
                     , null notas
                     , v.consistido

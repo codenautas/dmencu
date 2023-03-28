@@ -121,11 +121,11 @@ export function tareas_tem(context:TableContext):TableDefinition {
             from:`(
                 select *
                     from (
-                select tareas.tarea, t.operativo, t.enc, t.area
+                select ta.tarea, t.operativo, t.enc, t.area
                     ${fields.filter(x=>!(x.isPk || x.inTable===false||x.name=='area')).map(x=>`, tt.${db.quoteIdent(x.name)}`).join('')}
                     , y.grupo as ult_gru_no_rea
                     , case rol_asignante when 'automatico' then null
-                        when 'recepcionista' then areas.recepcionista end as asignante
+                        when 'recepcionista' then a.recepcionista end as asignante
                     , case when tt.tarea='recu' and y.grupo0 in ('ausentes','rechazos') then 'recuperacion' else null end a_recuperacion   
                     , t.supervision_aleatoria
                     , t.rea ult_rea, t.norea as ult_norea, t.resumen_estado ult_resumen_estado
@@ -134,11 +134,11 @@ export function tareas_tem(context:TableContext):TableDefinition {
                     , v.consistido
                     , e.visible_en_asignacion
                     , e.visible_en_recepcion
-                    from tareas join  tem t using (operativo) 
-                        left join areas using (operativo, area)
-                        --left join lateral (select * from tareas_tem where tarea=tareas.tarea and operativo=t.operativo and enc=t.enc) tt on true
-                        left join lateral (select * from tareas_tem where tarea=tareas.tarea and operativo=t.operativo and enc=t.enc) tt on 
-                            (t.operativo = tt.operativo and t.tarea_actual = tt. tarea and t.estado_actual = tt.estado) --muestro segun tarea y estado actual en la tem
+                    from 
+                        tem t left join tareas_tem tt
+                            on t.operativo = tt.operativo and t.enc = tt.enc
+                        left join tareas ta on tt.operativo = ta.operativo and tt.tarea = ta.tarea
+                        left join areas a on tt.operativo = a.operativo and t.area = a.area
                         left join no_rea y on t.norea=y.no_rea::integer
                         left join viviendas v on v.operativo=t.operativo and v.vivienda=t.enc 
                         join estados e on t.operativo = e.operativo and tt.estado = e.estado
