@@ -1,0 +1,12 @@
+permiso|accion|predeterminado
+campo|administrar|false
+campo|editar|false
+campo|ver|false
+casilleros_texto|editar|false
+configurar|editar|false
+configurar|ver|false
+consistencias|editar|false
+encuestas|ingresar|false
+encuestas|justificar|false
+encuestas|procesar|false
+encuestas|relevar|false

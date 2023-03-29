@@ -20,7 +20,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
         {name:'asignante'                   , typeName:'text'        , editable:false, inTable:false}, // va a la hoja de ruta
         {name:'recepcionista_tarea'         , typeName:'text'        , editable:true,  references:'recepcionistas' }, 
         {name:'asignado'                    , typeName:'text'}, // va a la hoja de ruta
-        {name:'operacion'                   , typeName:'text'}, // cargar/descargar
+        {name:'operacion'                   , typeName:'text'        , editable:false,}, // cargar/descargar
         {name:'fecha_asignacion'            , typeName:'date'}, // cargar/descargar
         {name:"carga_observaciones"         , typeName: "text"       , editable: true},        
         {name:'cargado_dm'                  , typeName:'text'        , editable: false}, //cargar/descargar 
@@ -38,7 +38,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
         //{name:'fecha_resultado'           , typeName:'date'}, // fk tareas_resultados 
         {name:'supervision_dirigida'        , typeName:'integer'     , editable: true},
         {name:'supervision_aleatoria'       , typeName:'integer'     , editable: false,  inTable:false},
-        {name:'verificado'                  , typeName:'text'}, 
+        {name:'verificado'                  , typeName:'text'        , editable:false,}, 
         {name:'a_recuperacion'              , typeName:'text'        , editable:false , inTable:false}, 
         {name:'obs_verificado'              , typeName:'text'},
         {name:'rea_sup'                     , typeName:'integer'     , editable: puedeEditar},

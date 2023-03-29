@@ -1,0 +1,11 @@
+rol|superuser|nombre
+admin|true|Administrador
+auxiliar|false|Auxiliar de campo
+coor_campo|false|Coordinador de Campo
+direccion|false|Dirección
+dis_conceptual|false|Diseño Conceptual
+encuestador|false|Encuestador
+procesamiento|false|Procesamiento
+recepcionista|false|Recepcionista
+recuperador|false|Recuperador
+supervisor|false|Supervisor
