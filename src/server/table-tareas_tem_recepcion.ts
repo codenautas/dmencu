@@ -4,15 +4,7 @@ import {TableDefinition, TableContext, FieldDefinition} from "./types-dmencu";
 
 import {tareas_tem} from "./table-tareas_tem";
 
-export function addButtonsAndSetDefinition(tableDef:TableDefinition){
-    tableDef.fields.splice(4,0,
-        {name:"acciones"                    , typeName: 'jsonb'      , editable:false   , inTable:false},
-        {name:"acciones_avance"             , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesAvance'},
-        {name:"acciones_retroceso"          , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesRetroceso'},
-        {name:"acciones_blanqueo"           , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesBlanqueo'},
-        {name:"visible_en_asignacion" , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
-        {name:"visible_en_recepcion"  , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
-    );
+export function setCommonDefinition(tableDef:TableDefinition){
     tableDef.fields.forEach((field:FieldDefinition)=>field.table='tareas_tem');
     //tableDef.selfRefresh = true;
     tableDef.refrescable = true;
@@ -39,7 +31,15 @@ export function checkMyActions(tableDef:TableDefinition, myField:string){
 export function tareas_tem_recepcion(context:TableContext):TableDefinition {
     var tableDef = tareas_tem(context);
     tableDef.name = `tareas_tem_recepcion`;
-    addButtonsAndSetDefinition(tableDef);
+    tableDef.fields.splice(4,0,
+        {name:"acciones"                    , typeName: 'jsonb'      , editable:false   , inTable:false},
+        {name:"acciones_avance"             , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesAvance'},
+        {name:"acciones_retroceso"          , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesRetroceso'},
+        {name:"acciones_blanqueo"           , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesBlanqueo'},
+        {name:"visible_en_asignacion" , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
+        {name:"visible_en_recepcion"  , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
+    );
+    setCommonDefinition(tableDef);
     tableDef.filterColumns=[
         {column:'visible_en_recepcion', operator:'=', value:true}
     ];

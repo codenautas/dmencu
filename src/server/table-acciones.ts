@@ -18,7 +18,6 @@ export function acciones(context:TableContext):TableDefinition {
             {name:'icono'                    , typeName:'text'        , editable:false   , inTable:false, clientSide:'verIconoSvg'},
             {name:'desc_eaccion'             , typeName:'text'},
             {name:'confirma'                 , typeName:'boolean', nullable: false, defaultDbValue: 'false'},
-            {name:'asigna'                   , typeName:'boolean', nullable: false, defaultDbValue: 'false'},
             {name:'recepciona'               , typeName:'boolean', nullable: false, defaultDbValue: 'false'},
         ],
         primaryKey:['operativo', 'eaccion'],
