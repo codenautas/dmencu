@@ -1,7 +1,7 @@
 {
   "name": "dmencu",
   "description": "DM Encu - Encuestas en dispositivo móvil",
-  "version": "0.3.28",
+  "version": "0.3.29",
   "author": "Codenautas <codenautas@googlegroups.com>",
   "license": "MIT",
   "main": "dist/server/server/app-dmencu.js",
@@ -11,11 +11,11 @@
     "install"
   ],
   "dependencies": {
-    "@material-ui/core": "~4.12.3",
+    "@material-ui/core": "^4.12.4",
     "memoize-one": "~6.0.0",
     "meta-enc": "^1.4.5",
     "procesamiento": "^1.0.10",
-    "backend-plus": "^1.17.14",
+    "backend-plus": "^1.17.15",
     "qrcode": "^1.5.0",
     "react": "~17.0.2",
     "react-dom": "~17.0.2",
