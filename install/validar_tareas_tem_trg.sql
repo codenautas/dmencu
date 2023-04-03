@@ -1,8 +1,8 @@
 --set role dmencu_owner;
 --set search_path=base;
 
-DROP FUNCTION if exists permite_modificar_tareas_tem_trg();
-CREATE OR REPLACE FUNCTION permite_modificar_tareas_tem_trg()
+DROP FUNCTION if exists validar_tareas_tem_trg();
+CREATE OR REPLACE FUNCTION validar_tareas_tem_trg()
     RETURNS trigger
     LANGUAGE 'plpgsql'
 AS $BODY$
@@ -46,9 +46,9 @@ begin
 end;
 $BODY$;
 
-DROP TRIGGER IF EXISTS permite_modificar_tareas_tem_trg ON tareas_tem;
-CREATE TRIGGER permite_modificar_tareas_tem_trg
+DROP TRIGGER IF EXISTS validar_tareas_tem_trg ON tareas_tem;
+CREATE TRIGGER validar_tareas_tem_trg
    BEFORE UPDATE
    ON tareas_tem
    FOR EACH ROW
-   EXECUTE PROCEDURE permite_modificar_tareas_tem_trg();   
+   EXECUTE PROCEDURE validar_tareas_tem_trg();   
