@@ -2,6 +2,8 @@
 --set search_path=base;
 
 DROP FUNCTION if exists validar_tareas_tem_trg();
+set search_path = base;
+
 CREATE OR REPLACE FUNCTION validar_tareas_tem_trg()
     RETURNS trigger
     LANGUAGE 'plpgsql'
@@ -23,8 +25,8 @@ begin
         if old.asignado is distinct from new.asignado and not v_permite_asignar then 
             raise exception 'Error: no es posible asignar en la encuesta % del operativo % ya que su estado no lo permite', new.enc, new.operativo;
         end if;
-        if not (new.tarea = v_tarea_actual or 
-                old.asignado is distinct from new.asignado and new.tarea = v_tarea_proxima) then
+        if not (new.tarea = coalesce(v_tarea_actual,'nulo') or 
+                old.asignado is distinct from new.asignado and new.tarea = coalesce(v_tarea_proxima,'nulo')) then
             raise exception 'Error: no es posible modificar la encuesta % del operativo % ya que la tarea actual definida en TEM no coincide con la tarea %', new.enc, new.operativo, new.tarea;
         end if;
         if old.asignado is distinct from new.asignado then
