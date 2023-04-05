@@ -4,7 +4,7 @@ import {TableDefinition, TableContext} from "./types-dmencu";
 
 export function areas(context:TableContext):TableDefinition {
     var be=context.be;
-    var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';
+    var puedeEditar = context.forDump || context.puede?.campo?.administrar|| ['recepcionista','admin'].includes(context.user.rol);
     return {
         name:'areas',
         elementName:'area',
@@ -31,6 +31,7 @@ export function areas(context:TableContext):TableDefinition {
             //{name:'recuperador'             , typeName:'text'                    },
             //{name:'supervisor'              , typeName:'text'                    },
             {name:'observaciones_hdr'       , typeName:'text'                      },
+            {name:'cantidad_encuestas'      , typeName:'integer' },
             {name:'clases'                  , typeName:'text'    , editable:false  , inTable:false},
             {name:'cargado'                 , typeName:'boolean' , editable:false  , inTable:false},
             {name:'reas'                    , typeName:'integer' , editable:false  , aggregate:'sum', inTable:false },
@@ -74,7 +75,7 @@ export function areas(context:TableContext):TableDefinition {
             isTable:true,
             from:` 
             (select a.operativo, a.area, a.recepcionista, ta.asignado encuestador
-                ,  a.observaciones_hdr, a.verificado_rec, a.obs_recepcionista
+                ,  a.observaciones_hdr, a.cantidad_encuestas, a.verificado_rec, a.obs_recepcionista
                   --a.operacion_area, a.fecha,
                 , a.cargadas_bkp, a.reas_bkp, a.no_reas_bkp, a.incompletas_bkp, a.vacias_bkp, a.inhabilitadas_bkp
                 , t.*
