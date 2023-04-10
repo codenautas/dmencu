@@ -8,7 +8,6 @@ export function setCommonDefinition(tableDef:TableDefinition){
     tableDef.fields.forEach((field:FieldDefinition)=>field.table='tareas_tem');
     //tableDef.selfRefresh = true;
     tableDef.refrescable = true;
-    //tableDef.primaryKey = ['operativo','enc'];
     tableDef.sql!.isTable = false;
     return tableDef
 }
@@ -36,15 +35,17 @@ export function tareas_tem_recepcion(context:TableContext):TableDefinition {
         {name:"acciones_avance"             , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesAvance'},
         {name:"acciones_retroceso"          , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesRetroceso'},
         {name:"acciones_blanqueo"           , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesBlanqueo'},
-        {name:"visible_en_asignacion" , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
-        {name:"visible_en_recepcion"  , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
+        {name:"visible_en_asignacion"       , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
+        {name:"visible_en_recepcion"        , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
     );
     setCommonDefinition(tableDef);
+    tableDef.primaryKey = ['operativo','enc'];
     tableDef.filterColumns=[
         {column:'visible_en_recepcion', operator:'=', value:true}
     ];
     tableDef.hiddenColumns=['cargado_dm','notas', 'acciones','fecha_asignacion'];
     checkMyActions(tableDef,'recepciona');
+    tableDef.sql!.where = `"tem".tarea_actual="tareas_tem".tarea`;
     return tableDef
 }
 
