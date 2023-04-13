@@ -643,6 +643,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             })
         })
         be.appendToTableDefinition('inconsistencias',function(tableDef, context){
+            tableDef.sql={...tableDef.sql, isTable:true};
             tableDef.fields.splice(2,0,
                 {name:'vivienda'    , typeName:'text'     , editable: false},
                 {name:'hogar'       , typeName:'bigint'   , editable: false},
