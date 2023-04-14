@@ -16,24 +16,13 @@ begin
         where operativo = new.operativo and enc = new.enc;
     select estado_al_asignar into v_estado_al_asignar from estados where operativo = new.operativo and estado = new.estado;
     if new.asignado is null then
-        /*update tareas_tem 
-            set estado = '0D'
-            where operativo = new.operativo and enc = new.enc and tarea = new.tarea;
-            */
         update tem 
-            set tarea_proxima = new.tarea, tarea_actual = new.tarea_anterior 
+            set tarea_proxima = new.tarea, tarea_actual = new.tarea_anterior, estado_actual = new.estado
             where operativo = new.operativo and enc = new.enc;
     else
         if v_tarea_actual is distinct from new.tarea then    
-            /*if v_estado_al_asignar is not null then
-                update tareas_tem 
-                    set estado = v_estado_al_asignar, tarea_anterior = v_tarea_actual
-                    where operativo = new.operativo and enc = new.enc and tarea = new.tarea;
-                    
-            end if;
-            */
             update tem 
-                set tarea_actual = tarea_proxima, tarea_proxima = null 
+                set tarea_actual = tarea_proxima, tarea_proxima = null , estado_actual = new.estado
                 where operativo = new.operativo and enc = new.enc;
         end if;
     end if;
