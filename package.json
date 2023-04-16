@@ -1,7 +1,7 @@
 {
   "name": "dmencu",
   "description": "DM Encu - Encuestas en dispositivo móvil",
-  "version": "0.3.33",
+  "version": "0.3.34",
   "author": "Codenautas <codenautas@googlegroups.com>",
   "license": "MIT",
   "main": "dist/server/server/app-dmencu.js",
@@ -13,10 +13,10 @@
   "dependencies": {
     "@material-ui/core": "^4.12.4",
     "memoize-one": "~6.0.0",
-    "meta-enc": "^1.4.5",
+    "meta-enc": "^1.4.7",
     "procesamiento": "^1.0.10",
-    "backend-plus": "^1.17.18",
-    "qrcode": "^1.5.0",
+    "backend-plus": "^1.18.0",
+    "qrcode": "^1.5.1",
     "react": "~17.0.2",
     "react-dom": "~17.0.2",
     "react-redux": "~7.2.6",
@@ -29,21 +29,20 @@
   },
   "dependencias provisorias: las que se pongan en dependencias ponerlas acá y sacarlas juntas": {},
   "devDependencies": {
-    "@types/mocha": "^9.1.1",
-    "@types/node": "^18.6.1",
-    "@types/qrcode": "^1.4.2",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^18.15.11",
+    "@types/qrcode": "^1.5.0",
     "@types/react": "^17.0.38",
     "@types/react-dom": "^17.0.11",
     "@types/react-redux": "^7.1.22",
     "@types/yazl": "~2.4.2",
-    "cross-var": "^1.1.0",
     "mixin-patch": "~0.4.0",
     "pg-triggers": "~0.3.2",
-    "types.d.ts": "~0.6.7",
-    "typescript": "^4.7.4"
+    "types.d.ts": "~0.6.13",
+    "typescript": "^5.0.4"
   },
   "engines": {
-    "node": ">= 14.17.0"
+    "node": ">= 16.18.0"
   },
   "scripts": {
     "prepare": "npm run build",
