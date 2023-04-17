@@ -16,7 +16,6 @@ export function estados(context:TableContext):TableDefinition {
             {name:'orden_estado'                 , typeName:'text'},
             {name:'permite_asignar'              , typeName:'boolean', nullable:false, defaultDbValue:'false'},
             {name:'estado_al_asignar'            , typeName:'text'   },
-            {name:'visible_en_asignacion'        , typeName:'boolean', nullable:false, defaultDbValue:'false'},
             {name:'visible_en_recepcion'         , typeName:'boolean', nullable:false, defaultDbValue:'true'},
             
         ],

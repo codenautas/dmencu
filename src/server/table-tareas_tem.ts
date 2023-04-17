@@ -8,9 +8,9 @@ export function tareas_tem(context:TableContext):TableDefinition {
     var db=be.db; 
     var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';       
     var fields:FieldDefinition[]=[
-        {name:'operativo'                   , typeName:'text', isPk:2},
-        {name:'enc'                         , typeName:'text', isPk:3},
-        {name:'tarea'                       , typeName:'text', isPk:1},
+        {name:'operativo'                   , typeName:'text', isPk:2, editable:false},
+        {name:'enc'                         , typeName:'text', isPk:3, editable:false},
+        {name:'tarea'                       , typeName:'text', isPk:1, editable:false},
         {name:'estado'                      , typeName:'text'        , editable:false   , nullable: false, defaultDbValue:"'0D'"},
         {name:'abrir'                       , typeName:'text'        , editable:false   , inTable:false, clientSide:'abrirRecepcion'},
         {name:"consistir"                   , typeName: 'text'       , editable:false   , inTable:false, clientSide:'consistir'},
@@ -19,7 +19,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
       //  {name:'ok'                          , typeName: 'text'       , editable:false   , inTable:false },
         {name:'asignante'                   , typeName:'text'        , editable:false, inTable:false}, // va a la hoja de ruta
         {name:'recepcionista_tarea'         , typeName:'text'        , editable:true,  references:'recepcionistas' }, 
-        {name:'asignado'                    , typeName:'text'}, // va a la hoja de ruta
+        {name:'asignado'                    , typeName:'text'        , editable:false}, // va a la hoja de ruta
         {name:'operacion'                   , typeName:'text'        , editable:false,}, // cargar/descargar
         {name:'fecha_asignacion'            , typeName:'date'}, // cargar/descargar
         {name:"carga_observaciones"         , typeName: "text"       , editable: true},        
@@ -132,7 +132,6 @@ export function tareas_tem(context:TableContext):TableDefinition {
                     , t.rea_sup ult_rea_sup, t.norea_sup as ult_norea_sup, t.resumen_estado_sup ult_resumen_estado_sup
                     , dominio
                     , v.consistido
-                    , e.visible_en_asignacion
                     , e.visible_en_recepcion
                     from 
                         tem t left join tareas_tem tt

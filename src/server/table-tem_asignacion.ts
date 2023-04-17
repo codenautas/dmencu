@@ -3,14 +3,13 @@
 import {TableDefinition, TableContext, FieldDefinition, OtherTableDefs} from "./types-dmencu";
 
 import { tem } from "./table-tem";
-import { setCommonDefinition } from "./table-tareas_tem_recepcion";
 
-export function tareas_tem_asignables(context:TableContext):TableDefinition {
+export function tem_asignacion(context:TableContext):TableDefinition {
     var tareas = ['encu','recu','supe'];
     var tareas_fields = [
-        {name:'recepcionista_tarea', prefijo:'rec'},
-        {name:'asignado', prefijo:'per'},
-        {name:'estado', prefijo:'est'}
+        {name:'recepcionista_tarea', prefijo:'rec', editable:true},
+        {name:'asignado', prefijo:'per', editable:true},
+        {name:'estado', prefijo:'est', editable:false}
     ]
     var extraFields:FieldDefinition[] = [];
     var extraFrom = '';
@@ -19,7 +18,7 @@ export function tareas_tem_asignables(context:TableContext):TableDefinition {
 
     tareas.forEach(t=>{
         tareas_fields.forEach(f=>{
-            extraFields.push({name:`${f.prefijo}_${t}`, typeName:'text', table:`tem_${t}`, nameForUpsert:f.name});
+            extraFields.push({name:`${f.prefijo}_${t}`, typeName:'text', table:`tem_${t}`, nameForUpsert:f.name, editable:f.editable});
             extraSelect += `, tem_${t}.${f.name} as ${f.prefijo}_${t}`;
         })
         extraFrom += ` 
@@ -32,22 +31,16 @@ export function tareas_tem_asignables(context:TableContext):TableDefinition {
     });
    
     var tableDef = tem(context, {});
-    tableDef.name = `tareas_tem_asignables`;
-    // setCommonDefinition(tableDef);
-    tableDef.primaryKey = ['operativo','enc'];
+    tableDef.name = `tem_asignacion`;
     tableDef.fields = tableDef.fields.filter((field)=>
-        ['operativo','enc','tarea_actual', 'estado_actual', 'habilitada', 'area', 'tarea_proxima', 'cargado_dm']
+        ['operativo','enc','tarea_actual', 'estado_actual', /*'abrir'*/,'habilitar','habilitada', 'area', 'tarea_proxima', 'cargado','cargado_dm']
         .includes(field.name)
     ).concat(extraFields);
-    /*
-    tableDef.softForeignKeys=[
-        {references:'tokens', fields:[{source:'cargado_dm', target:'token'}], displayFields:['username'], displayAfterFieldName:'cargado'},
-    ],
-    tableDef.hiddenColumns=['cargado_dm','notas'];
-    */
+    tableDef.refrescable = true;
+    tableDef.sql!.isTable = false;
     tableDef.sql!.from =  `(select t.* ${extraSelect} from (${tableDef.sql!.from}) t ${extraFrom})`,
     tableDef.sql!.otherTableDefs = otherTableDefs
-    // tableDef.sql!.where = `(tarea_actual="tareas_tem".tarea or tarea_actual is null)`;
+    tableDef.detailTables = tableDef.detailTables.filter((detailTable)=>['tareas_tem'].includes(detailTable.table));
     return tableDef
 }
 
