@@ -3,9 +3,10 @@
 import {TableDefinition, TableContext, FieldDefinition, OtherTableDefs} from "./types-dmencu";
 
 import { tem } from "./table-tem";
+import { IdTarea } from "../unlogged/tipos";
 
 export function tem_asignacion(context:TableContext):TableDefinition {
-    var tareas = ['encu','recu','supe'];
+    var tareas: IdTarea[] = ['encu','recu','supe'];
     var tareas_fields = [
         {name:'recepcionista_tarea', prefijo:'rec', editable:true},
         {name:'asignado', prefijo:'per', editable:true},
@@ -39,7 +40,7 @@ export function tem_asignacion(context:TableContext):TableDefinition {
     tableDef.refrescable = true;
     tableDef.sql!.isTable = false;
     tableDef.sql!.from =  `(select t.* ${extraSelect} from (${tableDef.sql!.from}) t ${extraFrom})`,
-    tableDef.sql!.otherTableDefs = otherTableDefs
+    tableDef.sql!.otherTableDefs = otherTableDefs;
     tableDef.detailTables = tableDef.detailTables.filter((detailTable)=>['tareas_tem'].includes(detailTable.table));
     return tableDef
 }
