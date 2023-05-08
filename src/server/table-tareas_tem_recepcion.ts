@@ -15,6 +15,7 @@ export function tareas_tem_recepcion(context:TableContext):TableDefinition {
         {name:"visible_en_recepcion"        , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
     );
     tableDef.fields.forEach((field:FieldDefinition)=>field.table='tareas_tem');
+    //tableDef.fields.forEach((field:FieldDefinition)=>field.editable=false);
     tableDef.primaryKey = ['operativo','enc'];
     tableDef.filterColumns=[
         {column:'visible_en_recepcion', operator:'=', value:true}

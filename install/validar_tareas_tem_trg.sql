@@ -22,11 +22,21 @@ begin
         from estados
         where operativo = new.operativo and estado =  new.estado;
     if v_habilitada then
-        if old.asignado is distinct from new.asignado and not v_permite_asignar then 
-            raise exception 'Error: no es posible asignar en la encuesta % del operativo % ya que su estado no lo permite', new.enc, new.operativo;
+        if old.asignado is distinct from new.asignado then 
+            if not v_permite_asignar then
+                raise exception 'Error: no es posible asignar en la encuesta % del operativo % ya que su estado no lo permite', new.enc, new.operativo;
+            end if;
+            if new.recepcionista_tarea is null then 
+                raise exception 'Error: no es posible asignar en la encuesta % del operativo % ya que no se indicó un/a recepcionista', new.enc, new.operativo;
+            end if;
         end if;
-        if old.recepcionista_tarea is distinct from new.recepcionista_tarea and not v_permite_asignar then 
-            raise exception 'Error: no es posible modificar recepcionista en la encuesta % del operativo % ya que su estado no lo permite', new.enc, new.operativo;
+        if old.recepcionista_tarea is distinct from new.recepcionista_tarea then
+            if not v_permite_asignar then 
+                raise exception 'Error: no es posible modificar recepcionista en la encuesta % del operativo % ya que su estado no lo permite', new.enc, new.operativo;
+            end if;
+            if new.recepcionista_tarea is null and new.asignado is not null then 
+                raise exception 'Error: no es posible quitar el recepcionista de la encuesta % del operativo % ya que se la misma se encuentra asignada', new.enc, new.operativo;
+            end if;
         end if;
         if not (new.tarea = coalesce(v_tarea_actual,'nulo') or 
             ((old.asignado is distinct from new.asignado) or (old.recepcionista_tarea is distinct from new.recepcionista_tarea)) 

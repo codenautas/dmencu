@@ -100,12 +100,13 @@ export function tareas_tem(context:TableContext):TableDefinition {
             {references:'usuarios', fields:[{source:'asignado' , target:'idper'}], alias:'ad'},
             {references:'operaciones' , fields:['operacion']},
             {references:'estados' , fields:['operativo','estado']},
+            {references:'usuarios', fields:[{source:'recepcionista_tarea' , target:'idper'}], alias:'rece'},
         ],
         softForeignKeys:[
             {references:'usuarios', fields:[{source:'asignante', target:'idper'}], alias:'at'},
             {references:'tem_recepcion' , fields:['operativo','enc'], displayAllFields:true, displayAfterFieldName:'resumen_estado_sup'},
             {references:'tokens', fields:[{source:'cargado_dm', target:'token'}], displayFields:['username'], displayAfterFieldName:'cargado'},
-           // {references:'recepcionistas', fields:[{source:'recepcionista_tarea', target:'persona'}], alias:'rec'},
+            {references:'recepcionistas', fields:[{source:'recepcionista_tarea', target:'persona'}], alias:'rec'},
         ],
         "detailTables": [
             {table: "inconsistencias", abr: "I", fields: [{source:'operativo', target:'operativo'},{source:'enc', target:'vivienda'}], refreshParent:true, refreshFromParent:true}
