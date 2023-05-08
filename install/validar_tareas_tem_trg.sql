@@ -25,9 +25,13 @@ begin
         if old.asignado is distinct from new.asignado and not v_permite_asignar then 
             raise exception 'Error: no es posible asignar en la encuesta % del operativo % ya que su estado no lo permite', new.enc, new.operativo;
         end if;
+        if old.recepcionista_tarea is distinct from new.recepcionista_tarea and not v_permite_asignar then 
+            raise exception 'Error: no es posible modificar recepcionista en la encuesta % del operativo % ya que su estado no lo permite', new.enc, new.operativo;
+        end if;
         if not (new.tarea = coalesce(v_tarea_actual,'nulo') or 
-                old.asignado is distinct from new.asignado and new.tarea = coalesce(v_tarea_proxima,'nulo')) then
-            raise exception 'Error: no es posible modificar la encuesta % del operativo % ya que la tarea actual definida en TEM no coincide con la tarea %', new.enc, new.operativo, new.tarea;
+            ((old.asignado is distinct from new.asignado) or (old.recepcionista_tarea is distinct from new.recepcionista_tarea)) 
+            and new.tarea = coalesce(v_tarea_proxima,'nulo')) then
+                raise exception 'Error: no es posible modificar la encuesta % del operativo % ya que la tarea actual definida en TEM no coincide con la tarea %', new.enc, new.operativo, new.tarea;
         end if;
         if old.asignado is distinct from new.asignado then
             if new.asignado is null then
