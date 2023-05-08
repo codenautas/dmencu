@@ -19,7 +19,7 @@ export function tareas_tem_recepcion(context:TableContext):TableDefinition {
     tableDef.filterColumns=[
         {column:'visible_en_recepcion', operator:'=', value:true}
     ];
-    tableDef.hiddenColumns=['cargado_dm','notas', 'acciones','fecha_asignacion'];
+    tableDef.hiddenColumns=['cargado_dm','notas', 'acciones','fecha_asignacion', 'estados__permite_editar_encuesta'];
     tableDef.refrescable = true;
     tableDef.sql!.isTable = false;
     tableDef.sql!.from=`(select * from (${tableDef.sql!.from}) aux

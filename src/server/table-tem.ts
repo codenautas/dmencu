@@ -29,7 +29,7 @@ export function tem(context:Context, opts:any):TableDefinition {
             'cita','notas', 'cluster',
             'codviviendaparticular', 'casa', 'obsdatosdomicilio', 'obsconjunto', 'reserva', 'rotacion_etoi', 'rotacion_eah'
             , 'trimestre'   , 'procedencia', 'sel_etoi_villa'   , 'marco'      , 'semana' , 'periodicidad' 
-            , 'cargado_dm'
+            , 'cargado_dm', 'estados__permite_editar_encuesta'
         ],
         "fields": [
             {name:'operativo'            , typeName:'text'    , editable: false  , nullable: false, defaultValue: 'etoi211'},

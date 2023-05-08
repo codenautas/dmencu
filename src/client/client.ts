@@ -313,10 +313,14 @@ var crearBotonesVerAbrirTareas = async (depot:myOwn.Depot, fieldName:string, lab
     })
 }
 
+var getAbrirOver = (depot:myOwn.Depot,_fieldName:string)=>
+    depot.row.cargado_dm || !depot.row['estados__permite_editar_encuesta']?'ver':'abrir'
+
+
 myOwn.clientSides.abrir={
     prepare: (_depot, _fieldName)=>{},
     update: (depot, fieldName)=>{
-        var label:'ver'|'abrir' = depot.row.cargado_dm?'ver':'abrir';
+        var label:'ver'|'abrir' = getAbrirOver(depot,fieldName);
         crearBotonesVerAbrirTareas(depot,fieldName,label); //no espero promesa porque no es necesario
     }
 };
@@ -324,7 +328,7 @@ myOwn.clientSides.abrir={
 myOwn.clientSides.abrirRecepcion={
     prepare: (_depot, _fieldName)=>{},
     update: (depot, fieldName)=>{
-        var label:'ver'|'abrir' = depot.row.cargado?'ver':'abrir';
+        var label:'ver'|'abrir' = getAbrirOver(depot,fieldName);
         crearBotonesVerAbrirTareas(depot,fieldName,label); //no espero promesa porque no es necesario
     }
 };

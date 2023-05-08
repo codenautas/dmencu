@@ -584,8 +584,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             var condviv= ` t.operativo= $1 and t.enc =$2`;
             var soloLectura = !!(await context.client.query(
                 `select *
-                    from tareas_tem
-                    where operativo= $1 and enc = $2 and cargado_dm is not null`
+                    from tareas_tem join estados using (operativo, estado) --pk estado verificada
+                    where operativo= $1 and enc = $2 and (cargado_dm is not null or not permite_editar_encuesta)`
                 ,
                 [operativo, vivienda]
             ).fetchOneRowIfExists()).rowCount;
@@ -1036,7 +1036,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         ],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var be = context.be;
-            await be.procedure.consistir_vivienda.coreFunction(context, {operativo:params.operativo, vivienda:params.enc})
+            await be.procedure.consistir_encuesta.coreFunction(context, {operativo:params.operativo, id_caso:params.enc})
             return 'ok';
         }
     },

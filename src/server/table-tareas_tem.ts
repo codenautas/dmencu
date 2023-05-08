@@ -92,7 +92,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
         editable:puedeEditar,
         fields,
         primaryKey:['tarea','operativo','enc'],
-        hiddenColumns:['cargado_dm','notas'],
+        hiddenColumns:['cargado_dm','notas', 'estados__permite_editar_encuesta'],
         foreignKeys:[
             {references:'tem' , fields:['operativo','enc'], displayFields:[], alias:'te'},
             {references:'tareas' , fields:['operativo','tarea']},
