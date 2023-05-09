@@ -1070,21 +1070,25 @@ function calcularFeedback(respuestas: Respuestas, forPkRaiz:ForPkRaiz, opts:Opci
     };
 }
 
-export var getFormulariosForIdVivienda = (idVivienda:number)=>{
-    var mainFormForVivienda = getMainFormForVivienda(idVivienda);
-    var formsFeedback = [mainFormForVivienda];
-    var buscarFormulariosHijos = (idFormulario:IdFormulario)=>{
-        estructura.formularios[idFormulario].casilleros.casilleros.forEach((casillero)=>{
+export var buscarFormulariosHijos = (idFormulario:IdFormulario | undefined, formsFeedback:IdFormulario[]=[])=>{
+    if(idFormulario){
+        for (let casillero of estructura.formularios[idFormulario].casilleros.casilleros){
             if(casillero.tipoc == 'BF'){
                 var formHijo = (casillero.salto?.startsWith('F:')?casillero.salto:'F:' + casillero.salto) as IdFormulario;
                 if(formHijo){
                     formsFeedback.push(formHijo);
-                    buscarFormulariosHijos(formHijo);
+                    buscarFormulariosHijos(formHijo, formsFeedback);
                 }
             }
-        })
+        }
     }
-    buscarFormulariosHijos(mainFormForVivienda);
+    return formsFeedback;
+}
+
+export var getFormulariosForIdVivienda = (idVivienda:number)=>{
+    var mainFormForVivienda = getMainFormForVivienda(idVivienda);
+    var formsFeedback = [mainFormForVivienda];
+    buscarFormulariosHijos(mainFormForVivienda, formsFeedback);
     return formsFeedback;
 }
 
@@ -1103,7 +1107,9 @@ export var calcularActualBF = (configSorteoFormulario:ConfiguracionSorteoFormula
 
 export var calcularDisabledBF = (configSorteoFormulario:ConfiguracionSorteoFormulario|null, numElementoUA: number, formulario:IdFormulario, r:Respuestas)=>
     !!(configSorteoFormulario && 
-    configSorteoFormulario.id_formulario_individual == formulario &&
+    (configSorteoFormulario.id_formulario_individual == formulario || 
+        buscarFormulariosHijos(configSorteoFormulario.id_formulario_individual).includes(formulario)
+    ) &&
     numElementoUA != coalesce(
         r[configSorteoFormulario.resultado_manual],
         r[configSorteoFormulario.resultado]
