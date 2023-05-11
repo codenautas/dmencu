@@ -151,7 +151,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             const APP_NAME = (await be.inTransaction(null, (client:pg.Client)=>
                 client.query("select operativo from parametros where unico_registro").fetchUniqueValue()
             )).value;
-            var sufijo = baseUrl.includes('test')?'_test':
+            var sufijo = baseUrl.includes('test') || baseUrl.startsWith('pr')?'_test':
                 baseUrl.includes('capa')?'_capa':'';
             try{
                 const content = {
