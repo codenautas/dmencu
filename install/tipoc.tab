@@ -6,7 +6,7 @@ CP|conjunto de preguntas|true|||false
 F|formulario||||false
 FILTRO|filtro|true|||false
 FIN|fin|true|||false
-LIBRE|casillero de uso libre (uso exclusivo de PEI)|true|||false
+LIBRE|casillero de uso libre (uso exclusivo de PEI)|true|||true
 MATRIZ|matriz (de varias preguntas)|true|||false
 O|opción|||nueva_fila|false
 OM|opción múltiple|||misma_fila|
