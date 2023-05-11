@@ -151,13 +151,13 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             const APP_NAME = (await be.inTransaction(null, (client:pg.Client)=>
                 client.query("select operativo from parametros where unico_registro").fetchUniqueValue()
             )).value;
-            var sufijo = baseUrl.includes('test') || baseUrl.startsWith('pr')?'_test':
+            var sufijo = baseUrl.includes('test') || baseUrl.includes('/pr')?'_test':
                 baseUrl.includes('capa')?'_capa':'';
             try{
                 const content = {
-                  "name": `${APP_NAME} Progressive Web App`,
-                  "short_name": `${APP_NAME} PWA`,
-                  "description": `Progressive Web App for ${APP_NAME}.`,
+                  "name": `${APP_NAME}${sufijo} Progressive Web App`,
+                  "short_name": `${APP_NAME}${sufijo} PWA`,
+                  "description": `Progressive Web App for ${APP_NAME}${sufijo}.`,
                   "icons": [
                     {
                       "src": `../img/${APP_NAME}-logo-dm-32${sufijo}.png`,
