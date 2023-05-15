@@ -4,7 +4,7 @@ import {TableDefinition, TableContext} from "./types-dmencu";
 
 import { cuentasSql, cuentasFields } from "./table-areas";  
 
-type OptsAsignados = {
+export type OptsAsignados = {
     rol: 'encu'|'recu'|'supe'|null
     name: string
 }

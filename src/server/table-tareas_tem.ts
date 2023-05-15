@@ -18,7 +18,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
         {name:'tarea_anterior'              , typeName:'text'        , editable:false},
       //  {name:'ok'                          , typeName: 'text'       , editable:false   , inTable:false },
         {name:'recepcionista'               , typeName:'text'        , editable:true }, 
-        {name:'asignado'                    , typeName:'text'        , editable:false}, // va a la hoja de ruta
+        {name:'asignado'                    , typeName:'text'        , editable:false, title:'relevador'}, // va a la hoja de ruta
         {name:'operacion'                   , typeName:'text'        , editable:false,}, // cargar/descargar
         {name:'fecha_asignacion'            , typeName:'date'}, // cargar/descargar
         {name:"carga_observaciones"         , typeName: "text"       , editable: true},        

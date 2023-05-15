@@ -1,8 +1,15 @@
 "use strict";
 
+import { OptsAsignados } from "./table-encuestadores";
 import {TableDefinition, FieldDefinition, TableContext} from "./types-dmencu";
 
-export function tareas_areas(context:TableContext):TableDefinition {
+export function tareas_areas(context:TableContext, opts?:OptsAsignados):TableDefinition {
+    if (opts == null) {
+        opts = {
+            name: 'relevador',
+            rol: null
+        }
+    }
     var be=context.be;
     var db=be.db;
     var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';
@@ -11,7 +18,7 @@ export function tareas_areas(context:TableContext):TableDefinition {
         {name:'tarea'                   , typeName:'text'   ,isPk:2},
         {name:'area'                    , typeName:'integer',isPk:3},
         {name:'recepcionista'           , typeName:'text', references: 'personal'},
-        {name:'asignado'                , typeName:'text', references: 'personal'},
+        {name:'asignado'                , typeName:'text', references: 'personal', title:opts.name},
         {name:'cargado'                 , typeName:'boolean', editable: false, inTable: false},
         {name:'verificado_recepcion'    , typeName:'text'                      },
         {name:'obs_recepcion'           , typeName:'text'                      },
@@ -51,7 +58,19 @@ export function tareas_areas(context:TableContext):TableDefinition {
 }
 
 export function t_encu_areas(context:TableContext){
-    var tableDef = tareas_areas(context);
+    var tableDef = tareas_areas(context, {rol:'encu', name:'encuestador'}) 
+    tableDef.hiddenColumns?.push('areas__encuestador');
+    return tableDef;
+}
+
+export function t_recu_areas(context:TableContext){
+    var tableDef = tareas_areas(context, {rol:'recu', name:'recuperador'}) 
+    tableDef.hiddenColumns?.push('areas__encuestador');
+    return tableDef;
+}
+
+export function t_supe_areas(context:TableContext){
+    var tableDef = tareas_areas(context, {rol:'supe', name:'supervisor'}) 
     tableDef.hiddenColumns?.push('areas__encuestador');
     return tableDef;
 }

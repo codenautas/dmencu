@@ -52,6 +52,8 @@ import { tareas              } from './table-tareas';
 import { tareas_tem          } from './table-tareas_tem';
 import { tareas_areas        } from './table-tareas_areas';
 import { t_encu_areas        } from './table-tareas_areas';
+import { t_recu_areas        } from './table-tareas_areas';
+import { t_supe_areas        } from './table-tareas_areas';
 import { mis_tareas          } from './table-mis_tareas';
 import { tem_asignacion      } from './table-tem_asignacion';
 import { tareas_tem_recepcion} from './table-tareas_tem_recepcion';
@@ -512,8 +514,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     {menuType:'menu', name:'asignacion', label:'asignación' ,menuContent:[
                         {menuType:'table', name:'general', table:'areas_asignacion_general'},
                         {menuType:'table', name:'encuestador', table:'t_encu_areas', ff:{tarea:'encu', ...filtroRecepcionista}},
-                        {menuType:'table', name:'recuperador', table:'tareas_areas', ff:{tarea:'recu', ...filtroRecepcionista}},
-                        {menuType:'table', name:'supervisor' , table:'tareas_areas', ff:{tarea:'supe', ...filtroRecepcionista}},
+                        {menuType:'table', name:'recuperador', table:'t_recu_areas', ff:{tarea:'recu', ...filtroRecepcionista}},
+                        {menuType:'table', name:'supervisor' , table:'t_supe_areas', ff:{tarea:'supe', ...filtroRecepcionista}},
                     ]},            
                 )
                 menu.push(
@@ -627,6 +629,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , tareas_tem
             , tareas_areas
             , t_encu_areas
+            , t_recu_areas
+            , t_supe_areas
             , mis_tareas
             , tem_asignacion
             , tareas_tem_recepcion
