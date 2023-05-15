@@ -31,7 +31,7 @@ begin
     alter table "tareas" rename column rol_asignante to rol_recepcionista;
     raise notice 'cambios debidos a tareas_areas.asignante realizadas!';
 	raise notice 'correr: install/sincro_tareas_areas_tareas_tem_trg.sql';
-	raise notice 'correr: install/asignar_desasignar_tareas_tem_trg';
+	raise notice 'correr: install/asignar_desasignar_tareas_tem_trg'; 
   end if;
 end; 
 $command$;

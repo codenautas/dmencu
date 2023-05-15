@@ -4,7 +4,7 @@
 DROP FUNCTION if exists sincro_tareas_areas_tareas_tem_trg();
 CREATE OR REPLACE FUNCTION sincro_tareas_areas_tareas_tem_trg()
     RETURNS trigger
-    LANGUAGE 'plpgsql'
+    LANGUAGE 'plpgsql' 
 AS $BODY$
 begin
     update tareas_tem tt

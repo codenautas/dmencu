@@ -55,7 +55,7 @@ begin
                 end if;
             end if;
         end if;
-    else
+    else 
         raise exception 'Error: la encuesta % del operativo % se encuentra deshabilitada', new.enc, new.operativo;
     end if;
     return new;
