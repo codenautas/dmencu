@@ -5,7 +5,7 @@ set search_path=base;
 -- TODO reveer si agregamos campos asociados a las tareas supe y recu a areas
 
 --delete from tareas_areas;
-insert into tareas_areas(operativo, tarea, area, asignado, asignante, obs_asignante)
+insert into tareas_areas(operativo, tarea, area, asignado, recepcionista, obs_recepcionista)
     select * 
         from (
           select a.operativo, t.tarea, area, case when tarea='encu' then encuestador else null end asignado, recepcionista, obs_recepcionista

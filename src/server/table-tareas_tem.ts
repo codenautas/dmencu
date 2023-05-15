@@ -17,8 +17,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
         {name:'area'                        , typeName: 'integer'    , editable:false   , inTable:false },
         {name:'tarea_anterior'              , typeName:'text'        , editable:false},
       //  {name:'ok'                          , typeName: 'text'       , editable:false   , inTable:false },
-        {name:'asignante'                   , typeName:'text'        , editable:false, inTable:false}, // va a la hoja de ruta
-        {name:'recepcionista_tarea'         , typeName:'text'        , editable:true,  references:'recepcionistas' }, 
+        {name:'recepcionista'               , typeName:'text'        , editable:true }, 
         {name:'asignado'                    , typeName:'text'        , editable:false}, // va a la hoja de ruta
         {name:'operacion'                   , typeName:'text'        , editable:false,}, // cargar/descargar
         {name:'fecha_asignacion'            , typeName:'date'}, // cargar/descargar
@@ -62,7 +61,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
                     when tareas_tem.habilitada and tareas_tem.tarea='supe' 
                         and (count(*) filter (where not h.habilitada  and h.tarea ='recu' and no_rea.grupo0~*'^ausencia|rechazo' ))>0  then 'RECUPERAR antes de habil. Supervision'
                 else '' end  
-                from tareas_tem h join tem  using (operativo, enc) left join no_rea on tem.norea=(no_rea.no_rea)::integer
+                from tareas_tem h join tem t2 using (operativo, enc) left join no_rea on t2.norea=(no_rea.no_rea)::integer
                where h.enc=tareas_tem.enc and h.operativo=tareas_tem.operativo
             )
             ||(select case 
@@ -94,39 +93,31 @@ export function tareas_tem(context:TableContext):TableDefinition {
         primaryKey:['tarea','operativo','enc'],
         hiddenColumns:['cargado_dm','notas', 'estados__permite_editar_encuesta'],
         foreignKeys:[
-            {references:'tem' , fields:['operativo','enc'], displayFields:[], alias:'te'},
+            {references:'tem' , fields:['operativo','enc'], displayFields:[]},
             {references:'tareas' , fields:['operativo','tarea']},
-            {references:'tareas' , fields:[{source:'operativo', target:'operativo'}, {source: 'tarea_anterior', target:'tarea'}], alias:'tarant'},
-            {references:'usuarios', fields:[{source:'asignado' , target:'idper'}], alias:'ad'},
+            {references:'tareas' , fields:[{source:'operativo', target:'operativo'}, {source: 'tarea_anterior', target:'tarea'}], alias:'tarea_anterior'},
+            {references:'usuarios', fields:[{source:'asignado' , target:'idper'}], alias:'asignado'},
             {references:'operaciones' , fields:['operacion']},
             {references:'estados' , fields:['operativo','estado']},
-            {references:'usuarios', fields:[{source:'recepcionista_tarea' , target:'idper'}], alias:'rece'},
+            {references:'usuarios', fields:[{source:'recepcionista' , target:'idper'}], alias:'recepcionista'},
         ],
         softForeignKeys:[
-            {references:'usuarios', fields:[{source:'asignante', target:'idper'}], alias:'at'},
-            {references:'tem_recepcion' , fields:['operativo','enc'], displayAllFields:true, displayAfterFieldName:'resumen_estado_sup'},
+            {references:'usuarios', fields:[{source:'recepcionista', target:'idper'}], alias:'at'},
+            {references:'tem_recepcion' , fields:['operativo','enc'], displayAllFields:true, displayAfterFieldName:'resumen_estado_sup', alias:"tem_rec"},
             {references:'tokens', fields:[{source:'cargado_dm', target:'token'}], displayFields:['username'], displayAfterFieldName:'cargado'},
-            {references:'recepcionistas', fields:[{source:'recepcionista_tarea', target:'persona'}], alias:'rec'},
+            {references:'recepcionistas', fields:[{source:'recepcionista', target:'persona'}], alias:'rec'},
         ],
-        "detailTables": [
+        detailTables: [
             {table: "inconsistencias", abr: "I", fields: [{source:'operativo', target:'operativo'},{source:'enc', target:'vivienda'}], refreshParent:true, refreshFromParent:true}
         ],
         sql:{
             isTable: true,
-            //insertIfNotUpdate:true,
-            /*fields:{
-                ok:{ 
-                    expr:ok_string
-                },
-            },*/
             from:`(
                 select *
                     from (
                 select ta.tarea, t.operativo, t.enc, t.area
                     ${fields.filter(x=>!(x.isPk || x.inTable===false||x.name=='area')).map(x=>`, tt.${db.quoteIdent(x.name)}`).join('')}
                     , y.grupo as ult_gru_no_rea
-                    , case rol_asignante when 'automatico' then null
-                        when 'recepcionista' then a.recepcionista end as asignante
                     , case when tt.tarea='recu' and y.grupo0 in ('ausentes','rechazos') then 'recuperacion' else null end a_recuperacion   
                     , t.supervision_aleatoria
                     , t.rea ult_rea, t.norea as ult_norea, t.resumen_estado ult_resumen_estado

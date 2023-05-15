@@ -251,26 +251,26 @@ function mostrarDatosPersona(hayDatos:boolean, datos:any, divResult:HTMLDivEleme
         var idper=my.config.idper;
         var esperar:boolean=false;
         if(row.habilitada){
-            if(!row.asignante && !row.asignado){
+            if(!row.recepcionista && !row.asignado){
                 tarea='preasignar';
                 esperar=true;
             }else if(!row.asignado || !row.fecha_asignacion || !row.operacion){
                 tarea='cargar';
-                esperar=row.asignante!=idper;
+                esperar=row.recepcionista!=idper;
             }else if(!row.rea){
                 tarea='realizar';
                 esperar=row.asignado!=idper;
             }else if(!row.verificado){
                 tarea='verificar';
-                esperar=row.asignante!=idper;
+                esperar=row.recepcionista!=idper;
             }
         }
         var poner={
-            asignante          :tarea=='preasignar' && (esperar?'esperar':'normal'),
+            recepcionista          :tarea=='preasignar' && (esperar?'esperar':'normal'),
             asignado           :tarea=='cargar'     && (esperar?'esperar':'normal'),
             fecha_asignacion   :tarea=='cargar'     && (esperar?'esperar':'normal'),
             operacion          :tarea=='cargar'     && (esperar?'esperar':'normal'),
-            carga_observaciones:(tarea=='cargar'     || tarea=='realizar' && !row.cargado && !row.rea ) && row.asignante==idper && 'optativo',
+            carga_observaciones:(tarea=='cargar'     || tarea=='realizar' && !row.cargado && !row.rea ) && row.recepcionista==idper && 'optativo',
             verificado         :tarea=='verificar'  && (esperar?'esperar':'normal'),
             obs_verificado     :tarea=='verificar'  && (esperar?'esperar':'optativo'),
         }

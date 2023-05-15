@@ -1,8 +1,8 @@
 "use strict";
 
-import {TableDefinition, Context} from "./types-dmencu";
+import {TableDefinition, ContextForDump} from "./types-dmencu";
 
-export function tem(context:Context, opts:any):TableDefinition {
+export function tem(context:ContextForDump, opts?:any):TableDefinition {
     var opts=opts||{};
     var recepcion=opts.recepcion?'_recepcion':'';
     var be=context.be;

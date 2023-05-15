@@ -7,8 +7,14 @@ import {getOperativoActual, ProceduresDmEncu} from "./procedures-dmencu";
 import * as pg from "pg-promise-strict";
 import {json} from "pg-promise-strict";
 import * as miniTools from "mini-tools";
-import {Context, MenuInfoBase, Request, Response} from "./types-dmencu";
-import { changing } from "best-globals";
+import {
+    Client, Context, CoreFunctionParameters, 
+    MenuInfoBase, 
+    Request, Response,
+    SufijosAmbiente,
+} from "./types-dmencu";
+
+import { unexpected } from "cast-error";
 
 import * as yazl from "yazl";
 import { NextFunction } from "express-serve-static-core";
@@ -20,8 +26,10 @@ import {promises as fs } from "fs";
 import { roles               } from "./table-roles";
 import { personal            } from "./table-personal";
 import { recepcionistas      } from "./table-recepcionistas";
-import { encuestadores         } from "./table-encuestadores";
-import { mis_encuestadores     } from "./table-mis_encuestadores";
+import { encuestadores_asignados } from "./table-encuestadores";
+import { recuperadores_asignados } from "./table-encuestadores";
+import { supervisores_asignados  } from "./table-encuestadores";
+import { mis_encuestadores   } from "./table-mis_encuestadores";
 import { recuperadores       } from "./table-recuperadores";
 import { supervisores        } from "./table-supervisores";
 import { personal_rol        } from "./table-personal_rol";
@@ -43,6 +51,7 @@ import { sincronizaciones    } from './table-sincronizaciones';
 import { tareas              } from './table-tareas';
 import { tareas_tem          } from './table-tareas_tem';
 import { tareas_areas        } from './table-tareas_areas';
+import { t_encu_areas        } from './table-tareas_areas';
 import { mis_tareas          } from './table-mis_tareas';
 import { tem_asignacion      } from './table-tem_asignacion';
 import { tareas_tem_recepcion} from './table-tareas_tem_recepcion';
@@ -74,10 +83,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         this.caches.tableContent = this.caches.tableContent || {};
         this.caches.tableContent.no_rea=[]
         this.caches.tableContent.no_rea_groups=[]
-        this.metaEncIncluirCasillerosSaltoREL = false;
-        this.timestampEstructura = new Date().getTime();
+        this.caches.metaEncIncluirCasillerosSaltoREL = false;
+        this.caches.timestampEstructura = new Date().getTime();
     }
-    async getProcedures(){
+    override async getProcedures(){
         var be = this;
         var procedimientoAReemplazar=["caso_guardar","caso_traer"];
         var parentProc = await super.getProcedures();
@@ -85,11 +94,11 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         parentProc = parentProc.map(procDef=>{
             if(procDef.action == 'table_record_save' || procDef.action == 'table_record_delete'){
                 var coreFunctionInterno = procDef.coreFunction;
-                procDef.coreFunction = async function(context, parameters){
+                procDef.coreFunction = async function(context:Context, parameters:CoreFunctionParameters){
                     var result = await coreFunctionInterno(context, parameters)
                     if(parameters.table == 'casilleros'){
-                        be.timestampEstructura = new Date().getTime();
-                        console.log('se tocó la estructura', be.timestampEstructura)
+                        be.caches.timestampEstructura = new Date().getTime();
+                        console.log('se tocó la estructura', be.caches.timestampEstructura)
                     }
                     return result;
                 }
@@ -98,14 +107,14 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         })
         return parentProc.concat(ProceduresDmEncu);
     }
-    async checkDatabaseStructure(_client:Client){
+    override async checkDatabaseStructure(_client:Client){
     }
-    addSchrödingerServices(mainApp:procesamiento.Express, baseUrl:string){
+    override addSchrödingerServices(mainApp:procesamiento.Express, baseUrl:string){
         let be=this;
         super.addSchrödingerServices(mainApp, baseUrl);
         //permito levantar mis imagenes en aplicaciones dependientes
         be.app.use('/img', express.static('node_modules/dmencu/dist/unlogged/unlogged/img'))
-        mainApp.use(function(req:Request,res:Response, next:NextFunction){
+        mainApp.use(function(req:Request,_res:Response, next:NextFunction){
             if(req.session && !req.session.install){
                 req.session.install=Math.random().toString().replace('.','');
             }
@@ -131,7 +140,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         });
         var createServiceWorker = async function(){
             var sw = await fs.readFile('node_modules/service-worker-admin/dist/service-worker-wo-manifest.js', 'utf8');
-            var manifest = be.createResourcesForCacheJson({});
+            var manifest = be.createResourcesForCacheJson();
             var swManifest = sw
                 .replace("'/*version*/'", JSON.stringify(manifest.version))
                 .replace("'/*appName*/'", JSON.stringify(manifest.appName))
@@ -144,7 +153,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             try{
                 miniTools.serveText(await createServiceWorker(),'application/javascript')(req,res);
             }catch(err){
-                miniTools.serveErr(req,res,next)(err);
+                miniTools.serveErr(req,res,next)(unexpected(err));
             }
         });
         mainApp.get(baseUrl+`/carga-dm/web-manifest.webmanifest`, async function(req, res, next){
@@ -190,16 +199,15 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                       "type": "image/png"
                     }
                   ],
-                  ...be.getColorsJson(sufijo)
+                  ...be.getColorsJson(sufijo as SufijosAmbiente)
                 }
                 miniTools.serveText(JSON.stringify(content), 'application/json')(req,res);
             }catch(err){
-                console.log(err);
-                miniTools.serveErr(req, res, next)(err);
+                miniTools.serveErr(req, res, next)(unexpected(err));
             }
         });
     }
-    getColorsJson(_sufijo:'_test'|'_capa'|''){
+    getColorsJson(_sufijo: SufijosAmbiente){
         return {
             "start_url": "../campo",
             "display": "standalone",
@@ -207,10 +215,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             "background_color": "#6d60ed"
         }
     }
-    addLoggedServices(){
+    override addLoggedServices(){
         var be = this;
         super.addLoggedServices();
-        be.app.get('/manifest.manifest', async function(req:Request, res:Response, next:NextFunction){
+        be.app.get('/manifest.manifest', async function(req:Request, res:Response, _next:NextFunction){
             miniTools.serveFile('src/client/manifest.manifest',{})(req,res);
         });
         this.app.get('/file', async function(req:Request,res:Response){
@@ -237,17 +245,17 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             await Promise.all(files.map(async function(fileName:string){
                 var path = base+'/'+fileName;
                 var stat = await fs.stat(path);
-                if(stat.isFile){
+                if(stat.isFile()){
                     zip.addFile(path,fileName);
                 }
             }));
             zip.end();
         })
     }
-    async postConfig(){
+    override async postConfig(){
         await super.postConfig();
         var be=this;
-        be.metaEncIncluirCasillerosSaltoREL = false;
+        be.caches.metaEncIncluirCasillerosSaltoREL = false;
         await be.inTransaction(null, async function(client:pg.Client){
             var qPermisos=`
             SELECT jsonb_object_agg(r.rol,jsonb_build_object('superuser',r.superuser,'puede',(
@@ -273,21 +281,21 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                       FROM permisos p
                 `).fetchUniqueValue()
             ];
-            be.permisosRol=results[0].value;
-            be.permisosRolSoloTrue=results[1].value;
-            be.permisosSuperuser=results[2].value;
-            be.permisosParaNadie=likeAr(be.permisosSuperuser).map(p=>likeAr(p).map(va=>false).plain()).plain()
-            //console.dir(be.permisosRolSoloTrue,{depth:9});
-            //console.dir(be.permisosSuperuser,{depth:9});
-            //console.dir(be.permisosParaNadie,{depth:9});
+            be.caches.permisosRol=results[0].value;
+            be.caches.permisosRolSoloTrue=results[1].value;
+            be.caches.permisosSuperuser=results[2].value;
+            be.caches.permisosParaNadie=likeAr(be.caches.permisosSuperuser).map(p=>likeAr(p).map(_=>false).plain()).plain()
+            //console.dir(be.caches.permisosRolSoloTrue,{depth:9});
+            //console.dir(be.caches.permisosSuperuser,{depth:9});
+            //console.dir(be.caches.permisosParaNadie,{depth:9});
         });
         await this.refreshCaches();
     }
-    configStaticConfig(){
+    override configStaticConfig(){
         super.configStaticConfig();
         this.setStaticConfig(defConfig);
     }
-    clientIncludes(req:Request, opts:OptsClientPage):ClientModuleDefinition[] {
+    override clientIncludes(req:Request, opts:OptsClientPage):ClientModuleDefinition[] {
         var be = this;
         var unlogged = opts && opts.offlineFile;
         var menuedResources:ClientModuleDefinition[]= unlogged?[
@@ -361,128 +369,128 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
     //        ` WHEN norea  = ${be.db.quoteLiteral(x.no_rea)}::integer THEN ${be.db.quoteLiteral(x[campoNecesario])}`
     //    ).join('')} WHEN TRUE THEN NULL END`
     //}    
-    getContext(req:Request):Context{
+    override getContext(req:Request):Context{
         var be = this;
         var fatherContext = super.getContext(req);
         if(fatherContext.user){
-            if(be.permisosRol[req.user.rol]?.superuser){
-                return {superuser:true, puede: be.permisosSuperuser, ...fatherContext}
+            if(req.user?.rol !=null && be.caches.permisosRol[req.user.rol]?.superuser){
+                return {superuser:true, puede: be.caches.permisosSuperuser, ...fatherContext}
             }else{
-                return {puede: be.permisosRol[req.user.rol]?.puede, ...fatherContext}
+                return {puede: be.caches.permisosRol[req.user.rol]?.puede, ...fatherContext}
             }
         }
-        return {puede:be.permisosParaNadie, ...fatherContext};
+        return {puede:be.caches.permisosParaNadie, ...fatherContext};
     }
-    getContextForDump():Context{
+    override getContextForDump():Context{
         var fatherContext = super.getContextForDump();
-        return {superuser:true, puede: this.permisosSuperuser, ...fatherContext};
+        return {superuser:true, puede: this.caches.permisosSuperuser, ...fatherContext};
     }
-    getClientSetupForSendToFrontEnd(req:Request){
+    override async getClientSetupForSendToFrontEnd(req:Request){
         return {
-            ...super.getClientSetupForSendToFrontEnd(req),
+            ...(await super.getClientSetupForSendToFrontEnd(req)),
             idper: req.user?.idper
         }
-    
     }
-    createResourcesForCacheJson(parameters){
+    createResourcesForCacheJson(){
         var be = this;
-        var jsonResult = {};
-        
-        jsonResult.version = APP_DM_VERSION;
-        jsonResult.appName = 'dmencu';
-        jsonResult.cache=[
-            "campo",
-            "offline",
-            "lib/react.production.min.js",
-            "lib/react-dom.production.min.js",
-            "lib/material-ui.production.min.js",
-            "lib/clsx.min.js",
-            "lib/redux.min.js",
-            "lib/react-redux.min.js",
-            "lib/memoize-one.js",
-            "lib/qrcode.js",
-            "lib/require-bro.js",
-            "lib/cast-error.js",
-            "lib/like-ar.js",
-            "lib/best-globals.js",
-            "lib/json4all.js",
-            "lib/js-to-html.js",
-            "lib/redux-typed-reducer.js",
-            "dmencu/adapt.js",
-            "dmencu/unlogged.js",
-            "lib/js-yaml.js",
-            "lib/xlsx.core.min.js",
-            "lib/lazy-some.js",
-            "lib/sql-tools.js",
-            "dialog-promise/dialog-promise.js",
-            "moment/min/moment.js",
-            "pikaday/pikaday.js",
-            "lib/polyfills-bro.js",
-            "lib/big.js",
-            "lib/type-store.js",
-            "lib/typed-controls.js",
-            "lib/ajax-best-promise.js",
-            "my-ajax.js",
-            "my-start.js",
-            "lib/my-localdb.js",
-            "lib/my-websqldb.js",
-            "lib/my-localdb.js.map",
-            "lib/my-websqldb.js.map",
-            "lib/my-things.js",
-            "lib/my-tables.js",
-            "lib/my-inform-net-status.js",
-            "lib/my-menu.js",
-            "lib/my-skin.js",
-            "lib/cliente-en-castellano.js",
-            "lib/service-worker-admin.js",
-            "lib/redux-typed-reducer.js",
-            "client_modules/operativos.js",
-            "client_modules/varcal.js",
-            "client_modules/form-structure.js",
-            "client_modules/meta-enc.js",
-            "client_modules/datos-ext.js",
-            "client_modules/consistencias.js",
-            "client_modules/procesamiento.js",
-            "dmencu/tipos.js",
-            "dmencu/bypass-formulario.js",
-            "dmencu/redux-formulario.js",
-            "dmencu/render-general.js",
-            "dmencu/render-formulario.js",
-            "dmencu/abrir-formulario.js",
-            "client_modules/row-validator.js",
-            "client/menu.js",
-            "img/logo.png",
-            //"img/logo-dm.png",
-            "img/logo-128.png",
-            "img/main-loading.gif",
-            "img/borrar-valor.png",
-            "img/fondo-salteado-error.png",
-            "img/fondo-salteado.png",
-            "img/background-test.png",
-            "client-setup",
-            "css/bootstrap.min.css",
-            "css/formulario-react.css",
-            "pikaday/pikaday.css",
-            "dialog-promise/dialog-promise.css",
-            "rel-enc/estados.css",
-            "css/my-tables.css",
-            "css/my-menu.css",
-            "css/my-things.css",
-            "css/menu.css",
-            "rel-enc/my-things2.css",
-            "css/formulario-react.css",
-            "css/Roboto-Regular.ttf"
-        ]
-        jsonResult.fallback=[
-            {"path":"login", "fallback":"offline"},
-            {"path":"logout", "fallback":"offline"},
-            {"path":"login#i=sincronizar", "fallback":"offline"},
-            {"path":"menu#i=sincronizar", "fallback":"offline"}
-        ];
+        var jsonResult = {
+            version: APP_DM_VERSION,
+            appName: 'dmencu',
+            cache: [
+                "campo",
+                "offline",
+                "lib/react.production.min.js",
+                "lib/react-dom.production.min.js",
+                "lib/material-ui.production.min.js",
+                "lib/clsx.min.js",
+                "lib/redux.min.js",
+                "lib/react-redux.min.js",
+                "lib/memoize-one.js",
+                "lib/qrcode.js",
+                "lib/require-bro.js",
+                "lib/cast-error.js",
+                "lib/like-ar.js",
+                "lib/best-globals.js",
+                "lib/json4all.js",
+                "lib/js-to-html.js",
+                "lib/redux-typed-reducer.js",
+                "dmencu/adapt.js",
+                "dmencu/unlogged.js",
+                "lib/js-yaml.js",
+                "lib/xlsx.core.min.js",
+                "lib/lazy-some.js",
+                "lib/sql-tools.js",
+                "dialog-promise/dialog-promise.js",
+                "moment/min/moment.js",
+                "pikaday/pikaday.js",
+                "lib/polyfills-bro.js",
+                "lib/big.js",
+                "lib/type-store.js",
+                "lib/typed-controls.js",
+                "lib/ajax-best-promise.js",
+                "my-ajax.js",
+                "my-start.js",
+                "lib/my-localdb.js",
+                "lib/my-websqldb.js",
+                "lib/my-localdb.js.map",
+                "lib/my-websqldb.js.map",
+                "lib/my-things.js",
+                "lib/my-tables.js",
+                "lib/my-inform-net-status.js",
+                "lib/my-menu.js",
+                "lib/my-skin.js",
+                "lib/cliente-en-castellano.js",
+                "lib/service-worker-admin.js",
+                "lib/redux-typed-reducer.js",
+                "client_modules/operativos.js",
+                "client_modules/varcal.js",
+                "client_modules/form-structure.js",
+                "client_modules/meta-enc.js",
+                "client_modules/datos-ext.js",
+                "client_modules/consistencias.js",
+                "client_modules/procesamiento.js",
+                "dmencu/tipos.js",
+                "dmencu/bypass-formulario.js",
+                "dmencu/redux-formulario.js",
+                "dmencu/render-general.js",
+                "dmencu/render-formulario.js",
+                "dmencu/abrir-formulario.js",
+                "client_modules/row-validator.js",
+                "client/menu.js",
+                "img/logo.png",
+                //"img/logo-dm.png",
+                "img/logo-128.png",
+                "img/main-loading.gif",
+                "img/borrar-valor.png",
+                "img/fondo-salteado-error.png",
+                "img/fondo-salteado.png",
+                "img/background-test.png",
+                "client-setup",
+                "css/bootstrap.min.css",
+                "css/formulario-react.css",
+                "pikaday/pikaday.css",
+                "dialog-promise/dialog-promise.css",
+                "rel-enc/estados.css",
+                "css/my-tables.css",
+                "css/my-menu.css",
+                "css/my-things.css",
+                "css/menu.css",
+                "rel-enc/my-things2.css",
+                "css/formulario-react.css",
+                "css/Roboto-Regular.ttf"
+            ],
+            fallback: [
+                {"path":"login", "fallback":"offline"},
+                {"path":"logout", "fallback":"offline"},
+                {"path":"login#i=sincronizar", "fallback":"offline"},
+                {"path":"menu#i=sincronizar", "fallback":"offline"}
+            ]
+        };
         return jsonResult
     }
     getMenu(context:Context){
         let menu:MenuInfoBase[] = [];
+        let filtroRecepcionista = context.user.rol=='recepcionista' ? {recepcionista: context.user.idper} : {};
         if(this.config.server.policy=='web'){
             if(context.puede?.encuestas.relevar){
                 if(this.config['client-setup'].ambiente=='demo' || this.config['client-setup'].ambiente=='test' || this.config['client-setup'].ambiente=='capa'){
@@ -501,7 +509,22 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     //{menuType:'consistir_encuesta', name:'consistir_encuesta'},
                 )
                 menu.push(
+                    {menuType:'menu', name:'asignacion', label:'asignación' ,menuContent:[
+                        {menuType:'table', name:'general', table:'areas_asignacion_general'},
+                        {menuType:'table', name:'encuestador', table:'t_encu_areas', ff:{tarea:'encu', ...filtroRecepcionista}},
+                        {menuType:'table', name:'recuperador', table:'tareas_areas', ff:{tarea:'recu', ...filtroRecepcionista}},
+                        {menuType:'table', name:'supervisor' , table:'tareas_areas', ff:{tarea:'supe', ...filtroRecepcionista}},
+                    ]},            
+                )
+                menu.push(
                     {menuType:'menu', name:'recepcion', label:'recepción' ,menuContent:[
+                        {menuType:'table', name:'encuestador', table:'encuestadores_asignados', ff:{ ...filtroRecepcionista}},
+                        {menuType:'table', name:'recuperador', table:'recuperadores_asignados', ff:{ ...filtroRecepcionista}},
+                        {menuType:'table', name:'supervisor' , table:'supervisores_asignados' , ff:{ ...filtroRecepcionista}},
+                    ]},            
+                )
+                menu.push(
+                    {menuType:'menu', name:'recepcion_ant', label:'recepción (ant)' ,menuContent:[
                         {menuType:'table', name:'mis_areas', table:'areas', ff:{recepcionista:context.user.idper}},
                         {menuType:'table', name:'mis_encuestadores'},
                         {menuType:'table', name:'areas'},
@@ -523,7 +546,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     ]},            
                 )
             }
-            if(context.puede.encuestas.procesar){
+            if(context.puede?.encuestas.procesar){
                 menu = [ ...menu,
                     {menuType:'menu', name:'procesar', menuContent:[
                         {menuType:'table', name:'variables'    },
@@ -566,11 +589,9 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 ]
             }
         }
-        
-        
         return {menu};
     }
-    prepareGetTables(){
+    override prepareGetTables(){
         var be=this;
         super.prepareGetTables();
         this.getTableDefinition={
@@ -579,7 +600,9 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , usuarios
             , personal
             , recepcionistas
-            , encuestadores
+            , encuestadores_asignados
+            , recuperadores_asignados
+            , supervisores_asignados
             , mis_encuestadores
             , recuperadores
             , supervisores
@@ -603,6 +626,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , tareas
             , tareas_tem
             , tareas_areas
+            , t_encu_areas
             , mis_tareas
             , tem_asignacion
             , tareas_tem_recepcion

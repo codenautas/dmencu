@@ -74,7 +74,7 @@ import {
     NO_CAMBIAR__SOLO_TRAER_STATUS
 } from "./bypass-formulario"
 
-import {arrange, html, HtmlTag} from "js-to-html";
+import {html, HtmlTag} from "js-to-html";
 
 function breakeableText(text:string|null):string|undefined;
 function breakeableText(text:string|null, diccionario?:{[clave:string]:React.ReactNode}){
@@ -1112,7 +1112,6 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                 var htmlSeccion=document.getElementById(idSeccion)!;
                 htmlSeccion.innerHTML="";
                 htmlSeccion.appendChild(html.div(todosLosBotones).create());
-                //arrange(document.getElementById(idSeccion)!, todosLosBotones);
             }catch(err){
                 var error = unexpected(err);
                 console.log("entra al catch")

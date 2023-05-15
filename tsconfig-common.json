@@ -12,6 +12,7 @@
         "module": "umd",
         "typeRoots" : ["../node_modules/@types", "../node_modules/types.d.ts/modules"],
         "noImplicitAny": true,
+        "noImplicitOverride": true,
         "alwaysStrict": true,
         "noUnusedLocals": false, /* noUnusedLocals  */
         "noUnusedParameters": true,

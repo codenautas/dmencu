@@ -10,11 +10,8 @@ export function tareas_areas(context:TableContext):TableDefinition {
         {name:'operativo'               , typeName:'text'   ,isPk:1},
         {name:'tarea'                   , typeName:'text'   ,isPk:2},
         {name:'area'                    , typeName:'integer',isPk:3},
-        {name:'asignante'               , typeName:'text', references: 'personal'},
+        {name:'recepcionista'           , typeName:'text', references: 'personal'},
         {name:'asignado'                , typeName:'text', references: 'personal'},
-        {name:'operacion'               , typeName:'text', references:'operaciones'},
-        {name:'fecha_asignacion'        , typeName:'date'},
-        {name:'obs_asignante'           , typeName:'text'},
         {name:'cargado'                 , typeName:'boolean', editable: false, inTable: false},
         {name:'verificado_recepcion'    , typeName:'text'                      },
         {name:'obs_recepcion'           , typeName:'text'                      },
@@ -29,12 +26,11 @@ export function tareas_areas(context:TableContext):TableDefinition {
         foreignKeys:[
             {references:'tareas', fields:['operativo','tarea']},
             {references:'areas',  fields:['operativo','area'], displayAllFields:true, displayAfterFieldName:'cargado'},
-            {references:'usuarios', fields:[{source:'asignante', target:'idper'}], alias:'at'},
-            {references:'usuarios', fields:[{source:'asignado' , target:'idper'}], alias:'ad'},
-            {references:'operaciones' , fields:['operacion']},
+            {references:'usuarios', fields:[{source:'recepcionista', target:'idper'}], alias:'recepcionista'},
+            {references:'usuarios', fields:[{source:'asignado'     , target:'idper'}], alias:'asignado'},
         ],
         detailTables:[
-            {table:`tareas_tem_recepcion`   , fields:['operativo','tarea', 'area'], abr:'T', refreshParent:true, refreshFromParent:true},
+            {table:`tareas_tem`, fields:['operativo', 'tarea', 'area'], abr:'T', refreshParent:true, refreshFromParent:true},
         ],
         sql:{
             isTable: true,
@@ -49,7 +45,13 @@ export function tareas_areas(context:TableContext):TableDefinition {
                             from tareas_tem tt join tem t using (operativo, enc)  where tt.operativo=t.operativo and tt.enc=t.enc and tt.tarea=ta.tarea and t.area=ta.area and t.operativo = ta.operativo
                         ) tt on true
             )`
-        }
+        },
+        hiddenColumns:[]
     };
 }
 
+export function t_encu_areas(context:TableContext){
+    var tableDef = tareas_areas(context);
+    tableDef.hiddenColumns?.push('areas__encuestador');
+    return tableDef;
+}

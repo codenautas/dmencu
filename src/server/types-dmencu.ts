@@ -6,25 +6,53 @@ export * from 'procesamiento'; //expose Procesamiento types
 export {emergeAppMetaEnc, emergeAppRelEnc} from 'meta-enc'; //expose types only in meta-enc stack
 export * from './table-tem';
 
-export type ProcedureDef = bePlus.ProcedureDef & {
-    definedIn?:string
+export type Puede = {
+    encuestas:{
+        relevar:boolean,
+        justificar: boolean,
+        procesar: boolean
+    },
+    campo:{
+        editar:boolean
+        administrar:boolean
+    }
+}
+
+export type Permisos = {
+    puede?: Puede
+    superuser?: boolean
+}
+
+declare module "backend-plus"{
+    export interface ProcedureDef{
+        definedIn?:string
+    }
+
+    export interface Caches{
+        tableContent: Record<string, any>
+        metaEncIncluirCasillerosSaltoREL: boolean
+        timestampEstructura: number
+        permisosRol: Permisos
+        permisosRolSoloTrue: Permisos
+        permisosSuperuser: Puede
+        permisosParaNadie: Puede
+
+    }
+
+    export interface Context{
+        puede?: Puede
+        superuser?: true
+    }
+
+    export interface OptsClientPage {
+        offlineFile: boolean 
+    }
+
+    export interface ClientSetup {
+        idper: string|undefined
+    }
 }
 
 export type MenuInfoBase = bePlus.MenuInfoBase;
 
-export interface Puedes{
-    puede?:{
-        encuestas:{
-            relevar:boolean,
-            justificar: boolean,
-            procesar: boolean
-        },
-        campo:{
-            editar:boolean
-            administrar:boolean
-        }
-    }
-    superuser?:true
-}
-
-export interface Context extends bePlus.ContextForDump, Puedes{}
+export type SufijosAmbiente = '_test'|'_capa'|''
