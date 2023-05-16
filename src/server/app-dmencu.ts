@@ -51,6 +51,7 @@ import { sincronizaciones    } from './table-sincronizaciones';
 import { tareas              } from './table-tareas';
 import { tareas_tem          } from './table-tareas_tem';
 import { tareas_areas        } from './table-tareas_areas';
+import { areas_asignacion_general } from './table-areas_asignacion_general';
 import { t_encu_areas        } from './table-tareas_areas';
 import { t_recu_areas        } from './table-tareas_areas';
 import { t_supe_areas        } from './table-tareas_areas';
@@ -628,6 +629,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , tareas
             , tareas_tem
             , tareas_areas
+            , areas_asignacion_general
             , t_encu_areas
             , t_recu_areas
             , t_supe_areas

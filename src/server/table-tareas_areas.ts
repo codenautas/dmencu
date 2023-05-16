@@ -27,6 +27,10 @@ export function tareas_areas(context:TableContext, opts?:OptsAsignados):TableDef
     return {
         name:`tareas_areas`,
         tableName:`tareas_areas`,
+        allow:{
+            insert:false,
+            delete:false,
+        },
         editable:puedeEditar,
         fields,
         primaryKey:['operativo','tarea','area'],

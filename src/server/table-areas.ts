@@ -81,9 +81,9 @@ export function areas(context:TableContext):TableDefinition {
             {references:'operativos', fields:['operativo']},
             {references:'usuarios', fields:[{source:'recepcionista', target:'idper'}], alias:'per_recep', displayFields:[]},
         ],
-        softForeignKeys:[
-            {references:'encuestadores', fields:[{source:'encuestador', target:'persona'}], alias:'per_encu'},
-        ],
+        //softForeignKeys:[
+        //    {references:'encuestadores', fields:[{source:'encuestador', target:'persona'}], alias:'per_encu'},
+        //],
         detailTables:[
             {table:'tem_asignacion' , fields:['operativo','area'], abr:'A', refreshParent:true, label:'asignables'},
             {table:`tareas_tem_recepcion`  , fields:['operativo', 'area'], abr:'R', refreshParent:true, label:'recepcion'},
