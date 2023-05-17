@@ -64,17 +64,20 @@ export function tareas_areas(context:TableContext, opts?:OptsAsignados):TableDef
 export function t_encu_areas(context:TableContext){
     var tableDef = tareas_areas(context, {rol:'encu', name:'encuestador'}) 
     tableDef.hiddenColumns?.push('areas__encuestador');
+    tableDef.sql!.isTable = false;
     return tableDef;
 }
 
 export function t_recu_areas(context:TableContext){
     var tableDef = tareas_areas(context, {rol:'recu', name:'recuperador'}) 
     tableDef.hiddenColumns?.push('areas__encuestador');
+    tableDef.sql!.isTable = false;
     return tableDef;
 }
 
 export function t_supe_areas(context:TableContext){
     var tableDef = tareas_areas(context, {rol:'supe', name:'supervisor'}) 
     tableDef.hiddenColumns?.push('areas__encuestador');
+    tableDef.sql!.isTable = false;
     return tableDef;
 }
