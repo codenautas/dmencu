@@ -267,7 +267,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     configSorteoFormulario.filtro_js=compilarExpresionesDominios(configSorteoFormulario.filtro)
                 })
             }
-            return {timestamp: be.timestampEstructura, ...result.row, operativo:parameters.operativo, configSorteo,noReas:be.caches.tableContent.no_rea, noReasSup:be.caches.tableContent.no_rea_sup};
+            return {timestamp: be.caches.timestampEstructura, ...result.row, operativo:parameters.operativo, configSorteo,noReas:be.caches.tableContent.no_rea, noReasSup:be.caches.tableContent.no_rea_sup};
         }
     },
     {
@@ -600,7 +600,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 soloLectura,
                 idPer:context.user.idper,
                 cargas:likeAr.createIndex(row.cargas.map(carga=>({...carga, fecha:carga.fecha?date.iso(carga.fecha).toDmy():null})), 'carga'),
-                timestampEstructura:be.timestampEstructura
+                timestampEstructura:be.caches.timestampEstructura
             };
         }
     },
