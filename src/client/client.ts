@@ -9,6 +9,7 @@ import {BACKUPS, cargarEstructura, cargarHojaDeRuta, GLOVAR_DATOSBYPASS, GLOVAR_
 import { Operativo } from "meta-enc";
 import {sleep, coalesce} from "best-globals";
 
+
 //TODO GENERALIZAR
 
 const TAREA_DEFAULT = 'encu';
