@@ -526,15 +526,6 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                         {menuType:'table', name:'supervisor' , table:'supervisores_asignados' , ff:{ ...filtroRecepcionista}},
                     ]},            
                 )
-                menu.push(
-                    {menuType:'menu', name:'recepcion_ant', label:'recepción (ant)' ,menuContent:[
-                        {menuType:'table', name:'mis_areas', table:'areas', ff:{recepcionista:context.user.idper}},
-                        {menuType:'table', name:'mis_encuestadores'},
-                        {menuType:'table', name:'areas'},
-                        {menuType:'table', name:'tem_recepcion', label:'TEM'},
-                        {menuType:'table', name:'tareas_tem', label:'TareasTEM'}
-                    ]},            
-                )
             }
             console.log("context user", context.user)
             if(context.superuser){
