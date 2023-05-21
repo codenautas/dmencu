@@ -11,6 +11,7 @@ select
     count(*) filter ( where tem.resumen_estado in ('incompleto', 'con problemas') ) as incompletas, 
     count(*) filter ( where tem.resumen_estado in ('vacio' ) ) as vacias,
     count(*) filter ( where thabilitada is not true )    as inhabilitadas,
+    count(*) as totales,
     --sum(case when cluster <>4 then null when confirmada is true then 1 else 0 end) as confirmadas,
     --sum(case when cluster <>4 then null when confirmada is null then 1 else 0 end) as pend_conf,
     string_agg(distinct clase,', ' order by clase desc) as clases,

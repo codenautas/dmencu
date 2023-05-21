@@ -38,7 +38,7 @@ export function asignados(context:TableContext, opts?:OptsAsignados){
                 from usuarios u, tareas ta, lateral (
                     ${cuentasSql(be, `tt.asignado = u.idper and tt.tarea = ta.tarea`)}
                 ) t
-                where true 
+                where totales > 0  
                     ${opts.rol ? `and ta.tarea = ${q(opts.rol)}` : `` }
                     ${context.user.rol == 'recepcionista' ? `and tt.recepcionista = ${q(context.user.idper)}` : `` } 
             )`
