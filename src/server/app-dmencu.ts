@@ -515,8 +515,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     {menuType:'menu', name:'asignacion', label:'asignación' ,menuContent:[
                         {menuType:'table', name:'general', table:'areas_asignacion_general'},
                         {menuType:'table', name:'encuestador', table:'t_encu_areas', ff:{tarea:'encu', ...filtroRecepcionista}},
-                        {menuType:'table', name:'recuperador', table:'tareas_tem', ff:{tem_rec__tarea_proxima:'recu', ...filtroRecepcionista}},
-                        {menuType:'table', name:'supervisor' , table:'tareas_tem', ff:{tem_rec__tarea_proxima:'supe', ...filtroRecepcionista}},
+                        {menuType:'table', name:'recuperador', table:'tareas_tem', ff:{tem_rec__tarea_proxima:'recu', tarea:'recu', ...filtroRecepcionista}},
+                        {menuType:'table', name:'supervisor' , table:'tareas_tem', ff:{tem_rec__tarea_proxima:'supe', tarea:'supe', ...filtroRecepcionista}},
                     ]},            
                 )
                 menu.push(
