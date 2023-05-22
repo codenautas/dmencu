@@ -363,14 +363,15 @@ var crearSVG = (path:string,props:any) => {
     return svg
 }
 var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
+    let  accionSinGuiones = action.eaccion.replace('_',' ');
     var svg = crearSVG(action.path_icono_svg,{class:"svg-acciones"})
     if(action.desactiva_boton){
-        return svg
+        return html.span({class:`sin-boton-accion`},[accionSinGuiones, svg as unknown as HTMLElement]).create()
     }
     let button = html.button({
         class:`boton-accion boton-accion-${action.eaccion_direccion}`
     },[
-        `${action.eaccion}`,
+        `${accionSinGuiones}`,
         //@ts-ignore svg es htmlelement
         action.path_icono_svg?svg:null,
     ]).create();
@@ -405,7 +406,7 @@ var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
                 {label:'sí', value:true},
                 {label:'no', value:false}
             ]
-            confirmPromise(`confirma acción "${action.eaccion}"?`, {...confirmPromiseOpts, buttonsDef}).then(actionFun);
+            confirmPromise(`confirma acción "${accionSinGuiones}"?`, {...confirmPromiseOpts, buttonsDef}).then(actionFun);
         }else{
             actionFun();
         }
