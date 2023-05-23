@@ -145,12 +145,17 @@ const Button2 = ({variant, onClick, disabled, children, className, color, size, 
     className?:string,
     size?:'small',
     $attrs?:{}
-} & CommonAttributes)=>html.button({
-    ...other,
-    class: `btn btn${variant=='contained'?'':'-'+(variant=='outlined'?'outline':variant)}-${(color=='default' || color=='inherit'?'secondary':color=='secondary'?'danger':color)||'secondary'} ${className||''} ${size=='small'?'btn-sm':''}`,
-    disabled,
-    $on:{click:onClick}
-}, children);
+} & CommonAttributes)=>{
+    let button = html.button({
+        ...other,
+        class: `btn btn${variant=='contained'?'':'-'+(variant=='outlined'?'outline':variant)}-${(color=='default' || color=='inherit'?'secondary':color=='secondary'?'danger':color)||'secondary'} ${className||''} ${size=='small'?'btn-sm':''}`,
+        disabled,
+    }, children).create();
+    button.onmouseup = (_event)=>{
+        onClick?.();
+    }
+    return button
+}
 
 
 const TextField = (props:{
