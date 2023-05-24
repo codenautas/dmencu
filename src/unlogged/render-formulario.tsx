@@ -1383,12 +1383,14 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
                 <Button color={b.que==forPk.formulario?"primary":"inherit"} variant="outlined"
                     key={`${i}-${b.que}-${b.retroceso}`}
                     disabled={!b.que}
-                    onClick={()=>
+                    onClick={()=>{
                         dispatch(
                             b.que=='hdr'?dispatchers.VOLVER_HDR({}):
                             dispatchers.VOLVER_DE_FORMULARIO({magnitudRetroceso:b.retroceso})
-                        )
-                    }
+                        );
+                        b.que=='hdr'?null:
+                            dispatchByPass(accion_abrir_formulario,{forPk:opciones.pilaForPk[opciones.pilaForPk.length-b.retroceso]});
+                    }}
                 >
                     <span className="abr">{b.abr}</span>
                     <span className="label">{b.label}</span>
