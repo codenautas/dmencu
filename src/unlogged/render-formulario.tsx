@@ -867,6 +867,7 @@ function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
     var ir = (defBoton:DefinicionFormularioAbrir)=>{
         // var nuevaForPk={...forPk, formulario:idFormularioDestino};
         // nuevaForPk[nuevoCampoPk] = defBoton.num
+        dispatchByPass(accion_abrir_formulario,{forPk:defBoton.forPk});
         dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:defBoton.forPk, apilarVuelta:true}));
     }
     return <DesplegarCasillero 
@@ -1476,7 +1477,10 @@ function BotonVolverEnDiv({id}:{id:string}){
     return <div className="div-boton-volver">
         {opciones.pilaForPk.length>0?
         <Button id={id} className="boton-volver"
-            onClick={()=>dispatch(dispatchers.VOLVER_DE_FORMULARIO({magnitudRetroceso:1}))}
+            onClick={()=>{
+                dispatchByPass(accion_abrir_formulario,{forPk:opciones.pilaForPk[opciones.pilaForPk.length-1]});
+                dispatch(dispatchers.VOLVER_DE_FORMULARIO({magnitudRetroceso:1}))
+            }}
         > <ICON.ChevronLeft/> Volver</Button>
         :null}
     </div>
