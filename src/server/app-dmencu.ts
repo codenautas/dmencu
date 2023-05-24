@@ -317,7 +317,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             { type: 'js', module: 'redux', modPath:'../dist', fileDevelopment:'redux.js', file:'redux.min.js' },
             { type: 'js', module: 'react-redux', modPath:'../dist', fileDevelopment:'react-redux.js', file:'react-redux.min.js' },
             { type: 'js', module: 'memoize-one',  file:'memoize-one.js' },
-            { type: 'js', module: 'qrcode', modPath: '../build', file: 'qrcode.js'},
+            //{ type: 'js', module: 'qrcode', modPath: '../build', file: 'qrcode.js'},
             ...super.clientIncludes(req, opts).filter(m=>m.file!='formularios.css')
             .filter(m=>!unlogged || true
                 && m.file!='var-cal.js'
@@ -409,7 +409,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 "lib/redux.min.js",
                 "lib/react-redux.min.js",
                 "lib/memoize-one.js",
-                "lib/qrcode.js",
+                //"lib/qrcode.js",
                 "lib/require-bro.js",
                 "lib/cast-error.js",
                 "lib/like-ar.js",
