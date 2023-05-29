@@ -1370,17 +1370,33 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
         //location.hash=hash.toString();
     }
     var botonesFormulario=[];
+    const ID_BOTON_VOLVER_HDR = 'boton-volver-hdr';
     if(!opciones.modoDirecto){
-        botonesFormulario.push({que: 'hdr'    , abr:'HdR', label:'hoja de ruta', retroceso:0})
+        botonesFormulario.push({que: 'hdr'    , abr:'HdR', id:ID_BOTON_VOLVER_HDR, label:'hoja de ruta', retroceso:0})
     }
     opciones.pilaForPk.forEach((forPk,i)=>
         botonesFormulario.push({que:'volver', abr:forPk.formulario.replace(/^F:/,''), label:forPk.formulario, retroceso:opciones.pilaForPk.length-i})
     )
     botonesFormulario.push({que:'', abr:forPk.formulario.replace(/^F:/,''), label:forPk.formulario, retroceso:0});
+    const ID_BOTON_CERRAR = 'boton-cerrar-encuesta';
+    registrarElemento({id:props.modoDirecto?ID_BOTON_CERRAR:ID_BOTON_VOLVER_HDR, direct:true,
+        fun:(
+            r:Respuestas, 
+            _feedbackForm: FormStructureState<IdVariable, Valor, IdFin>, 
+            elemento:HTMLDivElement, 
+            feedbackAll:{[formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin>}, 
+            _estructura:Estructura
+        )=>{
+            elemento.setAttribute('resumen-estado',calcularResumenVivienda(forPk, feedbackAll, r).resumenEstado);
+            
+        }
+            
+    })
     return <>
         <ButtonGroup key="formularios" className="barra-navegacion" solo-lectura={props.soloLectura?'si':'no'} >
             {botonesFormulario.map((b,i)=>
                 <Button color={b.que==forPk.formulario?"primary":"inherit"} variant="outlined"
+                    id={b.id}
                     key={`${i}-${b.que}-${b.retroceso}`}
                     disabled={!b.que}
                     onClick={()=>{
@@ -1402,6 +1418,7 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
             <>
                 <ButtonGroup key="volver_y_grabar" style={{margin:'0 0 0 30px'}}>
                     <Button
+                        id={ID_BOTON_CERRAR}
                         color="inherit"
                         variant="outlined"
                         onClick={async ()=>{

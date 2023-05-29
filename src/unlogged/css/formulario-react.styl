@@ -31,33 +31,33 @@ anchoNormal(ancho)
   .btn
     white-space normal
 
-.formulario, .hoja-de-ruta
-  [resumen-estado="ok-full_version"]
+.formulario button, .hoja-de-ruta button, #boton-cerrar-encuesta, #boton-volver-hdr
+  &[resumen-estado="ok-full_version"]
     background-color  #5CB85C
     color  #FFFFFF
-  [resumen-estado="ok"]
+  &[resumen-estado="ok"]
     border-color  #28a745
     color   #28a745
-  [resumen-estado="cita pactada"]
+  &[resumen-estado="cita pactada"]
     background-color  #3f51b5
     color  #FFFFFF
-  [resumen-estado="vacio"]
-    color: #fff;
-    background-color: #66CCFF;
-    border-color #66CCFF;
-  [resumen-estado="con problemas"] //segun bootstrap
+  &[resumen-estado="vacio"]
+    color: blue;
+    background-color: #fff;
+    border-color blue;
+  &[resumen-estado="con problemas"] //segun bootstrap
     color #fff
     background-color #dc3545
     border-color #dc3545
-  [resumen-estado="incompleto"] //segun bootstrap
+  &[resumen-estado="incompleto"] //segun bootstrap
     color #212529
     background-color #ffc107
     border-color #ffc107
-  [resumen-estado="no rea"] //segun bootstrap
+  &[resumen-estado="no rea"] //segun bootstrap
     color #fff
     background-color #6c757d
     border-color #6c757d
-  [resumen-estado="actual"]
+  &[resumen-estado="actual"]
     background-color  blue
     color  #FFFFFF
 
