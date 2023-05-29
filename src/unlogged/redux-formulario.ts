@@ -310,9 +310,9 @@ export function gotoCampo(){
     location.reload();   
 }
 
-export function gotoConsistir(operativo:IdOperativo,tarea:IdTarea, encuesta:IdEnc){
+export function gotoConsistir(operativo:IdOperativo,tarea:IdTarea, enc:IdEnc){
     // TODO-2023-03: probar con esto:
-    history.replaceState(null, '', `${location.origin+location.pathname}/../menu#w=consistir_encuesta&up=${JSON4all.toUrl({operativo, tarea, encuesta})}&autoproced=true`);
+    history.replaceState(null, '', `${location.origin+location.pathname}/../menu#w=consistir_encuesta&up=${JSON4all.toUrl({operativo, tarea, enc})}&autoproced=true`);
     // history.replaceState(null, '', `${location.origin+location.pathname}/../menu#w=consistir_encuesta&up={"operativo":"${operativo}","tarea":"${tarea}","encuesta":${encuesta}}&autoproced=true`);
     location.reload();   
 }

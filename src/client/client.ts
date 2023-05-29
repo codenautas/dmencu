@@ -12,6 +12,7 @@ import {sleep, coalesce} from "best-globals";
 
 //TODO GENERALIZAR
 
+const ABRIR_TAB = "_abrir";
 const TAREA_DEFAULT = 'encu';
 var OPERATIVO_DEFAULT:string|null= null;
 
@@ -26,14 +27,14 @@ myOwn.autoSetupFunctions.push(async ()=>{
         parameters:[
             {name:'operativo' , typeName:'text', defaultValue:OPERATIVO_DEFAULT, references:'operativos'},
             {name:'tarea'     , typeName:'text', defaultValue:TAREA_DEFAULT, references: 'tareas'},
-            {name:'encuesta'  , typeName:'integer', defaultValue:130031}
+            {name:'enc'       , typeName:'integer', defaultValue:130031}
         ],
         autoproced:true,
         mainAction:async (params)=>{
             // antes: abrirDirecto
-            var {operativo, encuesta, tarea} = params;
+            var {operativo, enc, tarea} = params;
             var estructura = getEstructura();
-            var carga = await my.ajax.dm_forpkraiz_cargar({operativo, vivienda:encuesta, tarea}) as DatosByPassPersistibles;
+            var carga = await my.ajax.dm_forpkraiz_cargar({operativo, vivienda:enc, tarea}) as DatosByPassPersistibles;
             if(!estructura || (estructura.timestamp??0) < carga.timestampEstructura! || estructura.operativo != operativo || my.config.config.devel){
                 estructura = await traerEstructura({operativo})
                 cargarEstructura(estructura);
@@ -41,7 +42,7 @@ myOwn.autoSetupFunctions.push(async ()=>{
             //@ts-ignore
             var state:CasoState = {}
             inicializarState(state);
-            var forPkRaiz = {formulario:carga.informacionHdr[encuesta as IdEnc].tarea.main_form, vivienda:encuesta};
+            var forPkRaiz = {formulario:carga.informacionHdr[enc as IdEnc].tarea.main_form, vivienda:enc};
             setPersistirDatosByPass(
                 async function persistirDatosByPassEnBaseDeDatos(persistentes:DatosByPassPersistibles){
                     if(persistentes.soloLectura){
@@ -64,27 +65,27 @@ myOwn.autoSetupFunctions.push(async ()=>{
         mainAction:async (_params)=>{
             // antes: abrirDirecto
             var {operativo, tarea} = {operativo: OPERATIVO_DEFAULT, tarea: TAREA_DEFAULT};
-            let encuesta = parseInt(await my.ajax.get_random_free_case({operativo})); 
-            await myOwn.wScreens.abrir_encuesta.mainAction({operativo, encuesta, tarea});
+            let enc = parseInt(await my.ajax.get_random_free_case({operativo})); 
+            await myOwn.wScreens.abrir_encuesta.mainAction({operativo, enc, tarea});
         }
     };
     myOwn.wScreens.consistir_encuesta={
         parameters:[
             {name:'operativo' , typeName:'text', defaultValue:OPERATIVO_DEFAULT, references:'operativos'},
             {name:'tarea'     , typeName:'text'},
-            {name:'encuesta'  , typeName:'integer'}
+            {name:'enc'       , typeName:'integer'}
         ],
         autoproced:true,
         mainAction:async (params)=>{
-            var {operativo, tarea, encuesta } = params;
+            var {operativo, tarea, enc } = params;
             var result = await myOwn.ajax.consistir_encuesta({
                 operativo: operativo,
-                id_caso: encuesta
+                id_caso: enc
             });
             if(result.ok){
                 var fixedFields = [];
                 fixedFields.push({fieldName: 'operativo', value: operativo});
-                fixedFields.push({fieldName: 'vivienda', value: encuesta});
+                fixedFields.push({fieldName: 'vivienda', value: enc});
                 var mainLayout = document.getElementById('main_layout')!;
                 var divGrilla = html.div({id:'inconsistencias'}).create();
                 mainLayout.insertBefore(divGrilla, mainLayout.firstChild);
@@ -92,8 +93,8 @@ myOwn.autoSetupFunctions.push(async ()=>{
                     crearBotonVerAbrirEncuesta(
                         operativo,
                         tarea,
-                        encuesta, 
-                        `ir a encuesta ${encuesta}`
+                        enc, 
+                        `ir a encuesta ${enc}`
                     ), 
                     mainLayout.firstChild
                 );
@@ -291,9 +292,10 @@ var crearBotonVerAbrirEncuesta = (operativo:IdOperativo,tarea:IdTarea,encuesta:n
     var up = {
         operativo:operativo,
         tarea:tarea,
-        encuesta:encuesta
+        enc:encuesta
     }
-    let ver = my.createForkeableButton({w:'abrir_encuesta',up, autoproced:true, label},{});
+    let ver = html.button({},label).create();
+    ver.onclick = ()=> window.open(location.origin+location.pathname+my.menuSeparator+`w=abrir_encuesta&up=${JSON.stringify(up)}&autoproced=true`, ABRIR_TAB)
     return ver
 }
 
@@ -389,6 +391,12 @@ var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
                 console.log(result)
                 var grid=depot.manager;
                 grid.retrieveRowAndRefresh(depot)
+                if(action.nombre_wscreen){
+                    //TODO acomodar esto en algun momento
+                    let params = depot.row;
+                    params.enc = Number(params.enc);
+                    window.open(location.origin+location.pathname+my.menuSeparator+`w=${action.nombre_wscreen}&up=${JSON.stringify(params)}&autoproced=true`, ABRIR_TAB)
+                }
             }catch(err){
                 alertPromise(err.message)
                 throw err
