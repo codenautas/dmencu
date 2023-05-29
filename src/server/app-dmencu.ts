@@ -507,17 +507,17 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             }
         }else{
             if(context.puede?.campo?.editar){
+                let menuFiltradoContent = [
+                    //{ menuType: 'table', name: 'general', table: 'areas_asignacion_general' },
+                    { menuType: 'table', name: 'encuestador', table: 't_encu_areas', ff: { tarea: 'encu', ...filtroRecepcionista } },
+                    { menuType: 'table', name: 'recuperador', table: 'tareas_tem', ff: { tem_rec__tarea_proxima: 'recu', tarea: 'recu', ...filtroRecepcionista } },
+                    { menuType: 'table', name: 'supervisor', table: 'tareas_tem', ff: { tem_rec__tarea_proxima: 'supe', tarea: 'supe', ...filtroRecepcionista } },
+                    ];
+                if (!(context.user.rol == 'recepcionista')) {
+                    menuFiltradoContent.unshift({ menuType: 'table', name: 'general', table: 'areas_asignacion_general' });
+                }
                 menu.push(
-                    {menuType:'abrir_encuesta', name:'abrir_encuesta'},
-                    //{menuType:'consistir_encuesta', name:'consistir_encuesta'},
-                )
-                menu.push(
-                    {menuType:'menu', name:'asignacion', label:'asignación' ,menuContent:[
-                        {menuType:'table', name:'general', table:'areas_asignacion_general'},
-                        {menuType:'table', name:'encuestador', table:'t_encu_areas', ff:{tarea:'encu', ...filtroRecepcionista}},
-                        {menuType:'table', name:'recuperador', table:'tareas_tem', ff:{tem_rec__tarea_proxima:'recu', tarea:'recu', ...filtroRecepcionista}},
-                        {menuType:'table', name:'supervisor' , table:'tareas_tem', ff:{tem_rec__tarea_proxima:'supe', tarea:'supe', ...filtroRecepcionista}},
-                    ]},            
+                    {menuType:'menu', name:'asignacion', label:'asignación' ,menuContent: menuFiltradoContent},
                 )
                 menu.push(
                     {menuType:'menu', name:'recepcion', label:'recepción' ,menuContent:[
@@ -526,6 +526,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                         {menuType:'table', name:'supervisor' , table:'supervisores_asignados' , ff:{ ...filtroRecepcionista}},
                     ]},            
                 )
+                menu.push({ menuType: 'menu', name: 'varios', menuContent: [
+                    { menuType: 'abrir_encuesta', name: 'abrir_encuesta'},
+                   //{menuType:'consistir_encuesta', name:'consistir_encuesta'},
+                ] });
             }
             console.log("context user", context.user)
             if(context.superuser){
