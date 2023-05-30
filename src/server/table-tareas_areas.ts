@@ -38,7 +38,7 @@ export function tareas_areas(context:TableContext, opts?:OptsAsignados):TableDef
             {references:'tareas', fields:['operativo','tarea']},
             {references:'areas',  fields:['operativo','area'], displayAllFields:true, displayAfterFieldName:'cargado'},
             {references:'usuarios', fields:[{source:'recepcionista', target:'idper'}], alias:'recepcionista'},
-            {references:'usuarios', fields:[{source:'asignado'     , target:'idper'}], alias:'asignado'},
+            {references:'usuarios', fields:[{source:'asignado'     , target:'idper'}], alias:'asignado', displayFields:['nombre','apellido']},
         ],
         detailTables:[
             {table:`tareas_tem`, fields:['operativo', 'tarea', 'area'], abr:'T', refreshParent:true, refreshFromParent:true},

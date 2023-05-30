@@ -108,7 +108,7 @@ export function tareas_tem(context:TableContext,opts?:{abre:boolean, consiste:bo
             {references:'tem' , fields:['operativo','enc'], displayFields:[]},
             {references:'tareas' , fields:['operativo','tarea']},
             {references:'tareas' , fields:[{source:'operativo', target:'operativo'}, {source: 'tarea_anterior', target:'tarea'}], alias:'tarea_anterior'},
-            {references:'usuarios', fields:[{source:'asignado' , target:'idper'}], alias:'asignado'},
+            {references:'usuarios', fields:[{source:'asignado' , target:'idper'}], alias:'asignado', displayFields:['nombre','apellido']},
             {references:'operaciones' , fields:['operacion']},
             {references:'estados' , fields:['operativo','estado']},
             {references:'usuarios', fields:[{source:'recepcionista' , target:'idper'}], alias:'recepcionista'},
