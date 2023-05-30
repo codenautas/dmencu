@@ -3,7 +3,13 @@
 import {TableDefinition, TableContext} from "./types-dmencu";
 import { FieldDefinition } from "rel-enc";
 
-export function tareas_tem(context:TableContext):TableDefinition {
+export function tareas_tem(context:TableContext,opts?:{abre:boolean, consiste:boolean}):TableDefinition {
+    if (opts == null) {
+        opts = {
+            abre:true,
+            consiste:true
+        }
+    }
     var be=context.be;
     var db=be.db; 
     var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';       
@@ -12,8 +18,14 @@ export function tareas_tem(context:TableContext):TableDefinition {
         {name:'enc'                         , typeName:'text', isPk:3, editable:false},
         {name:'tarea'                       , typeName:'text', isPk:1, editable:false},
         {name:'estado'                      , typeName:'text'        , editable:false   , nullable: false, defaultDbValue:"'0D'"},
-        {name:'abrir'                       , typeName:'text'        , editable:false   , inTable:false, clientSide:'abrirRecepcion'},
-        {name:"consistir"                   , typeName: 'text'       , editable:false   , inTable:false, clientSide:'consistir'},
+    ];
+    if(opts.abre){
+        fields.push({name:'abrir'                       , typeName:'text'        , editable:false   , inTable:false, clientSide:'abrirRecepcion'});
+    }
+    if(opts.consiste){
+        fields.push({name:"consistir"                   , typeName: 'text'       , editable:false   , inTable:false, clientSide:'consistir'});
+    }
+    fields=fields.concat([
         {name:'area'                        , typeName: 'integer'    , editable:false   , inTable:false },
         {name:'tarea_anterior'              , typeName:'text'        , editable:false},
       //  {name:'ok'                          , typeName: 'text'       , editable:false   , inTable:false },
@@ -46,7 +58,7 @@ export function tareas_tem(context:TableContext):TableDefinition {
         {name:'ult_rea_sup'                 , typeName:'integer'     , editable: false ,  inTable:false},
         {name:'ult_norea_sup'               , typeName:'integer'     , editable: false ,  inTable:false},
         {name:'ult_resumen_estado_sup'      , typeName:'text'        , editable: false ,  inTable:false},
-        ];
+        ]);
         var ok_string=` coalesce(nullif(
             case when tareas_tem.asignado is null and tareas_tem.verificado is not null then 'Verificado-asignado vacio'
                 --when tareas_tem.verificado is not null and tareas_tem.habilitada then 'Falta deshabilitar'
@@ -141,3 +153,20 @@ export function tareas_tem(context:TableContext):TableDefinition {
     };
 }
 
+export function tareas_tem_encu(context:TableContext){
+    var tableDef = tareas_tem(context, {abre:false, consiste:false}) 
+    tableDef.sql!.isTable = false;
+    return tableDef;
+}
+
+export function tareas_tem_recu(context:TableContext){
+    var tableDef = tareas_tem(context, {abre:true, consiste:false}) 
+    tableDef.sql!.isTable = false;
+    return tableDef;
+}
+
+export function tareas_tem_supe(context:TableContext){
+    var tableDef = tareas_tem(context, {abre:true, consiste:false}) 
+    tableDef.sql!.isTable = false;
+    return tableDef;
+}

@@ -65,6 +65,9 @@ export function t_encu_areas(context:TableContext){
     var tableDef = tareas_areas(context, {rol:'encu', name:'encuestador'}) 
     tableDef.hiddenColumns?.push('areas__encuestador');
     tableDef.sql!.isTable = false;
+    tableDef.detailTables=[
+        {table:`tareas_tem_encu`, fields:['operativo', 'tarea', 'area'], abr:'T', refreshParent:true, refreshFromParent:true}
+    ];
     return tableDef;
 }
 
@@ -72,6 +75,9 @@ export function t_recu_areas(context:TableContext){
     var tableDef = tareas_areas(context, {rol:'recu', name:'recuperador'}) 
     tableDef.hiddenColumns?.push('areas__encuestador');
     tableDef.sql!.isTable = false;
+    tableDef.detailTables=[
+        {table:`tareas_tem_recu`, fields:['operativo', 'tarea', 'area'], abr:'T', refreshParent:true, refreshFromParent:true}
+    ];
     return tableDef;
 }
 
@@ -79,5 +85,8 @@ export function t_supe_areas(context:TableContext){
     var tableDef = tareas_areas(context, {rol:'supe', name:'supervisor'}) 
     tableDef.hiddenColumns?.push('areas__encuestador');
     tableDef.sql!.isTable = false;
+    tableDef.detailTables=[
+        {table:`tareas_tem_supe`, fields:['operativo', 'tarea', 'area'], abr:'T', refreshParent:true, refreshFromParent:true}
+    ];
     return tableDef;
 }

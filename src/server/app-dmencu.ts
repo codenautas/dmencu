@@ -49,7 +49,10 @@ import { comunas             } from './table-comunas';
 import { areas               } from './table-areas';
 import { sincronizaciones    } from './table-sincronizaciones';
 import { tareas              } from './table-tareas';
-import { tareas_tem          } from './table-tareas_tem';
+import { tareas_tem, 
+         tareas_tem_encu, 
+         tareas_tem_recu, 
+         tareas_tem_supe     } from './table-tareas_tem';
 import { tareas_areas        } from './table-tareas_areas';
 import { areas_asignacion_general } from './table-areas_asignacion_general';
 import { t_encu_areas        } from './table-tareas_areas';
@@ -507,13 +510,13 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             }
         }else{
             if(context.puede?.campo?.editar){
-                let menuFiltradoContent = [
+                let menuFiltradoContent:MenuInfoBase[] = [
                     //{ menuType: 'table', name: 'general', table: 'areas_asignacion_general' },
                     { menuType: 'table', name: 'encuestador', table: 't_encu_areas', ff: { tarea: 'encu', ...filtroRecepcionista } },
-                    { menuType: 'table', name: 'recuperador', table: 'tareas_tem', ff: { tem_rec__tarea_proxima: 'recu', tarea: 'recu', ...filtroRecepcionista } },
-                    { menuType: 'table', name: 'supervisor', table: 'tareas_tem', ff: { tem_rec__tarea_proxima: 'supe', tarea: 'supe', ...filtroRecepcionista } },
+                    { menuType: 'table', name: 'recuperador', table: 'tareas_tem_recu', ff: { tem_rec__tarea_proxima: 'recu', tarea: 'recu', ...filtroRecepcionista } },
+                    { menuType: 'table', name: 'supervisor', table: 'tareas_tem_supe', ff: { tem_rec__tarea_proxima: 'supe', tarea: 'supe', ...filtroRecepcionista } },
                     ];
-                if (!(context.user.rol == 'recepcionista')) {
+                if(context.user?.rol != 'recepcionista') {
                     menuFiltradoContent.unshift({ menuType: 'table', name: 'general', table: 'areas_asignacion_general' });
                 }
                 menu.push(
@@ -623,6 +626,9 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , sincronizaciones
             , tareas
             , tareas_tem
+            , tareas_tem_encu
+            , tareas_tem_recu
+            , tareas_tem_supe
             , tareas_areas
             , areas_asignacion_general
             , t_encu_areas
