@@ -90,6 +90,12 @@ myOwn.autoSetupFunctions.push(async ()=>{
                 var divGrilla = html.div({id:'inconsistencias'}).create();
                 mainLayout.insertBefore(divGrilla, mainLayout.firstChild);
                 mainLayout.insertBefore(
+                    crearBotonCerrarEncuesta(
+                        `cerrar encuesta`
+                    ), 
+                    mainLayout.firstChild
+                );
+                mainLayout.insertBefore(
                     crearBotonVerAbrirEncuesta(
                         operativo,
                         tarea,
@@ -287,6 +293,12 @@ function mostrarDatosPersona(hayDatos:boolean, datos:any, divResult:HTMLDivEleme
     prepare: function(){}
 }
 */
+
+var crearBotonCerrarEncuesta = (label:string)=>{
+    let ver = html.button({},label).create();
+    ver.onclick = ()=> close();
+    return ver
+}
 
 var crearBotonVerAbrirEncuesta = (operativo:IdOperativo,tarea:IdTarea,encuesta:number, label:string)=>{
     var up = {
