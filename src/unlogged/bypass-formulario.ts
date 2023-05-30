@@ -1004,9 +1004,9 @@ export function calcularFeedbackUnidadAnalisis(
                     null
                 :resumen
             if(esHermano){
-                respuestas[BF_varname] = resumenOrNull;
+                respuestas[BF_varname] = resumenOrNull=='ok'?'ok':null;
             }else if(respuestasPadre != null){
-                respuestasPadre[BF_varname] = resumenOrNull;
+                //respuestasPadre[BF_varname] = resumenOrNull;
             }
         }
     }

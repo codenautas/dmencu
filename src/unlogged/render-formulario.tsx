@@ -952,6 +952,10 @@ var botonFormularioConResumen = (
                 onClick:()=>{
                     if(defBoton.esConfirmar){
                         if(defBoton.num != null){
+                            if(casillero.salto){
+                                var BF_varname = '$B.F:'+ casillero.salto as IdVariable
+                                dispatchByPass(accion_registrar_respuesta,{forPk:forPkPadre, variable:BF_varname, respuesta:defBoton.num==0?null:defBoton.num as Valor});
+                            }
                             dispatchByPass(accion_registrar_respuesta,{forPk:forPkPadre, variable:casillero.expresion_habilitar as IdVariable, respuesta:defBoton.num as Valor});
                         }
                     }else{
