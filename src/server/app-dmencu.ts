@@ -566,7 +566,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                             {menuType:'table', name:'tem', label: 'TEM'} ,
                             {menuType:'table', name:'tareas'},
                         // {menuType:'table', name:'personal_rol'},
-                           { menuType: 'table', name: 'gr_hoja_ruta', table: 'grilla_hoja_ruta'  label:'grilla hoja de ruta'},
+                           { menuType: 'table', name: 'gr_hoja_ruta', table: 'grilla_hoja_ruta',  label:'grilla hoja de ruta'},
                         ]},
                         {menuType:'menu', name:'metadatos', menuContent:[
                             {menuType:'table', name:'operativos'},
