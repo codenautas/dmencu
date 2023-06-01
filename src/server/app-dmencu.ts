@@ -55,6 +55,7 @@ import { tareas_tem,
          tareas_tem_supe     } from './table-tareas_tem';
 import { tareas_areas        } from './table-tareas_areas';
 import { areas_asignacion_general } from './table-areas_asignacion_general';
+import { grilla_hoja_ruta    } from './table-grilla_hoja_ruta';
 import { t_encu_areas        } from './table-tareas_areas';
 import { t_recu_areas        } from './table-tareas_areas';
 import { t_supe_areas        } from './table-tareas_areas';
@@ -565,6 +566,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                             {menuType:'table', name:'tem', label: 'TEM'} ,
                             {menuType:'table', name:'tareas'},
                         // {menuType:'table', name:'personal_rol'},
+                           { menuType: 'table', name: 'gr_hoja_ruta', table: 'grilla_hoja_ruta'  label:'grilla hoja de ruta'},
                         ]},
                         {menuType:'menu', name:'metadatos', menuContent:[
                             {menuType:'table', name:'operativos'},
@@ -631,6 +633,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , tareas_tem_supe
             , tareas_areas
             , areas_asignacion_general
+            , grilla_hoja_ruta
             , t_encu_areas
             , t_recu_areas
             , t_supe_areas
