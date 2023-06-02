@@ -431,35 +431,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 }
                 return datosj;
             }            
-            //datos_json = recorrer_datos_agregando_pks(datos_json);
-            for( var key1 in datos_json ){
-                var dato_key1 = datos_json[key1];
-                if ( dato_key1 instanceof Array && dato_key1.length >= 1 ) {
-                    var pk1 = tableStructures_app[key1](context).primaryKey;
-                    var ult_pk1 = pk1[pk1.length-1];
-                    datos_json[key1] = completar_ult_pk_en_arr( ult_pk1, datos_json[key1]) 
-                    datos_json[key1].forEach((un_key1, i1)=>{
-                        for ( var key2 in un_key1 ){
-                            if ( un_key1[key2] instanceof Array && un_key1[key2].length >= 1 ){
-                                var pk2 = tableStructures_app[key2](context).primaryKey;
-                                var ult_pk2 = pk2[pk2.length-1];            
-                                datos_json[key1][i1][key2] = completar_ult_pk_en_arr( ult_pk2, datos_json[key1][i1][key2])
-                                datos_json[key1][i1][key2].forEach(un_key2=>{
-                                    Object.keys(un_key2).filter( p2=>p2.startsWith('$')).forEach(pp2=>
-                                        delete un_key2[pp2]
-                                    )                                        
-                                })
-                            }
-                            if (key2.startsWith('$')||key2.startsWith('_')){
-                                delete datos_json[key1][i1][key2];
-                            }
-                        }
-                    });
-                }
-                if (key1.startsWith('$')){
-                    delete datos_json[key1];
-                };
-            }
+            datos_json = recorrer_datos_agregando_pks(datos_json);
             delete datos_json.codRea;
             delete datos_json.codNoRea;
             delete datos_json.resumenEstado;
