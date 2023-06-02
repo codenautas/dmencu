@@ -1,6 +1,6 @@
 "use strict";
 
-import { ProcedureDef, TableDefinition, Client } from "./types-dmencu";
+import { ProcedureDef, TableDefinition, Client, TableDefinitions } from "./types-dmencu";
 import { ProcedureContext, CoreFunctionParameters, ForeignKey } from "meta-enc";
 import * as likeAr from "like-ar";
 export * from "./types-dmencu";
@@ -414,35 +414,24 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 };
                 return con_pk_completa
             }
-            for( var key1 in datos_json ){
-                var dato_key1 = datos_json[key1];
-                if ( dato_key1 instanceof Array && dato_key1.length >= 1 ) {
-                    var pk1 = tableStructures_app[key1](context).primaryKey;
-                    var ult_pk1 = pk1[pk1.length-1];
-                    datos_json[key1] = completar_ult_pk_en_arr( ult_pk1, datos_json[key1]) 
-                    datos_json[key1].forEach((un_key1, i1)=>{
-                        for ( var key2 in un_key1 ){
-                            if ( un_key1[key2] instanceof Array && un_key1[key2].length >= 1 ){
-                                var pk2 = tableStructures_app[key2](context).primaryKey;
-                                var ult_pk2 = pk2[pk2.length-1];            
-                                datos_json[key1][i1][key2] = completar_ult_pk_en_arr( ult_pk2, datos_json[key1][i1][key2])
-                                datos_json[key1][i1][key2].forEach(un_key2=>{
-                                    Object.keys(un_key2).filter( p2=>p2.startsWith('$')).forEach(pp2=>
-                                        delete un_key2[pp2]
-                                    )                                        
-                                })
-                            }
-                            if (key2.startsWith('$')||key2.startsWith('_')){
-                                delete datos_json[key1][i1][key2];
-                            }
-                        }
-                    });
+            function recorrer_datos_agregando_pks(datosj) {
+                for (var keyName in datosj) {
+                    var datoK = datosj[keyName];
+                    if (datoK instanceof Array && datoK.length >= 1) {
+                        var pk = tableStructures_app[keyName](context).primaryKey;
+                        var ult_pk = pk[pk.length - 1];
+                        datoK = completar_ult_pk_en_arr(ult_pk, datoK);
+                        datoK.forEach((elemI) => {
+                            elemI=recorrer_datos_agregando_pks(elemI)
+                        });
+                    };                            
+                    if (keyName.startsWith('$')||keyName.startsWith('_')) {
+                        delete datosj[keyName];
+                    }
                 }
-                if (key1.startsWith('$')){
-                    delete datos_json[key1];
-                };
-            }
-            
+                return datosj;
+            }            
+            datos_json = recorrer_datos_agregando_pks(datos_json);
             delete datos_json.codRea;
             delete datos_json.codNoRea;
             delete datos_json.resumenEstado;
