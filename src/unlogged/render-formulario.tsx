@@ -2111,6 +2111,11 @@ setCalcularVariables((respuestasRaiz:RespuestasRaiz, forPk:ForPk)=>{
         }
     })
     respuestasRaiz.vdominio=getDatosByPass().informacionHdr[forPk.vivienda].tem.dominio;
+    //TODO: MEJORAR EN ALGUN MOMENTO EL BOTON LISTO
+    let totalH = respuestasRaiz['total_h' as IdVariable];
+    respuestasRaiz['$B.F:S1' as IdVariable] = (respuestasRaiz['hogares'] || []).length == totalH?'ok':null;
+    let totalHsup = respuestasRaiz['total_h_sup' as IdVariable];
+    respuestasRaiz['$B.F:S1_SUP' as IdVariable] = (respuestasRaiz['hogares_sup' as IdUnidadAnalisis] || []).length == totalHsup?'ok':null;
 })
 
 window.addEventListener('load', function(){
