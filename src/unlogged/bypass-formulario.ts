@@ -263,21 +263,24 @@ export function calcularElementoEnfocado(idVariable:IdVariable|IdFin){
     var elemento = elementoVariableAEnfocar;
     var MARGEN_SCROLL = 64;
     var altoPantalla = window.innerHeight*0.7 - MARGEN_SCROLL;
-    var elementoEntero:HTMLElement|null = elemento; // es el elemento que va a entar entero en pantalla, define el bottom
+    var elementoEntero:HTMLElement|null = null; // es el elemento que va a entar entero en pantalla, define el bottom
     var rectElementoEntero:ReturnType<typeof myOwn.getRect>|null = null;
     var elementoSuperior:HTMLElement|null = null; // es el elemento que va a mostrarse desde arriba aunque no entre entero, define el top
     var rectElementoSuperior:ReturnType<typeof myOwn.getRect>|null = null;
     while(elemento != null){
-        if(elemento.classList.contains('variable') 
-        || elemento.classList.contains('multiple') 
-        || elemento.classList.contains('pregunta') 
-        || elemento.classList.contains('conjuntopreguntas') 
-        || elemento.classList.contains('seccion-boton-formulario') 
-        || elemento.classList.contains('botonformulario') 
+        if(
+            (elemento.classList.contains('variable') 
+            || elemento.classList.contains('multiple') 
+            || elemento.classList.contains('pregunta') 
+            || elemento.classList.contains('conjuntopreguntas') 
+            || elemento.classList.contains('seccion-boton-formulario') 
+            || elemento.classList.contains('botonformulario') 
+            ) && elemento.offsetHeight > 0
         ){
             if(elementoSuperior == null && elemento.clientHeight < altoPantalla){
                 elementoEntero = elemento;
             }else{
+                if(elementoEntero == null) elementoEntero = elemento;
                 if(rectElementoEntero == null){
                     elementoSuperior = elementoEntero
                     rectElementoEntero = myOwn.getRect(elementoEntero!)

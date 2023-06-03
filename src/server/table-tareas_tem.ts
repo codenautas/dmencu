@@ -48,7 +48,7 @@ export function tareas_tem(context:TableContext,opts?:{abre:boolean, consiste:bo
         //{name:'resultado'                 , typeName:'text'}, // fk tareas_resultados 
         //{name:'fecha_resultado'           , typeName:'date'}, // fk tareas_resultados 
         {name:'supervision_dirigida'        , typeName:'integer'     , editable: true},
-        {name:'supervision_aleatoria'       , typeName:'integer'     , editable: false,  inTable:false},
+        {name:'supervision_aleatoria'       , typeName:'integer'     , editable: false, inTable:context.forDump},
         {name:'verificado'                  , typeName:'text'        , editable:false,}, 
         {name:'a_recuperacion'              , typeName:'text'        , editable:false , inTable:false}, 
         {name:'obs_verificado'              , typeName:'text'},
