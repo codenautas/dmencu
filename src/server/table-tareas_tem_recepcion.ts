@@ -16,6 +16,11 @@ export function tareas_tem_recepcion(context:TableContext):TableDefinition {
     );
     tableDef.fields.forEach((field:FieldDefinition)=>field.table='tareas_tem');
     //tableDef.fields.forEach((field:FieldDefinition)=>field.editable=false);
+    var campoRea=tableDef.fields.find((field:FieldDefinition)=>field.name=='rea');
+    var campoNorea=tableDef.fields.find((field:FieldDefinition)=>field.name=='norea');
+    var campoRes=tableDef.fields.find((field:FieldDefinition)=>field.name=='resumen_estado');
+    tableDef.fields.splice(9,0, campoRea,campoNorea,campoRes);
+    tableDef.fields.splice(24,3);
     tableDef.primaryKey = ['operativo','enc','tarea'];
     tableDef.filterColumns=[
         {column:'visible_en_recepcion', operator:'=', value:true}
