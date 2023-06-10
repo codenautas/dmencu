@@ -46,7 +46,7 @@
   },
   "scripts": {
     "prepare": "npm run build",
-    "build": "(tsc -p src/unlogged || echo \"continue w/error\") && (tsc -p src/client || echo \"continue w/error\") && (tsc -p src/server || echo \"continue w/error\") && mixin-patch",
+    "build": "(tsc -p src/server || echo \"continue w/error\") && (tsc -p src/unlogged || echo \"continue w/error\") && (tsc -p src/client || echo \"continue w/error\") && mixin-patch",
     "build-client": "(tsc -p src/client || echo \"continue w/error\") && mixin-patch",
     "build-unlogged": "(tsc -p src/unlogged || echo \"continue w/error\") && mixin-patch",
     "mixin-patch": "mixin-patch",
