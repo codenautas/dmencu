@@ -18,6 +18,7 @@ export function asignados(context:TableContext, opts?:OptsAsignados){
     }
     var { be } = context;
     var q = context.be.db.quoteLiteral;
+    var esRecepcionista = context.user.rol == 'recepcionista';
     var tableDef: TableDefinition = {
         name: opts.name,
         elementName: opts.name,
@@ -36,11 +37,10 @@ export function asignados(context:TableContext, opts?:OptsAsignados){
         sql:{
             from:`(select ta.tarea, u.idper as asignado, u.apellido, u.nombre, t.*
                 from usuarios u, tareas ta, lateral (
-                    ${cuentasSql(be, `tt.asignado = u.idper and tt.tarea = ta.tarea`)}
+                    ${cuentasSql(be, `tt.asignado = u.idper and tt.tarea = ta.tarea ${esRecepcionista ? `and tt.recepcionista = ${q(context.user.idper)}` : `` } `)}
                 ) t
                 where totales > 0  
                     ${opts.rol ? `and ta.tarea = ${q(opts.rol)}` : `` }
-                    ${context.user.rol == 'recepcionista' ? `and tt.recepcionista = ${q(context.user.idper)}` : `` } 
             )`
         },
         hiddenColumns: opts.rol ? ['tarea'] : []

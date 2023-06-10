@@ -1,7 +1,7 @@
 {
   "name": "dmencu",
   "description": "DM Encu - Encuestas en dispositivo móvil",
-  "version": "0.4.8",
+  "version": "0.4.9",
   "author": "Codenautas <codenautas@googlegroups.com>",
   "license": "MIT",
   "main": "dist/server/server/app-dmencu.js",
@@ -15,7 +15,7 @@
     "memoize-one": "~6.0.0",
     "meta-enc": "^1.4.9",
     "procesamiento": "^1.0.10",
-    "backend-plus": "^1.19.0",
+    "backend-plus": "^1.19.1",
     "qrcode": "^1.5.3",
     "react": "~17.0.2",
     "react-dom": "~17.0.2",
@@ -30,7 +30,7 @@
   "dependencias provisorias: las que se pongan en dependencias ponerlas acá y sacarlas juntas": {},
   "devDependencies": {
     "@types/mocha": "^10.0.1",
-    "@types/node": "^20.1.4",
+    "@types/node": "^20.2.6",
     "@types/qrcode": "^1.5.0",
     "@types/react": "^17.0.38",
     "@types/react-dom": "^17.0.11",
@@ -38,8 +38,8 @@
     "@types/yazl": "~2.4.2",
     "mixin-patch": "~0.4.1",
     "pg-triggers": "~0.3.2",
-    "types.d.ts": "~0.6.13",
-    "typescript": "^5.0.4"
+    "types.d.ts": "~0.6.14",
+    "typescript": "^5.1.3"
   },
   "engines": {
     "node": ">= 16.18.0"
