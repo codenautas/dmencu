@@ -3,13 +3,22 @@
 import {TableDefinition, TableContext} from "./types-dmencu";
 import { FieldDefinition } from "rel-enc";
 
-export function tareas_tem(context:TableContext,opts?:{abre:boolean, consiste:boolean}):TableDefinition {
+export type OptsTareasTem = {
+    rol: 'encu'|'recu'|'supe'|null
+    name: string
+    abre?:boolean
+    consiste?:boolean
+}
+
+export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefinition {
     if (opts == null) {
         opts = {
-            abre:true,
-            consiste:true
+            rol: null,
+            name: 'relevador'
         }
     }
+    opts.abre ??= true;
+    opts.consiste ??= true;
     var be=context.be;
     var db=be.db; 
     var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';       
@@ -27,10 +36,11 @@ export function tareas_tem(context:TableContext,opts?:{abre:boolean, consiste:bo
     }
     fields=fields.concat([
         {name:'area'                        , typeName: 'integer'    , editable:false   , inTable:false },
+        {name:'tarea_asignar'               , typeName:'text'        , inTable:false    , editable:false, serverSide:true},
         {name:'tarea_anterior'              , typeName:'text'        , editable:false},
       //  {name:'ok'                          , typeName: 'text'       , editable:false   , inTable:false },
         {name:'recepcionista'               , typeName:'text'        , editable:true }, 
-        {name:'asignado'                    , typeName:'text'        , editable:false, title:'relevador'}, // va a la hoja de ruta
+        {name:'asignado'                    , typeName:'text'        , editable:true, title: opts.name}, // va a la hoja de ruta
         {name:'operacion'                   , typeName:'text'        , editable:false,}, // cargar/descargar
         {name:'fecha_asignacion'            , typeName:'date'}, // cargar/descargar
         {name:"carga_observaciones"         , typeName: "text"       , editable: true},        
@@ -103,7 +113,7 @@ export function tareas_tem(context:TableContext,opts?:{abre:boolean, consiste:bo
         editable:puedeEditar,
         fields,
         primaryKey:['tarea','operativo','enc'],
-        hiddenColumns:['cargado_dm','notas', 'estados__permite_editar_encuesta'],
+        hiddenColumns:['cargado_dm','notas', 'estados__permite_editar_encuesta','tarea_anterior','tarea_asginar'],
         foreignKeys:[
             {references:'tem' , fields:['operativo','enc'], displayFields:[]},
             {references:'tareas' , fields:['operativo','tarea']},
@@ -127,7 +137,8 @@ export function tareas_tem(context:TableContext,opts?:{abre:boolean, consiste:bo
             from:`(
                 select *
                     from (
-                select ta.tarea, t.operativo, t.enc, t.area
+                select tt.tarea, t.operativo, t.enc, t.area, 
+                    case when tarea_proxima is not null then tarea_proxima when tt.estado='A' then tt.tarea else null end as tarea_asignar
                     ${fields.filter(x=>!(x.isPk || x.inTable===false||x.name=='area')).map(x=>`, tt.${db.quoteIdent(x.name)}`).join('')}
                     , y.grupo as ult_gru_no_rea
                     , case when tt.tarea='recu' and y.grupo0 in ('ausentes','rechazos') then 'recuperacion' else null end a_recuperacion   
@@ -154,19 +165,19 @@ export function tareas_tem(context:TableContext,opts?:{abre:boolean, consiste:bo
 }
 
 export function tareas_tem_encu(context:TableContext){
-    var tableDef = tareas_tem(context, {abre:false, consiste:false}) 
+    var tableDef = tareas_tem(context, {rol:'encu', name:'encuestador', abre:false, consiste:false}) 
     tableDef.sql!.isTable = false;
     return tableDef;
 }
 
 export function tareas_tem_recu(context:TableContext){
-    var tableDef = tareas_tem(context, {abre:true, consiste:false}) 
+    var tableDef = tareas_tem(context, {rol:'recu', name:'recuperador', abre:true, consiste:false}) 
     tableDef.sql!.isTable = false;
     return tableDef;
 }
 
 export function tareas_tem_supe(context:TableContext){
-    var tableDef = tareas_tem(context, {abre:true, consiste:false}) 
+    var tableDef = tareas_tem(context, {rol:'supe', name:'supervisor', abre:true, consiste:false}) 
     tableDef.sql!.isTable = false;
     return tableDef;
 }

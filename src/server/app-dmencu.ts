@@ -514,9 +514,9 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 let menuFiltradoContent:MenuInfoBase[] = [
                     //{ menuType: 'table', name: 'general', table: 'areas_asignacion_general' },
                     { menuType: 'table', name: 'encuestador', table: 't_encu_areas', ff: { tarea: 'encu', ...filtroRecepcionista } },
-                    { menuType: 'table', name: 'recuperador', table: 'tareas_tem_recu', ff: { tem_rec__tarea_proxima: 'recu', tarea: 'recu', ...filtroRecepcionista } },
-                    { menuType: 'table', name: 'supervisor', table: 'tareas_tem_supe', ff: { tem_rec__tarea_proxima: 'supe', tarea: 'supe', ...filtroRecepcionista } },
-                    ];
+                    { menuType: 'table', name: 'recuperador', table: 'tareas_tem_recu', ff: { tarea_asignar: 'recu', tarea: 'recu', ...filtroRecepcionista } },
+                    { menuType: 'table', name: 'supervisor' , table: 'tareas_tem_supe', ff: { tarea_asignar: 'supe', tarea: 'supe', ...filtroRecepcionista } },
+                ];
                 if(context.user?.rol != 'recepcionista') {
                     menuFiltradoContent.unshift({ menuType: 'table', name: 'general', table: 'areas_asignacion_general' });
                 }

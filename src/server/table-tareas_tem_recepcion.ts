@@ -2,10 +2,10 @@
 
 import {TableDefinition, TableContext, FieldDefinition} from "./types-dmencu";
 
-import {tareas_tem} from "./table-tareas_tem";
+import {tareas_tem, OptsTareasTem} from "./table-tareas_tem";
 
-export function tareas_tem_recepcion(context:TableContext):TableDefinition {
-    var tableDef = tareas_tem(context);
+export function tareas_tem_recepcion(context:TableContext, opts?:OptsTareasTem):TableDefinition {
+    var tableDef = tareas_tem(context, opts);
     tableDef.name = `tareas_tem_recepcion`;
     tableDef.fields.splice(4,0,
         {name:"acciones"                    , typeName: 'jsonb'      , editable:false   , inTable:false},
@@ -16,9 +16,9 @@ export function tareas_tem_recepcion(context:TableContext):TableDefinition {
     );
     tableDef.fields.forEach((field:FieldDefinition)=>field.table='tareas_tem');
     //tableDef.fields.forEach((field:FieldDefinition)=>field.editable=false);
-    var campoRea=tableDef.fields.find((field:FieldDefinition)=>field.name=='rea');
-    var campoNorea=tableDef.fields.find((field:FieldDefinition)=>field.name=='norea');
-    var campoRes=tableDef.fields.find((field:FieldDefinition)=>field.name=='resumen_estado');
+    var campoRea=tableDef.fields.find((field:FieldDefinition)=>field.name=='rea')!;
+    var campoNorea=tableDef.fields.find((field:FieldDefinition)=>field.name=='norea')!;
+    var campoRes=tableDef.fields.find((field:FieldDefinition)=>field.name=='resumen_estado')!;
     tableDef.fields.splice(9,0, campoRea,campoNorea,campoRes);
     tableDef.fields.splice(24,3);
     tableDef.primaryKey = ['operativo','enc','tarea'];
@@ -44,3 +44,14 @@ export function tareas_tem_recepcion(context:TableContext):TableDefinition {
     return tableDef
 }
 
+export function tareas_tem_recepcion_encu(context:TableContext):TableDefinition {
+    return tareas_tem_recepcion(context, {rol:'encu', name:'encuestador'})
+}
+
+export function tareas_tem_recepcion_recu(context:TableContext):TableDefinition {
+    return tareas_tem_recepcion(context, {rol:'recu', name:'recuperador'})
+}
+
+export function tareas_tem_recepcion_supe(context:TableContext):TableDefinition {
+    return tareas_tem_recepcion(context, {rol:'supe', name:'supervisor'})
+}

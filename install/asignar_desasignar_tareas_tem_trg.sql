@@ -24,7 +24,7 @@ begin
     else
         if v_tarea_actual is distinct from new.tarea then    
             update tem 
-                set tarea_actual = tarea_proxima, tarea_proxima = null , estado_actual = new.estado
+                set tarea_actual = tarea_proxima, tarea_proxima = null, estado_actual = new.estado
                 where operativo = new.operativo and enc = new.enc;
         end if;
     end if;
