@@ -76,6 +76,8 @@ import {
 
 import {html, HtmlTag} from "js-to-html";
 
+const DELAY_SCROLL_3 = 50;
+
 function breakeableText(text:string|null):string|undefined;
 function breakeableText(text:string|null, diccionario?:{[clave:string]:React.ReactNode}){
     if(typeof text != "string") return undefined;
@@ -303,11 +305,11 @@ function OpcionDespliegue(props:{casillero:Opcion, valorOpcion:number, variable:
             if(siguienteVariable && saltoAutomatico){
                 var botonStyle = (event.target as HTMLElement)?.style;
                 if(botonStyle) botonStyle.color = 'green';
-                await sleep(100);
+                await sleep(DELAY_SCROLL_3);
                 if(botonStyle) botonStyle.color = 'blue';
-                await sleep(100);
+                await sleep(DELAY_SCROLL_3);
                 if(botonStyle) botonStyle.color = 'green';
-                await sleep(100);
+                await sleep(DELAY_SCROLL_3);
                 if(botonStyle) botonStyle.color = '';
                 //@ts-ignore algunos casilleros tienen especial y otros no
                 (casillero.especial?.noScroll == true)?null:enfocarElementoDeVariable(siguienteVariable);
@@ -552,7 +554,7 @@ function calcularNuestraLongitud(longitud:string |null){
 function enfocarElementoDeVariable(siguienteVariable:IdVariable|IdFin){
     debeSaltar = false;
     var {top, enfocado, elementoInputVariable} = calcularElementoEnfocado(siguienteVariable);
-    if(top != null && top>0 && !enfocado){
+    if(top != null && top>0 && (!enfocado || "salta siempre")){
         window.scrollTo({top, left:0, behavior:'smooth'});
     }
     elementoInputVariable?.focus();
