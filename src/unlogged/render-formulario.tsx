@@ -90,6 +90,9 @@ function breakeableText(text:string|null, diccionario?:{[clave:string]:React.Rea
 const VER_DOMINIO = false; // el encuestador no necesita ver el dominio en cada encuesta porque el dominio depende del área y se deduce del primer dígito del número de encuesta
 // no poner VER_DOMINIO en true, cambiar por una variable que se fije si el DM está en modo prueba o en modo "diseño conceptual"
 
+const ID_BOTON_VOLVER_HDR = 'boton-volver-hdr';
+const ID_BOTON_CERRAR = 'boton-cerrar-encuesta';
+
 var debeSaltar:boolean = false;
 
 window.addEventListener('load', ()=>{
@@ -1376,7 +1379,6 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
         //location.hash=hash.toString();
     }
     var botonesFormulario=[];
-    const ID_BOTON_VOLVER_HDR = 'boton-volver-hdr';
     if(!opciones.modoDirecto){
         botonesFormulario.push({que: 'hdr'    , abr:'HdR', id:ID_BOTON_VOLVER_HDR, label:'hoja de ruta', retroceso:0})
     }
@@ -1384,7 +1386,6 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
         botonesFormulario.push({que:'volver', abr:forPk.formulario.replace(/^F:/,''), label:forPk.formulario, retroceso:opciones.pilaForPk.length-i})
     )
     botonesFormulario.push({que:'', abr:forPk.formulario.replace(/^F:/,''), label:forPk.formulario, retroceso:0});
-    const ID_BOTON_CERRAR = 'boton-cerrar-encuesta';
     registrarElemento({id:props.modoDirecto?ID_BOTON_CERRAR:ID_BOTON_VOLVER_HDR, direct:true,
         fun:(
             r:Respuestas, 
@@ -1394,9 +1395,7 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
             _estructura:Estructura
         )=>{
             elemento.setAttribute('resumen-estado',calcularResumenVivienda(forPk, feedbackAll, r).resumenEstado);
-            
         }
-            
     })
     return <>
         <ButtonGroup key="formularios" className="barra-navegacion" solo-lectura={props.soloLectura?'si':'no'} >
@@ -1499,15 +1498,21 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
 function BotonVolverEnDiv({id}:{id:string}){
     var {opciones} = useSelector((state:CasoState)=>({opciones:state.opciones}));
     const dispatch = useDispatch();
+    var esVolver = opciones.pilaForPk.length>0;
     return <div className="div-boton-volver">
-        {opciones.pilaForPk.length>0?
         <Button id={id} className="boton-volver"
             onClick={()=>{
-                dispatchByPass(accion_abrir_formulario,{forPk:opciones.pilaForPk[opciones.pilaForPk.length-1]});
-                dispatch(dispatchers.VOLVER_DE_FORMULARIO({magnitudRetroceso:1}))
+                if (esVolver) { 
+                    dispatchByPass(accion_abrir_formulario,{forPk:opciones.pilaForPk[opciones.pilaForPk.length-1]});
+                    dispatch(dispatchers.VOLVER_DE_FORMULARIO({magnitudRetroceso:1}))
+                } else {
+                    var botonCerrar = document.getElementById(ID_BOTON_CERRAR) || document.getElementById(ID_BOTON_VOLVER_HDR) 
+                    if (botonCerrar) {
+                        botonCerrar.click();
+                    }
+                }
             }}
-        > <ICON.ChevronLeft/> Volver</Button>
-        :null}
+        > <ICON.ChevronLeft/>{esVolver ? " Volver" : " Cerrar"}</Button>
     </div>
 }
 

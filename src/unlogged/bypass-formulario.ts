@@ -275,6 +275,7 @@ export function calcularElementoEnfocado(idVariable:IdVariable|IdFin){
             || elemento.classList.contains('conjuntopreguntas') 
             || elemento.classList.contains('seccion-boton-formulario') 
             || elemento.classList.contains('botonformulario') 
+            || elemento.classList.contains('boton-volver') 
             ) && elemento.offsetHeight > 0
         ){
             if(elementoSuperior == null && elemento.clientHeight < altoPantalla){
