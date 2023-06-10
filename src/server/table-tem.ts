@@ -38,7 +38,6 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {name:"consistir"            , typeName: 'text'   , editable: false  , inTable:false, clientSide:'consistir'},
             {name: "cluster"             , typeName:'integer' , editable: false, isName:true},
             {name:'tarea_actual'         , typeName:'text'    , editable: false  },
-            {name:'estado_actual'        , typeName:'text'    , editable: false   , nullable: false, defaultDbValue:"'0D'"},
             {name:"habilitar"            , typeName: "text"   , editable:false   , inTable:false, clientSide:'habilitar'},
             {name:"habilitada"           , typeName: 'boolean', editable:puedeEditar, nullable: false},
             {name:'tarea_proxima'        , typeName:'text'    , editable: false  },
@@ -150,7 +149,6 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             ], 
                 alias:'tarprox'
             },
-            {references:'estados' , fields:[{source:'operativo', target:'operativo'},{source:'estado_actual', target:'estado'}]},
         //    {references:'usuarios', fields:[{source:'carga_persona', target:'idper'}], displayFields:['apellido','nombre']},
         ],        
         softForeignKeys:[

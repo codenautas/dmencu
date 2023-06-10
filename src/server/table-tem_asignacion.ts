@@ -34,7 +34,7 @@ export function tem_asignacion(context:TableContext):TableDefinition {
     var tableDef = tem(context, {});
     tableDef.name = `tem_asignacion`;
     tableDef.fields = tableDef.fields.filter((field)=>
-        ['operativo','enc','tarea_actual', 'estado_actual', /*'abrir'*/,'habilitar','habilitada', 'area', 'tarea_proxima', 'cargado','cargado_dm']
+        ['operativo','enc','tarea_actual', /*'abrir'*/,'habilitar','habilitada', 'area', 'tarea_proxima', 'cargado','cargado_dm']
         .includes(field.name)
     ).concat(extraFields);
     tableDef.refrescable = true;

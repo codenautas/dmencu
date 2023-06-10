@@ -18,13 +18,13 @@ begin
     if new.asignado is null then
         if coalesce(v_tarea_actual,'nulo') = new.tarea then    
             update tem 
-                set tarea_proxima = new.tarea, tarea_actual = new.tarea_anterior, estado_actual = new.estado
+                set tarea_proxima = new.tarea, tarea_actual = new.tarea_anterior
                 where operativo = new.operativo and enc = new.enc;
         end if;
     else
         if v_tarea_actual is distinct from new.tarea then    
             update tem 
-                set tarea_actual = tarea_proxima, tarea_proxima = null, estado_actual = new.estado
+                set tarea_actual = tarea_proxima, tarea_proxima = null
                 where operativo = new.operativo and enc = new.enc;
         end if;
     end if;
