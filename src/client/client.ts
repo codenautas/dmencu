@@ -77,6 +77,12 @@ myOwn.autoSetupFunctions.push(async ()=>{
         ],
         autoproced:true,
         mainAction:async (params)=>{
+            if (window.opener) {
+                var mainTopBar = document.getElementById('main-top-bar');
+                if (mainTopBar) { 
+                    mainTopBar.style.display = 'none';
+                }
+            }
             var {operativo, tarea, enc } = params;
             var result = await myOwn.ajax.consistir_encuesta({
                 operativo: operativo,
@@ -90,17 +96,17 @@ myOwn.autoSetupFunctions.push(async ()=>{
                 var divGrilla = html.div({id:'inconsistencias'}).create();
                 mainLayout.insertBefore(divGrilla, mainLayout.firstChild);
                 mainLayout.insertBefore(
-                    crearBotonCerrarEncuesta(
-                        `cerrar encuesta`
-                    ), 
-                    mainLayout.firstChild
-                );
-                mainLayout.insertBefore(
                     crearBotonVerAbrirEncuesta(
                         operativo,
                         tarea,
                         enc, 
-                        `ir a encuesta ${enc}`
+                        `volver a encuesta ${enc}`
+                    ), 
+                    mainLayout.firstChild
+                );
+                mainLayout.insertBefore(
+                    crearBotonCerrarEncuesta(
+                        `⬅️ cerrar encuesta`
                     ), 
                     mainLayout.firstChild
                 );
