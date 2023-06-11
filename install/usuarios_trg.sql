@@ -22,7 +22,7 @@ begin
       into v_puede_asignar_rol
       from roles_subordinados
       where rol = v_rol_usuario_actual and rol_subordinado = new.rol;
-    if v_puede_asignar_rol then
+    if v_puede_asignar_rol or v_rol_usuario_actual = 'admin' then
       null; 
     else 
       raise exception 'No se peude asignar el rol %', new.rol;
