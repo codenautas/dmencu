@@ -22,29 +22,11 @@ export function estados(context:TableContext):TableDefinition {
         ],
         primaryKey:['operativo', 'estado'],
         foreignKeys: [
-            {
-                "references": "operativos",
-                "fields": [
-                    "operativo",
-                ]
-            },
-            {
-                references: "estados", "fields": [
-                    {source: "operativo", target:"operativo"},
-                    {source: "estado_al_asignar", target:"estado"}
-                ]
-                , alias: 'estdest'
-            }
+            {references: "operativos",fields: ["operativo"]},
+            {references: "estados", fields: ["operativo", {source: "estado_al_asignar", target:"estado"}], alias: 'estado_al_asignar'}
         ],
-        "detailTables": [
-            {
-                "table": "estados_acciones",
-                "fields": [
-                    "operativo",
-                    "estado"
-                ],
-                "abr": "ea"
-            }
+        detailTables: [
+            {table: "estados_acciones", fields: ["operativo","estado"], abr: "a", label:"acciones"}
         ],
     };
 }

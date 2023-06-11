@@ -22,22 +22,10 @@ export function acciones(context:TableContext):TableDefinition {
         ],
         primaryKey:['operativo', 'eaccion'],
         foreignKeys: [
-            {
-                "references": "operativos",
-                "fields": [
-                    "operativo",
-                ]
-            }
+            {references: "operativos", fields: ["operativo"]}
         ],
-        "detailTables": [
-            {
-                "table": "estados_acciones",
-                "fields": [
-                    "operativo",
-                    "eaccion"
-                ],
-                "abr": "ea"
-            }
+        detailTables: [
+            {table: "estados_acciones", fields: ["operativo", "eaccion"], abr: "e", label:"estados"}
         ],
     };
 }

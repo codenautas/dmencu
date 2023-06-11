@@ -511,32 +511,29 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             }
         }else{
             if(context.puede?.campo?.editar){
-                let menuFiltradoContent:MenuInfoBase[] = [
-                    //{ menuType: 'table', name: 'general', table: 'areas_asignacion_general' },
+                let menuAsignacion:MenuInfoBase[] = []
+                if (context.puede?.campo?.administrar) {
+                    menuAsignacion.push({ menuType: 'table', name: 'general', table: 'areas_asignacion_general' });
+                }
+                menuAsignacion.push(
                     { menuType: 'table', name: 'encuestador', table: 't_encu_areas', ff: { tarea: 'encu', ...filtroRecepcionista } },
                     { menuType: 'table', name: 'recuperador', table: 'tareas_tem_recu', ff: { tarea_asignar: 'recu', tarea: 'recu', ...filtroRecepcionista } },
                     { menuType: 'table', name: 'supervisor' , table: 'tareas_tem_supe', ff: { tarea_asignar: 'supe', tarea: 'supe', ...filtroRecepcionista } },
-                ];
-                if(context.user?.rol != 'recepcionista') {
-                    menuFiltradoContent.unshift({ menuType: 'table', name: 'general', table: 'areas_asignacion_general' });
-                }
+                );
                 menu.push(
-                    {menuType:'menu', name:'asignacion', label:'asignación' ,menuContent: menuFiltradoContent},
-                )
-                menu.push(
+                    {menuType:'menu', name:'asignacion', label:'asignación' ,menuContent: menuAsignacion},
                     {menuType:'menu', name:'recepcion', label:'recepción' ,menuContent:[
                         {menuType:'table', name:'encuestador', table:'encuestadores_asignados'},
                         {menuType:'table', name:'recuperador', table:'recuperadores_asignados'},
                         {menuType:'table', name:'supervisor' , table:'supervisores_asignados' },
                     ]},            
-                )
-                menu.push({ menuType: 'menu', name: 'varios', menuContent: [
-                    { menuType: 'abrir_encuesta', name: 'abrir_encuesta'},
-                   //{menuType:'consistir_encuesta', name:'consistir_encuesta'},
-                ] });
+                    {menuType: 'menu', name: 'varios', menuContent: [
+                        {menuType: 'abrir_encuesta', name: 'abrir_encuesta'},
+                        {menuType: 'table', name: 'hoja_ruta', table: 'grilla_hoja_ruta', label: 'hoja de ruta'},
+                    ]}
+                );
             }
-            console.log("context user", context.user)
-            if(context.superuser){
+            if(context.puede?.campo?.administrar){
                 menu.push(
                     {menuType:'menu', name:'control', menuContent:[
                         {menuType:'table', name:'resumen', table:'control_resumen', selectedByDefault:true},
@@ -548,8 +545,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     ]},            
                 )
             }
-            if(context.puede?.encuestas.procesar){
-                menu = [ ...menu,
+            if(context.puede?.encuestas?.procesar){
+                menu.push(
                     {menuType:'menu', name:'procesar', menuContent:[
                         {menuType:'table', name:'variables'    },
                         {menuType:'table', name:'consistencias'},
@@ -557,40 +554,49 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                         {menuType:'table', name:'tabla_datos'  },
                         {menuType:'table', name:'diccionario'  , label:'diccionarios' },
                     ]},
-                ]
+                );
+            }
+            var menuConfigurar:MenuInfoBase[] = [];
+            if(context.puede?.campo?.administrar){
+                menuConfigurar.push(
+                    {menuType:'menu', name:'muestra', label:'muestra', menuContent:[
+                        {menuType:'table', name:'tem', label: 'TEM'} ,
+                        {menuType:'table', name:'tareas'},
+                    ]},
+                );
+            }
+            if(context.puede?.casilleros_texto?.editar){
+                menuConfigurar.push(
+                    {menuType:'menu', name:'metadatos', menuContent:[
+                        {menuType:'table', name:'operativos'},
+                        {menuType:'table', name:'formularios' , table:'casilleros_principales'},
+                        {menuType:'table', name:'plano'       , table:'casilleros'},
+                        {menuType:'table', name:'tipoc'       , label:'tipos de celdas'},
+                        {menuType:'table', name:'tipoc_tipoc' , label:'inclusiones de celdas'},
+                    ]},
+                );
             }
             if(context.superuser){
-                menu = [ ...menu,
-                    {menuType:'menu', name:'configurar', menuContent:[
-                        {menuType:'menu', name:'muestra', label:'muestra', menuContent:[
-                            {menuType:'table', name:'tem', label: 'TEM'} ,
-                            {menuType:'table', name:'tareas'},
-                        // {menuType:'table', name:'personal_rol'},
-                           { menuType: 'table', name: 'gr_hoja_ruta', table: 'grilla_hoja_ruta',  label:'grilla hoja de ruta'},
-                        ]},
-                        {menuType:'menu', name:'metadatos', menuContent:[
-                            {menuType:'table', name:'operativos'},
-                            {menuType:'table', name:'formularios' , table:'casilleros_principales'},
-                            {menuType:'table', name:'plano'       , table:'casilleros'},
-                            {menuType:'table', name:'tipoc'       , label:'tipos de celdas'},
-                            {menuType:'table', name:'tipoc_tipoc' , label:'inclusiones de celdas'},
-                        ]},
-                        {menuType:'menu', name:'estados_acciones', label:'estados/acciones', menuContent:[
-                            {menuType:'table', name:'estados'},
-                            {menuType:'table', name:'acciones'},
-                            {menuType:'table', name:'estados_acciones'},
-                        ]},
-                        {menuType:'table', name:'parametros'},
+                menuConfigurar.push(
+                    {menuType:'menu', name:'estados_acciones', label:'estados/acciones', menuContent:[
+                        {menuType:'table', name:'estados'},
+                        {menuType:'table', name:'acciones'},
+                        {menuType:'table', name:'estados_acciones'},
                     ]},
+                    {menuType:'table', name:'parametros'},
+                )
+            }
+            if(context.puede?.campo?.administrar || context.puede?.encuestas?.procesar){
+                menuConfigurar.push(
                     {menuType:'menu', name:'usuarios', menuContent:[
                         {menuType:'table', name:'usuarios', selectedByDefault:true},
                         {menuType:'table', name:'roles'},
                         {menuType:'table', name:'permisos'},
                         {menuType:'table', name:'roles_permisos'},
                     ]},
-                    // {menuType:'proc', name:'generate_tabledef', proc:'tabledef_generate', label:'generar tablas'  },
-                ]
+                )
             }
+            menu.push({menuType:'menu', name:'configurar', menuContent:menuConfigurar});
         }
         return {menu};
     }

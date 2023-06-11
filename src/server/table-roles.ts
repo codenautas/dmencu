@@ -15,7 +15,8 @@ export function roles(context:TableContext):TableDefinition {
         ],
         primaryKey:['rol'],
         detailTables:[
-            {table:'roles_permisos'     , fields:['rol'], abr:'P', label:'Permisos para el rol'},
+            {table:'roles_permisos'     , fields:['rol'], abr:'P', label:'Permisos'},
+            {table:'roles_subordinados' , fields:['rol'], abr:'S'},
             {table:'usuarios'           , fields:['rol'], abr:'U'},
         ],
     };

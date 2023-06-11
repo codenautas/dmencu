@@ -12,6 +12,9 @@ export type Puede = {
         justificar: boolean,
         procesar: boolean
     },
+    casilleros_texto:{
+        editar:boolean
+    }
     campo:{
         editar:boolean
         administrar:boolean

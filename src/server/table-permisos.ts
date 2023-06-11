@@ -15,7 +15,7 @@ export function permisos(context:TableContext):TableDefinition {
         ],
         primaryKey:['permiso','accion'],
         detailTables:[
-            {table:'roles_permisos'     , fields:['permiso'], abr:'P', label:'Permisos para el rol'},
+            {table:'roles_permisos'     , fields:['permiso','accion'], abr:'P', label:'permisos'},
         ],
     };
 }

@@ -3,11 +3,13 @@
 import {TableDefinition, TableContext} from "./types-dmencu";
 
 export function usuarios(context:TableContext):TableDefinition{
-    var admin = context.user.rol==='admin';
+    var q = context.be.db.quoteLiteral;
+    var rol = context.user.rol;
+    var admin = rol ==='admin';
     return {
         name:'usuarios',
         title:'Usuarios de la Aplicación',
-        editable:admin,
+        editable:true,
         fields:[
             {name:'usuario'          , typeName:'text'    , nullable:false  },
             {name:'idper'            , typeName:'text'    },
@@ -22,7 +24,7 @@ export function usuarios(context:TableContext):TableDefinition{
             {name:'recepcionista'    , typeName:'text'                      },
             {name:'mail'             , typeName:'text'                      },
             {name:'mail_alternativo' , typeName:'text'                      },
-            {name:'rol2'             , typeName:'text'                      },
+            {name:'rol2'             , typeName:'text'    , editable: admin , visible:false},
             {name:'clave_nueva'      , typeName:'text', clientSide:'newPass', allow:{select:admin, update:true, insert:false}},
         ],
         primaryKey:['usuario'],
@@ -36,13 +38,8 @@ export function usuarios(context:TableContext):TableDefinition{
             {references:'usuarios', fields:[{source:'recepcionista', target:'idper'}], alias:'recepcionista'}
         ],
         sql:{
-            where:admin || context.forDump?'true':"usuarios.usuario = "+context.be.db.quoteNullable(context.user.usuario)
-            /*
-            where:` (${q(esSuperUser)} 
-                or usuarios.rol= ${q(context.user.rol)}
-                or exists (select rol_subordinado from roles_subordinados s where s.rol=${q(context.user.rol)} and usuarios.rol=s.rol_subordinado)                      
-            )`
-            */
+            where:admin || context.forDump?'true':// "usuarios.usuario = "+q(context.user.usuario)
+            `usuarios.rol in (select rol_subordinado from roles_subordinados where rol = ${q(rol)})`
         }
     };
 }
