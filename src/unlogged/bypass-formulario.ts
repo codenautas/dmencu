@@ -259,7 +259,7 @@ export function volcadoInicialElementosRegistrados(forPkRaiz:ForPkRaiz){
 
 export function calcularElementoEnfocado(idVariable:IdVariable|IdFin){
     var elementoVariableAEnfocar = document.getElementById(idVariable=='fin'?`boton-volver-2`:`var-${idVariable}`)
-        ||document.getElementById(`seccion-boton-formulario-${idVariable}`);
+        ||document.getElementById(idVariable);
     var elemento = elementoVariableAEnfocar;
     var MARGEN_SCROLL = 64;
     var altoPantalla = window.innerHeight*0.7 - MARGEN_SCROLL;

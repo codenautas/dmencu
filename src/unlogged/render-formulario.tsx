@@ -312,7 +312,7 @@ function OpcionDespliegue(props:{casillero:Opcion, valorOpcion:number, variable:
                 await sleep(DELAY_SCROLL_3);
                 if(botonStyle) botonStyle.color = '';
                 //@ts-ignore algunos casilleros tienen especial y otros no
-                (casillero.especial?.noScroll == true)?null:enfocarElementoDeVariable(siguienteVariable);
+                (casillero.especial?.noScroll == true)?null:enfocarElementoDeVariable(casillero.especial?.scrollTo ?? siguienteVariable);
             }
         }
     };
@@ -578,7 +578,7 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpcio
         var {siguienteVariable} = dispatchByPass(accion_registrar_respuesta, {forPk:props.forPk, variable:pregunta.var_name, respuesta:nuevoValor});
         if(siguienteVariable && debeSaltar){
             //@ts-ignore algunos casilleros tienen especial y otros no
-            (pregunta.especial?.noScroll == true)?null:enfocarElementoDeVariable(siguienteVariable);
+            (pregunta.especial?.noScroll == true)?null:enfocarElementoDeVariable(pregunta.especial?.scrollTo ?? siguienteVariable);
         }
     };
     var nuestraLongitud = calcularNuestraLongitud(longitud)
