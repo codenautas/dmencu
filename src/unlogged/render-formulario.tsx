@@ -830,7 +830,7 @@ function botonesDelFormulario(r:Respuestas, unidad_analisis:IdUnidadAnalisis, es
                                         estructura.formularios[formulario].casilleros
                                     )
                                 ]) : null
-                            }).array().map(x=>x == null ? null : x),
+                            }).array().map(x=>x == null ? null : x).reverse(),
                         ])
                         ,botonesDelFormulario(respuestasHija, uaHija.unidad_analisis, estructura, forPkHijaParcial, feedbackAll)
                     ])
