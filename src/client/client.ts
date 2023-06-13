@@ -95,21 +95,18 @@ myOwn.autoSetupFunctions.push(async ()=>{
                 var mainLayout = document.getElementById('main_layout')!;
                 var divGrilla = html.div({id:'inconsistencias'}).create();
                 mainLayout.insertBefore(divGrilla, mainLayout.firstChild);
-                mainLayout.insertBefore(
+                var divBotones = html.div({id:'botones-post-consistir'},[
+                    crearBotonCerrarEncuesta(
+                        `cerrar encuesta`
+                    ),
                     crearBotonVerAbrirEncuesta(
                         operativo,
                         tarea,
                         enc, 
                         `volver a encuesta ${enc}`
-                    ), 
-                    mainLayout.firstChild
-                );
-                mainLayout.insertBefore(
-                    crearBotonCerrarEncuesta(
-                        `⬅️ cerrar encuesta`
-                    ), 
-                    mainLayout.firstChild
-                );
+                    )
+                ]).create()
+                mainLayout.insertBefore(divBotones, mainLayout.firstChild);
                 my.tableGrid("inconsistencias", divGrilla,{tableDef:{},fixedFields: fixedFields});
             }else{
                 throw new Error(result.message);
@@ -301,7 +298,14 @@ function mostrarDatosPersona(hayDatos:boolean, datos:any, divResult:HTMLDivEleme
 */
 
 var crearBotonCerrarEncuesta = (label:string)=>{
-    let ver = html.button({},label).create();
+    let path = "M3 3v18h18V3H3zm14 12.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z";
+    var svg = html.svg({class:"svg-cerrar-encuesta"},[
+        html.path({
+            d:path
+        })
+    ]).create();
+    svg.setAttribute("viewBox","0 0 26 26");
+    let ver = html.button({id:'boton-cerrar-encuesta'},[svg, label]).create();
     ver.onclick = ()=> close();
     return ver
 }
@@ -312,7 +316,7 @@ var crearBotonVerAbrirEncuesta = (operativo:IdOperativo,tarea:IdTarea,encuesta:n
         tarea:tarea,
         enc:encuesta
     }
-    let ver = html.button({},label).create();
+    let ver = html.button({id:'boton-volver-a-encuesta'},label).create();
     ver.onclick = ()=> window.open(location.origin+location.pathname+my.menuSeparator+`w=abrir_encuesta&up=${JSON.stringify(up)}&autoproced=true`, ABRIR_TAB)
     return ver
 }

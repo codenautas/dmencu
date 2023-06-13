@@ -93,6 +93,21 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         this.caches.metaEncIncluirCasillerosSaltoREL = false;
         this.caches.timestampEstructura = new Date().getTime();
     }
+    override async canChangePass(reqOrContext, userToChangePass){
+        var be = this;
+        var result = await be.inDbClient(null, async (client)=>{
+            var q = be.db.quoteLiteral;
+            var rol = reqOrContext.user.rol;
+            return (await client.query(`
+                select * 
+                  from usuarios 
+                  where rol in (select rol_subordinado from roles_subordinados where rol = ${q(rol)})`).fetchAll()).rows;
+        })
+        var puede= result.find((user)=>user.usuario == userToChangePass.username) != -1;
+        var isAdmin = be.isAdmin(reqOrContext);
+        return isAdmin || puede
+        
+    }
     override async getProcedures(){
         var be = this;
         var procedimientoAReemplazar=["caso_guardar","caso_traer"];
@@ -721,7 +736,11 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 editable: context.forDump||['admin','dis_conceptual'].includes(context.user.rol)}
             );
         })
-
+        be.appendToTableDefinition('usuarios',function(tableDef, context){
+            let claveNuevaField = tableDef.fields.find((field)=>field.name == 'clave_nueva')!;
+            var adminOCoord = ['admin','coor_campo'].includes(context.user.rol);
+            claveNuevaField.allow = {select:adminOCoord, update:true, insert:false};
+        })
         // be.appendToTableDefinition('casilleros',function(tableDef, context){
         //     tableDef.constraints = tableDef.constraints.filter(c=>c.consName!='casilleros salto REL')
         // })

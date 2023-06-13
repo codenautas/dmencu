@@ -11,7 +11,7 @@ export function tareas_tem_recepcion(context:TableContext, opts?:OptsTareasTem):
         {name:"acciones"                    , typeName: 'jsonb'      , editable:false   , inTable:false},
         {name:"acciones_avance"             , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesAvance'},
         {name:"acciones_retroceso"          , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesRetroceso'},
-        {name:"acciones_blanqueo"           , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesBlanqueo'},
+        //{name:"acciones_blanqueo"           , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesBlanqueo'},
         {name:"visible_en_recepcion"        , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
     );
     tableDef.fields.forEach((field:FieldDefinition)=>field.table='tareas_tem');
