@@ -103,7 +103,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                   from usuarios 
                   where rol in (select rol_subordinado from roles_subordinados where rol = ${q(rol)})`).fetchAll()).rows;
         })
-        var puede = !!result.find((user)=>user.usuario == userToChangePass.username);
+        var puede = !!result.find((user)=>user.usuario == userToChangePass);
         var isAdmin = be.isAdmin(reqOrContext);
         return isAdmin || puede
         
