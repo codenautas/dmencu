@@ -1524,6 +1524,7 @@ function FormularioDespliegue(props:{forPk:ForPk}){
         = useSelectorVivienda(props.forPk);
     var soloLectura = getDatosByPass().soloLectura;
     const dispatch = useDispatch();
+    var esVolver = opciones.pilaForPk.length>0;
     useEffect(()=>{
         var controlScroll=()=>{
             var arriba = document.getElementById('fab-activo-arriba');
@@ -1560,9 +1561,17 @@ function FormularioDespliegue(props:{forPk:ForPk}){
     }
     var listaModos:ModoDespliegue[]=['metadatos','relevamiento','PDF'];
     ['boton-volver-1', 'boton-volver-2'].forEach(id=>{
-        registrarElemento({id, attr:'resumen-estado', fun:(_:Respuestas, feedbackForm: FormStructureState<IdVariable, Valor, IdFin>)=>(
-            feedbackForm.resumen
-        )})
+        registrarElemento({id, direct:true,
+            fun:(
+                r:Respuestas, 
+                feedbackForm: FormStructureState<IdVariable, Valor, IdFin>, 
+                elemento:HTMLDivElement, 
+                feedbackAll:{[formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin>}, 
+                _estructura:Estructura
+            )=>{
+                elemento.setAttribute('resumen-estado',esVolver?feedbackForm.resumen:calcularResumenVivienda(forPk, feedbackAll, r).resumenEstado);
+            }
+        })
     })
     // @ts-expect-error especial hay que leerlo en el parser de casilleros si esto termina quedando así
     var pantallaCompleta = formulario.especial?.pantallaCompleta;
