@@ -526,22 +526,35 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             }
         }else{
             if(context.puede?.campo?.editar){
-                let menuAsignacion:MenuInfoBase[] = []
+                let submenuAsignacion:MenuInfoBase[] = []
+                let submenuRecepcion:MenuInfoBase[] = []
                 if (context.puede?.campo?.administrar) {
-                    menuAsignacion.push({ menuType: 'table', name: 'general', table: 'areas_asignacion_general' });
+                    submenuAsignacion.push({ menuType: 'table', name: 'general', table: 'areas_asignacion_general' });
                 }
-                menuAsignacion.push(
+                submenuAsignacion.push(
                     { menuType: 'table', name: 'encuestador', table: 't_encu_areas', ff: { tarea: 'encu', ...filtroRecepcionista } },
                     { menuType: 'table', name: 'recuperador', table: 'tareas_tem_recu', ff: { tarea_asignar: 'recu', tarea: 'recu', ...filtroRecepcionista } },
                     { menuType: 'table', name: 'supervisor' , table: 'tareas_tem_supe', ff: { tarea_asignar: 'supe', tarea: 'supe', ...filtroRecepcionista } },
                 );
+                submenuRecepcion.push(
+                    {menuType:'table', name:'encuestador', table:'encuestadores_asignados'},
+                    {menuType:'table', name:'recuperador', table:'recuperadores_asignados'},
+                )
+                let itemSupervision = {menuType:'table', name:'supervisor' , table:'supervisores_asignados' };
                 menu.push(
-                    {menuType:'menu', name:'asignacion', label:'asignación' ,menuContent: menuAsignacion},
-                    {menuType:'menu', name:'recepcion', label:'recepción' ,menuContent:[
-                        {menuType:'table', name:'encuestador', table:'encuestadores_asignados'},
-                        {menuType:'table', name:'recuperador', table:'recuperadores_asignados'},
-                        {menuType:'table', name:'supervisor' , table:'supervisores_asignados' },
-                    ]},            
+                    {menuType:'menu', name:'asignacion', label:'asignación' ,menuContent: submenuAsignacion},
+                    {menuType:'menu', name:'recepcion', label:'recepción' ,menuContent:submenuRecepcion},  
+                );
+                if(context.puede?.campo?.administrar){
+                    submenuRecepcion.push(itemSupervision)
+                }else{
+                    menu.push(
+                        {menuType:'menu', name:'supervision', label:'supervisión' ,menuContent:[
+                            itemSupervision
+                        ]}
+                    )
+                }    
+                menu.push(      
                     {menuType: 'menu', name: 'varios', menuContent: [
                         {menuType: 'abrir_encuesta', name: 'abrir_encuesta'},
                         {menuType: 'table', name: 'hoja_ruta', table: 'grilla_hoja_ruta', label: 'hoja de ruta'},
@@ -611,7 +624,9 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     ]},
                 )
             }
-            menu.push({menuType:'menu', name:'configurar', menuContent:menuConfigurar});
+            if(menuConfigurar.length){
+                menu.push({menuType:'menu', name:'configurar', menuContent:menuConfigurar});
+            }
         }
         return {menu};
     }
