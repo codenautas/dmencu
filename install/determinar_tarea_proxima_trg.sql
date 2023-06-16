@@ -11,16 +11,20 @@ AS $BODY$
         v_norea integer;
         v_grupo0 text;
         v_proxtarea text;
+        v_supervision_aleatoria integer;
 begin
-     select rea, norea, tarea_actual, grupo0 into v_rea, v_norea, v_tarea_actual, v_grupo0 
+     select rea, norea, tarea_actual, grupo0, supervision_aleatoria 
+        into v_rea, v_norea, v_tarea_actual, v_grupo0, v_supervision_aleatoria 
         from tem t
         left join no_rea nr  on nr.no_rea= norea::text 
-        where operativo = new.operativo and enc = new.enc;
+        where operativo = new.operativo and enc = new.enc;    
     if new.verificado='1' then
-              if v_tarea_actual='encu' then
+        if v_tarea_actual='encu' then
             case when  v_grupo0 in ('ausentes', 'rechazos') then
                     v_proxtarea='recu';
                  when  v_grupo0 in ('no encuestable') then 
+                    v_proxtarea='supe';
+                 when  v_rea=1 and (v_supervision_aleatoria is not null or new.supervision_dirigida is not null) then 
                     v_proxtarea='supe';
                  else 
                     v_proxtarea=null;
