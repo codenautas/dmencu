@@ -20,6 +20,8 @@ export function estados(context:TableContext):TableDefinition {
             {name:'visible_en_recepcion'         , typeName:'boolean', nullable:false, defaultDbValue:'true'},
             {name:'visible_en_ingreso'           , typeName:'boolean', nullable:false, defaultDbValue:'false'},
         ],
+        sortColumns:[{column:'orden_estado'}],
+        hiddenColumns:['estado_al_asignar__permite_editar_encuesta'],
         primaryKey:['operativo', 'estado'],
         foreignKeys: [
             {references: "operativos",fields: ["operativo"]},
