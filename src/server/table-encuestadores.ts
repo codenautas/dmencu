@@ -39,7 +39,7 @@ export function asignados(context:TableContext, opts?:OptsAsignados){
         sql:{
             from:`(select ta.tarea, u.idper as asignado, u.apellido, u.nombre, t.*
                 from usuarios u, tareas ta, lateral (
-                    ${cuentasSql(be, `tt.asignado = u.idper and tt.tarea = ta.tarea ${esRecepcionista ? `and tt.recepcionista = ${q(context.user.idper)}` : `` } `)}
+                    ${cuentasSql(be, `tt.asignado = u.idper and tt.tarea = ta.tarea ${esRecepcionista ? `and ${opts.sincronizaDM?'tt.recepcionista':'tt.asignado'} = ${q(context.user.idper)}` : `` } `)}
                 ) t
                 where totales > 0  
                     ${opts.rol ? `and ta.tarea = ${q(opts.rol)}` : `` }
