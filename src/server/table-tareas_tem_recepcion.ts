@@ -4,7 +4,7 @@ import {TableDefinition, TableContext, FieldDefinition} from "./types-dmencu";
 
 import {tareas_tem, OptsTareasTem} from "./table-tareas_tem";
 
-var getSqlFrom = (tableDef:TableDefinition, opts:{desde:'asigna'|'recepciona'})=> `(select * from (${tableDef.sql!.from}) aux
+var getSqlFrom = (tableDef:TableDefinition, opts:{desde:'ingresa'|'recepciona'})=> `(select * from (${tableDef.sql!.from}) aux
 , lateral (
     select jsonb_agg(z.*) as acciones
         from (
@@ -51,7 +51,7 @@ export function tareas_tem_ingreso(context:TableContext):TableDefinition {
     tableDef.filterColumns=[
         {column:'visible_en_ingreso', operator:'=', value:true}
     ];
-    tableDef.sql!.from=getSqlFrom(tableDef,{desde:"asigna"});
+    tableDef.sql!.from=getSqlFrom(tableDef,{desde:"ingresa"});
     return tableDef;
 }
 
