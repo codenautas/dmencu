@@ -121,3 +121,30 @@ input:checked + .slider:before
     color #007bff
     background-color #fff
     border-color #007bff
+
+@media print 
+  @page 
+    margin 10px
+    //size  landscape
+ 
+  button
+    display none
+  
+  .grid-th-actions[class=th-name]
+    display none
+  
+  .head-info-row
+    display none
+  
+  .head-info-empty-com
+    display none
+  
+  .head-info
+    display none
+
+  tfoot
+    display none
+  
+  body 
+    font-size 10pt
+    background-image none
