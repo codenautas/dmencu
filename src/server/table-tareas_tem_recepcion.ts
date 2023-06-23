@@ -51,7 +51,8 @@ export function tareas_tem_ingreso(context:TableContext):TableDefinition {
     tableDef.filterColumns=[
         {column:'visible_en_ingreso', operator:'=', value:true}
     ];
-    tableDef.sql!.from=getSqlFrom(tableDef,{desde:"ingresa"});
+    var tableDefTT = tareas_tem(context, opts);
+    tableDef.sql!.from=getSqlFrom(tableDefTT,{desde:"ingresa"});
     return tableDef;
 }
 
