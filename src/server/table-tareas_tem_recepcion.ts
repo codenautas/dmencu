@@ -26,6 +26,7 @@ export function tareas_tem_recepcion(context:TableContext, opts?:OptsTareasTem):
         {name:"acciones_retroceso"          , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesRetroceso'},
         //{name:"acciones_blanqueo"           , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesBlanqueo'},
         {name:"visible_en_recepcion"        , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
+        {name:"visible_en_ingreso"          , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
     );
     tableDef.fields.forEach((field:FieldDefinition)=>field.table='tareas_tem');
     //tableDef.fields.forEach((field:FieldDefinition)=>field.editable=false);
@@ -48,6 +49,7 @@ export function tareas_tem_recepcion(context:TableContext, opts?:OptsTareasTem):
 
 export function tareas_tem_ingreso(context:TableContext):TableDefinition {
     let tableDef = tareas_tem_recepcion(context)
+    tableDef.name = `tareas_tem_ingreso`;
     tableDef.filterColumns=[
         {column:'visible_en_ingreso', operator:'=', value:true}
     ];
