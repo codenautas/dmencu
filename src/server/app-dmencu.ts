@@ -29,6 +29,7 @@ import { recepcionistas      } from "./table-recepcionistas";
 import { encuestadores_asignados } from "./table-encuestadores";
 import { recuperadores_asignados } from "./table-encuestadores";
 import { supervisores_asignados  } from "./table-encuestadores";
+import { ingreso_supervisores_asignados } from "./table-encuestadores";
 import { mis_encuestadores   } from "./table-mis_encuestadores";
 import { recuperadores       } from "./table-recuperadores";
 import { supervisores        } from "./table-supervisores";
@@ -62,6 +63,7 @@ import { t_supe_areas        } from './table-tareas_areas';
 import { mis_tareas          } from './table-mis_tareas';
 import { tem_asignacion      } from './table-tem_asignacion';
 import { tareas_tem_recepcion} from './table-tareas_tem_recepcion';
+import { tareas_tem_ingreso} from './table-tareas_tem_recepcion';
 import { mis_tareas_areas    } from './table-mis_tareas_areas';
 import { control_campo       } from './table-control_campo';
 import { control_resumen     } from './table-control_resumen';
@@ -534,23 +536,26 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 submenuAsignacion.push(
                     { menuType: 'table', name: 'encuestador', table: 't_encu_areas', ff: { tarea: 'encu', ...filtroRecepcionista } },
                     { menuType: 'table', name: 'recuperador', table: 'tareas_tem_recu', ff: { tarea_asignar: 'recu', tarea: 'recu', ...filtroRecepcionista } },
-                    { menuType: 'table', name: 'supervisor' , table: 'tareas_tem_supe', ff: { tarea_asignar: 'supe', tarea: 'supe', ...filtroRecepcionista } },
                 );
+                if(context.puede?.campo?.administrar){
+                    submenuAsignacion.push(
+                        { menuType: 'table', name: 'supervisor' , table: 'tareas_tem_supe', ff: { tarea_asignar: 'supe', tarea: 'supe', ...filtroRecepcionista } },
+                    );
+                }
                 submenuRecepcion.push(
                     {menuType:'table', name:'encuestador', table:'encuestadores_asignados'},
                     {menuType:'table', name:'recuperador', table:'recuperadores_asignados'},
                 )
-                let itemSupervision = {menuType:'table', name:'supervisor' , table:'supervisores_asignados' };
                 menu.push(
                     {menuType:'menu', name:'asignacion', label:'asignación' ,menuContent: submenuAsignacion},
                     {menuType:'menu', name:'recepcion', label:'recepción' ,menuContent:submenuRecepcion},  
                 );
                 if(context.puede?.campo?.administrar){
-                    submenuRecepcion.push(itemSupervision)
+                    submenuRecepcion.push({menuType:'table', name:'supervisor' , table:'supervisores_asignados' })
                 }else{
                     menu.push(
                         {menuType:'menu', name:'supervision', label:'supervisión' ,menuContent:[
-                            itemSupervision
+                            {menuType:'table', name:'ingreso' , table:'ingreso_supervisores_asignados' }
                         ]}
                     )
                 }    
@@ -642,6 +647,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , encuestadores_asignados
             , recuperadores_asignados
             , supervisores_asignados
+            , ingreso_supervisores_asignados
             , mis_encuestadores
             , recuperadores
             , supervisores
@@ -676,6 +682,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , mis_tareas
             , tem_asignacion
             , tareas_tem_recepcion
+            , tareas_tem_ingreso
             , mis_tareas_areas
             , control_campo
             , control_resumen

@@ -18,7 +18,7 @@ export function estados(context:TableContext):TableDefinition {
             {name:'permite_editar_encuesta'      , typeName:'boolean', nullable:false, defaultDbValue:'true', isName:true},
             {name:'estado_al_asignar'            , typeName:'text'   },
             {name:'visible_en_recepcion'         , typeName:'boolean', nullable:false, defaultDbValue:'true'},
-            
+            {name:'visible_en_asignacion'        , typeName:'boolean', nullable:false, defaultDbValue:'false'},
         ],
         primaryKey:['operativo', 'estado'],
         foreignKeys: [

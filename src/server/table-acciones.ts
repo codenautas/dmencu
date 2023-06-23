@@ -19,6 +19,7 @@ export function acciones(context:TableContext):TableDefinition {
             {name:'desc_eaccion'             , typeName:'text'},
             {name:'confirma'                 , typeName:'boolean', nullable: false, defaultDbValue: 'false'},
             {name:'recepciona'               , typeName:'boolean', nullable: false, defaultDbValue: 'false'},
+            {name:'ingresa'                  , typeName:'boolean', nullable: false, defaultDbValue: 'false'},
         ],
         primaryKey:['operativo', 'eaccion'],
         foreignKeys: [

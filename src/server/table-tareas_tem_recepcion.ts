@@ -4,6 +4,19 @@ import {TableDefinition, TableContext, FieldDefinition} from "./types-dmencu";
 
 import {tareas_tem, OptsTareasTem} from "./table-tareas_tem";
 
+var getSqlFrom = (tableDef:TableDefinition, opts:{desde:'asigna'|'recepciona'})=> `(select * from (${tableDef.sql!.from}) aux
+, lateral (
+    select jsonb_agg(z.*) as acciones
+        from (
+            select ea.*, ac.path_icono_svg, ac.desactiva_boton, ac.confirma
+                from estados_acciones ea join acciones ac using (operativo, eaccion)
+                where ea.operativo = aux.operativo and ea.estado = aux.estado and ac.${opts.desde}
+                and accion_cumple_condicion(aux.operativo, ea.estado, aux.enc, ea.eaccion, ea.condicion)
+            order by ac.eaccion
+        ) z
+    ) y
+)`
+
 export function tareas_tem_recepcion(context:TableContext, opts?:OptsTareasTem):TableDefinition {
     var tableDef = tareas_tem(context, opts);
     tableDef.name = `tareas_tem_recepcion`;
@@ -28,20 +41,18 @@ export function tareas_tem_recepcion(context:TableContext, opts?:OptsTareasTem):
     tableDef.hiddenColumns=['tarea','cargado_dm','notas', 'acciones','fecha_asignacion', 'estados__permite_editar_encuesta'];
     tableDef.refrescable = true;
     tableDef.sql!.isTable = false;
-    tableDef.sql!.from=`(select * from (${tableDef.sql!.from}) aux
-        , lateral (
-            select jsonb_agg(z.*) as acciones
-                from (
-                    select ea.*, ac.path_icono_svg, ac.desactiva_boton, ac.confirma
-                        from estados_acciones ea join acciones ac using (operativo, eaccion)
-                        where ea.operativo = aux.operativo and ea.estado = aux.estado and ac.recepciona
-                        and accion_cumple_condicion(aux.operativo, ea.estado, aux.enc, ea.eaccion, ea.condicion)
-                    order by ac.eaccion
-                ) z
-            ) y
-        )`
+    tableDef.sql!.from=getSqlFrom(tableDef,{desde:"recepciona"});
     tableDef.sql!.where = `"tem".tarea_actual="tareas_tem".tarea`;
     return tableDef
+}
+
+export function tareas_tem_ingreso(context:TableContext):TableDefinition {
+    let tableDef = tareas_tem_recepcion(context)
+    tableDef.filterColumns=[
+        {column:'visible_en_ingreso', operator:'=', value:true}
+    ];
+    tableDef.sql!.from=getSqlFrom(tableDef,{desde:"asigna"});
+    return tableDef;
 }
 
 export function tareas_tem_recepcion_encu(context:TableContext):TableDefinition {

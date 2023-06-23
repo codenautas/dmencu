@@ -7,13 +7,15 @@ import { cuentasSql, cuentasFields } from "./table-areas";
 export type OptsAsignados = {
     rol: 'encu'|'recu'|'supe'|null
     name: string
+    sincronizaDM: boolean
 }
 
 export function asignados(context:TableContext, opts?:OptsAsignados){
     if (opts == null) {
         opts = {
             name: 'relevador',
-            rol: null
+            rol: null,
+            sincronizaDM: true
         }
     }
     var { be } = context;
@@ -32,7 +34,7 @@ export function asignados(context:TableContext, opts?:OptsAsignados){
         ],
         primaryKey: ['asignado'],
         detailTables:[
-            {table:'tareas_tem_recepcion', fields:['tarea', 'asignado'], abr:'T'}
+            {table:opts.sincronizaDM?'tareas_tem_recepcion':'tareas_tem_ingreso', fields:['tarea', 'asignado'], abr:'T'}
         ],
         sql:{
             from:`(select ta.tarea, u.idper as asignado, u.apellido, u.nombre, t.*
@@ -49,13 +51,17 @@ export function asignados(context:TableContext, opts?:OptsAsignados){
 }
 
 export function encuestadores_asignados(context:TableContext):TableDefinition {
-    return asignados(context, {rol:'encu', name:'encuestador'})    
+    return asignados(context, {rol:'encu', name:'encuestador', sincronizaDM:true})    
 }
 
 export function recuperadores_asignados(context:TableContext):TableDefinition {
-    return asignados(context, {rol:'recu', name:'recuperador'})    
+    return asignados(context, {rol:'recu', name:'recuperador', sincronizaDM:true})    
 }
 
 export function supervisores_asignados(context:TableContext):TableDefinition {
-    return asignados(context, {rol:'supe', name:'supervisor'})    
+    return asignados(context, {rol:'supe', name:'supervisor', sincronizaDM:true})    
+}
+
+export function ingreso_supervisores_asignados(context:TableContext):TableDefinition {
+    return asignados(context, {rol:'supe', name:'supervisor', sincronizaDM:false})    
 }

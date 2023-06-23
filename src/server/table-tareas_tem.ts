@@ -148,6 +148,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
                     , dominio
                     , v.consistido
                     , e.visible_en_recepcion
+                    , e.visible_en_ingreso
                     from 
                         tem t left join tareas_tem tt
                             on t.operativo = tt.operativo and t.enc = tt.enc
