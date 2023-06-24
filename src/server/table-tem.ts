@@ -69,6 +69,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {name:'pre_sorteo'           , typeName:'integer'     , editable: false, visible: false},
             {name:'supervision_aleatoria', typeName:'integer'     , editable: false},
             {name:'supervision'          , typeName:'integer'     , editable: false},
+            {name:'result_sup'           , typeName:'integer'     , editable: puedeEditar},
             {name:'fin_campo'            , typeName:'text'    , editable: puedeEditar  },
             {name:'proie'                , typeName:'text'    , editable: puedeEditar  },
             {name:'pase_tabla'           , typeName:'text'    , editable: false  },

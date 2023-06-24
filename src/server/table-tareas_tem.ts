@@ -53,8 +53,9 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
         {name:'resumen_estado'              , typeName:'text'        , editable: false   , label: 'resumen_estado_dm'},
         {name:'ult_rea'                     , typeName:'integer'     , editable: false   ,  inTable:false},
         {name:'ult_norea'                   , typeName:'integer'     , editable: false   ,  inTable:false},
-        {name:'ult_gru_no_rea'              , typeName:'text'        , editable: false   , inTable:false  },
+        {name:'ult_gru_no_rea'              , typeName:'text'        , editable: false   ,  inTable:false},
         {name:'ult_resumen_estado'          , typeName:'text'        , editable: false   ,  inTable:false},
+      //  {name:'result_sup'                  , typeName:'text'        , editable: puedeEditar  ,  inTable:false},
         //{name:'resultado'                 , typeName:'text'}, // fk tareas_resultados 
         //{name:'fecha_resultado'           , typeName:'date'}, // fk tareas_resultados 
         {name:'supervision_dirigida'        , typeName:'integer'     , editable: true},
@@ -149,6 +150,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
                     , v.consistido
                     , e.visible_en_recepcion
                     , e.visible_en_ingreso
+                    , t.result_sup
                     from 
                         tem t left join tareas_tem tt
                             on t.operativo = tt.operativo and t.enc = tt.enc
