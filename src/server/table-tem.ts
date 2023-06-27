@@ -157,6 +157,9 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
         ],
         "detailTables": [
             {table: "inconsistencias", abr: "I", fields: [{source:'operativo', target:'operativo'},{source:'enc', target:'vivienda'}]}
+        ],
+        constraints:[
+            {constraintType:'check', consName:"vresult_sup_ck", expr:"(result_sup between 1 and 9 or result_sup in (11,12,21,22 ) or result_sup between 60 and 68)"}
         ]
     };
     if (opts.recepcion) {
