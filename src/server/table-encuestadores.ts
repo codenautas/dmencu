@@ -8,6 +8,7 @@ export type OptsAsignados = {
     rol: 'encu'|'recu'|'supe'|null
     name: string
     sincronizaDM: boolean
+    verComoRecepcionista: boolean
 }
 
 export function asignados(context:TableContext, opts?:OptsAsignados){
@@ -15,12 +16,13 @@ export function asignados(context:TableContext, opts?:OptsAsignados){
         opts = {
             name: 'relevador',
             rol: null,
-            sincronizaDM: true
+            sincronizaDM: true,
+            verComoRecepcionista: false
         }
     }
     var { be } = context;
     var q = context.be.db.quoteLiteral;
-    var esRecepcionista = context.user.rol == 'recepcionista';
+    var esRecepcionista = context.user.rol == 'recepcionista' || opts.verComoRecepcionista;
     var tableDef: TableDefinition = {
         name: opts.name,
         elementName: opts.name,
@@ -51,17 +53,21 @@ export function asignados(context:TableContext, opts?:OptsAsignados){
 }
 
 export function encuestadores_asignados(context:TableContext):TableDefinition {
-    return asignados(context, {rol:'encu', name:'encuestador', sincronizaDM:true})    
+    return asignados(context, {rol:'encu', name:'encuestador', sincronizaDM:true, verComoRecepcionista:false})    
 }
 
 export function recuperadores_asignados(context:TableContext):TableDefinition {
-    return asignados(context, {rol:'recu', name:'recuperador', sincronizaDM:true})    
+    return asignados(context, {rol:'recu', name:'recuperador', sincronizaDM:true, verComoRecepcionista:true})
 }
 
 export function supervisores_asignados(context:TableContext):TableDefinition {
-    return asignados(context, {rol:'supe', name:'supervisor', sincronizaDM:true})    
+    return asignados(context, {rol:'supe', name:'supervisor', sincronizaDM:true, verComoRecepcionista:false})    
+}
+
+export function mis_supervisores_asignados(context:TableContext):TableDefinition {
+    return asignados(context, {rol:'supe', name:'supervisor', sincronizaDM:true, verComoRecepcionista:false})    
 }
 
 export function ingreso_supervisores_asignados(context:TableContext):TableDefinition {
-    return asignados(context, {rol:'supe', name:'supervisor', sincronizaDM:false})    
+    return asignados(context, {rol:'supe', name:'supervisor', sincronizaDM:false, verComoRecepcionista:false})    
 }

@@ -53,6 +53,7 @@ export function tareas_tem_ingreso(context:TableContext):TableDefinition {
     tableDef.filterColumns=[
         {column:'visible_en_ingreso', operator:'=', value:true}
     ];
+    tableDef.fields = tableDef.fields.filter((field:FieldDefinition)=>!['abrir', 'consistir'].includes(field.name));
     var tableDefTT = tareas_tem(context);
     tableDef.sql!.from=getSqlFrom(tableDefTT,{desde:"ingresa"});
     return tableDef;

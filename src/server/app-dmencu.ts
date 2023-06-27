@@ -29,6 +29,7 @@ import { recepcionistas      } from "./table-recepcionistas";
 import { encuestadores_asignados } from "./table-encuestadores";
 import { recuperadores_asignados } from "./table-encuestadores";
 import { supervisores_asignados  } from "./table-encuestadores";
+import { mis_supervisores_asignados  } from "./table-encuestadores";
 import { ingreso_supervisores_asignados } from "./table-encuestadores";
 import { mis_encuestadores   } from "./table-mis_encuestadores";
 import { recuperadores       } from "./table-recuperadores";
@@ -551,7 +552,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     {menuType:'menu', name:'recepcion', label:'recepción' ,menuContent:submenuRecepcion},  
                 );
                 if(context.puede?.campo?.administrar){
-                    submenuRecepcion.push({menuType:'table', name:'supervisor' , table:'supervisores_asignados' })
+                    submenuRecepcion.push(
+                        {menuType:'table', name:'supervisor' , table:'supervisores_asignados' },
+                        {menuType:'table', name: 'mis_supervisores' , table: 'mis_supervisores_asignados'}
+                    );
                 }else{
                     menu.push(
                         {menuType:'menu', name:'supervision', label:'supervisión' ,menuContent:[
@@ -647,6 +651,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , encuestadores_asignados
             , recuperadores_asignados
             , supervisores_asignados
+            , mis_supervisores_asignados
             , ingreso_supervisores_asignados
             , mis_encuestadores
             , recuperadores
