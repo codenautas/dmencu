@@ -55,7 +55,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
         {name:'ult_norea'                   , typeName:'integer'     , editable: false   ,  inTable:false},
         {name:'ult_gru_no_rea'              , typeName:'text'        , editable: false   ,  inTable:false},
         {name:'ult_resumen_estado'          , typeName:'text'        , editable: false   ,  inTable:false},
-        {name:'result_sup'                  , typeName:'text'        , editable: puedeEditar  ,  inTable:false, table:'tem'},
+        {name:'result_sup'                  , typeName:'integer'     , editable: puedeEditar  ,  inTable:false, table:'tem'},
         //{name:'resultado'                 , typeName:'text'}, // fk tareas_resultados 
         //{name:'fecha_resultado'           , typeName:'date'}, // fk tareas_resultados 
         {name:'supervision_dirigida'        , typeName:'integer'     , editable: true},
