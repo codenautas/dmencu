@@ -57,7 +57,7 @@ export function encuestadores_asignados(context:TableContext):TableDefinition {
 }
 
 export function recuperadores_asignados(context:TableContext):TableDefinition {
-    return asignados(context, {rol:'recu', name:'recuperador', sincronizaDM:true, verComoRecepcionista:true})
+    return asignados(context, {rol:'recu', name:'recuperador', sincronizaDM:true, verComoRecepcionista:false})
 }
 
 export function supervisores_asignados(context:TableContext):TableDefinition {
@@ -65,7 +65,7 @@ export function supervisores_asignados(context:TableContext):TableDefinition {
 }
 
 export function mis_supervisores_asignados(context:TableContext):TableDefinition {
-    return asignados(context, {rol:'supe', name:'supervisor', sincronizaDM:true, verComoRecepcionista:false})    
+    return asignados(context, {rol:'supe', name:'supervisor', sincronizaDM:true, verComoRecepcionista:true})    
 }
 
 export function ingreso_supervisores_asignados(context:TableContext):TableDefinition {
