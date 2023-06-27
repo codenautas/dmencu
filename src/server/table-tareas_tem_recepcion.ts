@@ -28,7 +28,11 @@ export function tareas_tem_recepcion(context:TableContext, opts?:OptsTareasTem):
         {name:"visible_en_recepcion"        , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
         {name:"visible_en_ingreso"          , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
     );
-    tableDef.fields.forEach((field:FieldDefinition)=>field.table='tareas_tem');
+    tableDef.fields.forEach((field:FieldDefinition)=>{
+        if(!field.table){
+            field.table='tareas_tem'
+        }
+    });
     //tableDef.fields.forEach((field:FieldDefinition)=>field.editable=false);
     var campoRea=tableDef.fields.find((field:FieldDefinition)=>field.name=='rea')!;
     var campoNorea=tableDef.fields.find((field:FieldDefinition)=>field.name=='norea')!;
