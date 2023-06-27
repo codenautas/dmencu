@@ -30,7 +30,6 @@ import { encuestadores_asignados } from "./table-encuestadores";
 import { recuperadores_asignados } from "./table-encuestadores";
 import { supervisores_asignados  } from "./table-encuestadores";
 import { mis_supervisores_asignados  } from "./table-encuestadores";
-import { ingreso_supervisores_asignados } from "./table-encuestadores";
 import { mis_encuestadores   } from "./table-mis_encuestadores";
 import { recuperadores       } from "./table-recuperadores";
 import { supervisores        } from "./table-supervisores";
@@ -559,7 +558,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 }else{
                     menu.push(
                         {menuType:'menu', name:'supervision', label:'supervisión' ,menuContent:[
-                            {menuType:'table', name:'ingreso' , table:'ingreso_supervisores_asignados' }
+                            {menuType:'table', name:'supervisar' , table:'tareas_tem_ingreso', ff:{tarea:'supe', asignado:context.user.idper } }
                         ]}
                     )
                 }    
@@ -652,7 +651,6 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , recuperadores_asignados
             , supervisores_asignados
             , mis_supervisores_asignados
-            , ingreso_supervisores_asignados
             , mis_encuestadores
             , recuperadores
             , supervisores
