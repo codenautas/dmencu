@@ -57,12 +57,18 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             //{name:'encu_habilitada'      , typeName:'boolean' , editable: false , inTable: false  },
             //{name:'encu_cargado'         , typeName:'boolean' , editable: false , inTable: false  },
             {name:'encuestador'          , typeName:'text'    , editable: false , inTable: false  },
+            {name:'nombre_enc'           , typeName:'text'    , inTable: false  },
+            {name:'apellido_enc'         , typeName:'text'    , inTable: false  },
             //{name:'recu_habilitada'      , typeName:'boolean' , editable: false , inTable: false  },
             //{name:'recu_cargado'         , typeName:'boolean' , editable: false , inTable: false  },
             {name:'recuperador'          , typeName:'text'    , editable: false , inTable: false  },
+            {name:'nombre_rec'           , typeName:'text'    , inTable: false  },
+            {name:'apellido_rec'         , typeName:'text'    , inTable: false  },
             //{name:'supe_habilitada'      , typeName:'boolean' , editable: false , inTable: false  },
             //{name:'supe_cargado'         , typeName:'boolean' , editable: false , inTable: false  },
             {name:'supervisor'           , typeName:'text'    , editable: false , inTable: false  },
+            {name:'nombre_sup'           , typeName:'text'    , inTable: false  },
+            {name:'apellido_sup'         , typeName:'text'    , inTable: false  },
             {name:'rea_sup'              , typeName:'integer'     , editable: false},
             {name:'norea_sup'            , typeName:'integer'     , editable: false},
             {name:'resumen_estado_sup'   , typeName:'text'        , editable: false},
@@ -183,12 +189,21 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
                     , tt.etareas->'supe'->>'asignado' as supervisor
                     , null notas
                     , v.consistido
+                    , usu_enc.nombre as nombre_enc
+                    , usu_enc.apellido as apellido_enc
+                    , usu_rec.nombre as nombre_rec
+                    , usu_rec.apellido as apellido_rec
+                    , usu_sup.nombre as nombre_sup
+                    , usu_sup.apellido as apellido_sup
                     ${opts.recepcion? columnasNoRea.map(v=>'\n     , '+ v.expr +' as '+ v.name).join('') :''}
                     from tem t left join (
                         select tt.operativo, tt.enc, bool_or(cargado) cargado, string_agg(cargado_dm,',') cargado_dm,jsonb_object_agg(tarea,jsonb_build_object('asignado',asignado,'cargado',cargado,'cargado_dm',cargado_dm))etareas 
                             from tareas_tem tt group by tt.operativo, tt.enc  )tt on t.operativo=tt.operativo and t.enc=tt.enc
                             left join no_rea y on y.no_rea::integer=t.norea
                             left join viviendas v on v.vivienda=t.enc 
+                            left join usuarios usu_enc on usu_enc.idper = tt.etareas->'encu'->>'asignado'
+                            left join usuarios usu_rec on usu_rec.idper = tt.etareas->'recu'->>'asignado'
+                            left join usuarios usu_sup on usu_sup.idper = tt.etareas->'supe'->>'asignado'
                 )
             `     
         };
