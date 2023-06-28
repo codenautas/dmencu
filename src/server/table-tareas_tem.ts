@@ -10,6 +10,17 @@ export type OptsTareasTem = {
     consiste?:boolean
 }
 
+export var getReaFields = (puedeEditar):FieldDefinition[] => [
+    {name:'rea'                         , typeName:'integer'     , editable: puedeEditar, label:'rea_dm'},
+    {name:'norea'                       , typeName:'integer'     , editable: puedeEditar, label:'norea_dm'},
+    //{name:'cod_no_rea'                , typeName:'text'        , editable: false   , inTable:false  },
+    {name:'resumen_estado'              , typeName:'text'        , editable: false   , label: 'resumen_estado_dm'},
+    {name:'ult_rea'                     , typeName:'integer'     , editable: false   ,  inTable:false},
+    {name:'ult_norea'                   , typeName:'integer'     , editable: false   ,  inTable:false},
+    {name:'ult_gru_no_rea'              , typeName:'text'        , editable: false   ,  inTable:false},
+    {name:'ult_resumen_estado'          , typeName:'text'        , editable: false   ,  inTable:false}
+]
+
 export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefinition {
     if (opts == null) {
         opts = {
@@ -27,6 +38,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
         {name:'enc'                         , typeName:'text', isPk:3, editable:false},
         {name:'tarea'                       , typeName:'text', isPk:1, editable:false},
         {name:'estado'                      , typeName:'text'        , editable:false   , nullable: false, defaultDbValue:"'0D'"},
+        
     ];
     if(opts.abre){
         fields.push({name:'abrir'                       , typeName:'text'        , editable:false   , inTable:false, clientSide:'abrirRecepcion'});
@@ -41,25 +53,15 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
       //  {name:'ok'                          , typeName: 'text'       , editable:false   , inTable:false },
         {name:'recepcionista'               , typeName:'text'        , editable:true }, 
         {name:'asignado'                    , typeName:'text'        , editable:true, title: opts.name}, // va a la hoja de ruta
-        {name:'operacion'                   , typeName:'text'        , editable:false,}, // cargar/descargar
         {name:'fecha_asignacion'            , typeName:'date'}, // cargar/descargar
-        {name:"carga_observaciones"         , typeName: "text"       , editable: true},        
-        {name:'cargado_dm'                  , typeName:'text'        , editable: false}, //cargar/descargar 
-        {name:"cargado"                     , typeName: "boolean"    , editable: false},
-        {name:'notas'                       , typeName:'text'}, // viene de la hoja de ruta
-        {name:'rea'                         , typeName:'integer'     , editable: puedeEditar, label:'rea_dm'},
-        {name:'norea'                       , typeName:'integer'     , editable: puedeEditar, label:'norea_dm'},
-        //{name:'cod_no_rea'                , typeName:'text'        , editable: false   , inTable:false  },
-        {name:'resumen_estado'              , typeName:'text'        , editable: false   , label: 'resumen_estado_dm'},
-        {name:'ult_rea'                     , typeName:'integer'     , editable: false   ,  inTable:false},
-        {name:'ult_norea'                   , typeName:'integer'     , editable: false   ,  inTable:false},
-        {name:'ult_gru_no_rea'              , typeName:'text'        , editable: false   ,  inTable:false},
-        {name:'ult_resumen_estado'          , typeName:'text'        , editable: false   ,  inTable:false},
-        {name:'result_sup'                  , typeName:'integer'     , editable: puedeEditar  ,  inTable:false, table:'tem'},
+    ]);
+    fields = fields.concat(...getReaFields(puedeEditar),[
         //{name:'resultado'                 , typeName:'text'}, // fk tareas_resultados 
         //{name:'fecha_resultado'           , typeName:'date'}, // fk tareas_resultados 
+        {name:'modalidad'                   , typeName:'text'        , editable: false, inTable: false},
         {name:'supervision_dirigida'        , typeName:'integer'     , editable: true},
         {name:'supervision_aleatoria'       , typeName:'integer'     , editable: false, inTable:false},
+        {name:'result_sup'                  , typeName:'integer'     , editable: puedeEditar  ,  inTable:false, table:'tem'},
         {name:'verificado'                  , typeName:'text'        , editable:false,}, 
         {name:'a_recuperacion'              , typeName:'text'        , editable:false , inTable:false}, 
         {name:'obs_verificado'              , typeName:'text'},
@@ -69,7 +71,12 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
         {name:'ult_rea_sup'                 , typeName:'integer'     , editable: false ,  inTable:false},
         {name:'ult_norea_sup'               , typeName:'integer'     , editable: false ,  inTable:false},
         {name:'ult_resumen_estado_sup'      , typeName:'text'        , editable: false ,  inTable:false},
-        ]);
+        {name:'operacion'                   , typeName:'text'        , editable:false,}, // cargar/descargar
+        {name:"carga_observaciones"         , typeName: "text"       , editable: true},        
+        {name:'cargado_dm'                  , typeName:'text'        , editable: false}, //cargar/descargar 
+        {name:"cargado"                     , typeName: "boolean"    , editable: false},
+        {name:'notas'                       , typeName:'text'}, // viene de la hoja de ruta
+    ]);
         var ok_string=` coalesce(nullif(
             case when tareas_tem.asignado is null and tareas_tem.verificado is not null then 'Verificado-asignado vacio'
                 --when tareas_tem.verificado is not null and tareas_tem.habilitada then 'Falta deshabilitar'
@@ -144,6 +151,9 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
                     , y.grupo as ult_gru_no_rea
                     , case when tt.tarea='recu' and y.grupo0 in ('ausentes','rechazos') then 'recuperacion' else null end a_recuperacion   
                     , t.supervision_aleatoria
+                    , case when tt.supervision_dirigida = 1 or t.supervision_aleatoria = 1 then 'presencial'
+                           when tt.supervision_dirigida = 2 or t.supervision_aleatoria = 2 then 'telefónica' 
+                           else null end as modalidad
                     , t.rea ult_rea, t.norea as ult_norea, t.resumen_estado ult_resumen_estado
                     , t.rea_sup ult_rea_sup, t.norea_sup as ult_norea_sup, t.resumen_estado_sup ult_resumen_estado_sup
                     , dominio

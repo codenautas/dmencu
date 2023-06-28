@@ -2,7 +2,8 @@
 
 import {TableDefinition, TableContext, FieldDefinition} from "./types-dmencu";
 
-import {tareas_tem, OptsTareasTem} from "./table-tareas_tem";
+import {tareas_tem, OptsTareasTem, getReaFields} from "./table-tareas_tem";
+import { table } from "console";
 
 var getSqlFrom = (tableDef:TableDefinition, opts:{desde:'ingresa'|'recepciona'})=> `(select * from (${tableDef.sql!.from}) aux
 , lateral (
@@ -20,6 +21,9 @@ var getSqlFrom = (tableDef:TableDefinition, opts:{desde:'ingresa'|'recepciona'})
 export function tareas_tem_recepcion(context:TableContext, opts?:OptsTareasTem):TableDefinition {
     var tableDef = tareas_tem(context, opts);
     tableDef.name = `tareas_tem_recepcion`;
+    var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';       
+    var reaFieldNames = getReaFields().map((field:FieldDefinition)=>field.name);
+    tableDef.fields = tableDef.fields.filter((field)=>!reaFieldNames.includes(field.name));
     tableDef.fields.splice(4,0,
         {name:"acciones"                    , typeName: 'jsonb'      , editable:false   , inTable:false},
         {name:"acciones_avance"             , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesAvance'},
@@ -27,18 +31,15 @@ export function tareas_tem_recepcion(context:TableContext, opts?:OptsTareasTem):
         //{name:"acciones_blanqueo"           , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesBlanqueo'},
         {name:"visible_en_recepcion"        , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
         {name:"visible_en_ingreso"          , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
+        ...getReaFields(puedeEditar)
     );
     tableDef.fields.forEach((field:FieldDefinition)=>{
         if(!field.table){
             field.table='tareas_tem'
         }
     });
-    //tableDef.fields.forEach((field:FieldDefinition)=>field.editable=false);
-    var campoRea=tableDef.fields.find((field:FieldDefinition)=>field.name=='rea')!;
-    var campoNorea=tableDef.fields.find((field:FieldDefinition)=>field.name=='norea')!;
-    var campoRes=tableDef.fields.find((field:FieldDefinition)=>field.name=='resumen_estado')!;
-    tableDef.fields.splice(9,0, campoRea,campoNorea,campoRes);
-    tableDef.fields.splice(24,3);
+    
+    
     tableDef.primaryKey = ['operativo','enc','tarea'];
     tableDef.filterColumns=[
         {column:'visible_en_recepcion', operator:'=', value:true}
