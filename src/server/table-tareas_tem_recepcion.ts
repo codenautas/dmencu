@@ -1,6 +1,6 @@
 "use strict";
 
-import {TableDefinition, TableContext, FieldDefinition} from "./types-dmencu";
+import {TableDefinition, TableContext, FieldDefinition, getDomicilioFields} from "./types-dmencu";
 
 import {tareas_tem, OptsTareasTem, getReaFields} from "./table-tareas_tem";
 import { table } from "console";
@@ -22,7 +22,7 @@ export function tareas_tem_recepcion(context:TableContext, opts?:OptsTareasTem):
     var tableDef = tareas_tem(context, opts);
     tableDef.name = `tareas_tem_recepcion`;
     var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';       
-    var reaFieldNames = getReaFields().map((field:FieldDefinition)=>field.name);
+    var reaFieldNames = getReaFields(puedeEditar).map((field:FieldDefinition)=>field.name);
     tableDef.fields = tableDef.fields.filter((field)=>!reaFieldNames.includes(field.name));
     tableDef.fields.splice(4,0,
         {name:"acciones"                    , typeName: 'jsonb'      , editable:false   , inTable:false},
@@ -59,6 +59,11 @@ export function tareas_tem_ingreso(context:TableContext):TableDefinition {
         {column:'visible_en_ingreso', operator:'=', value:true}
     ];
     tableDef.fields = tableDef.fields.filter((field:FieldDefinition)=>!['abrir', 'consistir'].includes(field.name));
+    var domicilioFieldNames = getDomicilioFields().map((field:FieldDefinition)=>field.name);
+    tableDef.fields = tableDef.fields.filter((field)=>!domicilioFieldNames.includes(field.name));
+    tableDef.fields.splice(4,0,
+        //{name:'telefono'         , typeName:'text'        , editable: false },
+        ...getDomicilioFields().filter((field:FieldDefinition)=>!['codcalle'].includes(field.name)));
     var tableDefTT = tareas_tem(context);
     tableDef.sql!.from=getSqlFrom(tableDefTT,{desde:"ingresa"});
     return tableDef;

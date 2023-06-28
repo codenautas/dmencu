@@ -10,7 +10,7 @@ export type OptsTareasTem = {
     consiste?:boolean
 }
 
-export var getReaFields = (puedeEditar):FieldDefinition[] => [
+export var getReaFields = (puedeEditar:boolean):FieldDefinition[] => [
     {name:'rea'                         , typeName:'integer'     , editable: puedeEditar, label:'rea_dm'},
     {name:'norea'                       , typeName:'integer'     , editable: puedeEditar, label:'norea_dm'},
     //{name:'cod_no_rea'                , typeName:'text'        , editable: false   , inTable:false  },
@@ -77,40 +77,6 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
         {name:"cargado"                     , typeName: "boolean"    , editable: false},
         {name:'notas'                       , typeName:'text'}, // viene de la hoja de ruta
     ]);
-        var ok_string=` coalesce(nullif(
-            case when tareas_tem.asignado is null and tareas_tem.verificado is not null then 'Verificado-asignado vacio'
-                --when tareas_tem.verificado is not null and tareas_tem.habilitada then 'Falta deshabilitar'
-            else '' end 
-            ||case when tareas_tem.asignado is null and tareas_tem.operacion is not null then 'Operacion sin asignado'
-                when tareas_tem.verificado is not null and coalesce(tareas_tem.operacion,'descargar')='cargar' then 'Verificado-cargado'
-                when tareas_tem.dominio=3 and tareas_tem.verificado is not null and tareas_tem.operacion is null then 'Verificado sin operacion '
-            else '' end
-            ||(select case
-                    when tareas_tem.habilitada and tareas_tem.tarea='recu' and count(*) filter(where h.verificado is not null and h.tarea='encu') =0  then 'Tarea previa a recu sin verificar'
-                    when tareas_tem.habilitada and tareas_tem.tarea='supe' and (count(*) filter (where h.verificado is not null and h.tarea <>'supe') )=0  then 'Tarea previa a supe sin verificar'
-                    when tareas_tem.habilitada and tareas_tem.tarea='supe' 
-                        and (count(*) filter (where not h.habilitada  and h.tarea ='recu' and no_rea.grupo0~*'^ausencia|rechazo' ))>0  then 'RECUPERAR antes de habil. Supervision'
-                else '' end  
-                from tareas_tem h join tem t2 using (operativo, enc) left join no_rea on t2.norea=(no_rea.no_rea)::integer
-               where h.enc=tareas_tem.enc and h.operativo=tareas_tem.operativo
-            )
-            ||(select case 
-                when count(cargado_dm)>1  then '+cargados'
-                when count(*) filter (where habilitada is true and verificado is null)>1 then '+habilitadas sin verificar'
-                when count(*) filter (where operacion='cargar')>1   then '+opeCargar'
-                else '' end
-        from tareas_tem h 
-        where h.enc=tareas_tem.enc and h.operativo=tareas_tem.operativo
-        )
-        || (select case
-            when count(i.consistencia)>0 then 'Revisar inconsist' 
-            else '' end
-            from inconsistencias i join consistencias c using(operativo, consistencia)
-            where i.operativo=tareas_tem.operativo and i.vivienda=tareas_tem.enc and tareas_tem.tarea='encu' 
-               and i.justificacion is null and c.valida and c.activa
-        )
-     ,''),'✔')
-    `; // a determinar si es necesario mantenerla
     return {
         name:`tareas_tem`,
         tableName:`tareas_tem`,
@@ -161,6 +127,20 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
                     , e.visible_en_recepcion
                     , e.visible_en_ingreso
                     , t.result_sup
+                    , t.codcalle
+                    , t.nomcalle
+                    , t.nrocatastral
+                    , t.piso
+                    , t.departamento
+                    , t.habitacion
+                    , t.sector
+                    , t.edificio
+                    , t.entrada
+                    , t.barrio
+                    --, (select case when concat_ws(';',tel1, tel2, tel_ms) = '' then null else concat_ws(';',tel1, tel2, tel_ms) end
+                    --    from tem t left join hogares h on (t.operativo = h.operativo and t.enc = h.vivienda)
+                    --    left join personas p on h.vivienda=p.vivienda and h.hogar=p.hogar and h.cr_num_miembro=p.persona
+                    --) as telefono
                     from 
                         tem t left join tareas_tem tt
                             on t.operativo = tt.operativo and t.enc = tt.enc

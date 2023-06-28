@@ -1,6 +1,19 @@
 "use strict";
 
-import {TableDefinition, ContextForDump} from "./types-dmencu";
+import {TableDefinition, ContextForDump, FieldDefinition} from "./types-dmencu";
+
+export var getDomicilioFields = ():FieldDefinition[] => [
+    {name:'codcalle'             , typeName:'integer' , editable: false  },
+    {name:'nomcalle'             , typeName:'text'    , editable: false  },
+    {name:'nrocatastral'         , typeName:'integer' , editable: false  },
+    {name:'piso'                 , typeName:'text'    , editable: false  },
+    {name:'departamento'         , typeName:'text'    , editable: false  },
+    {name:'habitacion'           , typeName:'text'    , editable: false  },
+    {name:'sector'               , typeName:'text'    , editable: false  },
+    {name:'edificio'             , typeName:'text'    , editable: false  },
+    {name:'entrada'              , typeName:'text'    , editable: false  },
+    {name:'barrio'               , typeName:'text'    , editable: false  },
+]
 
 export function tem(context:ContextForDump, opts?:any):TableDefinition {
     var opts=opts||{};
@@ -79,16 +92,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {name:'fin_campo'            , typeName:'text'    , editable: puedeEditar  },
             {name:'proie'                , typeName:'text'    , editable: puedeEditar  },
             {name:'pase_tabla'           , typeName:'text'    , editable: false  },
-            {name:'codcalle'             , typeName:'integer' , editable: false  },
-            {name:'nomcalle'             , typeName:'text'    , editable: false  },
-            {name:'nrocatastral'         , typeName:'integer' , editable: false  },
-            {name:'piso'                 , typeName:'text'    , editable: false  },
-            {name:'departamento'         , typeName:'text'    , editable: false  },
-            {name:'habitacion'           , typeName:'text'    , editable: false  },
-            {name:'sector'               , typeName:'text'    , editable: false  },
-            {name:'edificio'             , typeName:'text'    , editable: false  },
-            {name:'entrada'              , typeName:'text'    , editable: false  },
-            {name:'barrio'               , typeName:'text'    , editable: false  },
+            ...getDomicilioFields(),
             //{name: "verificar"       , typeName:'boolean', editable:true, inTable:false, clientSide:'verificarCaso'},
             //{name: "finalizar_campo" , typeName:'boolean', editable:true, inTable:false, clientSide:'finalizarCampo'}, //fin_de_campo
             //{name: "procesamiento"   , typeName:'boolean', editable:true, inTable:false, clientSide:'pasarAProcesamiento', label: 'pasar a procesamiento'}, //procesamiento
