@@ -76,6 +76,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
         {name:'cargado_dm'                  , typeName:'text'        , editable: false}, //cargar/descargar 
         {name:"cargado"                     , typeName: "boolean"    , editable: false},
         {name:'notas'                       , typeName:'text'}, // viene de la hoja de ruta
+        {name:'telefono'                    , typeName:'text'        , editable: false ,  inTable:false}, 
     ]);
     return {
         name:`tareas_tem`,
@@ -137,10 +138,11 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
                     , t.edificio
                     , t.entrada
                     , t.barrio
-                    --, (select case when concat_ws(';',tel1, tel2, tel_ms) = '' then null else concat_ws(';',tel1, tel2, tel_ms) end
-                    --    from tem t left join hogares h on (t.operativo = h.operativo and t.enc = h.vivienda)
-                    --    left join personas p on h.vivienda=p.vivienda and h.hogar=p.hogar and h.cr_num_miembro=p.persona
-                    --) as telefono
+                    , (select string_agg(case when concat_ws(';',tel1, tel2, tel_ms) = '' then null else concat_ws(';',tel1, tel2, tel_ms) end,';') 
+                    from hogares h 
+                    left join personas p on h.vivienda=p.vivienda and h.hogar=p.hogar and h.cr_num_miembro=p.persona
+                    where t.enc=h.vivienda --and tt.tarea=t.tarea_actual
+                    group by t.enc	) as telefono                    
                     from 
                         tem t left join tareas_tem tt
                             on t.operativo = tt.operativo and t.enc = tt.enc
