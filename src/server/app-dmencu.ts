@@ -562,14 +562,17 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                         ]}
                     )
                 }    
-                menu.push(      
-                    {menuType: 'menu', name: 'varios', menuContent: [
-                        {menuType: 'abrir_encuesta', name: 'abrir_encuesta'},
-                        {menuType: 'table', name: 'hoja_ruta', table: 'grilla_hoja_ruta', label: 'hoja de ruta'},
-                    ]}
-                );
             }
-            if(context.puede?.campo?.administrar){
+            if(context.puede?.campo?.editar||context.puede?.encuestas?.procesar){
+                let submenuVarios:MenuInfoBase[] = [{menuType: 'abrir_encuesta', name: 'abrir_encuesta'}]
+                if(context.puede?.campo?.editar){
+                    submenuVarios.push({menuType: 'table', name: 'hoja_ruta', table: 'grilla_hoja_ruta', label: 'hoja de ruta'})
+                }
+                menu.push(      
+                    {menuType: 'menu', name: 'varios', menuContent: submenuVarios}
+                );
+            }    
+            if(context.puede?.campo?.administrar||context.puede?.encuestas?.procesar){
                 menu.push(
                     {menuType:'menu', name:'control', menuContent:[
                         {menuType:'table', name:'resumen', table:'control_resumen', selectedByDefault:true},
@@ -577,7 +580,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                         {menuType:'table', name:'zona'   , table:'control_campo_zona'  },
                         {menuType:'table', name:'comuna' , table:'control_campo_comuna'},
                         {menuType:'table', name:'área'   , table:'control_campo_area'  },
-                        {menuType:'table', name:'participacion'        , table:'control_campo_participacion'  },
+                        /*{menuType:'table', name:'participacion'        , table:'control_campo_participacion'  },*/
                     ]},            
                 )
             }
@@ -593,12 +596,13 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 );
             }
             var menuConfigurar:MenuInfoBase[] = [];
-            if(context.puede?.campo?.administrar){
+            if(context.puede?.campo?.administrar||context.puede?.encuestas?.procesar){
+                let submenuMuestra:MenuInfoBase[] = [{menuType:'table', name:'tem', label: 'TEM'}]
+                if(context.puede?.campo?.administrar){
+                    submenuMuestra.push({menuType:'table', name:'tareas'})
+                } 
                 menuConfigurar.push(
-                    {menuType:'menu', name:'muestra', label:'muestra', menuContent:[
-                        {menuType:'table', name:'tem', label: 'TEM'} ,
-                        {menuType:'table', name:'tareas'},
-                    ]},
+                    {menuType:'menu', name:'muestra', label:'muestra', menuContent:submenuMuestra}
                 );
             }
             if(context.puede?.casilleros_texto?.editar){
