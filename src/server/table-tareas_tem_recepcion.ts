@@ -62,7 +62,7 @@ export function tareas_tem_ingreso(context:TableContext):TableDefinition {
     var domicilioFieldNames = getDomicilioFields().map((field:FieldDefinition)=>field.name);
     tableDef.fields = tableDef.fields.filter((field)=>!domicilioFieldNames.includes(field.name));
     tableDef.fields.splice(4,0,
-        //{name:'telefono'         , typeName:'text'        , editable: false },
+        {name:'telefono'         , typeName:'text'        , editable: false },
         ...getDomicilioFields().filter((field:FieldDefinition)=>!['codcalle'].includes(field.name)));
     var tableDefTT = tareas_tem(context);
     tableDef.sql!.from=getSqlFrom(tableDefTT,{desde:"ingresa"});

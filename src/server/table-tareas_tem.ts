@@ -76,7 +76,6 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
         {name:'cargado_dm'                  , typeName:'text'        , editable: false}, //cargar/descargar 
         {name:"cargado"                     , typeName: "boolean"    , editable: false},
         {name:'notas'                       , typeName:'text'}, // viene de la hoja de ruta
-        {name:'telefono'                    , typeName:'text'        , editable: false ,  inTable:false}, 
     ]);
     return {
         name:`tareas_tem`,
