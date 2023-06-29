@@ -20,7 +20,8 @@ export function asignados(context:TableContext, opts?:OptsAsignados){
     }
     var { be } = context;
     var q = context.be.db.quoteLiteral;
-    var esRecepcionista = context.user.rol == 'recepcionista' || opts.verComoRecepcionista;
+    //si no chequeo !dump rompe el dump
+    var esRecepcionista = context.user.rol == 'recepcionista' || (context.user.usuario!='!dump'?opts.verComoRecepcionista:false);
     var tableDef: TableDefinition = {
         name: opts.name,
         elementName: opts.name,
