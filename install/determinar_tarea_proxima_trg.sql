@@ -27,13 +27,25 @@ begin
                  when  v_rea=1 and (v_supervision_aleatoria is not null or new.supervision_dirigida is not null) then 
                     v_proxtarea='supe';
                  else 
-                    v_proxtarea=null;
+                    v_proxtarea='finc';
             end case;
-      --analizar condiciones de  supervision para encu  por ahora ponemos algo provisiorio, falta cuando la encuesta es rea considerar si la mandan a supervision            
-          update tem 
-            set tarea_proxima = v_proxtarea
-            where operativo = new.operativo and enc = new.enc;
-        end if;        
+        elsif v_tarea_actual='recu' then
+            case when  v_grupo0 in ('no encuestable') then 
+                    v_proxtarea='supe';
+                 when  v_rea=1 and (v_supervision_aleatoria is not null or new.supervision_dirigida is not null) then 
+                    v_proxtarea='supe';
+                 else 
+                    v_proxtarea='finc';
+            end case;
+        elsif v_tarea_actual='supe' then
+            v_proxtarea='finc';
+        end if;
+        update tem 
+          set tarea_proxima = v_proxtarea
+          where operativo = new.operativo and enc = new.enc;
+        update tareas_tem
+          set ts_entrada = current_timestamp
+          where operativo = new.operativo and enc = new.enc and tarea = v_proxtarea;
     elsif new.verificado is null then   --podria llegar a haber otros valores de verificado 
         update tem 
             set tarea_proxima = null 

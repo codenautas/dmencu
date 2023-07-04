@@ -37,6 +37,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
         {name:'operativo'                   , typeName:'text', isPk:2, editable:false},
         {name:'enc'                         , typeName:'text', isPk:3, editable:false},
         {name:'tarea'                       , typeName:'text', isPk:1, editable:false},
+        {name:'ts_entrada'                  , typeName:'timestamp'   , editable:false},
         {name:'estado'                      , typeName:'text'        , editable:false   , nullable: false, defaultDbValue:"'0D'"},
         
     ];

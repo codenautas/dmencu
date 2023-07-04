@@ -13,7 +13,8 @@ export function parametros(context:TableContext):TableDefinition{
         },     
         fields:[
             {name:'unico_registro'       , typeName:'boolean' , nullable:false, editable: false, defaultValue:true },
-            {name:'operativo'            , typeName:'text'    , nullable:false, editable: true                     },
+            {name:'operativo'            , typeName:'text'    , nullable:false, editable: admin                    },
+            {name:'dias_finc'            , typeName:'integer' , nullable:false, editable: admin                    },
         ],
         primaryKey:['unico_registro'],
         foreignKeys:[
