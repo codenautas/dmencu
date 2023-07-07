@@ -14,6 +14,7 @@ import {promises as  fs} from "fs";
 import * as ExpresionParser from 'expre-parser';
 import { tareas } from "./table-tareas";
 import { prependListener } from "process";
+import { getDiasAPasarQuery } from "./table-tareas_tem";
 
 var path = require('path');
 var sqlTools = require('sql-tools');
@@ -208,6 +209,7 @@ function compilarExpresiones(casillero:CasilleroDeAca){
     for(var casilleroInterno of casillero.childs) compilarExpresiones(casilleroInterno);
 }
 
+export const ACCION_PASAR_PROIE = 'encuestas_procesamiento_pasar';
 export const ProceduresDmEncu : ProcedureDef[] = [
     {
         action:'operativo_estructura_completa',
@@ -1065,14 +1067,56 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         }
     },
     {
-        action: 'encuesta_dpt',
+        action: 'encuesta_supervisar_presencial',
         parameters:[
             {name:'operativo'       , typeName:'text'},
-            {name:'tarea'           , typeName:'text'},
             {name:'enc'             , typeName:'text'},
+            {name:'tarea'           , typeName:'text'},
         ],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
-            //TODO acá hay que preparar la siguiente tarea
+            await context.client.query(`
+                UPDATE tem
+                    set tarea_actual = $3, tarea_proxima = $4, supervision_dirigida = $5
+                    where operativo=$1 and enc=$2
+                    returning *`,
+                [params.operativo, params.enc, 'finc', 'supe', 1])
+            .fetchUniqueRow();
+            return 'ok';
+        }
+    },
+    {
+        action: 'encuesta_supervisar_telefonica',
+        parameters:[
+            {name:'operativo'       , typeName:'text'},
+            {name:'enc'             , typeName:'text'},
+            {name:'tarea'           , typeName:'text'},
+        ],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            await context.client.query(`
+                UPDATE tem
+                    set tarea_actual = $3, tarea_proxima = $4, supervision_dirigida = $5
+                    where operativo=$1 and enc=$2
+                    returning *`,
+                [params.operativo, params.enc, 'finc', 'supe', 2])
+            .fetchUniqueRow();
+            return 'ok';
+        }
+    },
+    {
+        action: 'encuesta_no_supervisar',
+        parameters:[
+            {name:'operativo'       , typeName:'text'},
+            {name:'enc'             , typeName:'text'},
+            {name:'tarea'           , typeName:'text'},
+        ],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            await context.client.query(`
+                UPDATE tem
+                    set tarea_actual = $3, tarea_proxima = $4, supervision_dirigida = null
+                    where operativo=$1 and enc=$2
+                    returning *`,
+                [params.operativo, params.enc, null, 'finc'])
+            .fetchUniqueRow();
             return 'ok';
         }
     },
@@ -1093,5 +1137,31 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             return 'ok';
         }
     },
-      
+    {
+        action: ACCION_PASAR_PROIE,
+        parameters:[],
+        coreFunction:async function(context:ProcedureContext, _params:CoreFunctionParameters){
+            let parametros = (await context.client.query(`
+                select * from parametros where unico_registro`,
+            []).fetchUniqueRow()).row;
+            //parametros.dias_finc
+            var select = `select * from tareas_tem where operativo=$1 and tarea= $2 and (${getDiasAPasarQuery()} <= 0 or coalesce(adelantar,false))`
+            await context.client.query(`
+                    UPDATE tareas_tem tt
+                        set estado = 'A'
+                        from (${select}) aux
+                        where tt.operativo = aux.operativo and tt.enc = aux.enc and tt.tarea = $3
+                        returning *`,
+                [parametros.operativo, 'finc', 'proc'])
+            .fetchAll();
+            await context.client.query(`
+                update tem t
+                    set tarea_actual = 'proc', tarea_proxima = null
+                    from (${select}) aux
+                    where t.operativo = aux.operativo and t.enc = aux.enc
+                    returning *` ,
+            [parametros.operativo, 'finc']).fetchAll();
+        return 'ok';
+        }
+    },
 ];

@@ -33,6 +33,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
     var def: TableDefinition= {
         name:`tem${recepcion}`,
         tableName:'tem',
+        muestraAbrirEnTodasLasTareas:true,
         allow:{
             insert:false,
             delete:false,
@@ -87,6 +88,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {name:'resumen_estado_sup'   , typeName:'text'        , editable: false},
             {name:'pre_sorteo'           , typeName:'integer'     , editable: false, visible: false},
             {name:'supervision_aleatoria', typeName:'integer'     , editable: false},
+            {name:'supervision_dirigida' , typeName:'integer'     , editable: false},
             {name:'supervision'          , typeName:'integer'     , editable: false},
             {name:'result_sup'           , typeName:'integer'     , editable: puedeEditar},
             {name:'fin_campo'            , typeName:'text'    , editable: puedeEditar  },

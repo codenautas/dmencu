@@ -3,9 +3,8 @@
 import {TableDefinition, TableContext, FieldDefinition, getDomicilioFields} from "./types-dmencu";
 
 import {tareas_tem, OptsTareasTem, getReaFields} from "./table-tareas_tem";
-import { table } from "console";
 
-var getSqlFrom = (tableDef:TableDefinition, opts:{desde:'ingresa'|'recepciona'})=> `(select * from (${tableDef.sql!.from}) aux
+export var getSqlFrom = (tableDef:TableDefinition, opts:{desde:'ingresa'|'recepciona'|'fin_campo'|'analisis_campo'|'procesa'})=> `(select * from (${tableDef.sql!.from}) aux
 , lateral (
     select jsonb_agg(z.*) as acciones
         from (
@@ -31,6 +30,9 @@ export function tareas_tem_recepcion(context:TableContext, opts?:OptsTareasTem):
         //{name:"acciones_blanqueo"           , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesBlanqueo'},
         {name:"visible_en_recepcion"        , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
         {name:"visible_en_ingreso"          , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
+        {name:"visible_en_fin_campo"        , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
+        {name:"visible_en_analisis_campo"   , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
+        {name:"visible_en_procesamiento"    , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
         ...getReaFields(puedeEditar)
     );
     tableDef.fields.forEach((field:FieldDefinition)=>{
@@ -50,23 +52,6 @@ export function tareas_tem_recepcion(context:TableContext, opts?:OptsTareasTem):
     tableDef.sql!.from=getSqlFrom(tableDef,{desde:"recepciona"});
     tableDef.sql!.where = `"tem".tarea_actual="tareas_tem".tarea`;
     return tableDef
-}
-
-export function tareas_tem_ingreso(context:TableContext):TableDefinition {
-    let tableDef = tareas_tem_recepcion(context)
-    tableDef.name = `tareas_tem_ingreso`;
-    tableDef.filterColumns=[
-        {column:'visible_en_ingreso', operator:'=', value:true}
-    ];
-    tableDef.fields = tableDef.fields.filter((field:FieldDefinition)=>!['abrir', 'consistir'].includes(field.name));
-    var domicilioFieldNames = getDomicilioFields().map((field:FieldDefinition)=>field.name);
-    tableDef.fields = tableDef.fields.filter((field)=>!domicilioFieldNames.includes(field.name));
-    tableDef.fields.splice(4,0,
-        {name:'telefono'         , typeName:'text'        , editable: false },
-        ...getDomicilioFields().filter((field:FieldDefinition)=>!['codcalle'].includes(field.name)));
-    var tableDefTT = tareas_tem(context);
-    tableDef.sql!.from=getSqlFrom(tableDefTT,{desde:"ingresa"});
-    return tableDef;
 }
 
 export function tareas_tem_recepcion_encu(context:TableContext):TableDefinition {

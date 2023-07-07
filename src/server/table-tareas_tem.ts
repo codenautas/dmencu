@@ -10,6 +10,8 @@ export type OptsTareasTem = {
     consiste?:boolean
 }
 
+export var getDiasAPasarQuery = (tareasTemAlias?:string) => `extract(day from ${tareasTemAlias?tareasTemAlias+'.':''}ts_entrada - current_timestamp) + (select dias_finc from parametros where unico_registro)`
+
 export var getReaFields = (puedeEditar:boolean):FieldDefinition[] => [
     {name:'rea'                         , typeName:'integer'     , editable: puedeEditar, label:'rea_dm'},
     {name:'norea'                       , typeName:'integer'     , editable: puedeEditar, label:'norea_dm'},
@@ -37,7 +39,9 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
         {name:'operativo'                   , typeName:'text', isPk:2, editable:false},
         {name:'enc'                         , typeName:'text', isPk:3, editable:false},
         {name:'tarea'                       , typeName:'text', isPk:1, editable:false},
-        {name:'ts_entrada'                  , typeName:'timestamp'   , editable:false},
+        {name:'ts_entrada'                  , typeName:'timestamp'   , editable:false               , visible:false},
+        {name:'adelantar'                   , typeName:'boolean'     , editable:true                , visible:false},
+        {name:'dias_a_pasar'                , typeName:'integer'     , editable:false, inTable:false, visible:false},
         {name:'estado'                      , typeName:'text'        , editable:false   , nullable: false, defaultDbValue:"'0D'"},
         
     ];
@@ -59,8 +63,8 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
     fields = fields.concat(...getReaFields(puedeEditar),[
         //{name:'resultado'                 , typeName:'text'}, // fk tareas_resultados 
         //{name:'fecha_resultado'           , typeName:'date'}, // fk tareas_resultados 
-        {name:'modalidad'                   , typeName:'text'        , editable: false, inTable: false},
-        {name:'supervision_dirigida'        , typeName:'integer'     , editable: true},
+        {name:'modalidad'                   , typeName:'text'        , editable: false, inTable:false},
+        {name:'supervision_dirigida'        , typeName:'integer'     , editable: false, inTable:false},
         {name:'supervision_aleatoria'       , typeName:'integer'     , editable: false, inTable:false},
         {name:'result_sup'                  , typeName:'integer'     , editable: puedeEditar  ,  inTable:false, table:'tem'},
         {name:'verificado'                  , typeName:'text'        , editable:false,}, 
@@ -112,14 +116,15 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
             from:`(
                 select *
                     from (
-                select tt.tarea, t.operativo, t.enc, t.area, 
+                select tt.tarea, t.operativo, t.enc, t.area, ${getDiasAPasarQuery('tt')}  as dias_a_pasar,
                     case when tarea_proxima is not null then tarea_proxima when tt.estado='A' then tt.tarea else null end as tarea_asignar
                     ${fields.filter(x=>!(x.isPk || x.inTable===false||x.name=='area')).map(x=>`, tt.${db.quoteIdent(x.name)}`).join('')}
                     , y.grupo as ult_gru_no_rea
                     , case when tt.tarea='recu' and y.grupo0 in ('ausentes','rechazos') then 'recuperacion' else null end a_recuperacion   
                     , t.supervision_aleatoria
-                    , case when tt.supervision_dirigida = 1 or t.supervision_aleatoria = 1 then 'presencial'
-                           when tt.supervision_dirigida = 2 or t.supervision_aleatoria = 2 then 'telefónica' 
+                    , t.supervision_dirigida
+                    , case when t.supervision_dirigida = 1 or t.supervision_aleatoria = 1 then 'presencial'
+                           when t.supervision_dirigida = 2 or t.supervision_aleatoria = 2 then 'telefónica' 
                            else null end as modalidad
                     , t.rea ult_rea, t.norea as ult_norea, t.resumen_estado ult_resumen_estado
                     , t.rea_sup ult_rea_sup, t.norea_sup as ult_norea_sup, t.resumen_estado_sup ult_resumen_estado_sup
@@ -127,6 +132,9 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
                     , v.consistido
                     , e.visible_en_recepcion
                     , e.visible_en_ingreso
+                    , e.visible_en_fin_campo
+                    , e.visible_en_analisis_campo
+                    , e.visible_en_procesamiento
                     , t.result_sup
                     , t.codcalle
                     , t.nomcalle

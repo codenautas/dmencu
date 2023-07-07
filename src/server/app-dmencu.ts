@@ -2,7 +2,7 @@
 
 import * as procesamiento from "procesamiento";
 import {emergeAppProcesamiento, emergeAppConsistencias, emergeAppVarCal, emergeAppDatosExt, emergeAppOperativos, AppBackend, ClientModuleDefinition, OptsClientPage} from "procesamiento";
-import {getOperativoActual, ProceduresDmEncu} from "./procedures-dmencu";
+import {ACCION_PASAR_PROIE, getOperativoActual, ProceduresDmEncu} from "./procedures-dmencu";
 
 import * as pg from "pg-promise-strict";
 import {json} from "pg-promise-strict";
@@ -63,7 +63,9 @@ import { t_supe_areas        } from './table-tareas_areas';
 import { mis_tareas          } from './table-mis_tareas';
 import { tem_asignacion      } from './table-tem_asignacion';
 import { tareas_tem_recepcion} from './table-tareas_tem_recepcion';
-import { tareas_tem_ingreso} from './table-tareas_tem_recepcion';
+import { tareas_tem_ingreso} from './table-tareas_tem_ingreso';
+import { tareas_tem_fin_campo} from './table-tareas_tem_fin_campo';
+import { tareas_tem_procesamiento} from './table-tareas_tem_procesamiento';
 import { mis_tareas_areas    } from './table-mis_tareas_areas';
 import { control_campo       } from './table-control_campo';
 import { control_resumen     } from './table-control_resumen';
@@ -82,8 +84,29 @@ import { estados_acciones    } from './table-estados_acciones';
 
 export * from "./types-dmencu";
 import {defConfig} from "./def-config"
+import { ProcedureDef } from "backend-plus";
 
 const APP_DM_VERSION="#22-12-15";
+
+var registrarCronJobPasarAProie = async (be) => {
+    let procedures = await be.getProcedures()
+    var procPasar = procedures.find((proc:ProcedureDef)=>proc.action == ACCION_PASAR_PROIE)
+    var context = be.getContextForDump();
+    setInterval(async ()=>{
+        try{
+            console.log('inicia cron posaje a proie')
+            var result = await be.inTransaction(null, async (client)=>{
+                context.client=client;
+                return await procPasar.coreFunction(context,[]);
+            })
+            console.log("result proc pasaje a proie: ", result)
+        }catch(err){
+            console.log(`error pasaje a proie. ${err.message}`);
+        }finally{
+            console.log('termina cron proie')
+        }
+    },1000*60*60)
+}
 
 export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamiento.AppProcesamientoType>>(Base:T){
   return class AppDmEncu extends Base{
@@ -314,6 +337,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             //console.dir(be.caches.permisosParaNadie,{depth:9});
         });
         await this.refreshCaches();
+        await registrarCronJobPasarAProie(be);
     }
     override configStaticConfig(){
         super.configStaticConfig();
@@ -555,6 +579,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                         {menuType:'table', name:'supervisor' , table:'supervisores_asignados' },
                         {menuType:'table', name: 'mis_supervisores' , table: 'mis_supervisores_asignados'}
                     );
+                    menu.push({menuType:'table', name:'tareas_tem_fin_campo', label:'fin campo'})
                 }else{
                     menu.push(
                         {menuType:'menu', name:'supervision', label:'supervisión' ,menuContent:[
@@ -575,6 +600,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             if(context.puede?.campo?.administrar||context.puede?.encuestas?.procesar){
                 menu.push(
                     {menuType:'menu', name:'control', menuContent:[
+                        {menuType:'proc', name:'encuestas_procesamiento_pasar', label: 'pasar encuestas a procesamiento'},
                         {menuType:'table', name:'resumen', table:'control_resumen', selectedByDefault:true},
                         {menuType:'table', name:'dominio', table:'control_campo_dominio'},
                         {menuType:'table', name:'zona'   , table:'control_campo_zona'  },
@@ -592,6 +618,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                         {menuType:'table', name:'inconsistencias'},
                         {menuType:'table', name:'tabla_datos'  },
                         {menuType:'table', name:'diccionario'  , label:'diccionarios' },
+                        {menuType:'table', name:'tareas_tem_procesamiento', label:'encuestas'}
                     ]},
                 );
             }
@@ -690,6 +717,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , tem_asignacion
             , tareas_tem_recepcion
             , tareas_tem_ingreso
+            , tareas_tem_fin_campo
+            , tareas_tem_procesamiento
             , mis_tareas_areas
             , control_campo
             , control_resumen

@@ -20,6 +20,9 @@ export function acciones(context:TableContext):TableDefinition {
             {name:'confirma'                 , typeName:'boolean', nullable: false, defaultDbValue: 'false'},
             {name:'recepciona'               , typeName:'boolean', nullable: false, defaultDbValue: 'false'},
             {name:'ingresa'                  , typeName:'boolean', nullable: false, defaultDbValue: 'false'},
+            {name:'fin_campo'                , typeName:'boolean', nullable: false, defaultDbValue: 'false'},
+            {name:'analisis_campo'           , typeName:'boolean', nullable: false, defaultDbValue: 'false'},
+            {name:'procesa'                  , typeName:'boolean', nullable: false, defaultDbValue: 'false'},
         ],
         primaryKey:['operativo', 'eaccion'],
         foreignKeys: [
@@ -30,4 +33,3 @@ export function acciones(context:TableContext):TableDefinition {
         ],
     };
 }
-
