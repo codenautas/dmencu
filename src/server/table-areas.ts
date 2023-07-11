@@ -15,7 +15,7 @@ select
     --sum(case when cluster <>4 then null when confirmada is true then 1 else 0 end) as confirmadas,
     --sum(case when cluster <>4 then null when confirmada is null then 1 else 0 end) as pend_conf,
     string_agg(distinct clase,', ' order by clase desc) as clases,
-    string_agg(distinct nrocomuna::text,'0' order by nrocomuna::text)::bigint as comuna
+    string_agg(distinct nrocomuna::text,'-' order by nrocomuna::text)::text as comuna
     , string_agg(distinct cluster::text,', ' order by cluster::text desc) as clusters
     ${be.caches.tableContent.no_rea_groups.map(x=>
         `, sum(CASE WHEN gru_no_rea=${be.db.quoteLiteral(x.grupo)} THEN 1 ELSE NULL END) as ${be.db.quoteIdent(x.grupo.replace(/ /g,'_'))}`
@@ -40,7 +40,7 @@ export const cuentasFields = (be:any) => [
     {name:'incompletas'             , typeName:'integer' , editable:false  , aggregate:'sum', inTable:false },
     {name:'vacias'                  , typeName:'integer' , editable:false  , aggregate:'sum', inTable:false },
     {name:'inhabilitadas'           , typeName:'integer' , editable:false  , aggregate:'sum', inTable:false },
-    {name:'comuna'                  , typeName:'bigint'  , title:'comuna'  , inTable:false},
+    {name:'comuna'                  , typeName:'text'    , title:'comuna'  , inTable:false},
     ...be.caches.tableContent.no_rea_groups.map(x=>(
         {name:x.grupo.replace(/ /g,'_'), typeName:'integer', editable:false}
     ))
