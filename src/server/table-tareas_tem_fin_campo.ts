@@ -15,7 +15,6 @@ export var definicionComunFincAnacProc = (tableDef:TableDefinition)=>{
 }
 
 export function tareas_tem_fin_campo(context:TableContext):TableDefinition {
-    let tableDef = tareas_tem_recepcion(context)
     let tableDef = tareas_tem_recepcion(context, {rol: null, name: 'relevador', consiste: false});
     tableDef.name = `tareas_tem_fin_campo`;
     tableDef.filterColumns=[
