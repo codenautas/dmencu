@@ -12,9 +12,10 @@ AS $BODY$
         v_grupo0 text;
         v_proxtarea text;
         v_supervision_aleatoria integer;
+        v_supervision_dirigida integer;
 begin
-     select rea, norea, tarea_actual, grupo0, supervision_aleatoria 
-        into v_rea, v_norea, v_tarea_actual, v_grupo0, v_supervision_aleatoria 
+     select rea, norea, tarea_actual, grupo0, supervision_aleatoria, supervision_dirigida
+        into v_rea, v_norea, v_tarea_actual, v_grupo0, v_supervision_aleatoria, v_supervision_dirigida 
         from tem t
         left join no_rea nr  on nr.no_rea= norea::text 
         where operativo = new.operativo and enc = new.enc;    
@@ -24,7 +25,7 @@ begin
                     v_proxtarea='recu';
                  when  v_grupo0 in ('no encuestable') then 
                     v_proxtarea='supe';
-                 when  v_rea=1 and (v_supervision_aleatoria is not null or new.supervision_dirigida is not null) then 
+                 when  v_rea=1 and (v_supervision_aleatoria is not null or v_supervision_dirigida is not null) then 
                     v_proxtarea='supe';
                  else 
                     v_proxtarea='finc';
@@ -32,7 +33,7 @@ begin
         elsif v_tarea_actual='recu' then
             case when  v_grupo0 in ('no encuestable') then 
                     v_proxtarea='supe';
-                 when  v_rea=1 and (v_supervision_aleatoria is not null or new.supervision_dirigida is not null) then 
+                 when  v_rea=1 and (v_supervision_aleatoria is not null or v_supervision_dirigida is not null) then 
                     v_proxtarea='supe';
                  else 
                     v_proxtarea='finc';
