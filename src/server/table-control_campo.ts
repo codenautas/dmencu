@@ -10,6 +10,7 @@ export type controlCamposOpts={
     camposCorte?:FieldDefinition[],
     filtroWhere?:string
     title?:string
+    gabinete?:boolean
 }
 
 export function control_campo(context:TableContext,opts?:controlCamposOpts):TableDefinition {
@@ -29,8 +30,8 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
         {name:'sin_resultado', typeName:'bigint', aggregate:'sum', visible:!opts.agrupado, condicion:`resumen_estado in ('vacio')`},
        // {name:'cita_pactada' , typeName:'bigint', aggregate:'sum', visible:!opts.agrupado, condicion:`resumen_estado in ('cita pactada')`},
         {name:'rea'          , typeName:'bigint', aggregate:'sum', condicion:`resultado='efectiva'`},
-		{name:'pendiente'    , typeName:'bigint', aggregate:'sum', condicion:`resultado='pendiente'`},
-		{name:'mixta'        , typeName:'bigint', aggregate:'sum', condicion:`resultado='mixta'`},
+        {name:'pendiente'    , typeName:'bigint', aggregate:'sum', condicion:`resultado='pendiente'`},
+        {name:'mixta'        , typeName:'bigint', aggregate:'sum', condicion:`resultado='mixta'`},
         /*
         {name:'asuente_viv'  , typeName:'bigint', title:'ausente de vivienda', condicion:`cod_no_rea=7`},
         {name:'asuente_mie'  , typeName:'bigint', title:'ausente de miembro seleccionado', condicion:`cod_no_rea=75`},
@@ -53,10 +54,12 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
             ...camposCorte,
             {name:'total'        , typeName:'bigint', aggregate:'sum'},
             ...camposCalculados.map(f=>{var {condicion, ...fieldDef}=f; return fieldDef}),
-            {name:'otros'                , typeName:'bigint', aggregate:'sum'},
-            {name:'tasa_efectividad'     , typeName:'decimal'},
-            {name:'incompleto'           , typeName:'bigint', aggregate:'sum', visible:!opts.agrupado, condicion:`resumen_estado in ('incompleto','con problemas')`},
-            {name:'verif_encu_pendiente' , typeName:'bigint', aggregate:'sum', visible:!opts.agrupado, condicion:`resumen_estado in ('incompleto','con problemas')`},
+            {name:'otros'                    , typeName:'bigint', aggregate:'sum'},
+            {name:'tasa_efectividad'         , typeName:'decimal'},
+            {name:'incompleto'               , typeName:'bigint', aggregate:'sum', visible:!opts.agrupado, condicion:`resumen_estado in ('incompleto','con problemas')`},
+            {name:'verif_encu_pendiente'     , typeName:'bigint', aggregate:'sum', visible:!opts.agrupado, condicion:`resumen_estado in ('incompleto','con problemas')`},
+            {name:'en_curso'                 , typeName:'bigint', aggregate:'sum', visible:!!opts.gabinete, title:'En_curso'     },
+            {name:'otras_causas_gabinete'    , typeName:'bigint', aggregate:'sum', visible:!!opts.gabinete, title: 'Otras_causas'},
         ],
         primaryKey:camposCorte.map(f=>f.name),
         sql:{
@@ -68,7 +71,9 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
                         round(rea*100.0/nullif( ${(
                             ['rea', ...(camposCalculados.filter(f=>f.tasa_efectividad).map(f=>f.name))].join('+')
                         )},0),1) as tasa_efectividad,
-                        total-coalesce(no_salieron,0) as salieron
+                        total-coalesce(no_salieron,0) as salieron,
+                        coalesce(otros,0) + ${opts.gabinete?` coalesce(otras_causas,0) `:` coalesce(otras_causas_hogar,0)+coalesce(otras_causas_seleccionado,0)+coalesce(otras_causas_vivienda,0)`}  as otras_causas_gabinete,
+                        coalesce(pendiente,0)+coalesce(mixta,0) + ${opts.gabinete?` coalesce(incompleto,0)+coalesce(sin_resultado,0)+coalesce(no_finalizada) `:` coalesce(sin_resultado,0)+ coalesce(sin_finalizar_dm,0)+ coalesce(sin_finalizar_incompleto,0) + coalesce(sin_finalizar_otra_causa,0)`} as en_curso
                     from (   
                         select ${[
                             ...camposCorte.map(f=>f.name),
@@ -103,4 +108,3 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
         }
     };
 }
-
