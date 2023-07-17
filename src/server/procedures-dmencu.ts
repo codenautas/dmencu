@@ -1145,14 +1145,16 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 select * from parametros where unico_registro`,
             []).fetchUniqueRow()).row;
             //parametros.dias_finc
-            var select = `select * from tareas_tem where operativo=$1 and tarea= $2 and (${getDiasAPasarQuery()} <= 0 or coalesce(adelantar,false))`
+            var select = `select * 
+                            from tareas_tem left join tem t using (operativo,enc)
+                            where operativo=$1 and tarea= $2 and (${getDiasAPasarQuery()} <= 0 or coalesce(adelantar,false)) and tarea_proxima = $3`
             await context.client.query(`
                     UPDATE tareas_tem tt
                         set estado = 'A'
                         from (${select}) aux
-                        where tt.operativo = aux.operativo and tt.enc = aux.enc and tt.tarea = $3
+                        where tt.operativo = aux.operativo and tt.enc = aux.enc and tt.tarea = $4
                         returning *`,
-                [parametros.operativo, 'finc', 'proc'])
+                [parametros.operativo, 'finc', 'finc','proc'])
             .fetchAll();
             await context.client.query(`
                 update tem t
@@ -1160,7 +1162,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     from (${select}) aux
                     where t.operativo = aux.operativo and t.enc = aux.enc
                     returning *` ,
-            [parametros.operativo, 'finc']).fetchAll();
+            [parametros.operativo, 'finc','finc']).fetchAll();
         return 'ok';
         }
     },
