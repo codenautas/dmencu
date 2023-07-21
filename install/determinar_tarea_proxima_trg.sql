@@ -21,7 +21,7 @@ begin
         where operativo = new.operativo and enc = new.enc;    
     if new.verificado='1' then
         if v_tarea_actual='encu' then
-            case when  v_grupo0 in ('ausentes', 'rechazos') then
+            case when  v_grupo0 in ('ausentes', 'rechazos') or v_rea in (3,4) then
                     v_proxtarea='recu';
                  when  v_grupo0 in ('no encuestable') then 
                     v_proxtarea='supe';
