@@ -27,6 +27,16 @@ coor_campo|consistencias|editar|true
 coor_campo|encuestas|ingresar|true
 coor_campo|encuestas|justificar|true
 coor_campo|encuestas|procesar|true
+coor_proc|campo|administrar|true
+coor_proc|campo|editar|true
+coor_proc|campo|ver|true
+coor_proc|casilleros_texto|editar|false
+coor_proc|configurar|editar|true
+coor_proc|configurar|ver|true
+coor_proc|consistencias|editar|true
+coor_proc|encuestas|ingresar|true
+coor_proc|encuestas|justificar|true
+coor_proc|encuestas|procesar|true
 direccion|campo|editar|true
 direccion|campo|ver|true
 direccion|casilleros_texto|editar|false
