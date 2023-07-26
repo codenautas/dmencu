@@ -799,7 +799,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         })
         be.appendToTableDefinition('usuarios',function(tableDef, context){
             let claveNuevaField = tableDef.fields.find((field)=>field.name == 'clave_nueva')!;
-            var adminOCoord = ['admin','coor_campo'].includes(context.user.rol);
+            var adminOCoord = 'admin'===context.user.rol||context.puede?.campo?.administrar;
             claveNuevaField.allow = {select:adminOCoord, update:true, insert:false};
         })
         // be.appendToTableDefinition('casilleros',function(tableDef, context){

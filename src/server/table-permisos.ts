@@ -7,7 +7,7 @@ export function permisos(context:TableContext):TableDefinition {
     return {
         name:'permisos',
         elementName:'permiso',
-        editable:false,
+        editable:admin,
         fields:[
             {name:'permiso'          , typeName:'text'      , nullable:false  },
             {name:'accion'           , typeName:'text'      , nullable:false  },

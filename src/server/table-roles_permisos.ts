@@ -9,6 +9,7 @@ export function roles_permisos(context:TableContext):TableDefinition {
         elementName:'permiso para rol',
         allow:{
             update:admin,
+            insert:admin
         },
         fields:[
             {name:'rol'         , typeName:'text'     , nullable:false  },
