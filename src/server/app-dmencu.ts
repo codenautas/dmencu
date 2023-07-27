@@ -86,6 +86,7 @@ import { estados_acciones    } from './table-estados_acciones';
 export * from "./types-dmencu";
 import {defConfig} from "./def-config"
 import { ProcedureDef } from "backend-plus";
+import { table } from "console";
 
 const APP_DM_VERSION="#22-12-15";
 
@@ -749,6 +750,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , personas_sup
         }
         be.appendToTableDefinition('consistencias',function(tableDef, context){
+            tableDef.editable=tableDef.editable || context.puede?.encuestas?.procesar;
             tableDef.fields.forEach(function(field){
                 if(field.name=='error_compilacion'){
                     if(field.visible){
@@ -775,11 +777,11 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     field.editable=context.forDump || context.puede?.encuestas.justificar;
                 }
             })
-            tableDef.fields.push({name:'fin_campo'      , typeName:'text'   
+            tableDef.fields.push({name:'tarea_actual'      , typeName:'text'   
                 , editable: false, inTable:false
             })
             tableDef.sql!.from=`
-                (select i.*, t.fin_campo 
+                (select i.*, t.tarea_actual 
                   from inconsistencias i join tem t on i.vivienda=t.enc and i.operativo=t.operativo 
                 )  
             `
@@ -802,6 +804,12 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             var adminOCoord = 'admin'===context.user.rol||context.puede?.campo?.administrar;
             claveNuevaField.allow = {select:adminOCoord, update:true, insert:false};
         })
+        be.appendToTableDefinition('variables',function(tableDef, context){
+            var esAdmin= context.user.rol==='admin';
+            tableDef.editable=tableDef.editable || context.puede?.encuestas?.procesar;
+            tableDef.allow={delete: esAdmin};            
+        })
+
         // be.appendToTableDefinition('casilleros',function(tableDef, context){
         //     tableDef.constraints = tableDef.constraints.filter(c=>c.consName!='casilleros salto REL')
         // })
