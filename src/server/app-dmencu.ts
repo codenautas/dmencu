@@ -791,13 +791,17 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 name:'config_sorteo', 
                 typeName:'jsonb',
                 editable: false
-            });
-            tableDef.fields.splice(3,0,{
+            },{
                 name:'disform_cerrado', 
                 typeName:'boolean', 
                 defaultValue: false, 
-                editable: context.forDump||['admin','dis_conceptual'].includes(context.user.rol)}
-            );
+                editable: context.forDump||['admin','dis_conceptual'].includes(context.user.rol)
+            },{
+                name:'con_rea_hogar', 
+                typeName:'boolean', 
+                editable: false,
+                defaultDbValue: 'true'
+            });
         })
         be.appendToTableDefinition('usuarios',function(tableDef, context){
             let claveNuevaField = tableDef.fields.find((field)=>field.name == 'clave_nueva')!;

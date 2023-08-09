@@ -2082,50 +2082,72 @@ setLibreDespliegue((props:{
 })=><div key={props.key} id={props.casillero.id_casillero}>este casillero debe redefinirse en la APP final y su uso es exclusivo del área informática</div>)
 
 setCalcularVariables((respuestasRaiz:RespuestasRaiz, forPk:ForPk)=>{
-    //TODO GENERALIZAR
-    var uasIterar:{
-        [key in IdUnidadAnalisis]:{
-            uaPersonas: IdUnidadAnalisis
-            varSexoPersona: IdVariable
-            varNombrePersona: IdVariable
-            varLosNombres: IdVariable
-        }
-    } = {
-        hogares: {
-            uaPersonas: 'personas',
-            varSexoPersona: 'sexo' as IdVariable,
-            varNombrePersona: 'nombre' as IdVariable,
-            varLosNombres: "los_nombres" as IdVariable
-        },
-        ["hogares_sup" as IdUnidadAnalisis] : {
-            uaPersonas: 'personas_sup' as IdUnidadAnalisis,
-            varSexoPersona: 'sexo_sup'  as IdVariable,
-            varNombrePersona: 'nombre_sup'  as IdVariable,
-            varLosNombres: "nombres_componentes_sup"  as IdVariable
-        }
+    type ConfigPadre = {
+        uaPersonas: IdUnidadAnalisis
+        varSexoPersona: IdVariable
+        varNombrePersona: IdVariable
+        varLosNombres: IdVariable
     }
-    likeAr(uasIterar).forEach((configHogares,uaHogares)=>{
-        var estructura = getEstructura();
-        if(estructura.unidades_analisis[uaHogares]){
-            for(var respuestasHogar of iterator(respuestasRaiz[uaHogares]??[])){
-                if(!respuestasHogar[configHogares.uaPersonas] || empty(respuestasHogar[configHogares.uaPersonas]) || respuestasHogar[configHogares.uaPersonas][0][configHogares.varSexoPersona] == null){
-                    var losNombres = respuestasHogar[configHogares.varLosNombres] as string
-                    if(losNombres != null){
-                        if(!respuestasHogar[configHogares.uaPersonas]){
-                            respuestasHogar[configHogares.uaPersonas]=[];
-                        }
-                        losNombres
-                            .split(',')
-                            .filter((nombre:string)=>nombre.trim().length > 0)
-                            .forEach((nombre:string, i:number)=>{
-                                respuestasHogar[configHogares.uaPersonas][i] = respuestasHogar[configHogares.uaPersonas][i] || {};
-                                respuestasHogar[configHogares.uaPersonas][i][configHogares.varNombrePersona] = nombre.trim();
-                            })
+    var estructura = getEstructura();
+    var autoCargarPersonas = (configPadre: ConfigPadre ,uaPadrePersonas:IdUnidadAnalisis, estructura:Estructura)=>{
+        var leerNombres = (respuestasUAPadre:Respuestas, configPadre:ConfigPadre)=>{
+            if(!respuestasUAPadre[configPadre.uaPersonas] || empty(respuestasUAPadre[configPadre.uaPersonas]) || respuestasUAPadre[configPadre.uaPersonas][0][configPadre.varSexoPersona] == null){
+                var losNombres = respuestasUAPadre[configPadre.varLosNombres] as string
+                if(losNombres != null){
+                    if(!respuestasUAPadre[configPadre.uaPersonas]){
+                        respuestasUAPadre[configPadre.uaPersonas]=[];
                     }
+                    losNombres
+                        .split(',')
+                        .filter((nombre:string)=>nombre.trim().length > 0)
+                        .forEach((nombre:string, i:number)=>{
+                            respuestasUAPadre[configPadre.uaPersonas][i] = respuestasUAPadre[configPadre.uaPersonas][i] || {};
+                            respuestasUAPadre[configPadre.uaPersonas][i][configPadre.varNombrePersona] = nombre.trim();
+                        })
                 }
             }
         }
-    })
+        if(estructura.unidades_analisis[uaPadrePersonas]){
+            if(uaPadrePersonas == 'viviendas'){
+                leerNombres(respuestasRaiz,configPadre)
+            }else{
+                for(var respuestasUAPadre of iterator(respuestasRaiz[uaPadrePersonas]??[])){
+                    leerNombres(respuestasUAPadre,configPadre)
+                }   
+            }
+        }
+    }
+    var uasIterar: {
+        [key in IdUnidadAnalisis]:ConfigPadre
+    }; 
+    var configEncu : ConfigPadre = { 
+        uaPersonas: 'personas',
+        varSexoPersona: 'sexo' as IdVariable,
+        varNombrePersona: 'nombre' as IdVariable,
+        varLosNombres: "los_nombres" as IdVariable
+    };
+    var configSupe : ConfigPadre = { 
+        uaPersonas: 'personas_sup' as IdUnidadAnalisis,
+        varSexoPersona: 'sexo_sup'  as IdVariable,
+        varNombrePersona: 'nombre_sup'  as IdVariable,
+        varLosNombres: "nombres_componentes_sup"  as IdVariable
+    };
+
+    if(estructura.conReaHogar){
+        uasIterar = {
+            hogares: configEncu,
+            ["hogares_sup" as IdUnidadAnalisis] : configSupe
+        }
+        likeAr(uasIterar).forEach((configPadre,uaPadre)=>{
+            autoCargarPersonas(configPadre,uaPadre, estructura)
+            
+        })
+    }else{
+        var configPadres: ConfigPadre[] = [configEncu,configSupe];
+        configPadres.forEach((configPadre)=>{
+            autoCargarPersonas(configPadre,'viviendas', estructura)
+        })        
+    }
     respuestasRaiz.vdominio=getDatosByPass().informacionHdr[forPk.vivienda].tem.dominio;
     //TODO: MEJORAR EN ALGUN MOMENTO EL BOTON LISTO
     let totalH = respuestasRaiz['total_h' as IdVariable];

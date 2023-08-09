@@ -351,6 +351,7 @@ export type Estructura = {
     timestamp:number
     operativo:IdOperativo
     configSorteo: ConfiguracionSorteo
+    conReaHogar: boolean
 	noReas: { 
 	      no_rea: string  
 		  descripcion: string

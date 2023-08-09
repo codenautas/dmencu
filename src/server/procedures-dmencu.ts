@@ -254,11 +254,11 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             likeAr(result.row.unidades_analisis).forEach((ua, idUa)=>
                 completarUA(ua, idUa as IdUnidadAnalisis, result.row.unidades_analisis)
             )
-            var configSorteo = (await context.client.query(`
-                select config_sorteo 
+            var {con_rea_hogar: conReaHogar, config_sorteo: configSorteo} = (await context.client.query(`
+                select config_sorteo, con_rea_hogar 
                     from operativos 
                     where operativo = $1
-            `,[parameters.operativo]).fetchUniqueValue()).value;
+            `,[parameters.operativo]).fetchUniqueRow()).row;
             let compilarExpresionesDominios = (expresionesDominio:any)=> 
                 likeAr(expresionesDominio)
                     .map((expr,dominio)=>({dominio, expr:compilarExpresion(expr.expr)}))
@@ -269,7 +269,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     configSorteoFormulario.filtro_js=compilarExpresionesDominios(configSorteoFormulario.filtro)
                 })
             }
-            return {timestamp: be.caches.timestampEstructura, ...result.row, operativo:parameters.operativo, configSorteo,noReas:be.caches.tableContent.no_rea, noReasSup:be.caches.tableContent.no_rea_sup};
+            return {timestamp: be.caches.timestampEstructura, ...result.row, operativo:parameters.operativo, conReaHogar, configSorteo,noReas:be.caches.tableContent.no_rea, noReasSup:be.caches.tableContent.no_rea_sup};
         }
     },
     {
