@@ -146,7 +146,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
                     , t.edificio
                     , t.entrada
                     , t.barrio
-                    , '#implementar_en_operativo_final' as telefono                    
+                    , '__implementar_en_operativo_final' as telefono                    
                     from 
                         tem t left join tareas_tem tt
                             on t.operativo = tt.operativo and t.enc = tt.enc
