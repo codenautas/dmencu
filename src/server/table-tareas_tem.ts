@@ -146,12 +146,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
                     , t.edificio
                     , t.entrada
                     , t.barrio
-                    , (select string_agg(case when concat_ws(';',tel1, tel2, tel_ms) = '' then null else concat_ws(';',tel1, tel2, tel_ms) end,';') 
-                        from hogares h 
-                        left join personas p on h.operativo = p.operativo and h.vivienda=p.vivienda and h.hogar=p.hogar and h.cr_num_miembro=p.persona
-                        where t.operativo = h.operativo and t.enc=h.vivienda --and tt.tarea=t.tarea_actual
-                        group by t.enc	
-                    ) as telefono                    
+                    , '#implementar_en_operativo_final' as telefono                    
                     from 
                         tem t left join tareas_tem tt
                             on t.operativo = tt.operativo and t.enc = tt.enc
