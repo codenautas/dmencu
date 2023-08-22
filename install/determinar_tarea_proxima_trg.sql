@@ -13,17 +13,19 @@ AS $BODY$
         v_proxtarea text;
         v_supervision_aleatoria integer;
         v_supervision_dirigida integer;
+        v_pasa_a_recuperacion boolean;
+        v_pasa_a_supervision  boolean;
 begin
-     select rea, norea, tarea_actual, grupo0, supervision_aleatoria, supervision_dirigida
-        into v_rea, v_norea, v_tarea_actual, v_grupo0, v_supervision_aleatoria, v_supervision_dirigida 
+     select rea, norea, tarea_actual, grupo0, supervision_aleatoria, supervision_dirigida, pasa_a_recuperacion, pasa_a_supervision
+        into v_rea, v_norea, v_tarea_actual, v_grupo0, v_supervision_aleatoria, v_supervision_dirigida , v_pasa_a_recuperacion, v_pasa_a_supervision
         from tem t
         left join no_rea nr  on nr.no_rea= norea::text 
         where operativo = new.operativo and enc = new.enc;    
     if new.verificado='1' then
         if v_tarea_actual='encu' then
-            case when  v_grupo0 in ('ausentes', 'rechazos') or v_rea in (3,4) then
+            case when  pasa_a_recuperacion or v_rea in (3,4) then
                     v_proxtarea='recu';
-                 when  v_grupo0 in ('no encuestable') then 
+                 when  pasa_a_supervision then 
                     v_proxtarea='supe';
                  when  v_rea=1 and (v_supervision_aleatoria is not null or v_supervision_dirigida is not null) then 
                     v_proxtarea='supe';
@@ -31,7 +33,7 @@ begin
                     v_proxtarea='finc';
             end case;
         elsif v_tarea_actual='recu' then
-            case when  v_grupo0 in ('no encuestable') then 
+            case when  pasa_a_supervision then 
                     v_proxtarea='supe';
                  when  v_rea=1 and (v_supervision_aleatoria is not null or v_supervision_dirigida is not null) then 
                     v_proxtarea='supe';
