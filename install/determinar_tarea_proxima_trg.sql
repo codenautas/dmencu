@@ -23,9 +23,9 @@ begin
         where operativo = new.operativo and enc = new.enc;    
     if new.verificado='1' then
         if v_tarea_actual='encu' then
-            case when  pasa_a_recuperacion or v_rea in (3,4) then
+            case when v_pasa_a_recuperacion or v_rea in (3,4) then
                     v_proxtarea='recu';
-                 when  pasa_a_supervision then 
+                 when v_pasa_a_supervision then 
                     v_proxtarea='supe';
                  when  v_rea=1 and (v_supervision_aleatoria is not null or v_supervision_dirigida is not null) then 
                     v_proxtarea='supe';
@@ -33,7 +33,7 @@ begin
                     v_proxtarea='finc';
             end case;
         elsif v_tarea_actual='recu' then
-            case when  pasa_a_supervision then 
+            case when v_pasa_a_supervision then 
                     v_proxtarea='supe';
                  when  v_rea=1 and (v_supervision_aleatoria is not null or v_supervision_dirigida is not null) then 
                     v_proxtarea='supe';
