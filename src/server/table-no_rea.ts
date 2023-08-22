@@ -15,6 +15,8 @@ export function no_rea(context:TableContext):TableDefinition {
             {name:'variable'                , typeName:'text'},
             {name:'valor'                   , typeName:'text'},
             {name:'grupo0'                  , typeName:'text'},
+            {name:'pasa_a_recuperacion'     , typeName:'boolean', nullable:false, defaultDbValue:'false'},
+            {name:'pasa_a_supervision'      , typeName:'boolean', nullable:false, defaultDbValue:'false'},
         ],
         primaryKey:['no_rea'],
     };
