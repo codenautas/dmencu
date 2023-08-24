@@ -24,7 +24,7 @@ insert into tareas_tem (operativo, enc, tarea)
       from (select ta.*, t.enc,t.area from tareas ta, tem t where ta.operativo=t.operativo) ta 
       where ta.operativo= (select operativo from parametros where unico_registro) 
           and not (ta.operativo, ta.enc, ta.tarea) in (select operativo, enc, tarea from tareas_tem)
-          and ta.main_form is not null
+          --and ta.main_form is not null
     order by 1,3,2;
   
 update tem set tarea_proxima='encu', habilitada = true;  
