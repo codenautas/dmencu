@@ -774,15 +774,16 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     field.visible=false;
                 }
                 if(field.name=='justificacion'){
-                    field.editable=context.forDump || context.puede?.encuestas.justificar;
+                    field.editable=context?.forDump || context?.puede?.encuestas.justificar;
                 }
             })
-            tableDef.fields.push({name:'tarea_actual'      , typeName:'text'   
-                , editable: false, inTable:false
-            })
+            tableDef.fields=tableDef.fields.concat(['tarea_actual','tarea_anterior'].map(fn=>{
+                return {name: fn   , typeName: 'text'  , editable: false, inTable: false}
+            }))
             tableDef.sql!.from=`
-                (select i.*, t.tarea_actual 
+                (select i.*, t.tarea_actual,tt.tarea_anterior
                   from inconsistencias i join tem t on i.vivienda=t.enc and i.operativo=t.operativo 
+                  left join tareas_tem tt on t.operativo=tt.operativo and t.enc=tt.enc and t.tarea_actual=tt.tarea 
                 )  
             `
         })
@@ -795,7 +796,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 name:'disform_cerrado', 
                 typeName:'boolean', 
                 defaultValue: false, 
-                editable: context.forDump||['admin','dis_conceptual'].includes(context.user.rol)
+                editable: context?.forDump||['admin','dis_conceptual'].includes(context.user.rol)
             },{
                 name:'con_rea_hogar', 
                 typeName:'boolean', 
@@ -805,12 +806,12 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         })
         be.appendToTableDefinition('usuarios',function(tableDef, context){
             let claveNuevaField = tableDef.fields.find((field)=>field.name == 'clave_nueva')!;
-            var adminOCoord = 'admin'===context.user.rol||context.puede?.campo?.administrar;
+            var adminOCoord = 'admin'===context?.user.rol||context?.puede?.campo?.administrar;
             claveNuevaField.allow = {select:adminOCoord, update:true, insert:false};
         })
         be.appendToTableDefinition('variables',function(tableDef, context){
-            var esAdmin= context.user.rol==='admin';
-            tableDef.editable=tableDef.editable || context.puede?.encuestas?.procesar;
+            var esAdmin= context?.user.rol==='admin';
+            tableDef.editable=tableDef.editable || context?.puede?.encuestas?.procesar;
             tableDef.allow={delete: esAdmin};            
         })
 

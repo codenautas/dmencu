@@ -22,7 +22,7 @@ export function tareas_tem_fin_campo(context:TableContext):TableDefinition {
     ];
     definicionComunFincAnacProc(tableDef);
     tableDef.fields
-        .filter((field)=>['adelantar','dias_a_pasar'].includes(field.name))
+        .filter((field)=>['adelantar','dias_a_pasar','proie'].includes(field.name))
         .forEach((field)=>field.visible=true);
     var tableDefTT = tareas_tem(context);
     tableDef.sql!.from=getSqlFrom(tableDefTT,{desde:"fin_campo"});
