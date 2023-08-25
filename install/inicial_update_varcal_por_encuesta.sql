@@ -9,3 +9,14 @@ BEGIN
   RETURN 'OK';
 END;
 $BODY$;
+
+CREATE OR REPLACE FUNCTION base.update_varcal(
+	p_operativo text)
+    RETURNS text
+    LANGUAGE 'plpgsql'
+AS $BODY$
+BEGIN
+
+  RETURN 'OK';
+END;
+$BODY$;

@@ -19,7 +19,8 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
     var opts=opts||{};
     var recepcion=opts.recepcion?'_recepcion':'';
     var be=context.be;
-    var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';
+    var puedeEditarCampo = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';
+    var puedeEditarProc = context.forDump || context.puede?.encuestas?.procesar;
 
     var columnasAreasParaLaTem=['obs_recepcionista','verificado_rec','recepcionista'];
 
@@ -38,7 +39,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             insert:false,
             delete:false,
         },
-        editable: puedeEditar,
+        editable: puedeEditarCampo||puedeEditarProc,
         hiddenColumns:[
             'cita','notas', 'cluster',
             'codviviendaparticular', 'casa', 'obsdatosdomicilio', 'obsconjunto', 'reserva', 'rotacion_etoi', 'rotacion_eah'
@@ -53,7 +54,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {name: "cluster"             , typeName:'integer' , editable: false, isName:true},
             {name:'tarea_actual'         , typeName:'text'    , editable: false  },
             {name:"habilitar"            , typeName: "text"   , editable:false   , inTable:false, clientSide:'habilitar'},
-            {name:"habilitada"           , typeName: 'boolean', editable:puedeEditar, nullable: false},
+            {name:"habilitada"           , typeName: 'boolean', editable:puedeEditarCampo, nullable: false},
             {name:'tarea_proxima'        , typeName:'text'    , editable: false  },
             {name:'area'                 , typeName:'integer' , editable: false  },
             {name:'zona'                 , typeName:'text'    , editable: false  },
@@ -90,9 +91,9 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {name:'supervision_aleatoria', typeName:'integer'     , editable: false},
             {name:'supervision_dirigida' , typeName:'integer'     , editable: false},
             {name:'supervision'          , typeName:'integer'     , editable: false},
-            {name:'result_sup'           , typeName:'integer'     , editable: puedeEditar},
-            {name:'fin_campo'            , typeName:'text'    , editable: puedeEditar  },
-            {name:'proie'                , typeName:'text'    , editable: puedeEditar  },
+            {name:'result_sup'           , typeName:'integer'     , editable: puedeEditarCampo},
+            {name:'fin_campo'            , typeName:'text'    , editable: puedeEditarCampo  },
+            {name:'proie'                , typeName:'text'    , editable: puedeEditarCampo||puedeEditarProc  },
             {name:'pase_tabla'           , typeName:'text'    , editable: false  },
             ...getDomicilioFields(),
             //{name: "verificar"       , typeName:'boolean', editable:true, inTable:false, clientSide:'verificarCaso'},
@@ -206,7 +207,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
                         select tt.operativo, tt.enc, bool_or(cargado) cargado, string_agg(cargado_dm,',') cargado_dm,jsonb_object_agg(tarea,jsonb_build_object('asignado',asignado,'cargado',cargado,'cargado_dm',cargado_dm))etareas 
                             from tareas_tem tt group by tt.operativo, tt.enc  )tt on t.operativo=tt.operativo and t.enc=tt.enc
                             left join no_rea y on y.no_rea::integer=t.norea
-                            left join viviendas v on v.vivienda=t.enc 
+                            left join viviendas v on v.operativo=t.operativo and v.vivienda=t.enc 
                             left join usuarios usu_enc on usu_enc.idper = tt.etareas->'encu'->>'asignado'
                             left join usuarios usu_rec on usu_rec.idper = tt.etareas->'recu'->>'asignado'
                             left join usuarios usu_sup on usu_sup.idper = tt.etareas->'supe'->>'asignado'
