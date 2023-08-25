@@ -221,9 +221,9 @@ export const ProceduresDmEncu : ProcedureDef[] = [
             var be = context.be;
             var result = await context.client.query(
                 `select casilleros_jerarquizados($1) as formularios, 
-                    ${jsono(`select unidad_analisis, padre, pk_agregada, '{}'::jsonb as hijas from unidad_analisis`, 'unidad_analisis')} as unidades_analisis
+                    ${jsono(`select unidad_analisis, padre, pk_agregada, '{}'::jsonb as hijas from unidad_analisis where operativo = $2`, 'unidad_analisis')} as unidades_analisis
                 `,
-                [parameters.operativo]
+                [parameters.operativo, parameters.operativo]
             ).fetchUniqueRow();
             likeAr(result.row.formularios).forEach(f=>compilarExpresiones(f));
             // Hermanos son los formularios que están implantados en otro formulario de la misma UA. Por ejemplo el A1 en el S1
