@@ -838,14 +838,26 @@ export function verificarSorteo(opts:{
     if(configuracionSorteo.parametros.includes(variableActual)){
         var uaPadre = likeAr(estructura.unidades_analisis).find((ua)=>ua.unidad_analisis==unidadAnalisis)?.padre;
         var pkAgregadaPadre = likeAr(estructura.unidades_analisis).find((ua)=>ua.unidad_analisis==uaPadre)?.pk_agregada
-        if(uaPadre && respuestasAumentadas[uaPadre]){
-            //@ts-ignore pkAgregadaPadre existe e indica la posicion del padre
-            var padre = respuestasAumentadas[uaPadre][Number(respuestasAumentadas[pkAgregadaPadre])-1];
-            if(variableActual != configuracionSorteo.cantidad_total){
-                padre[configuracionSorteo.cantidad_total]=padre[unidadAnalisis].length; //si agrega desde boton agregar
+        if(estructura.conReaHogar){
+            if(uaPadre && respuestasAumentadas[uaPadre]){
+                //@ts-ignore pkAgregadaPadre existe e indica la posicion del padre
+                var padre = respuestasAumentadas[uaPadre][Number(respuestasAumentadas[pkAgregadaPadre])-1];
+                if(variableActual != configuracionSorteo.cantidad_total){
+                    padre[configuracionSorteo.cantidad_total]=padre[unidadAnalisis].length; //si agrega desde boton agregar
+                }
+                resetearSorteo({respuestas:padre});
+                respuestas = padre;
             }
-            resetearSorteo({respuestas:padre});
-            respuestas = padre;
+        }else{
+            if(uaPadre && respuestasAumentadas){
+                //@ts-ignore pkAgregadaPadre existe e indica la posicion del padre
+                var padre = respuestasAumentadas;
+                if(variableActual != configuracionSorteo.cantidad_total){
+                    padre[configuracionSorteo.cantidad_total]=padre[unidadAnalisis].length; //si agrega desde boton agregar
+                }
+                resetearSorteo({respuestas:padre});
+                respuestas = padre;
+            }
         }
     }
     if(respuestas[unidadAnalisis] != null){
