@@ -830,7 +830,7 @@ export function verificarSorteo(opts:{
 
     var {configuracionSorteo, variableActual, respuestas, forPk, respuestasRaiz} = opts;
     var idEnc = forPk.vivienda!;
-    var {respuestasAumentadas} = respuestasForPk(forPk, true);
+    var {respuestasAumentadas, respuestasRaiz} = respuestasForPk(forPk, true);
     var expr_incompletitud_fun = getFuncionHabilitar(configuracionSorteo.expr_incompletitud_js[respuestasAumentadas.vdominio].expr);
     var filtro_fun =  getFuncionHabilitar(configuracionSorteo.filtro_js[respuestasAumentadas.vdominio].expr);
     var unidadAnalisis = configuracionSorteo.unidad_analisis;
@@ -849,9 +849,9 @@ export function verificarSorteo(opts:{
                 respuestas = padre;
             }
         }else{
-            if(uaPadre && respuestasAumentadas){
+            if(uaPadre && respuestasRaiz){
                 //@ts-ignore pkAgregadaPadre existe e indica la posicion del padre
-                var padre = respuestasAumentadas;
+                var padre = respuestasRaiz;
                 if(variableActual != configuracionSorteo.cantidad_total){
                     padre[configuracionSorteo.cantidad_total]=padre[unidadAnalisis].length; //si agrega desde boton agregar
                 }
