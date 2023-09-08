@@ -1173,4 +1173,83 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         return 'ok';
         }
     },
+    {
+        action:'intercambiar_encuestas',
+        parameters:[
+            {name:'enc1'            ,references:'tem' , typeName:'text'    },
+            {name:'cantHog1'                          , typeName:'integer' },
+            {name:'enc2'                              , typeName:'text'    },
+            {name:'cantHog2'                          , typeName:'integer' },
+            {name:'confirma'                 , typeName:'boolean', defaultValue:false, label:'Confirma intercambio de los datos entre las encuestas? ' },
+        ],
+        roles:['coor_proc','procesamiento','admin'],
+        progress:true,
+        coreFunction:async function(context:ProcedureContext, params: CoreFunctionParameters){
+            if (!params.confirma){
+                throw new Error('No confirmó intercambio')
+            }
+            if ( !params.enc1 || !params.enc2)  {
+                throw new Error('Error, Falta ingresar una numero de encuesta!');
+            }
+            if ( params.enc1==params.enc2)  {
+                throw new Error('Error, enc1 y enc2 deben ser distintos!');
+            }    
+            if ( params.cantHog1==null)  {
+                throw new Error('Error, Cantidad de Hogares de enc1, no esta ingresado!');
+            }
+            if ( params.cantHog2==null)  {
+                throw new Error('Error, Cantidad de Hogares de enc2, no esta ingresado!');
+            }            
+            // CONTROLAR QUE NINGUNA DE LAS 2 encuestas ESTE CARGADA, ABIERTA FALTA
+            const OPERATIVO = await getOperativoActual(context);
+           
+            const cant_hogs=(await context.client.query(`
+                select vivienda, count(*)nh from hogares where operativo=$1 and (vivienda=$2 or vivienda=$3)
+                group by vivienda
+                `,[OPERATIVO, params.enc1, params.enc2]).fetchAll()).rows;
+                
+            var param_nh=[params.cantHog1,params.cantHog2];
+            cant_hogs.forEach((xe,i)=>{
+                if (param_nh[i] !== xe.nh) {
+                    const xmens=`Error, no coincide la cantidad de hogares de enc${i+1}`;
+                    throw new Error(xmens);
+                };
+            });    
+            
+            var regEnc=(await context.client.query(`
+            select enc, json_encuesta from tem where operativo=$1 and (enc =$2 or enc=$3)
+            `,[OPERATIVO, params.enc1, params.enc2]).fetchAll()).rows;
+            
+            if (regEnc.length!=2){
+                throw new Error('Error, No se encontraron 2 encuestas')    
+            }else{    
+                regEnc.forEach(async(xe,i)=>{
+                    await context.client.query(
+                        `update tem set json_encuesta=regEnc[(i+1)%2].json_encuesta
+                        where operativo=$1 and enc=$2`
+                        , [ OPERATIVO, xe.enc]
+                      ).execute();                    
+                })
+                //update tablas ua , llamando al guardar
+                //guardar las 2 encuestas
+                /* refactorizar
+                        var procedureGuardar = be.procedure.caso_guardar;
+                        let resultado = `id enc ${idEnc}: `;
+                        let param_guardar={operativo: OPERATIVO,id_caso:idEnc, datos_caso:respuestasUAPrincipal}
+                        let errMessage: string|null;
+                        try{
+                            await be.inTransaction(null, async function(client){
+                                resultado+= await procedureGuardar.coreFunction(context, param_guardar, client);    
+                            })
+                        }catch(err){
+                            errMessage = resultado + "dm_forpkraiz_descargar. "+ err ;
+                            resultado = errMessage
+                            console.log(errMessage)
+                        }                
+                */
+            }            
+            
+            return (`Listo. Intercambio realizado entre las encuestas  ${params.enc1} y ${params.enc2}. Por favor consista la encuesta`)
+        }        
+    },
 ];
