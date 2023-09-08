@@ -10,8 +10,8 @@ BEGIN
             SELECT coalesce(max(enc::bigint), NEW.area) INTO max_enc FROM tem WHERE area = NEW.area;
         SELECT least(maximo_creacion_encuestas, NEW.cantidad_encuestas)-coalesce(OLD.cantidad_encuestas,0) INTO n FROM parametros;
         FOR j IN 1..(n) LOOP
-            INSERT INTO tem (operativo,     enc,               estado_actual,  habilitada, area) 
-                     VALUES (NEW.operativo, (max_enc+j)::text, 'ESTADO_NUEVO', true,       NEW.area);
+            INSERT INTO tem (operativo,     enc,               habilitada, area) 
+                     VALUES (NEW.operativo, (max_enc+j)::text, true,       NEW.area);
         END LOOP;
     END IF;
     RETURN NULL;
