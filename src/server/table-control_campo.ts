@@ -11,7 +11,9 @@ export type controlCamposOpts={
     filtroWhere?:string
     title?:string
     gabinete?:boolean
+    sinhogfin?:boolean
 }
+
 
 export function control_campo(context:TableContext,opts?:controlCamposOpts):TableDefinition {
     opts = opts || {nombre:'control_campo'}
@@ -23,6 +25,7 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
     var camposCorte:FieldDefinition[]=[{name:'cluster'       , typeName:'integer'},...(
         opts.camposCorte ||[]
     )];
+
     var camposCalculados:(FieldDefinition & {condicion:string, tasa_efectividad:boolean})[]=[
         {name:'no_salieron'  , typeName:'bigint', aggregate:'sum', title:'no salieron a campo', condicion:`resumen_estado is null`},
         {name:'salieron'     , typeName:'bigint', aggregate:'sum', title:'salieron a campo'},
@@ -72,8 +75,8 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
                             ['rea', ...(camposCalculados.filter(f=>f.tasa_efectividad).map(f=>f.name))].join('+')
                         )},0),1) as tasa_efectividad,
                         total-coalesce(no_salieron,0) as salieron,
-                        coalesce(otros,0) + ${opts.gabinete?` coalesce(otras_causas,0) `:` coalesce(otras_causas_hogar,0)+coalesce(otras_causas_seleccionado,0)+coalesce(otras_causas_vivienda,0)`}  as otras_causas_gabinete,
-                        coalesce(pendiente,0)+coalesce(mixta,0) + ${opts.gabinete?` coalesce(incompleto,0)+coalesce(sin_resultado,0)+coalesce(no_finalizada) `:` coalesce(sin_resultado,0)+ coalesce(sin_finalizar_dm,0)+ coalesce(sin_finalizar_incompleto,0) + coalesce(sin_finalizar_otra_causa,0)`} as en_curso
+                        coalesce(otros,0) + ${opts.gabinete?` coalesce(otras_causas,0) `:opts.sinhogfin?` coalesce(otras_causas_seleccionado,0)+coalesce(otras_causas_vivienda,0)`: ` coalesce(otras_causas_hogar,0)+coalesce(otras_causas_seleccionado,0)+coalesce(otras_causas_vivienda,0)`}  as otras_causas_gabinete,
+                        coalesce(pendiente,0)+coalesce(mixta,0) +coalesce(sin_resultado,0) + ${ opts.gabinete? ` coalesce(incompleto,0) `: opts.gabinete && !opts.sinhogfin? ` coalesce(no_finalizada,0) `: !opts.gabinete && !opts.sinhogfin? `coalesce(sin_finalizar_dm,0)+ coalesce(sin_finalizar_incompleto,0) + coalesce(sin_finalizar_otra_causa,0)` :`0`} as en_curso
                     from (   
                         select ${[
                             ...camposCorte.map(f=>f.name),

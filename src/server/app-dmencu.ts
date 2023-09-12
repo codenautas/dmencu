@@ -410,6 +410,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             this.caches.tableContent.no_rea_sup_groups0 = (await client.query(`
             select grupo0_sup as grupo, jsonb_agg(to_json(r.*)) as codigos from no_rea_sup r group by grupo0_sup order by 1
         `).fetchAll()).rows;
+           this.caches.tableContent.conReaHogar = (await client.query(`
+            select con_rea_hogar,operativo from operativos
+             `).fetchUniqueRow()).row;
+            console.log('caches',this.caches.tableContent.conReaHogar)
         })
         console.log('caches ok');
     }
@@ -538,6 +542,16 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         };
         return jsonResult
     }
+    getMenuControles(context:Context) { return [
+        {menuType:'proc', name:'encuestas_procesamiento_pasar', label: 'pasar encuestas a procesamiento'},
+        {menuType:'table', name:'resumen', table:'control_resumen', selectedByDefault:true},
+        {menuType:'table', name:'dominio', table:'control_campo_dominio'},
+        {menuType:'table', name:'zona'   , table:'control_campo_zona'  },
+        {menuType:'table', name:'comuna' , table:'control_campo_comuna'},
+        {menuType:'table', name:'área'   , table:'control_campo_area'  },
+    ];
+}
+
     getMenu(context:Context){
         let menu:MenuInfoBase[] = [];
         let filtroRecepcionista = context.user.rol=='recepcionista' ? {recepcionista: context.user.idper} : {};
@@ -604,17 +618,9 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             }    
             if(context.puede?.campo?.administrar||context.puede?.encuestas?.procesar){
                 menu.push(
-                    {menuType:'menu', name:'control', menuContent:[
-                        {menuType:'proc', name:'encuestas_procesamiento_pasar', label: 'pasar encuestas a procesamiento'},
-                        {menuType:'table', name:'resumen', table:'control_resumen', selectedByDefault:true},
-                        {menuType:'table', name:'dominio', table:'control_campo_dominio'},
-                        {menuType:'table', name:'zona'   , table:'control_campo_zona'  },
-                        {menuType:'table', name:'comuna' , table:'control_campo_comuna'},
-                        {menuType:'table', name:'área'   , table:'control_campo_area'  },
-                        {menuType:'table', name:'control_dias_carga', table: 'control_dias_carga', label: 'control por dias'}
-                        /*{menuType:'table', name:'participacion'        , table:'control_campo_participacion'  },*/
-                    ]},            
-                )
+                    {menuType:'menu', name:'control', menuContent:  this.getMenuControles(context) } )  ;
+                 /*{menuType:'table', name:'participacion'        , table:'control_campo_participacion'  },*/
+
             }
             if(context.puede?.encuestas?.procesar){
                 menu.push(
@@ -729,19 +735,19 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , control_campo
             , control_resumen
             , control_campo_zona: context=>control_campo(context, 
-                {nombre:'control_campo_comuna', title:'control campo x zona solo cemento', camposCorte:[{name:'zona', typeName:'text'}], filtroWhere:'dominio=3' }
+                {nombre:'control_campo_comuna', title:'control campo x zona solo cemento', camposCorte:[{name:'zona', typeName:'text'}], sinhogfin:!context.be.caches.tableContent.conReaHogar.con_rea_hogar,filtroWhere:'dominio=3' }
             )
             , control_campo_comuna: context=>control_campo(context, 
-                {nombre:'control_campo_comuna', title:'control campo x comuna solo cemento', camposCorte:[{name:'zona', typeName:'text'},{name:'nrocomuna', typeName:'integer'}], filtroWhere:'dominio=3' }
+                {nombre:'control_campo_comuna', title:'control campo x comuna solo cemento', camposCorte:[{name:'zona', typeName:'text'},{name:'nrocomuna', typeName:'integer'}], sinhogfin:!context.be.caches.tableContent.conReaHogar.con_rea_hogar,filtroWhere:'dominio=3' }
             )
             , control_campo_area: context=>control_campo(context, 
-                {nombre:'control_campo_comuna', title:'control campo x area', camposCorte:[{name:'zona', typeName:'text'},{name:'nrocomuna', typeName:'integer'},{name:'area', typeName:'integer'},{name:'participacion_a', typeName:'text'},{name:'clase_a', typeName:'text'}]}
+                {nombre:'control_campo_comuna', title:'control campo x area', camposCorte:[{name:'zona', typeName:'text'},{name:'nrocomuna', typeName:'integer'},{name:'area', typeName:'integer'},{name:'participacion_a', typeName:'text'},{name:'clase_a', typeName:'text'}] ,sinhogfin:!context.be.caches.tableContent.conReaHogar.con_rea_hogar}
             )
             , control_campo_participacion: context=>control_campo(context, 
-                {nombre:'control_campo_comuna', title:'control campo x participacion', camposCorte:[{name:'participacion', typeName:'bigint'}]}
+                {nombre:'control_campo_comuna', title:'control campo x participacion', camposCorte:[{name:'participacion', typeName:'bigint'}],sinhogfin:!context.be.caches.tableContent.conReaHogar.con_rea_hogar}
             )
             , control_campo_dominio: context=>control_campo(context, 
-                {nombre:'control_campo_comuna', title:'control campo x dominio', camposCorte:[{name:'dominio', typeName:'integer'}]}
+                {nombre:'control_campo_comuna', title:'control campo x dominio', camposCorte:[{name:'dominio', typeName:'integer'}],sinhogfin:!context.be.caches.tableContent.conReaHogar.con_rea_hogar}
             )
             , control_dias_carga
             , viviendas
