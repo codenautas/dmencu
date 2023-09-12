@@ -24,6 +24,8 @@ var discrepances = require('discrepances');
 
 const formPrincipal = 'F:F1';
 const MAIN_TABLENAME ='viviendas';
+const ESTADO_POSTERIOR_CARGA = 'C';
+const ESTADO_POSTERIOR_DESCARGA = 'D';
 
 export const getOperativoActual = async (context:ProcedureContext)=>{
     var be = context.be;
@@ -644,8 +646,6 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         ],
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             const OPERATIVO = await getOperativoActual(context);
-            const ESTADO_POSTERIOR_CARGA = 'C';
-            const ESTADO_POSTERIOR_DESCARGA = 'D';
             var be=context.be;
             var {persistentes} = parameters;
             var num_sincro:number=0;
