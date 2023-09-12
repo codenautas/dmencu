@@ -4,7 +4,7 @@ import { ProcedureDef, TableDefinition, Client, TableDefinitions } from "./types
 import { ProcedureContext, CoreFunctionParameters, ForeignKey } from "meta-enc";
 import * as likeAr from "like-ar";
 export * from "./types-dmencu";
-import { IdUnidadAnalisis, UnidadAnalisis, EstadoAccion } from "../unlogged/tipos";
+import { IdUnidadAnalisis, UnidadAnalisis, EstadoAccion, IdEnc, IdTarea } from "../unlogged/tipos";
 
 import {json, jsono} from "pg-promise-strict";
 
@@ -94,6 +94,30 @@ var guardarEncuestaEnTem = async (context, operativo, idEnc, respuestasUAPrincip
         params
     ).fetchUniqueRow();
 }
+
+var simularGuardadoDesdeEncuesta = async (context: ProcedureContext ,operativo: string, enc: IdEnc, tarea: IdTarea, json_encuesta:any )=>{
+    var be = context.be;
+    const UA_PRINCIPAL = await getUAPrincipal(context.client, operativo);
+    return await be.procedure.dm_forpkraiz_descargar.coreFunction(
+        context, 
+        {
+            operativo:operativo, 
+            persistentes:{
+                respuestas:{
+                    [UA_PRINCIPAL]: {
+                        [enc]: json_encuesta
+                    }
+                },
+                informacionHdr:{
+                    [enc]: {
+                        tarea
+                    }
+                }
+            }
+        }
+    )
+}
+
 
 var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
     return `
@@ -1265,6 +1289,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'token'         , typeName:'text'},
         ],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            var be = context.be;
+            const UA_PRINCIPAL = await getUAPrincipal(context.client, params.operativo);
             let tareasTemResult = await context.client.query(`
                 UPDATE tareas_tem
                     set cargado_dm = null, operacion = 'descargar', estado = $3
@@ -1275,7 +1301,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             if(tareasTemResult.rowCount == 0){
                 throw error('No se blanqueó ninguna encuesta')
             }
-            tareasTemResult.rows.forEach(async (tt)=>{
+            for(let tt of tareasTemResult.rows){
                 tt.result_blanqueo = `enc ${tt.enc} se blanqueó correctamente.`;
                 let resultBackup = await context.client.query(`
                     UPDATE tem
@@ -1286,8 +1312,9 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 .fetchOneRowIfExists();
                 if(resultBackup.rowCount){
                     tt.result_blanqueo+=` Se restableció el backup con fecha ${resultBackup.row.fecha_backup.toYmdHms()}.`
+                    await simularGuardadoDesdeEncuesta(context, resultBackup.row.operativo, resultBackup.row.enc, tt.tarea,resultBackup.row.json_encuesta)
                 }
-            })
+            }
             return tareasTemResult.rows;
         }
     },

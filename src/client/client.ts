@@ -600,7 +600,7 @@ myOwn.wScreens.proc.result.mostrar_encuestas_a_blanquear=function(result, divRes
                     var mainDiv = html.div().create()
                     mainDiv.appendChild(
                         html.div({},[
-                            html.div({class:'danger'}, [`Está por blanquear el dm ${miNroCarga}. No se podrá descargar el dispositivo.`])
+                            html.div({class:'danger'}, [`Está por blanquear la carga ${miNroCarga}. No se podrá descargar el dispositivo.`])
                         ]).create()
                     );
                     var inputForzar = html.input({class:'input-forzar'}).create();
