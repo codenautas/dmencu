@@ -595,6 +595,9 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 if(context.puede?.campo?.editar){
                     submenuVarios.push({menuType: 'table', name: 'hoja_ruta', table: 'grilla_hoja_ruta', label: 'hoja de ruta'})
                 }
+                if(context.puede?.campo?.administrar){
+                    submenuVarios.push({menuType:'proc', name:'encuestador_dms_mostrar', label:'forzar descarga encuestas DM'})
+                } 
                 menu.push(      
                     {menuType: 'menu', name: 'varios', menuContent: submenuVarios}
                 );

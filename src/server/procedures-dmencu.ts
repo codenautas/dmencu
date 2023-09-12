@@ -15,6 +15,7 @@ import * as ExpresionParser from 'expre-parser';
 import { tareas } from "./table-tareas";
 import { prependListener } from "process";
 import { getDiasAPasarQuery } from "./table-tareas_tem";
+import { error } from "console";
 
 var path = require('path');
 var sqlTools = require('sql-tools');
@@ -71,16 +72,9 @@ function createStructure(context:ProcedureContext, tableName:string){
 
 type AnyObject = {[k:string]:any}
 
-var getParametersAndSettersForUpdateTem = async (context, operativo, idEnc, respuestasUAPrincipal, tarea)=>{
-    var registraEstadoEnTem = (await context.client.query(
-        `select registra_estado_en_tem
-            from tareas
-            where operativo=$1 and tarea = $2`
-        ,
-        [operativo, tarea]
-    ).fetchUniqueValue()).value;
+var guardarEncuestaEnTem = async (context, operativo, idEnc, respuestasUAPrincipal, tarea)=>{
     var params = [operativo, idEnc, respuestasUAPrincipal]
-    var setters = `json_encuesta = $3`;
+    var setters = `json_encuesta = $3, fecha_modif_encuesta = current_timestamp`;
     //TODO ARREGLAR ESTE HORROR, GENERALIZAR
     if(tarea=='supe'){
         setters+= `, resumen_estado_sup=$4, norea_sup=$5, rea_sup=$6`
@@ -89,7 +83,14 @@ var getParametersAndSettersForUpdateTem = async (context, operativo, idEnc, resp
         setters+= `, resumen_estado=$4, norea=$5, rea=$6`
         params = params.concat([respuestasUAPrincipal.resumenEstado, respuestasUAPrincipal.codNoRea, respuestasUAPrincipal.codRea]);
     }
-    return {setters, params}
+    return await context.client.query(
+        `update tem
+            set ${setters}
+            where operativo= $1 and enc = $2
+            returning 'ok'`
+        ,
+        params
+    ).fetchUniqueRow();
 }
 
 var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
@@ -608,15 +609,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 if(respuestasUAPrincipal.s1a1_obs == '!prueba de error al grabar!'){
                     throw new Error('DIO PRUEBA DE ERROR AL GRABAR');
                 }
-                var {params, setters} = await getParametersAndSettersForUpdateTem(context, operativo, idEnc, respuestasUAPrincipal, persistentes.informacionHdr[idEnc].tarea.tarea);
-                await context.client.query(
-                    `update tem
-                        set ${setters}
-                        where operativo= $1 and enc = $2
-                        returning 'ok'`
-                    ,
-                    params
-                ).fetchUniqueRow();
+                await guardarEncuestaEnTem(context, operativo, idEnc, respuestasUAPrincipal, persistentes.informacionHdr[idEnc].tarea.tarea);
                 //guardar paralelamente en tablas ua
                 var procedureGuardar = be.procedure.caso_guardar;
                 let resultado = `id enc ${idEnc}: `;
@@ -701,16 +694,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     ).fetchOneRowIfExists();
                     puedoGuardarEnTEM=queryTareasTem.rowCount==1;
                     if(puedoGuardarEnTEM){
-                        var {params, setters} = await getParametersAndSettersForUpdateTem(context, OPERATIVO, idEnc, respuestasUAPrincipal, tarea);
-                        await context.client.query(
-                            `update tem
-                                set ${setters}
-                                where operativo= $1 and enc = $2
-                                returning 'ok'`
-                            ,
-                            params
-                        ).fetchUniqueRow();
-
+                        await guardarEncuestaEnTem(context, OPERATIVO, idEnc, respuestasUAPrincipal, tarea);
                         //guardar paralelamente en tablas ua
                         var procedureGuardar = be.procedure.caso_guardar;
                         let resultado = `id enc ${idEnc}: `;
@@ -786,7 +770,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 await Promise.all(likeAr(parameters.tem).map(async (backup:any)=>{
                     context.client.query(
                         `update tem
-                            set json_backup = $3
+                            set json_backup = $3, fecha_backup = current_timestamp
                             where operativo= $1 and enc = $2 and json_backup is distinct from $4
                             returning 'ok'`
                         ,
@@ -1250,6 +1234,61 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             }            
             
             return (`Listo. Intercambio realizado entre las encuestas  ${params.enc1} y ${params.enc2}. Por favor consista la encuesta`)
-        }        
+        }   
+    },
+    {     
+        action: 'encuestador_dms_mostrar',
+        parameters:[
+            {name:'operativo'       , typeName:'text', references:"operativos"},
+            {name:'encuestador'     , typeName:'text'},
+        ],
+        resultOk:'mostrar_encuestas_a_blanquear',
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            var result = await context.client.query(`
+                select *
+                    from tareas_tem
+                    where operativo=$1 and asignado = $2 and cargado_dm is not null
+                    order by cargado_dm
+                `,
+                [params.operativo, params.encuestador])
+            .fetchAll();
+            if(result.rowCount == 0){
+                throw Error (`No se encontraron encuestas cargadas en un DM para el operativo ${params.operativo}, encuestador ${params.encuestador}`)
+            }
+            return {rows: result.rows, operativo: params.operativo};
+        }
+    },
+    {
+        action: 'dm_blanquear',
+        parameters:[
+            {name:'operativo'       , typeName:'text', references:"operativos"},
+            {name:'token'         , typeName:'text'},
+        ],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            let tareasTemResult = await context.client.query(`
+                UPDATE tareas_tem
+                    set cargado_dm = null, operacion = 'descargar', estado = $3
+                    where operativo=$1 and cargado_dm = $2
+                    returning *`,
+                [params.operativo, params.token, ESTADO_POSTERIOR_DESCARGA])
+            .fetchAll();
+            if(tareasTemResult.rowCount == 0){
+                throw error('No se blanqueó ninguna encuesta')
+            }
+            tareasTemResult.rows.forEach(async (tt)=>{
+                tt.result_blanqueo = `enc ${tt.enc} se blanqueó correctamente.`;
+                let resultBackup = await context.client.query(`
+                    UPDATE tem
+                        set json_encuesta = json_backup, fecha_modif_encuesta = fecha_backup
+                        where operativo=$1 and enc=$2 and fecha_backup > coalesce(fecha_modif_encuesta, '1900-01-01') and json_backup is not null
+                        returning *`,
+                    [tt.operativo, tt.enc])
+                .fetchOneRowIfExists();
+                if(resultBackup.rowCount){
+                    tt.result_blanqueo+=` Se restableció el backup con fecha ${resultBackup.row.fecha_backup.toYmdHms()}.`
+                }
+            })
+            return tareasTemResult.rows;
+        }
     },
 ];

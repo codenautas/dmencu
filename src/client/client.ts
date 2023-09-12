@@ -8,6 +8,7 @@ import {getEstructura, setPersistirDatosByPass} from "../unlogged/bypass-formula
 import {BACKUPS, cargarEstructura, cargarHojaDeRuta, GLOVAR_DATOSBYPASS, GLOVAR_ESTRUCTURA, GLOVAR_MODOBYPASS} from "../unlogged/abrir-formulario"
 import { Operativo } from "meta-enc";
 import {sleep, coalesce} from "best-globals";
+import { stringify } from "querystring";
 
 
 //TODO GENERALIZAR
@@ -576,6 +577,80 @@ myOwn.clientSides.consistir = botonClientSideEnGrilla({
         }): alertPromise('La encuesta debe tener dato en rea para poder consistirla.');
     }
 });
+
+myOwn.wScreens.proc.result.mostrar_encuestas_a_blanquear=function(result, divResult){
+    if(result.rows.length){
+        var currentToken:string|null = null
+        var nroCarga = 0;
+        var encuestasDiv: null|HTMLDivElement = null;
+        divResult.appendChild(html.h2('operativo: ' + result.operativo).create());
+        result.rows.forEach((encuesta)=>{
+            if(currentToken != encuesta.cargado_dm){
+                nroCarga++;
+                currentToken = encuesta.cargado_dm;
+                divResult.appendChild(html.h4('carga Nº ' + nroCarga.toString()).create());
+                encuestasDiv = html.div({class:'encuestas-a-blanquear'}).create();
+                //las copio con let para que tome el valor actual y no el último
+                let miToken = currentToken;
+                let miNroCarga = nroCarga;
+                var button = html.button({
+                    class:`boton-blanquear-dm boton-accion`
+                }, 'blanquear carga ' + nroCarga.toString()).create();
+                button.onclick = async ()=> {
+                    var mainDiv = html.div().create()
+                    mainDiv.appendChild(
+                        html.div({},[
+                            html.div({class:'danger'}, [`Está por blanquear el dm ${miNroCarga}. No se podrá descargar el dispositivo.`])
+                        ]).create()
+                    );
+                    var inputForzar = html.input({class:'input-forzar'}).create();
+                    mainDiv.appendChild(html.div([
+                        html.div(['Se puede forzar el blanqueo ',inputForzar])
+                    ]).create());
+                    var forzar = await confirmPromise(mainDiv, {
+                        withCloseButton: false,
+                        reject:false,
+                        buttonsDef:[
+                            {label:'forzar blanqueo', value:true},
+                            {label:'cancelar blanqueo', value:false}
+                        ]
+                    });
+                    if(forzar){
+                        if(inputForzar.value=='forzar'){
+                            try{
+                                button.disabled=true;
+                                var resultBlanqueo = await my.ajax.dm_blanquear({
+                                    operativo: result.operativo,
+                                    token: miToken
+                                });
+                                divResult.innerHTML='';
+                                resultBlanqueo.forEach((tt:any)=>{
+                                    divResult.appendChild(
+                                        html.div({},[
+                                            html.span({},`${tt.result_blanqueo}`),
+                                        ]).create()
+                                    )
+                                })
+                            }catch(err){
+                                alertPromise(err.message);
+                            }finally{
+                                button.disabled=false;
+                            };
+                        }else{
+                            alertPromise('si necesita blanquear escriba forzar.')
+                        }
+                    }
+                }
+                divResult.appendChild(encuestasDiv);
+                divResult.appendChild(button);
+            }
+            encuestasDiv?.appendChild(html.div({},[
+                html.span(`encuesta: ${encuesta.enc} `),
+                html.span(`tarea:  ${encuesta.tarea} `),
+            ]).create())
+        })
+    }
+}
 
 myOwn.wScreens.demo=async function(_addrParams){
     // @ts-ignore desplegarFormularioActual global

@@ -28,7 +28,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
         {name:'gru_no_rea', expr: 'grupo' }
     ];
     var columnasSoloTem=[
-          'enc_original'   , 'json_encuesta'      , 'json_backup'
+          'enc_original'   , 'json_encuesta'      , 'json_backup', 'fecha_modif_encuesta', 'fecha_backup'
         , 'h4'             , 'x'       , 'y'      , 'fexp'
     ];
     var def: TableDefinition= {
