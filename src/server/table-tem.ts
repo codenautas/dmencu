@@ -135,7 +135,9 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {name:'semana'               , typeName:'integer' , editable: false  ,visible: false  },
             {name:'periodicidad'         , typeName:'text'    , editable: false  ,visible: false  },
             //solo tem 
-            {name:'json_encuesta'        , typeName:'jsonb'   , editable: false  },
+            {name: 'fecha_modif_encuesta', typeName: "timestamp", editable:false  },
+            {name:'json_encuesta'        , typeName:'jsonb'     , editable:false  },
+            {name: 'fecha_backup'        , typeName: "timestamp", editable:false},
             {name:"json_backup"          , typeName:'jsonb'   , editable: false, visible:false},
             {name:"h4"                   , typeName:'text'    , editable: false  },
             {name:"x"                    , typeName:'decimal' , editable: false  },
