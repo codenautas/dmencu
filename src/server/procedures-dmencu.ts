@@ -110,7 +110,9 @@ var simularGuardadoDesdeEncuesta = async (context: ProcedureContext ,operativo: 
                 },
                 informacionHdr:{
                     [enc]: {
-                        tarea
+                        tarea: {
+                            tarea
+                        }
                     }
                 }
             }
