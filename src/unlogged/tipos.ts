@@ -406,7 +406,7 @@ export type DatosByPassPersistibles = {
     tarea:IdTarea
     idper:string
     cargas: Cargas
-    informacionHdr: InformacionHdr
+    informaciinformacionHdr: InformacionHdr
     soloLectura: boolean
     token?:string
     num_sincro?:number

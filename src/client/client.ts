@@ -421,7 +421,12 @@ var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
                     //TODO acomodar esto en algun momento
                     let params = depot.row;
                     params.enc = Number(params.enc);
-                    window.open(location.origin+location.pathname+my.menuSeparator+`w=${action.nombre_wscreen}&up=${JSON.stringify(params)}&autoproced=true`, ABRIR_TAB)
+                    var up = {
+                        operativo:params.operativo,
+                        tarea:params.tarea,
+                        enc:params.enc
+                    }
+                    window.open(location.origin+location.pathname+my.menuSeparator+`w=${action.nombre_wscreen}&up=${JSON.stringify(up)}&autoproced=true`, ABRIR_TAB)
                 }
             }catch(err){
                 alertPromise(err.message)
