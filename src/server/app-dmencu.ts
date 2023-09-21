@@ -550,8 +550,12 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         {menuType:'table', name:'comuna' , table:'control_campo_comuna'},
         {menuType:'table', name:'área'   , table:'control_campo_area'  },
     ];
-}
-
+    }
+    getMenuLimpieza(context:Context) { 
+        return [
+            //{menuType:'proc', name:'intercambiar_encuestas'},
+        ];
+    }    
     getMenu(context:Context){
         let menu:MenuInfoBase[] = [];
         let filtroRecepcionista = context.user.rol=='recepcionista' ? {recepcionista: context.user.idper} : {};
@@ -633,6 +637,11 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                         {menuType:'table', name:'tareas_tem_procesamiento', label:'encuestas'}
                     ]},
                 );
+                if (this.getMenuLimpieza(context).length){
+                    menu.push(
+                        {menuType:'menu', name:'limpieza', menuContent:this.getMenuLimpieza(context)},                       
+                    );
+                }    
             }
             var menuConfigurar:MenuInfoBase[] = [];
             if(context.puede?.campo?.administrar||context.puede?.encuestas?.procesar){
