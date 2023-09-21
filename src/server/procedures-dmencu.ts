@@ -4,7 +4,7 @@ import { ProcedureDef, TableDefinition, Client, TableDefinitions } from "./types
 import { ProcedureContext, CoreFunctionParameters, ForeignKey } from "meta-enc";
 import * as likeAr from "like-ar";
 export * from "./types-dmencu";
-import { IdUnidadAnalisis, UnidadAnalisis, EstadoAccion, IdEnc, IdTarea } from "../unlogged/tipos";
+import { IdUnidadAnalisis, UnidadAnalisis, EstadoAccion, IdEnc, IdTarea, RespuestasRaiz, IdOperativo } from "../unlogged/tipos";
 
 import {json, jsono} from "pg-promise-strict";
 
@@ -74,20 +74,32 @@ function createStructure(context:ProcedureContext, tableName:string){
 
 type AnyObject = {[k:string]:any}
 
-var guardarEncuestaEnTem = async (context, operativo, idEnc, respuestasUAPrincipal, tarea)=>{
-    var params = [operativo, idEnc, respuestasUAPrincipal]
-    var setters = `json_encuesta = $3, fecha_modif_encuesta = current_timestamp`;
-    //TODO ARREGLAR ESTE HORROR, GENERALIZAR
-    if(tarea=='supe'){
-        setters+= `, resumen_estado_sup=$4, norea_sup=$5, rea_sup=$6`
-        params = params.concat([respuestasUAPrincipal.resumenEstadoSup, respuestasUAPrincipal.codNoReaSup, respuestasUAPrincipal.codReaSup]);
-    }else{
-        setters+= `, resumen_estado=$4, norea=$5, rea=$6`
-        params = params.concat([respuestasUAPrincipal.resumenEstado, respuestasUAPrincipal.codNoRea, respuestasUAPrincipal.codRea]);
-    }
+var getSettersAndParametersForReaNoReaResumenEstado = (funParams:{tarea:IdTarea, respuestasUAPrincipal:RespuestasRaiz, setters:string[], params:any[]})=>{
+    let {tarea,respuestasUAPrincipal,setters,params} = funParams;
+    let {resumenEstadoSup, codNoReaSup, codReaSup, resumenEstado, codNoRea, codRea} = respuestasUAPrincipal;
+    setters = setters.concat([
+        `resumen_estado${tarea=='supe'?'_sup':''}=$${params.length+1}`,
+        `norea${tarea=='supe'?'_sup':''}=$${params.length+2}`,
+        `rea${tarea=='supe'?'_sup':''}=$${params.length+3}`
+    ])
+    params = params.concat([
+        tarea=='supe'?resumenEstadoSup:resumenEstado,
+        tarea=='supe'?codNoReaSup:codNoRea,
+        tarea=='supe'?codReaSup:codRea
+    ]);
+    return {setters,params}
+}
+
+var guardarEncuestaEnTem = async (context:ProcedureContext, operativo:IdOperativo, idEnc:IdEnc, respuestasUAPrincipal:RespuestasRaiz, tarea:IdTarea)=>{
+    var {params,setters} = getSettersAndParametersForReaNoReaResumenEstado({
+        tarea,
+        respuestasUAPrincipal,
+        setters: [`json_encuesta = $3`, `fecha_modif_encuesta = current_timestamp`],
+        params: [operativo, idEnc, respuestasUAPrincipal]
+    })
     return await context.client.query(
         `update tem
-            set ${setters}
+            set ${setters.join(',')}
             where operativo= $1 and enc = $2
             returning 'ok'`
         ,
@@ -95,7 +107,7 @@ var guardarEncuestaEnTem = async (context, operativo, idEnc, respuestasUAPrincip
     ).fetchUniqueRow();
 }
 
-var simularGuardadoDesdeEncuesta = async (context: ProcedureContext ,operativo: string, enc: IdEnc, tarea: IdTarea, json_encuesta:any )=>{
+var simularGuardadoDeEncuestaDesdeAppEscritorio = async (context: ProcedureContext ,operativo: string, enc: IdEnc, tarea: IdTarea, json_encuesta:any )=>{
     var be = context.be;
     const UA_PRINCIPAL = await getUAPrincipal(context.client, operativo);
     return await be.procedure.dm_forpkraiz_descargar.coreFunction(
@@ -700,19 +712,18 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 await Promise.all(likeAr(persistentes.respuestas[UA_PRINCIPAL]).map(async (respuestasUAPrincipal, idEnc)=>{
                     var tarea = persistentes.informacionHdr[idEnc].tarea.tarea;
                     var puedoGuardarEnTEM=true;
-                    //TODO GENERALIZAR EL HORROR ESTE
-                    var setters=``;
-                    var params = [OPERATIVO, idEnc, tarea, token];
-                    if(tarea=='supe'){
-                        setters+= `, resumen_estado_sup=$5, norea_sup=$6, rea_sup=$7`
-                        params = params.concat([respuestasUAPrincipal.resumenEstadoSup, respuestasUAPrincipal.codNoReaSup, respuestasUAPrincipal.codReaSup]);
-                    }else{
-                        setters+= `, resumen_estado=$5, norea=$6, rea=$7`
-                        params = params.concat([respuestasUAPrincipal.resumenEstado, respuestasUAPrincipal.codNoRea, respuestasUAPrincipal.codRea]);
-                    }
+                    var {params,setters} = getSettersAndParametersForReaNoReaResumenEstado({
+                        tarea,
+                        respuestasUAPrincipal,
+                        setters: [
+                            `estado = ${context.be.db.quoteLiteral(ESTADO_POSTERIOR_DESCARGA)}`, 
+                            `cargado_dm=null`
+                        ],
+                        params: [OPERATIVO, idEnc, tarea, token]
+                    })
                     var queryTareasTem = await context.client.query(
                         `update tareas_tem
-                            set estado = ${context.be.db.quoteLiteral(ESTADO_POSTERIOR_DESCARGA)}, cargado_dm=null ${setters}
+                            set ${setters.join(',')}
                             where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm = $4
                             returning 'ok'`
                         ,
@@ -1314,7 +1325,21 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 .fetchOneRowIfExists();
                 if(resultBackup.rowCount){
                     tt.result_blanqueo+=` Se restableció el backup con fecha ${resultBackup.row.fecha_backup.toYmdHms()}.`
-                    await simularGuardadoDesdeEncuesta(context, resultBackup.row.operativo, resultBackup.row.enc, tt.tarea,resultBackup.row.json_encuesta)
+                    var {params:queryParams,setters} = getSettersAndParametersForReaNoReaResumenEstado({
+                        tarea: tt.tarea,
+                        respuestasUAPrincipal: resultBackup.row.json_encuesta,
+                        setters: [],
+                        params: [tt.operativo, tt.enc, tt.tarea]
+                    })
+                    await context.client.query(
+                        `update tareas_tem
+                            set ${setters.join(',')}
+                            where operativo= $1 and enc = $2 and tarea = $3
+                            returning 'ok'`
+                        ,
+                        queryParams
+                    ).fetchUniqueRow();
+                    await simularGuardadoDeEncuestaDesdeAppEscritorio(context, resultBackup.row.operativo, resultBackup.row.enc, tt.tarea,resultBackup.row.json_encuesta)
                 }
             }
             return tareasTemResult.rows;
