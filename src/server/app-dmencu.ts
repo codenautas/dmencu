@@ -119,6 +119,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         this.caches.tableContent.no_rea_groups=[]
         this.caches.metaEncIncluirCasillerosSaltoREL = false;
         this.caches.timestampEstructura = new Date().getTime();
+        this.caches.tableContent.conReaHogar = {};
     }
     override async canChangePass(reqOrContext, userToChangePass){
         var be = this;
