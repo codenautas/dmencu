@@ -1235,7 +1235,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
            
             const cant_hogs=(await context.client.query(`
                 select vivienda, count(*)nh from hogares where operativo=$1 and (vivienda=$2 or vivienda=$3)
-                group by vivienda
+                group by vivienda order by vivienda
                 `,[OPERATIVO, params.enc1, params.enc2]).fetchAll()).rows;
                 
             var param_nh=[params.cantHog1,params.cantHog2];
@@ -1254,16 +1254,17 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 throw new Error('Error, No se encontraron 2 encuestas')    
             }else{
                 // limpia las TDs  
+                let [enc1,enc2] = [regEnc[0], regEnc[1]]
                 if(params.paso == 1){
                     await context.client.query(
                         `delete from viviendas where operativo=$1 and (vivienda=$2 OR vivienda=$3)`
-                        , [OPERATIVO, regEnc[0].enc, regEnc[1].enc]
+                        , [OPERATIVO, enc1.enc, enc2.enc]
                         ).execute();
                 }
-                else if(params.paso == 1){
+                else if(params.paso == 2){
                     //simula guardado
-                    await simularGuardadoDeEncuestaDesdeAppEscritorio(context, OPERATIVO, regEnc[0].enc, regEnc[0].tarea_actual , regEnc[1].json_encuesta)
-                    await simularGuardadoDeEncuestaDesdeAppEscritorio(context, OPERATIVO, regEnc[1].enc, regEnc[1].tarea_actual , regEnc[0].json_encuesta)
+                    await simularGuardadoDeEncuestaDesdeAppEscritorio(context, OPERATIVO, enc1.enc, enc1.tarea_actual , enc2.json_encuesta)
+                    await simularGuardadoDeEncuestaDesdeAppEscritorio(context, OPERATIVO, enc2.enc, enc2.tarea_actual , enc1.json_encuesta)
                 }
             }
             return (`Listo paso ${params.paso}. Intercambio realizado entre las encuestas  ${params.enc1} y ${params.enc2}. Por favor consista la encuesta`)
