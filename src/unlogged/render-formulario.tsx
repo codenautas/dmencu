@@ -1011,6 +1011,26 @@ var botonFormularioConResumen = (
     ]).create()
 }
 
+var buscarHnosFormulario = (idFormularioDestino:IdFormulario)=>{
+    var estructura = getEstructura();
+    var ua = estructura.formularios[idFormularioDestino].casilleros.unidad_analisis;
+    return likeAr(estructura.formularios)
+        .filter((infoFormulario:InfoFormulario, idForm:IdFormulario)=>
+            infoFormulario.casilleros.unidad_analisis == ua
+        ).map((_infoFormulario:InfoFormulario, idForm:IdFormulario)=>
+            idForm
+        ).array()
+}
+
+var checkFormsVacios = (forms:IdFormulario[], feedbackAll:{
+    [formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin> // resultado del rowValidator para estado.forPk
+}, forPk:ForPk)=>{
+    return forms.filter((form:IdFormulario)=>{
+        let myforPk={...forPk, formulario:form};
+        var feedback = feedbackAll[toPlainForPk(myforPk)];
+        return feedback.resumen != 'vacio'
+    }).length == 0
+}
 
 function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:Formulario, forPk:ForPk}){
     var {casillero, forPk} = props;
@@ -1074,6 +1094,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                     listaDeBotonesAbrir = likeAr(conjunto).map((_, i)=>{
                         let num:number = numberOrStringIncIfArray(i, conjunto) as number;
                         let forPk={...props.forPk, formulario:idFormularioDestino, [nuevoCampoPk]:num};
+                        var formHnos = buscarHnosFormulario(idFormularioDestino)
                         var feedback = feedbackAll[toPlainForPk(forPk)];
                         if(numActual == null && feedback.resumen == "vacio" && estadoDelBoton =='valida'){
                             numActual = num;
@@ -1085,7 +1106,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                             actual: calcularActualBF(configSorteoFormulario, num, numActual, idFormularioDestino, respuestasAumentadas),
                             previo: numActual == null, 
                             permiteBorrar: likeAr(conjunto).array().length == Number(i) + 1 && 
-                                feedback.resumen == 'vacio' && 
+                                checkFormsVacios(formHnos, feedbackAll, forPk) &&
                                 calcularPermiteBorrarBF(configSorteoFormulario,idFormularioDestino),
                             disabled: calcularDisabledBF(configSorteoFormulario, num, idFormularioDestino, respuestasAumentadas)
                         }
