@@ -553,7 +553,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
     }
     getMenuLimpieza(context:Context) { 
         return [
-            //{menuType:'proc', name:'intercambiar_encuestas'},
+            {menuType:'proc', name:'intercambiar_encuestas'},
         ];
     }    
     getMenu(context:Context){

@@ -1201,26 +1201,35 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'cantHog1'                          , typeName:'integer' },
             {name:'enc2'                              , typeName:'text'    },
             {name:'cantHog2'                          , typeName:'integer' },
+            {name:'paso'                              , typeName:'integer' },
             {name:'confirma'                 , typeName:'boolean', defaultValue:false, label:'Confirma intercambio de los datos entre las encuestas? ' },
         ],
         roles:['coor_proc','procesamiento','admin'],
         progress:true,
         coreFunction:async function(context:ProcedureContext, params: CoreFunctionParameters){
+            /**
+             * Para controlar:
+             * - que las hogares, personas, etc estén intercambiadas 
+             *  * tanto en el json
+             *  * como en las TDs
+             * - cosas que se calculan por la app? cuales? (resumen_estado, rea y norea)
+             */
+
             if (!params.confirma){
                 throw new Error('No confirmó intercambio')
             }
             if ( !params.enc1 || !params.enc2)  {
-                throw new Error('Error, Falta ingresar una numero de encuesta!');
+                throw new Error('Error, Falta ingresar un numero de encuesta!');
             }
             if ( params.enc1==params.enc2)  {
                 throw new Error('Error, enc1 y enc2 deben ser distintos!');
-            }    
-            if ( params.cantHog1==null)  {
+            }
+            if (!params.cantHog1)  {
                 throw new Error('Error, Cantidad de Hogares de enc1, no esta ingresado!');
             }
-            if ( params.cantHog2==null)  {
+            if (!params.cantHog2)  {
                 throw new Error('Error, Cantidad de Hogares de enc2, no esta ingresado!');
-            }            
+            }
             // CONTROLAR QUE NINGUNA DE LAS 2 encuestas ESTE CARGADA, ABIERTA FALTA
             const OPERATIVO = await getOperativoActual(context);
            
@@ -1238,40 +1247,27 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             });    
             
             var regEnc=(await context.client.query(`
-            select enc, json_encuesta from tem where operativo=$1 and (enc =$2 or enc=$3)
+            select enc, tarea_actual, json_encuesta from tem where operativo=$1 and (enc =$2 or enc=$3) order by enc
             `,[OPERATIVO, params.enc1, params.enc2]).fetchAll()).rows;
             
             if (regEnc.length!=2){
                 throw new Error('Error, No se encontraron 2 encuestas')    
-            }else{    
-                regEnc.forEach(async(xe,i)=>{
+            }else{
+                // limpia las TDs  
+                if(params.paso == 1){
                     await context.client.query(
-                        `update tem set json_encuesta=regEnc[(i+1)%2].json_encuesta
-                        where operativo=$1 and enc=$2`
-                        , [ OPERATIVO, xe.enc]
-                      ).execute();                    
-                })
-                //update tablas ua , llamando al guardar
-                //guardar las 2 encuestas
-                /* refactorizar
-                        var procedureGuardar = be.procedure.caso_guardar;
-                        let resultado = `id enc ${idEnc}: `;
-                        let param_guardar={operativo: OPERATIVO,id_caso:idEnc, datos_caso:respuestasUAPrincipal}
-                        let errMessage: string|null;
-                        try{
-                            await be.inTransaction(null, async function(client){
-                                resultado+= await procedureGuardar.coreFunction(context, param_guardar, client);    
-                            })
-                        }catch(err){
-                            errMessage = resultado + "dm_forpkraiz_descargar. "+ err ;
-                            resultado = errMessage
-                            console.log(errMessage)
-                        }                
-                */
-            }            
-            
-            return (`Listo. Intercambio realizado entre las encuestas  ${params.enc1} y ${params.enc2}. Por favor consista la encuesta`)
-        }   
+                        `delete from viviendas where operativo=$1 and (vivienda=$2 OR vivienda=$3)`
+                        , [OPERATIVO, regEnc[0].enc, regEnc[1].enc]
+                        ).execute();
+                }
+                else if(params.paso == 1){
+                    //simula guardado
+                    await simularGuardadoDeEncuestaDesdeAppEscritorio(context, OPERATIVO, regEnc[0].enc, regEnc[0].tarea_actual , regEnc[1].json_encuesta)
+                    await simularGuardadoDeEncuestaDesdeAppEscritorio(context, OPERATIVO, regEnc[1].enc, regEnc[1].tarea_actual , regEnc[0].json_encuesta)
+                }
+            }
+            return (`Listo paso ${params.paso}. Intercambio realizado entre las encuestas  ${params.enc1} y ${params.enc2}. Por favor consista la encuesta`)
+        }
     },
     {     
         action: 'encuestador_dms_mostrar',
