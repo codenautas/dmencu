@@ -408,6 +408,8 @@ function registradorDeVariable(pregunta:Pregunta|OpcionMultiple|ConjuntoPregunta
 function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
     const {opcionM} = props;
     var id = `opcionM-${opcionM.id_casillero}`;
+    //@ts-ignore altunos casilleros no tienen especial, no importa, es solo para poner los metadatos
+    var styles = opcionM.especial?.flexDirection?{flexDirection:opcionM.especial.flexDirection}:{};
     registrarElemento({
         id, 
         direct:true, 
@@ -417,6 +419,7 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
         id={id}
         casillero={opcionM}
         despliegueEncabezado='lateral'
+        style={styles}
     >
         <EncabezadoDespliegue 
             casillero={opcionM} 
