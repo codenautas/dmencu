@@ -793,11 +793,10 @@ function botonesDelFormulario(r:Respuestas, unidad_analisis:IdUnidadAnalisis, es
     var uaDef = estructura.unidades_analisis[unidad_analisis];
     var arrayEstructuraFormularios = (likeAr(estructura.formularios)).array();
     var x = likeAr(uaDef.hijas).filter(uaHija=>
-            formsVivienda.includes(
-                arrayEstructuraFormularios.find((infoFormulario)=>
-                    infoFormulario.casilleros.unidad_analisis == uaHija?.unidad_analisis)
-                ?.casilleros.id_casillero as IdFormulario
-            )
+            //descarto uas que no estén en ningun form
+            arrayEstructuraFormularios.filter((infoFormulario)=>
+                infoFormulario.casilleros.unidad_analisis == uaHija?.unidad_analisis && formsVivienda.includes(infoFormulario.casilleros.id_casillero as IdFormulario)
+            ).length > 0
         ).map(uaHija=>(
         uaHija == null ? null :
         html.div({class:'ua-hijas'},[
@@ -811,7 +810,7 @@ function botonesDelFormulario(r:Respuestas, unidad_analisis:IdUnidadAnalisis, es
                         html.div({class:'botones-ua'},[
                             html.div({class:'numero-ua'},num.toString()),
                             ...likeAr(estructura.formularios)
-                            .filter(formDef=>formDef.casilleros.unidad_analisis == uaHija.unidad_analisis )
+                            .filter(formDef=>formDef.casilleros.unidad_analisis == uaHija.unidad_analisis && formsVivienda.includes(formDef.casilleros.id_casillero as IdFormulario))
                             .map((_formDef, formulario)=>{
                                 var forPk = {...forPkHijaParcial, formulario};
                                 var feedbackForm = feedbackAll[toPlainForPk(forPk)];
