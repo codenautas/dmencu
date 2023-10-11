@@ -348,8 +348,19 @@ export function setValorDistinto<T extends {}, N extends keyof T>(
     }
 }
 
-function calcularVariablesBotonFormulario(_forPk:ForPk){
-    
+function calcularVariablesBotonFormulario(forPk:ForPk){
+    if(estructura.habilitacionBotonFormulario && !datosByPass?.soloLectura){
+        var {respuestas}  = respuestasForPk(forPk);
+        likeAr(estructura.habilitacionBotonFormulario)
+            .forEach((configBotonFormulario, idFormulario)=>{
+                var respUA = respuestas[estructura.habilitacionBotonFormulario[idFormulario].unidad_analisis];
+                if(respUA != null && respUA instanceof Array){
+                    if(!configBotonFormulario.habilitar_agregar_listo){
+                        respuestas['$B.'+ idFormulario as IdVariable] = 'ok';  
+                    }
+                }
+            })
+    }
 };
 
 
