@@ -351,6 +351,7 @@ export type Estructura = {
     timestamp:number
     operativo:IdOperativo
     configSorteo: ConfiguracionSorteo
+    habilitacionBotonFormulario: ConfiguracionHabilitarBotonFormulario
     conReaHogar: boolean
 	noReas: { 
 	      no_rea: string  
@@ -434,6 +435,8 @@ type ConfiguracionSorteoHash = {
 
 export type ConfiguracionSorteo = {[key in IdFormulario]:ConfiguracionSorteoFormulario}
 
+export type ConfiguracionHabilitarBotonFormulario = {[key in IdFormulario]:ConfiguracionHabilitarBotonFormularioForm}
+
 export type ConfiguracionSorteoFormulario = {
     unidad_analisis: IdUnidadAnalisis,
     unidad_analisis_padre: IdUnidadAnalisis,
@@ -471,6 +474,12 @@ export type ConfiguracionSorteoFormulario = {
     id_formulario_padre?: IdFormulario // 'F:S1'
 } & (ConfiguracionSorteoHash | ConfiguracionSorteoTabla)
 
+export type ConfiguracionHabilitarBotonFormularioForm = {
+    unidad_analisis: IdUnidadAnalisis,
+    expr_habilitar_boton: string,
+    expr_habilitar_boton_js: string,
+    habilitar_agregar_listo: boolean
+}
 
 export function toPlainForPk(forPk:ForPk):PlainForPk{
     // @ts-ignore sabemos que hay que hacer un JSON

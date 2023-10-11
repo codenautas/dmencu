@@ -812,6 +812,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 typeName:'jsonb',
                 editable: false
             },{
+                name:'habilitacion_boton_formulario', 
+                typeName:'jsonb',
+                editable: false
+            },{
                 name:'disform_cerrado', 
                 typeName:'boolean', 
                 defaultValue: false, 

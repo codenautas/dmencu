@@ -22,7 +22,7 @@ import {Bloque, BotonFormulario,
     IdCasillero,
     PreguntaConSiNo,
     Texto, Estructura, InformacionHdr, DatosHdrUaPpal, ConfiguracionSorteoFormulario, ResumenEstado, DatosByPassPersistibles, IdOperativo, IdEnc, Libre, UnidadAnalisis,
-    iterator, empty
+    iterator, empty, ConfiguracionHabilitarBotonFormulario
 } from "./tipos";
 import{ 
     accion_abrir_formulario,
@@ -785,8 +785,17 @@ function PreguntaDespliegue(props:{
     </DesplegarCasillero>
 }
 
-var calcularDisabledBFAgregarListo = (configSorteoFormulario:ConfiguracionSorteoFormulario|null, formulario:IdFormulario)=>
-    !!(configSorteoFormulario && configSorteoFormulario.id_formulario_individual == formulario)
+var calcularDisabledBFAgregarListo = (
+    configSorteoFormulario:ConfiguracionSorteoFormulario|null, 
+    habilitacionBotonFormulario: ConfiguracionHabilitarBotonFormulario|null,
+    formulario:IdFormulario
+)=>{
+    if(habilitacionBotonFormulario && habilitacionBotonFormulario[formulario]){
+        return !habilitacionBotonFormulario[formulario].habilitar_agregar_listo
+    }else{
+        return !!(configSorteoFormulario && configSorteoFormulario.id_formulario_individual == formulario)
+    }
+}
 
 function botonesDelFormulario(r:Respuestas, unidad_analisis:IdUnidadAnalisis, estructura:Estructura, forPkPadre:ForPk, feedbackAll:{[formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin>}):HtmlTag<HTMLDivElement>{
     var formsVivienda = getFormulariosForIdVivienda(forPkPadre.vivienda);
@@ -806,6 +815,7 @@ function botonesDelFormulario(r:Respuestas, unidad_analisis:IdUnidadAnalisis, es
                     var num = Number(i)+1
                     var forPkHijaParcial = {...forPkPadre, [uaHija.pk_agregada]: num};
                     var configSorteoFormulario = estructura.configSorteo?estructura.configSorteo[getMainFormForVivienda(forPkPadre.vivienda!)]:null
+                    var habilitacionBotonFormulario = estructura.habilitacionBotonFormulario;
                     return html.div({class:'numerador-ua'}, [
                         html.div({class:'botones-ua'},[
                             html.div({class:'numero-ua'},num.toString()),
@@ -822,7 +832,7 @@ function botonesDelFormulario(r:Respuestas, unidad_analisis:IdUnidadAnalisis, es
                                             num, 
                                             actual: true || calcularActualBF(configSorteoFormulario, num, null, formulario, r), //REVISAR true para que no se grisen
                                             previo:false, 
-                                            disabled: calcularDisabledBF(configSorteoFormulario, num, formulario, r)
+                                            disabled: calcularDisabledBF(configSorteoFormulario, habilitacionBotonFormulario, num, formulario, r)
                                         },
                                         feedbackForm, 
                                         r,
@@ -1093,6 +1103,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                       var estadoDelBoton = feedbackRow.feedback['$B.F:'+armoNomSalto as IdVariable].estado
                    // console.log('BotonFormularioDespliegue estadoDelBoton ' +estadoDelBoton  );
                     var configSorteoFormulario = estructura.configSorteo?estructura.configSorteo[getMainFormForVivienda(forPk.vivienda)]:null
+                    var habilitacionBotonFormulario = estructura.habilitacionBotonFormulario;
                     listaDeBotonesAbrir = likeAr(conjunto).map((_, i)=>{
                         let num:number = numberOrStringIncIfArray(i, conjunto) as number;
                         let forPk={...props.forPk, formulario:idFormularioDestino, [nuevoCampoPk]:num};
@@ -1110,7 +1121,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                             permiteBorrar: likeAr(conjunto).array().length == Number(i) + 1 && 
                                 checkFormsVacios(formHnos, feedbackAll, forPk) &&
                                 calcularPermiteBorrarBF(configSorteoFormulario,idFormularioDestino),
-                            disabled: calcularDisabledBF(configSorteoFormulario, num, idFormularioDestino, respuestasAumentadas)
+                            disabled: calcularDisabledBF(configSorteoFormulario, habilitacionBotonFormulario, num, idFormularioDestino, respuestasAumentadas)
                         }
                     }).array();
                     if("puede agregar //TODO VER ESTO" && (conjunto instanceof Array || conjunto == null)){
@@ -1124,7 +1135,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                             esAgregar:true, 
                             actual:debeAgregarOlisto, 
                             previo: false, 
-                            disabled: calcularDisabledBFAgregarListo(configSorteoFormulario,idFormularioDestino)
+                            disabled: calcularDisabledBFAgregarListo(configSorteoFormulario, habilitacionBotonFormulario, idFormularioDestino)
                         });
                         listaDeBotonesAbrir.push({
                             forPk, 
@@ -1132,7 +1143,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                             esConfirmar:true, 
                             actual:debeAgregarOlisto && (!casillero.longitud || nuevoValorPk > Number(casillero.longitud)), 
                             previo: false, 
-                            disabled: calcularDisabledBFAgregarListo(configSorteoFormulario,idFormularioDestino)
+                            disabled: calcularDisabledBFAgregarListo(configSorteoFormulario, habilitacionBotonFormulario, idFormularioDestino)
                         });
                     }
                 }else{

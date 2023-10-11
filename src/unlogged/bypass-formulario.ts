@@ -19,7 +19,8 @@ import {
     DatosByPassPersistibles,
     IdEnc,
     DefOperativo,
-    iterator
+    iterator,
+    ConfiguracionHabilitarBotonFormulario
 } from "./tipos";
 
 var especiales = {} as {
@@ -1121,15 +1122,27 @@ export var calcularActualBF = (configSorteoFormulario:ConfiguracionSorteoFormula
         numActual == numElementoUA
     )
 
-export var calcularDisabledBF = (configSorteoFormulario:ConfiguracionSorteoFormulario|null, numElementoUA: number, formulario:IdFormulario, r:Respuestas)=>
-    !!(configSorteoFormulario && 
-    (configSorteoFormulario.id_formulario_individual == formulario || 
-        buscarFormulariosHijos(configSorteoFormulario.id_formulario_individual).includes(formulario)
-    ) &&
-    numElementoUA != coalesce(
-        r[configSorteoFormulario.resultado_manual],
-        r[configSorteoFormulario.resultado]
-    ))
+export var calcularDisabledBF = (
+    configSorteoFormulario:ConfiguracionSorteoFormulario|null,
+    habilitacionBotonFormulario: ConfiguracionHabilitarBotonFormulario|null,
+    numElementoUA: number, 
+    formulario:IdFormulario, 
+    r:Respuestas
+)=>{
+    if(habilitacionBotonFormulario && habilitacionBotonFormulario[formulario]){
+        var expr_habilitar_fun = getFuncionHabilitar(habilitacionBotonFormulario[formulario].expr_habilitar_boton_js);
+        return !expr_habilitar_fun(r[habilitacionBotonFormulario[formulario].unidad_analisis][numElementoUA-1])
+    }else{
+        return !!(configSorteoFormulario && 
+        (configSorteoFormulario.id_formulario_individual == formulario || 
+            buscarFormulariosHijos(configSorteoFormulario.id_formulario_individual).includes(formulario)
+        ) &&
+        numElementoUA != coalesce(
+            r[configSorteoFormulario.resultado_manual],
+            r[configSorteoFormulario.resultado]
+        ))
+    } 
+}
 
 export var calcularPermiteBorrarBF = (configSorteoFormulario:ConfiguracionSorteoFormulario|null, formulario:IdFormulario)=>
     !(configSorteoFormulario && 
@@ -1155,6 +1168,7 @@ export function calcularResumenVivienda(
     var {codNoReaSup, esNoReaSup} = defOperativo.esNoReaSup(respuestas)
     var formsFeedback = getFormulariosForIdVivienda(forPkRaiz.vivienda!);
     var configuracionSorteoFormulario = estructura.configSorteo && estructura.configSorteo[getMainFormForVivienda(forPkRaiz.vivienda!)]
+    var habilitacionBotonFormulario = estructura.habilitacionBotonFormulario;
     var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>{
         var tieneIndividual = configuracionSorteoFormulario && !!(configuracionSorteoFormulario.id_formulario_individual && configuracionSorteoFormulario.id_formulario_padre)
         return JSON.parse(plainPk).vivienda==forPkRaiz.vivienda && 
@@ -1162,6 +1176,7 @@ export function calcularResumenVivienda(
             (tieneIndividual?
                 !calcularDisabledBF(
                     configuracionSorteoFormulario, 
+                    habilitacionBotonFormulario,
                     JSON.parse(plainPk).persona, 
                     JSON.parse(plainPk).formulario, 
                     JSON.parse(plainPk).hogar?respuestasForPk({

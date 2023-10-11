@@ -295,8 +295,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             likeAr(result.row.unidades_analisis).forEach((ua, idUa)=>
                 completarUA(ua, idUa as IdUnidadAnalisis, result.row.unidades_analisis)
             )
-            var {con_rea_hogar: conReaHogar, config_sorteo: configSorteo} = (await context.client.query(`
-                select config_sorteo, con_rea_hogar 
+            var {con_rea_hogar: conReaHogar, config_sorteo: configSorteo, habilitacion_boton_formulario:habilitacionBotonFormulario} = (await context.client.query(`
+                select config_sorteo, con_rea_hogar, habilitacion_boton_formulario 
                     from operativos 
                     where operativo = $1
             `,[parameters.operativo]).fetchUniqueRow()).row;
@@ -310,7 +310,12 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     configSorteoFormulario.filtro_js=compilarExpresionesDominios(configSorteoFormulario.filtro)
                 })
             }
-            return {timestamp: be.caches.timestampEstructura, ...result.row, operativo:parameters.operativo, conReaHogar, configSorteo,noReas:be.caches.tableContent.no_rea, noReasSup:be.caches.tableContent.no_rea_sup};
+            if(habilitacionBotonFormulario){
+                likeAr(habilitacionBotonFormulario).forEach((form)=>{
+                    form.expr_habilitar_boton_js=compilarExpresion(form.expr_habilitar_boton)
+                })
+            }
+            return {timestamp: be.caches.timestampEstructura, ...result.row, operativo:parameters.operativo, conReaHogar, configSorteo, habilitacionBotonFormulario, noReas:be.caches.tableContent.no_rea, noReasSup:be.caches.tableContent.no_rea_sup};
         }
     },
     {
