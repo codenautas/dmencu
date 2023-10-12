@@ -20,7 +20,8 @@ import {
     IdEnc,
     DefOperativo,
     iterator,
-    ConfiguracionHabilitarBotonFormulario
+    ConfiguracionHabilitarBotonFormulario,
+    CampoPk
 } from "./tipos";
 
 var especiales = {} as {
@@ -1182,21 +1183,35 @@ export function calcularResumenVivienda(
     var habilitacionBotonFormulario = estructura.habilitacionBotonFormulario;
     var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>{
         var tieneIndividual = configuracionSorteoFormulario && !!(configuracionSorteoFormulario.id_formulario_individual && configuracionSorteoFormulario.id_formulario_padre)
+        var tieneBotonDesHabilitable = habilitacionBotonFormulario && habilitacionBotonFormulario[JSON.parse(plainPk).formulario as IdFormulario];
+        var pkAgregada = null;
+        if(tieneBotonDesHabilitable){
+            pkAgregada = likeAr(estructura.unidades_analisis).find((ua,idUA)=>
+                ua.unidad_analisis==habilitacionBotonFormulario[JSON.parse(plainPk).formulario as IdFormulario].unidad_analisis)?.pk_agregada;
+        }
         return JSON.parse(plainPk).vivienda==forPkRaiz.vivienda && 
             formsFeedback.includes(JSON.parse(plainPk).formulario) &&
-            (tieneIndividual?
+            (tieneBotonDesHabilitable?
                 !calcularDisabledBF(
                     configuracionSorteoFormulario, 
                     habilitacionBotonFormulario,
-                    JSON.parse(plainPk).persona, 
                     JSON.parse(plainPk).formulario, 
-                    JSON.parse(plainPk).hogar?respuestasForPk({
-                        vivienda:forPkRaiz.vivienda, 
-                        formulario:configuracionSorteoFormulario.id_formulario_padre!,
-                        hogar:JSON.parse(plainPk).hogar 
-                    }).respuestas:{} as Respuestas
+                    JSON.parse(plainPk)[pkAgregada as CampoPk],
+                    respuestasForPk(JSON.parse(plainPk),true).respuestasAumentadas
                 )
-            :true)
+                :tieneIndividual?
+                    !calcularDisabledBF(
+                        configuracionSorteoFormulario, 
+                        habilitacionBotonFormulario,
+                        JSON.parse(plainPk).persona, 
+                        JSON.parse(plainPk).formulario, 
+                        JSON.parse(plainPk).hogar?respuestasForPk({
+                            vivienda:forPkRaiz.vivienda, 
+                            formulario:configuracionSorteoFormulario.id_formulario_padre!,
+                            hogar:JSON.parse(plainPk).hogar 
+                        }).respuestas:{} as Respuestas
+                    )
+                :true)
     }).array();
     var prioridades:{[key in ResumenEstado]: {prioridad:number, cantidad:number}} = {
         'no rea':{prioridad: 1, cantidad:0},
