@@ -1195,8 +1195,8 @@ export function calcularResumenVivienda(
                 !calcularDisabledBF(
                     configuracionSorteoFormulario, 
                     habilitacionBotonFormulario,
-                    JSON.parse(plainPk).formulario, 
                     JSON.parse(plainPk)[pkAgregada as CampoPk],
+                    JSON.parse(plainPk).formulario, 
                     respuestasForPk(JSON.parse(plainPk),true).respuestasAumentadas
                 )
                 :tieneIndividual?
