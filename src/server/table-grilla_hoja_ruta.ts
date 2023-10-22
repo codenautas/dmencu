@@ -15,6 +15,7 @@ export function grilla_hoja_ruta(context:TableContext):TableDefinition {
             {name:'tarea_actual'         , typeName:'text'    , editable: false  },
             {name:'recepcionista'        , typeName:'text'    , editable: false , inTable: false  },
             {name:'asignado'             , typeName:'text'    , editable: false , inTable: false  },
+            {name:'estado'               , typeName:'text'    , editable: false , nullable: false },
             {name:'area'                 , typeName:'integer' , editable: false  },
             {name:'zona'                 , typeName:'text'    , editable: false  },
             {name:'codcalle'             , typeName:'integer' , editable: false  },
@@ -61,7 +62,7 @@ export function grilla_hoja_ruta(context:TableContext):TableDefinition {
         sql:{
             isTable:false,
             from:`(
-                select t.*, recepcionista, asignado
+                select t.*, recepcionista, asignado, estado
                     from tem t
                     inner join tareas_tem tt
                     on (t.operativo=tt.operativo and  t.enc=tt.enc  and t.tarea_actual=tt.tarea)

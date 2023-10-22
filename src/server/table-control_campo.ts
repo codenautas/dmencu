@@ -25,7 +25,7 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
     var camposCorte:FieldDefinition[]=[{name:'cluster'       , typeName:'integer'},...(
         opts.camposCorte ||[]
     )];
-
+    var tieneSeleccionado=context.be.caches.tableContent.conReaHogar.config_sorteo;
     var camposCalculados:(FieldDefinition & {condicion:string, tasa_efectividad:boolean})[]=[
         {name:'no_salieron'  , typeName:'bigint', aggregate:'sum', title:'no salieron a campo', condicion:`resumen_estado is null`},
         {name:'salieron'     , typeName:'bigint', aggregate:'sum', title:'salieron a campo'},
@@ -75,8 +75,11 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
                             ['rea', ...(camposCalculados.filter(f=>f.tasa_efectividad).map(f=>f.name))].join('+')
                         )},0),1) as tasa_efectividad,
                         total-coalesce(no_salieron,0) as salieron,
-                        coalesce(otros,0) + ${opts.gabinete?` coalesce(otras_causas,0) `:opts.sinhogfin?` coalesce(otras_causas_seleccionado,0)+coalesce(otras_causas_vivienda,0)`: ` coalesce(otras_causas_hogar,0)+coalesce(otras_causas_seleccionado,0)+coalesce(otras_causas_vivienda,0)`}  as otras_causas_gabinete,
-                        coalesce(pendiente,0)+coalesce(mixta,0) +coalesce(sin_resultado,0) + ${ opts.gabinete? ` coalesce(incompleto,0) `: opts.gabinete && !opts.sinhogfin? ` coalesce(no_finalizada,0) `: !opts.gabinete && !opts.sinhogfin? `coalesce(sin_finalizar_dm,0)+ coalesce(sin_finalizar_incompleto,0) + coalesce(sin_finalizar_otra_causa,0)` :`0`} as en_curso
+                        coalesce(otros,0) + ${opts.gabinete?` coalesce(otras_causas,0) `:opts.sinhogfin?` coalesce(otras_causas_seleccionado,0)+coalesce(otras_causas_vivienda,0)`: !tieneSeleccionado?` coalesce(otras_causas_hogar,0) +coalesce(otras_causas_vivienda,0)`:` coalesce(otras_causas_hogar,0) +coalesce(otras_causas_vivienda,0)+ coalesce(otras_causas_seleccionado,0)`}  as otras_causas_gabinete,
+                        coalesce(pendiente,0)+coalesce(mixta,0) +coalesce(sin_resultado,0) +coalesce(incompleto,0) +${ opts.gabinete && tieneSeleccionado && !opts.sinhogfin ? ` coalesce(no_finalizada,0) `: !opts.gabinete && !opts.sinhogfin && tieneSeleccionado? `coalesce(sin_finalizar_dm,0)+ coalesce(sin_finalizar_incompleto,0) + coalesce(sin_finalizar_otra_causa,0)` :`0`} as en_curso
+                     /*   coalesce(otros,0)+${opts.gabinete?`coalesce(otras_causas,0) `:`coalesce(otras_causas_hogar,0) + coalesce(otras_causas_seleccionado,0) + coalesce(otras_causas_vivienda,0)`}  as otras_causas_gabinete, */
+                     /*   coalesce(pendiente,0)+coalesce(mixta,0)+ coalesce(incompleto,0)+coalesce(sin_resultado,0)+${opts.gabinete?`coalesce(no_finalizada,0)`:`coalesce(sin_finalizar_dm,0)+coalesce(sin_finalizar_incompleto,0)+ coalesce(sin_finalizar_otra_causa,0)`}  as en_curso */
+
                     from (   
                         select ${[
                             ...camposCorte.map(f=>f.name),
