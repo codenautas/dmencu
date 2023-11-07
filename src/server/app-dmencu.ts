@@ -520,7 +520,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 "img/fondo-salteado-error.png",
                 "img/fondo-salteado.png",
                 "img/background-test.png",
-                "client-setup",
+                //"client-setup",
                 "css/bootstrap.min.css",
                 "css/formulario-react.css",
                 "pikaday/pikaday.css",
