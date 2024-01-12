@@ -1,7 +1,7 @@
 --set role dmencu_owner;
 --set search_path=base;
 
-DROP FUNCTION if exists asignar_desasignar_tareas_tem_trg();
+--DROP FUNCTION if exists asignar_desasignar_tareas_tem_trg();
 CREATE OR REPLACE FUNCTION asignar_desasignar_tareas_tem_trg()
     RETURNS trigger
     LANGUAGE 'plpgsql'
@@ -32,7 +32,7 @@ begin
 end;
 $BODY$;
 
-DROP TRIGGER IF EXISTS asignar_desasignar_tareas_tem_trg ON tareas_tem;
+--DROP TRIGGER IF EXISTS asignar_desasignar_tareas_tem_trg ON tareas_tem;
 CREATE TRIGGER asignar_desasignar_tareas_tem_trg
    AFTER UPDATE OF asignado
    ON tareas_tem

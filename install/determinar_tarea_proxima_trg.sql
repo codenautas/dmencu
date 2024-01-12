@@ -1,6 +1,6 @@
 --set role dmencu_owner;
 --set search_path=base;
-DROP FUNCTION if exists determinar_tarea_proxima_trg();
+--DROP FUNCTION if exists determinar_tarea_proxima_trg();
 CREATE OR REPLACE FUNCTION determinar_tarea_proxima_trg()
     RETURNS trigger
     LANGUAGE 'plpgsql'
@@ -60,7 +60,7 @@ begin
 end;
 $BODY$;
 
-DROP TRIGGER IF EXISTS determinar_tarea_proxima_trg ON tareas_tem;
+--DROP TRIGGER IF EXISTS determinar_tarea_proxima_trg ON tareas_tem;
 CREATE TRIGGER determinar_tarea_proxima_trg
    AFTER UPDATE OF verificado
    ON tareas_tem
