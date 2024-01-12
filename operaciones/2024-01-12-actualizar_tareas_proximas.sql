@@ -6,7 +6,7 @@ create table "tareas_proximas" (
   "estado" text, 
   "tarea_destino" text, 
   "estado_destino" text, 
-  "orden" text, 
+  "orden" integer, 
   "condicion" text, 
   "desasigna_en_tarea_destino" boolean, 
   "nombre_procedure" text
