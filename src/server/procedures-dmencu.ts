@@ -904,29 +904,26 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var be =  context.be;
             var accion = params.accion as EstadoAccion;
-            const ANALIZAR_CONDICION = true;
-            if(ANALIZAR_CONDICION){
-                var cumple:boolean = (await context.client.query(
-                    `select accion_cumple_condicion($5, $6, $7, $8, (
-                        select condicion 
-                          from estados_acciones 
-                          where operativo = $1 and estado = $2 and eaccion = $3 and estado_destino = $4
-                    )
-                )`, [
-                    params.operativo, 
-                    accion.estado, 
-                    accion.eaccion, 
-                    accion.estado_destino,
-                    params.operativo, 
-                    accion.estado, 
-                    params.enc, 
-                    accion.eaccion,
-                ])
-                .fetchUniqueValue()).value;
-                if(!cumple){
-                    throw Error(`No se pudo ejecutar la acción, no se cumple la condición "${params.condicion}" o bien el estado está desactualizado, refresque la grilla.`)
-                }
+            var cumple:boolean = (await context.client.query(
+                `select accion_cumple_condicion($5, $6, $7, $8, (
+                    select condicion 
+                      from estados_acciones 
+                      where operativo = $1 and estado = $2 and eaccion = $3 and estado_destino = $4
+                )
+            )`, [
+                params.operativo, 
+                accion.estado, 
+                accion.eaccion, 
+                accion.estado_destino,
+                params.operativo, 
+                accion.estado, 
+                params.enc, 
+                accion.eaccion,
+            ]).fetchUniqueValue()).value;
+            if(!cumple){
+                throw Error(`No se pudo ejecutar la acción, no se cumple la condición "${params.condicion}" o bien el estado está desactualizado, refresque la grilla.`)
             }
+            
             var result = await context.client.query(`
                 UPDATE tareas_tem 
                     set estado = $4
@@ -949,6 +946,42 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     operativo: ${accion.operativo}, estado: ${accion.estado}, eaccion: ${accion.eaccion}.`)
                 }
             }
+            // BUSCO PASE DE TAREA
+            var tareaSiguiente = (await context.client.query(
+                `select *
+                    from tareas_proximas
+                    where 
+                        operativo = $1 and 
+                        tarea = $2 and estado = $3 and 
+                        tarea_cumple_condicion($4, $5, $6, $7, condicion)
+                    order by orden
+                    limit 1`
+            ,[
+                params.operativo, 
+                params.tarea,
+                accion.estado_destino,
+                params.operativo, 
+                params.tarea,
+                accion.estado_destino,
+                params.enc
+            ]).fetchOneRowIfExists()).row;
+            if(tareaSiguiente){
+                await context.client.query(`
+                    update tem
+                        set tarea_proxima = $3
+                        where operativo = $1 and enc = $2
+                        returning *`
+                    ,[params.operativo, params.enc, tareaSiguiente.tarea_destino]
+                ).fetchUniqueRow();
+                await context.client.query(`
+                    update tareas_tem
+                        set ts_entrada = current_timestamp
+                        where operativo = $1 and enc = $2 and tarea = $3
+                        returning *`
+                    ,[params.operativo, params.enc, tareaSiguiente.tarea_destino]
+                ).fetchUniqueRow();
+            }
+            // FIN PASE DE TAREA
             return result.row;
 
         }

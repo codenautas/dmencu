@@ -81,6 +81,7 @@ import { personas_sup        } from './table-personas_sup';
 import { estados             } from './table-estados';
 import { acciones            } from './table-acciones';
 import { estados_acciones    } from './table-estados_acciones';
+import { tareas_proximas     } from './table-tareas_proximas';
 
 
 export * from "./types-dmencu";
@@ -667,10 +668,11 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             }
             if(context.superuser){
                 menuConfigurar.push(
-                    {menuType:'menu', name:'estados_acciones', label:'estados/acciones', menuContent:[
+                    {menuType:'menu', name:'estados_acciones_tareas', label:'estados/acciones/tareas', menuContent:[
                         {menuType:'table', name:'estados'},
                         {menuType:'table', name:'acciones'},
                         {menuType:'table', name:'estados_acciones'},
+                        {menuType:'table', name:'tareas_proximas'},
                     ]},
                     {menuType:'table', name:'parametros'},
                 )
@@ -717,6 +719,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , estados
             , acciones
             , estados_acciones
+            , tareas_proximas
             , tem
             , tem_recepcion
             , parametros

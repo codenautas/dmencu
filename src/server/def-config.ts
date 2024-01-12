@@ -55,7 +55,7 @@ install:
       - carga_inicial_tareas_tem.sql
       - validar_tareas_tem_trg.sql
       - asignar_desasignar_tareas_tem_trg.sql
-      - determinar_tarea_proxima_trg.sql
+      - desverificar_tarea_trg.sql
       - inicial_update_varcal_por_encuesta.sql
 login:
   infoFieldList: [usuario, rol, idper]
