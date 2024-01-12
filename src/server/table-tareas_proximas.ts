@@ -22,6 +22,12 @@ export function tareas_proximas(context:TableContext):TableDefinition {
         ],
         hiddenColumns:['estados__permite_editar_encuesta','estado_dest__permite_editar_encuesta'],
         primaryKey:['operativo','tarea', 'estado', 'tarea_destino'],
+        sortColumns:[
+            {column:'operativo'},
+            {column:'tarea'},
+            {column:'estado'},
+            {column:'orden'},
+        ],
         foreignKeys: [
             {references: 'tareas'  , fields: ['operativo','tarea']},
             {references: 'estados' , fields: ['operativo','estado']},
