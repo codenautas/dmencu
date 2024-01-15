@@ -52,7 +52,7 @@ install:
       - control_cargado_tareas_tem_trg.sql
       - accion_cumple_condicion.sql
       - tarea_cumple_condicion.sql
-      - actualizar_estado_tem_trg.sql
+      - agregar_historial_tem_trg.sql
       - carga_inicial_tareas_tem.sql
       - validar_tareas_tem_trg.sql
       - asignar_desasignar_tareas_tem_trg.sql

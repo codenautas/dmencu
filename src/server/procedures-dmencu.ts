@@ -1179,6 +1179,129 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             return 'ok';
         }
     },
+    /**
+     * {
+        action: 'encuesta_pasar_a_anac',
+        parameters:[
+            {name:'operativo'       , typeName:'text'},
+            {name:'enc'             , typeName:'text'},
+            {name:'tarea'           , typeName:'text'},
+        ],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            await context.client.query(`
+                UPDATE tem
+                    set tarea_actual = $3, tarea_proxima = $4
+                    where operativo=$1 and enc=$2
+                    returning *`,
+                [params.operativo, params.enc, 'anac', 'proc'])
+            .fetchUniqueRow();
+            await context.client.query(`
+                UPDATE tareas_tem
+                    set estado = 'CC'
+                    where operativo=$1 and tarea= $2 and enc=$3
+                    returning *`,
+                [params.operativo, params.tarea, params.enc])
+            .fetchUniqueRow();
+            return 'ok';
+        }
+    },
+    {
+        action: 'encuesta_no_pasar_a_anac',
+        parameters:[
+            {name:'operativo'       , typeName:'text'},
+            {name:'enc'             , typeName:'text'},
+            {name:'tarea'           , typeName:'text'},
+        ],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            await context.client.query(`
+                UPDATE tem
+                    set tarea_actual = $3, tarea_proxima = $4, supervision_dirigida = null
+                    where operativo=$1 and enc=$2
+                    returning *`,
+                [params.operativo, params.enc, 'proc', null])
+            .fetchUniqueRow();
+            await context.client.query(`
+                UPDATE tareas_tem
+                    set estado = 'A'
+                    where operativo=$1 and tarea= $2 and enc=$3
+                    returning *`,
+                [params.operativo, 'proc', params.enc])
+            .fetchUniqueRow();
+            return 'ok';
+        }
+    },
+    {
+        action: 'encuesta_recuperar_desde_anac',
+        parameters:[
+            {name:'operativo'       , typeName:'text'},
+            {name:'enc'             , typeName:'text'},
+            {name:'tarea'           , typeName:'text'},
+        ],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            var be = context.be;
+            var forzarTareaEncuestaProc = be.procedure.encuesta_forzar_tarea;
+            var {operativo,enc,tarea:tarea_actual} = params;
+            await forzarTareaEncuestaProc.coreFunction(context,{operativo,enc,tarea_actual,tarea_nueva:'recu'});
+            return 'ok'
+        }
+    },
+    {
+        action: 'encuesta_forzar_tarea',
+        parameters:[
+            {name:'operativo'       , typeName:'text'},
+            {name:'enc'             , typeName:'text'},
+            {name:'tarea_actual'    , typeName:'text'},
+            {name:'tarea_nueva'     , typeName:'text'},
+        ],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            var {operativo, enc, tarea_actual, tarea_nueva} = params;
+            //await context.client.query(`
+            //    update tem 
+            //        set tarea_actual = $4, tarea_proxima = null
+            //        where operativo = $1 and enc = $2 and tarea_actual = $3
+            //        returning *`,
+            //    [operativo, enc, tarea_actual, tarea_nueva])
+            //.fetchUniqueRow();
+            await context.client.query(`
+                update tem 
+                    set tarea_actual = $3, tarea_proxima = null
+                    where operativo = $1 and enc = $2
+                    returning *`,
+                [operativo, enc, tarea_nueva])
+            .fetchUniqueRow();
+            
+            var result = await context.client.query(`
+                update tareas_tem 
+                    set estado = '0D' 
+                    where operativo = $1 and enc = $2 and tarea in ($3, $4)
+                    returning *`,
+                [operativo, enc, tarea_actual, tarea_nueva])
+            .fetchAll();
+
+            if(result.rowCount != 2){
+                throw Error(`Se esperaban 2 registros y se obtuvo/obtuvieron ${result.rowCount}`)
+            }
+        
+            await context.client.query(`
+                update tareas_tem 
+                    set asignado = null
+                    where operativo = $1 and enc = $2 and tarea  = $3
+                    returning *`,
+                [operativo, enc, tarea_nueva])
+            .fetchUniqueRow();
+
+            await context.client.query(`
+                update tareas_tem 
+                    set recepcionista = null
+                    where operativo = $1 and enc = $2 and tarea  = $3
+                    returning *`,
+                [operativo, enc, tarea_nueva])
+            .fetchUniqueRow();
+
+            return 'ok';
+        }
+    },
+     */
     {
         action: 'encuesta_habilitar_deshabilitar',
         parameters:[

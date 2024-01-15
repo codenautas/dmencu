@@ -171,7 +171,8 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {references:'tokens', fields:[{source:'cargado_dm', target:'token'}], displayFields:['username'], displayAfterFieldName:'cargado'}
         ],
         "detailTables": [
-            {table: "inconsistencias", abr: "I", fields: [{source:'operativo', target:'operativo'},{source:'enc', target:'vivienda'}]}
+            {table: "inconsistencias", abr: "I", fields: [{source:'operativo', target:'operativo'},{source:'enc', target:'vivienda'}]},
+            {table: "historial_tem", abr: "H", fields: ['operativo','enc']}
         ],
         constraints:[
             {constraintType:'check', consName:"vresult_sup_ck", expr:"(result_sup between 1 and 9 or result_sup in (11,12,21,22 ) or result_sup between 60 and 68)"}

@@ -82,6 +82,7 @@ import { estados             } from './table-estados';
 import { acciones            } from './table-acciones';
 import { estados_acciones    } from './table-estados_acciones';
 import { tareas_proximas     } from './table-tareas_proximas';
+import { historial_tem       } from './table-historial_tem';
 
 
 export * from "./types-dmencu";
@@ -722,6 +723,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , tareas_proximas
             , tem
             , tem_recepcion
+            , historial_tem
             , parametros
             , operaciones
             , comunas
