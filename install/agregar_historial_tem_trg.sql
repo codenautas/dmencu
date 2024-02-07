@@ -32,8 +32,8 @@ begin
             from tem 
             where operativo = old.operativo and enc = old.enc;
 
-        insert into historial_tem (operativo, enc, orden, tarea, ts_salida, recepcionista, asignado, json_encuesta, resumen_estado, resumen_estado_sup, rea, norea, rea_sup, norea_sup) values 
-            (old.operativo, old.enc, v_proximo_orden, old.tarea_actual, current_timestamp, v_recepcionista, v_asignado, v_json_encuesta, v_resumen_estado, v_resumen_estado_sup, v_rea, v_norea, v_rea_sup, v_norea_sup);
+        insert into historial_tem (operativo, enc, orden, tarea, estado, ts_salida, recepcionista, asignado, json_encuesta, resumen_estado, resumen_estado_sup, rea, norea, rea_sup, norea_sup) values 
+            (old.operativo, old.enc, v_proximo_orden, old.estado, old.tarea_actual, current_timestamp, v_recepcionista, v_asignado, v_json_encuesta, v_resumen_estado, v_resumen_estado_sup, v_rea, v_norea, v_rea_sup, v_norea_sup);
     end if;
     return new;
 end;
