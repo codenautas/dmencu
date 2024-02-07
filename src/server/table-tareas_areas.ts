@@ -7,7 +7,7 @@ export function tareas_areas(context:TableContext, opts?:OptsAsignados):TableDef
     if (opts == null) {
         opts = {
             name: 'relevador',
-            rol: null
+            tarea: null
         }
     }
     var be=context.be;
@@ -62,17 +62,17 @@ export function tareas_areas(context:TableContext, opts?:OptsAsignados):TableDef
 }
 
 export function t_encu_areas(context:TableContext){
-    var tableDef = tareas_areas(context, {rol:'encu', name:'encuestador'}) 
+    var tableDef = tareas_areas(context, {tarea:'encu', name:'encuestador'}) 
     tableDef.hiddenColumns?.push('areas__encuestador');
     tableDef.sql!.isTable = false;
     tableDef.detailTables=[
-        {table:`tareas_tem_encu`, fields:['operativo', 'tarea', 'area'], abr:'T', refreshParent:true, refreshFromParent:true}
+        {table:`tareas_tem_asignacion_encu`, fields:['operativo', 'tarea', 'area'], abr:'T', refreshParent:true, refreshFromParent:true}
     ];
     return tableDef;
 }
 
 export function t_recu_areas(context:TableContext){
-    var tableDef = tareas_areas(context, {rol:'recu', name:'recuperador'}) 
+    var tableDef = tareas_areas(context, {tarea:'recu', name:'recuperador'}) 
     tableDef.hiddenColumns?.push('areas__encuestador');
     tableDef.sql!.isTable = false;
     tableDef.detailTables=[
@@ -82,7 +82,7 @@ export function t_recu_areas(context:TableContext){
 }
 
 export function t_supe_areas(context:TableContext){
-    var tableDef = tareas_areas(context, {rol:'supe', name:'supervisor'}) 
+    var tableDef = tareas_areas(context, {tarea:'supe', name:'supervisor'}) 
     tableDef.hiddenColumns?.push('areas__encuestador');
     tableDef.sql!.isTable = false;
     tableDef.detailTables=[

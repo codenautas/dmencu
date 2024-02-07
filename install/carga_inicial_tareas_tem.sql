@@ -27,4 +27,4 @@ insert into tareas_tem (operativo, enc, tarea)
           --and ta.main_form is not null
     order by 1,3,2;
   
-update tem set tarea_proxima='encu', habilitada = true;  
+update tem set habilitada = true;  

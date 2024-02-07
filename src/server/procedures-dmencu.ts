@@ -900,6 +900,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'enc'             , typeName:'text'},
             {name:'condicion'       , typeName:'text'},
             {name:'accion'          , typeName:'jsonb'},
+            {name:'tareasTemTable'  , typeName:'text'},        
         ],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var be =  context.be;
@@ -968,21 +969,34 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             if(tareaSiguiente){
                 await context.client.query(`
                     update tem
-                        set tarea_proxima = $3
+                        set tarea_actual = $3
                         where operativo = $1 and enc = $2
                         returning *`
                     ,[params.operativo, params.enc, tareaSiguiente.tarea_destino]
                 ).fetchUniqueRow();
+                let autoAsignado = tareaSiguiente.registra_recepcionista?context.user.idper:null;
+                let q = context.be.db.quoteLiteral;
                 await context.client.query(`
                     update tareas_tem
                         set ts_entrada = current_timestamp
+                            ${autoAsignado?
+                                ", recepcionista="+q(autoAsignado)
+                            :""}
                         where operativo = $1 and enc = $2 and tarea = $3
                         returning *`
                     ,[params.operativo, params.enc, tareaSiguiente.tarea_destino]
                 ).fetchUniqueRow();
             }
             // FIN PASE DE TAREA
-            return result.row;
+
+            var mainDefTable=be.tableStructures[params.tareasTemTable](context);
+            console.log("from:", mainDefTable.sql!.from)
+            return (await context.client.query(`
+                select ${[...mainDefTable.sql!.select].join(', ')}
+                    from ${mainDefTable.sql!.from}
+                    where "tareas_tem".operativo = $1 and "tareas_tem".enc = $2 and "tareas_tem".tarea = $3`
+                ,[params.operativo, params.enc, params.tarea]
+            ).fetchUniqueRow()).row;
 
         }
     },
@@ -1135,10 +1149,10 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             await context.client.query(`
                 UPDATE tem
-                    set tarea_actual = $3, tarea_proxima = $4, supervision_dirigida = $5
+                    set tarea_actual = $3, supervision_dirigida = $4
                     where operativo=$1 and enc=$2
                     returning *`,
-                [params.operativo, params.enc, 'finc', 'supe', 1])
+                [params.operativo, params.enc, 'supe', 1])
             .fetchUniqueRow();
             return 'ok';
         }
@@ -1153,10 +1167,10 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             await context.client.query(`
                 UPDATE tem
-                    set tarea_actual = $3, tarea_proxima = $4, supervision_dirigida = $5
+                    set tarea_actual = $3, supervision_dirigida = $4
                     where operativo=$1 and enc=$2
                     returning *`,
-                [params.operativo, params.enc, 'finc', 'supe', 2])
+                [params.operativo, params.enc, 'supe', 2])
             .fetchUniqueRow();
             return 'ok';
         }
@@ -1171,10 +1185,10 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             await context.client.query(`
                 UPDATE tem
-                    set tarea_actual = $3, tarea_proxima = $4, supervision_dirigida = null
+                    set tarea_actual = $3, supervision_dirigida = null
                     where operativo=$1 and enc=$2
                     returning *`,
-                [params.operativo, params.enc, null, 'finc'])
+                [params.operativo, params.enc, 'finc'])
             .fetchUniqueRow();
             return 'ok';
         }
@@ -1190,10 +1204,10 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             await context.client.query(`
                 UPDATE tem
-                    set tarea_actual = $3, tarea_proxima = $4
+                    set tarea_actual = $3
                     where operativo=$1 and enc=$2
                     returning *`,
-                [params.operativo, params.enc, 'anac', 'proc'])
+                [params.operativo, params.enc, 'anac'])
             .fetchUniqueRow();
             await context.client.query(`
                 UPDATE tareas_tem
@@ -1215,10 +1229,10 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             await context.client.query(`
                 UPDATE tem
-                    set tarea_actual = $3, tarea_proxima = $4, supervision_dirigida = null
+                    set tarea_actual = $3
                     where operativo=$1 and enc=$2
                     returning *`,
-                [params.operativo, params.enc, 'proc', null])
+                [params.operativo, params.enc, 'proc'])
             .fetchUniqueRow();
             await context.client.query(`
                 UPDATE tareas_tem
@@ -1255,21 +1269,13 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         ],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var {operativo, enc, tarea_actual, tarea_nueva} = params;
-            //await context.client.query(`
-            //    update tem 
-            //        set tarea_actual = $4, tarea_proxima = null
-            //        where operativo = $1 and enc = $2 and tarea_actual = $3
-            //        returning *`,
-            //    [operativo, enc, tarea_actual, tarea_nueva])
-            //.fetchUniqueRow();
             await context.client.query(`
                 update tem 
-                    set tarea_actual = $3, tarea_proxima = null
-                    where operativo = $1 and enc = $2
+                    set tarea_actual = $4
+                    where operativo = $1 and enc = $2 and tarea_actual = $3
                     returning *`,
-                [operativo, enc, tarea_nueva])
+                [operativo, enc, tarea_actual, tarea_nueva])
             .fetchUniqueRow();
-            
             var result = await context.client.query(`
                 update tareas_tem 
                     set estado = '0D' 
@@ -1326,32 +1332,34 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             let parametros = (await context.client.query(`
                 select * from parametros where unico_registro`,
             []).fetchUniqueRow()).row;
-            //parametros.dias_finc
-            /*
-            var select = `select * 
-                            from tareas_tem left join tem t using (operativo,enc)
-                            where operativo=$1 and tarea= $2 and (${getDiasAPasarQuery()} <= 0 or coalesce(adelantar,false)) and tarea_proxima = $3`
-            */                
-            var select = `select t.operativo, t.enc, t.tarea_actual, t.tarea_proxima, tt.ts_entrada, tta.estado 
-                            from tareas_tem tt left join tem t using (operativo,enc) join tareas_tem tta on tta.operativo=t.operativo and tta.enc=t.enc and tta.tarea=t.tarea_actual
-                            where tt.operativo=$1 and tt.tarea= $2 and (${getDiasAPasarQuery('tt')} <= 0 or coalesce(tt.adelantar,false)) and tarea_proxima = $3
-                              and tta.estado='V' and tta.asignado is not null and tta.recepcionista is not null
+            var select = `select t.operativo, t.enc, t.tarea_actual, tt.ts_entrada
+                            from tareas_tem tt join tem t using (operativo,enc)
+                            where tt.operativo=$1 and tt.tarea= $2 and (${getDiasAPasarQuery('tt')} <= 0 or coalesce(tt.adelantar,false)) and tt.tarea = t.tarea_actual
                         `;
+            await context.client.query(`
+                    UPDATE tareas_tem tt
+                        set estado = 'V'
+                        from (${select}) aux
+                        where tt.operativo = aux.operativo and tt.enc = aux.enc and tt.tarea = $3
+                        returning *`,
+                [parametros.operativo, 'finc', 'finc'])
+            .fetchAll();
+            //TODO asignar en procesamiento
             await context.client.query(`
                     UPDATE tareas_tem tt
                         set estado = 'A'
                         from (${select}) aux
-                        where tt.operativo = aux.operativo and tt.enc = aux.enc and tt.tarea = $4
+                        where tt.operativo = aux.operativo and tt.enc = aux.enc and tt.tarea = $3
                         returning *`,
-                [parametros.operativo, 'finc', 'finc','proc'])
+                [parametros.operativo, 'finc', 'proc'])
             .fetchAll();
             await context.client.query(`
                 update tem t
-                    set tarea_actual = 'proc', tarea_proxima = null
+                    set tarea_actual = 'proc'
                     from (${select}) aux
                     where t.operativo = aux.operativo and t.enc = aux.enc
                     returning *` ,
-            [parametros.operativo, 'finc','finc']).fetchAll();
+            [parametros.operativo, 'finc']).fetchAll();
         return 'ok';
         }
     },

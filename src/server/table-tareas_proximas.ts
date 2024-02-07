@@ -17,7 +17,7 @@ export function tareas_proximas(context:TableContext):TableDefinition {
             {name:'estado_destino'             , typeName:'text'    ,  nullable: false},
             {name:'orden'                      , typeName:'integer' ,  nullable: false},
             {name:'condicion'                  , typeName:'text'    ,  nullable: false},
-            {name:'desasigna_en_tarea_destino' , typeName:'boolean'                   },
+            {name:'registra_recepcionista', typeName:'boolean'                   },
             {name:'nombre_procedure'           , typeName:'text'                      },
         ],
         hiddenColumns:['estados__permite_editar_encuesta','estado_dest__permite_editar_encuesta'],

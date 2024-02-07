@@ -40,28 +40,15 @@ export function tareas_tem_recepcion(context:TableContext, opts?:OptsTareasTem):
             field.table='tareas_tem'
         }
     });
-    
-    
     tableDef.primaryKey = ['operativo','enc','tarea'];
     tableDef.filterColumns=[
         {column:'visible_en_recepcion', operator:'=', value:true}
     ];
     tableDef.hiddenColumns=['tarea','cargado_dm','notas', 'acciones','fecha_asignacion', 'estados__permite_editar_encuesta'];
     tableDef.refrescable = true;
+    tableDef.selfRefresh = true;
     tableDef.sql!.isTable = false;
     tableDef.sql!.from=getSqlFrom(tableDef,{desde:"recepciona"});
     tableDef.sql!.where = `"tem".tarea_actual="tareas_tem".tarea`;
     return tableDef
-}
-
-export function tareas_tem_recepcion_encu(context:TableContext):TableDefinition {
-    return tareas_tem_recepcion(context, {rol:'encu', name:'encuestador'})
-}
-
-export function tareas_tem_recepcion_recu(context:TableContext):TableDefinition {
-    return tareas_tem_recepcion(context, {rol:'recu', name:'recuperador'})
-}
-
-export function tareas_tem_recepcion_supe(context:TableContext):TableDefinition {
-    return tareas_tem_recepcion(context, {rol:'supe', name:'supervisor'})
 }

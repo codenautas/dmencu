@@ -5,7 +5,7 @@ import {TableDefinition, TableContext} from "./types-dmencu";
 import { cuentasSql, cuentasFields } from "./table-areas";  
 
 export type OptsAsignados = {
-    rol: 'encu'|'recu'|'supe'|null
+    tarea: 'encu'|'recu'|'supe'|null
     name: string
     verComoRecepcionista: boolean
 }
@@ -14,7 +14,7 @@ export function asignados(context:TableContext, opts?:OptsAsignados){
     if (opts == null) {
         opts = {
             name: 'relevador',
-            rol: null,
+            tarea: null,
             verComoRecepcionista: false
         }
     }
@@ -43,26 +43,26 @@ export function asignados(context:TableContext, opts?:OptsAsignados){
                     ${cuentasSql(be, `tt.asignado = u.idper and tt.tarea = ta.tarea ${esRecepcionista ? `and tt.recepcionista = ${q(context.user.idper)}` : `` } `)}
                 ) t
                 where totales > 0  
-                    ${opts.rol ? `and ta.tarea = ${q(opts.rol)}` : `` }
+                    ${opts.tarea ? `and ta.tarea = ${q(opts.tarea)}` : `` }
             )`
         },
-        hiddenColumns: opts.rol ? ['tarea'] : []
+        hiddenColumns: opts.tarea ? ['tarea'] : []
     }
     return tableDef;
 }
 
 export function encuestadores_asignados(context:TableContext):TableDefinition {
-    return asignados(context, {rol:'encu', name:'encuestador', verComoRecepcionista:false})    
+    return asignados(context, {tarea:'encu', name:'encuestador', verComoRecepcionista:false})    
 }
 
 export function recuperadores_asignados(context:TableContext):TableDefinition {
-    return asignados(context, {rol:'recu', name:'recuperador', verComoRecepcionista:false})
+    return asignados(context, {tarea:'recu', name:'recuperador', verComoRecepcionista:false})
 }
 
 export function supervisores_asignados(context:TableContext):TableDefinition {
-    return asignados(context, {rol:'supe', name:'supervisor', verComoRecepcionista:false})    
+    return asignados(context, {tarea:'supe', name:'supervisor', verComoRecepcionista:false})    
 }
 
 export function mis_supervisores_asignados(context:TableContext):TableDefinition {
-    return asignados(context, {rol:'supe', name:'supervisor', verComoRecepcionista:true})    
+    return asignados(context, {tarea:'supe', name:'supervisor', verComoRecepcionista:true})    
 }

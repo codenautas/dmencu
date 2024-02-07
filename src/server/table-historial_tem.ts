@@ -12,6 +12,7 @@ export function historial_tem(context:TableContext):TableDefinition {
         {name:'orden'               , typeName:'integer'  },
         {name:'ts_salida'           , typeName:'timestamp'},
         {name:'tarea'               , typeName:'text'     },
+        {name:'estado'              , typeName:'text'     },
         {name:'recepcionista'       , typeName:'text'     },
         {name:'asignado'            , typeName:'text'     },
         {name:'json_encuesta'       , typeName:'jsonb'    },
@@ -35,11 +36,12 @@ export function historial_tem(context:TableContext):TableDefinition {
         editable:context.forDump,
         fields,
         primaryKey:['operativo','enc','orden'],
-        foreignKeys:[
+        softForeignKeys:[
             {references:'tem' , fields:['operativo','enc'], displayFields:[]},
             {references:'tareas' , fields:['operativo','tarea']},
             {references:'usuarios', fields:[{source:'asignado' , target:'idper'}], alias:'asignado', displayFields:['nombre','apellido']},
             {references:'usuarios', fields:[{source:'recepcionista' , target:'idper'}], alias:'recepcionista', displayFields:['nombre','apellido']},
+            {references:'estados' , fields:['operativo','estado']},
         ],
         sortColumns:[{column:'orden', order:-1}]
     };

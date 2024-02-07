@@ -8,7 +8,7 @@ create table "tareas_proximas" (
   "estado_destino" text, 
   "orden" integer, 
   "condicion" text, 
-  "desasigna_en_tarea_destino" boolean, 
+  "registra_recepcionista" boolean, 
   "nombre_procedure" text
 , primary key ("operativo", "tarea", "estado", "tarea_destino")
 );
@@ -75,22 +75,43 @@ $BODY$
 
  --set role dmencu_owner;
 --set search_path=base;
-DROP FUNCTION if exists desverificar_tarea_trg();
+--DROP FUNCTION if exists desverificar_tarea_trg();
 CREATE OR REPLACE FUNCTION desverificar_tarea_trg()
     RETURNS trigger
     LANGUAGE 'plpgsql'
 AS $BODY$
+declare 
+        v_asignado_actual text;
+        v_tarea_actual text;
+        v_ultima_tarea_historial text;
 begin
+    select asignado, tarea_actual into v_asignado_actual, v_tarea_actual
+        from tareas_tem tt join tem t using (operativo, enc)
+        where new.operativo = t.operativo and new.enc = t.enc and tt.tarea = t.tarea_actual;
+
+    select tarea into v_ultima_tarea_historial
+        from historial_tem ht
+        where new.operativo = ht.operativo and new.enc = ht.enc
+        order by ts_salida desc
+        limit 1;
     if new.verificado is null then
-        update tem 
-            set tarea_proxima = null 
-            where operativo = new.operativo and enc = new.enc;
+        if v_ultima_tarea_historial = new.tarea then 
+            if v_asignado_actual is null then
+                update tem 
+                    set tarea_actual = new.tarea
+                    where operativo = new.operativo and enc = new.enc;
+            else
+                raise 'ERROR: no se puede desverificar la tarea % ya que la tarea siguiente (%) se encuentra asignada', new.tarea, v_tarea_actual;
+            end if;
+        else
+            raise 'ERROR: no se puede desverificar la tarea % ya que no es la ultima anterior a la actual', new.tarea;
+        end if;
     end if;
     return new;
 end;
 $BODY$;
 
-DROP TRIGGER IF EXISTS desverificar_tarea_trg ON tareas_tem;
+--DROP TRIGGER IF EXISTS desverificar_tarea_trg ON tareas_tem;
 CREATE TRIGGER desverificar_tarea_trg
    AFTER UPDATE OF verificado
    ON tareas_tem
@@ -106,6 +127,7 @@ create table "historial_tem" (
   "orden" integer, 
   "ts_salida" timestamp, 
   "tarea" text, 
+  "estado" text,
   "recepcionista" text, 
   "asignado" text, 
   "json_encuesta" jsonb, 
@@ -128,16 +150,6 @@ alter table "historial_tem" add constraint "asignado<>''" check ("asignado"<>'')
 alter table "historial_tem" add constraint "resumen_estado<>''" check ("resumen_estado"<>'');
 alter table "historial_tem" add constraint "resumen_estado_sup<>''" check ("resumen_estado_sup"<>'');
 
-alter table "historial_tem" add constraint "historial_tem tem REL" foreign key ("operativo", "enc") references "tem" ("operativo", "enc")  on update cascade;
-alter table "historial_tem" add constraint "historial_tem tareas REL" foreign key ("operativo", "tarea") references "tareas" ("operativo", "tarea")  on update cascade;
-alter table "historial_tem" add constraint "historial_tem asignado REL" foreign key ("asignado") references "usuarios" ("idper")  on update cascade;
-alter table "historial_tem" add constraint "historial_tem recepcionista REL" foreign key ("recepcionista") references "usuarios" ("idper")  on update cascade;
-
-create index "operativo,enc 4 historial_tem IDX" ON "historial_tem" ("operativo", "enc");
-create index "operativo,tarea 4 historial_tem IDX" ON "historial_tem" ("operativo", "tarea");
-create index "asignado 4 historial_tem IDX" ON "historial_tem" ("asignado");
-create index "recepcionista 4 historial_tem IDX" ON "historial_tem" ("recepcionista");
-
 CREATE OR REPLACE FUNCTION agregar_historial_tem_trg()
     RETURNS trigger
     LANGUAGE 'plpgsql'
@@ -154,7 +166,7 @@ AS $BODY$
         v_rea_sup integer;
         v_norea_sup integer;
 begin
-    if old.tarea_actual is distinct from new.tarea_actual and old.tarea_actual is not null then
+    if old.tarea_actual is distinct from new.tarea_actual and new.tarea_actual is not null and old.tarea_actual is not null then
         select coalesce(max(orden),0)+1 into v_proximo_orden
             from historial_tem 
             where operativo = old.operativo and enc = old.enc;
@@ -171,6 +183,109 @@ begin
 
         insert into historial_tem (operativo, enc, orden, tarea, ts_salida, recepcionista, asignado, json_encuesta, resumen_estado, resumen_estado_sup, rea, norea, rea_sup, norea_sup) values 
             (old.operativo, old.enc, v_proximo_orden, old.tarea_actual, current_timestamp, v_recepcionista, v_asignado, v_json_encuesta, v_resumen_estado, v_resumen_estado_sup, v_rea, v_norea, v_rea_sup, v_norea_sup);
+    end if;
+    return new;
+end;
+$BODY$;
+
+
+DROP TRIGGER IF EXISTS agregar_historial_tem_trg ON tem;
+CREATE TRIGGER agregar_historial_tem_trg
+   AFTER UPDATE OF tarea_actual
+   ON tem
+   FOR EACH ROW
+   EXECUTE PROCEDURE agregar_historial_tem_trg();   
+
+alter table "tareas" add column "es_inicial";
+
+update tareas set es_inicial = true where operativo = 'PRC_EAH2023' and tarea = 'encu';
+
+alter table tem drop column tarea_proxima;
+
+--DROP FUNCTION if exists asignar_desasignar_tareas_tem_trg();
+CREATE OR REPLACE FUNCTION asignar_desasignar_tareas_tem_trg()
+    RETURNS trigger
+    LANGUAGE 'plpgsql'
+AS $BODY$
+    declare 
+        v_estado_al_asignar text;
+        v_tarea_actual  text;
+        v_tarea_inicial text;
+begin
+    select tarea_actual into v_tarea_actual
+        from tem 
+        where operativo = new.operativo and enc = new.enc;
+    select estado_al_asignar into v_estado_al_asignar from estados where operativo = new.operativo and estado = new.estado;
+    select tarea into v_tarea_inicial
+        from tareas 
+        where operativo = new.operativo and es_inicial;
+    if new.asignado is null then
+        if new.tarea = v_tarea_inicial then
+            update tem 
+                set tarea_actual = null
+                where operativo = new.operativo and enc = new.enc;
+        end if;
+    else
+        if v_tarea_actual is null and v_tarea_actual is distinct from new.tarea then    
+            update tem 
+                set tarea_actual = v_tarea_inicial
+                where operativo = new.operativo and enc = new.enc;
+        end if;
+    end if;
+    return new;
+end;
+$BODY$;
+
+CREATE OR REPLACE FUNCTION validar_tareas_tem_trg()
+    RETURNS trigger
+    LANGUAGE 'plpgsql'
+AS $BODY$
+declare 
+    v_habilitada    boolean;
+    v_tarea_actual  text;
+    v_permite_asignar boolean;
+    v_estado_al_asignar text;
+    v_tarea_inicial text;
+begin
+    select tarea_actual, habilitada into v_tarea_actual, v_habilitada
+        from tem 
+        where operativo = new.operativo and enc = new.enc;
+    select permite_asignar, estado_al_asignar into v_permite_asignar, v_estado_al_asignar
+        from estados
+        where operativo = new.operativo and estado =  new.estado;
+    select tarea into v_tarea_inicial
+        from tareas 
+        where operativo = new.operativo and es_inicial;
+    if v_habilitada then
+        if old.asignado is distinct from new.asignado then 
+            if not v_permite_asignar then
+                raise exception 'Error: no es posible asignar en la encuesta % del operativo % ya que su estado no lo permite', new.enc, new.operativo;
+            end if;
+            if new.recepcionista is null then 
+                raise exception 'Error: no es posible asignar en la encuesta % del operativo % ya que no se indicó un/a recepcionista', new.enc, new.operativo;
+            end if;
+            if not (new.tarea = coalesce(v_tarea_actual,'nulo') or new.tarea = v_tarea_inicial) then
+                raise exception 'Error: no es posible modificar la encuesta % del operativo % ya que la tarea actual definida en TEM no coincide con la tarea %', new.enc, new.operativo, new.tarea;
+            end if;
+        end if;
+        if old.recepcionista is distinct from new.recepcionista then
+            if new.recepcionista is null and new.asignado is not null then 
+                raise exception 'Error: no es posible quitar el recepcionista de la encuesta % del operativo % ya que se la misma se encuentra asignada', new.enc, new.operativo;
+            end if;
+        end if;
+        if old.asignado is distinct from new.asignado then
+            if new.asignado is null then
+                new.estado = '0D';
+            else
+                --if v_tarea_actual is distinct from new.tarea then    
+                    if v_estado_al_asignar is not null then
+                        new.estado = v_estado_al_asignar;
+                    end if;
+                --end if;
+            end if;
+        end if;
+    else 
+        raise exception 'Error: la encuesta % del operativo % se encuentra deshabilitada', new.enc, new.operativo;
     end if;
     return new;
 end;

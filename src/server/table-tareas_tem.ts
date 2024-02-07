@@ -53,8 +53,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
     }
     fields=fields.concat([
         {name:'area'                        , typeName: 'integer'    , editable:false   , inTable:false },
-        {name:'tarea_asignar'               , typeName:'text'        , inTable:false    , editable:false, serverSide:true},
-        {name:'tarea_anterior'              , typeName:'text'        , editable:false},
+        {name:'tarea_actual'                , typeName:'text'        , inTable:false    , editable:false, serverSide:true},
       //  {name:'ok'                          , typeName: 'text'       , editable:false   , inTable:false },
         {name:'recepcionista'               , typeName:'text'        , editable:true }, 
         {name:'asignado'                    , typeName:'text'        , editable:true, title: opts.name}, // va a la hoja de ruta
@@ -92,11 +91,10 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
         editable:puedeEditar,
         fields,
         primaryKey:['tarea','operativo','enc'],
-        hiddenColumns:['cargado_dm','notas', 'estados__permite_editar_encuesta','tarea_anterior','tarea_asginar'],
+        hiddenColumns:['cargado_dm','notas', 'estados__permite_editar_encuesta'],
         foreignKeys:[
             {references:'tem' , fields:['operativo','enc'], displayFields:[]},
             {references:'tareas' , fields:['operativo','tarea']},
-            {references:'tareas' , fields:[{source:'operativo', target:'operativo'}, {source: 'tarea_anterior', target:'tarea'}], alias:'tarea_anterior'},
             {references:'usuarios', fields:[{source:'asignado' , target:'idper'}], alias:'asignado', displayFields:['nombre','apellido']},
             {references:'operaciones' , fields:['operacion']},
             {references:'estados' , fields:['operativo','estado']},
@@ -104,7 +102,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
         ],
         softForeignKeys:[
             {references:'usuarios', fields:[{source:'recepcionista', target:'idper'}], alias:'at'},
-            {references:'tem_recepcion' , fields:['operativo','enc'], displayAllFields:true, displayAfterFieldName:'resumen_estado_sup', alias:"tem_rec"},
+            {references:'tem' , fields:['operativo','enc'], displayAllFields:true, displayAfterFieldName:'resumen_estado_sup', alias:"tem_rec"},
             {references:'tokens', fields:[{source:'cargado_dm', target:'token'}], displayFields:['username'], displayAfterFieldName:'cargado'},
             {references:'recepcionistas', fields:[{source:'recepcionista', target:'persona'}], alias:'rec'},
         ],
@@ -117,7 +115,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
                 select *
                     from (
                 select tt.tarea, t.operativo, t.enc, t.area, ${getDiasAPasarQuery('tt')}  as dias_a_pasar,
-                    case when tarea_proxima is not null then tarea_proxima when tt.estado='A' then tt.tarea else null end as tarea_asignar
+                    t.tarea_actual
                     ${fields.filter(x=>!(x.isPk ||x.table|| x.inTable===false||x.name=='area')).map(x=>`, tt.${db.quoteIdent(x.name)}`).join('')}
                     , y.grupo as ult_gru_no_rea
                     , case when tt.tarea='recu' and y.grupo0 in ('ausentes','rechazos') then 'recuperacion' else null end a_recuperacion   
@@ -147,7 +145,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
                     , t.edificio
                     , t.entrada
                     , t.barrio
-                    , '__implementar_en_operativo_final' as telefono                    
+                    , '__implementar_en_operativo_final' as telefono
                     from 
                         tem t left join tareas_tem tt
                             on t.operativo = tt.operativo and t.enc = tt.enc
@@ -164,19 +162,19 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
     };
 }
 
-export function tareas_tem_encu(context:TableContext){
+export function tareas_tem_asignacion_encu(context:TableContext){
     var tableDef = tareas_tem(context, {rol:'encu', name:'encuestador', abre:false, consiste:false}) 
     tableDef.sql!.isTable = false;
     return tableDef;
 }
 
-export function tareas_tem_recu(context:TableContext){
+export function tareas_tem_asignacion_recu(context:TableContext){
     var tableDef = tareas_tem(context, {rol:'recu', name:'recuperador', abre:true, consiste:false}) 
     tableDef.sql!.isTable = false;
     return tableDef;
 }
 
-export function tareas_tem_supe(context:TableContext){
+export function tareas_tem_asignacion_supe(context:TableContext){
     var tableDef = tareas_tem(context, {rol:'supe', name:'supervisor', abre:true, consiste:false}) 
     tableDef.sql!.isTable = false;
     return tableDef;

@@ -96,6 +96,7 @@ client-setup:
   lang: es
   menu: true
   background-img: ../img/background-test.png
+  grid-row-retain-moved-or-deleted: true
   deviceWidthForMobile: device-width
   user-scalable: no
 `

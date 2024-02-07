@@ -42,7 +42,6 @@ import { roles_subordinados  } from "./table-roles_subordinados";
 import {no_rea               } from "./table-no_rea";
 import {no_rea_sup           } from "./table-no_rea_sup";
 import {tem                  } from "./table-tem";
-import {tem_recepcion        } from "./table-tem_recepcion";
 import {semanas              } from "./table-semanas";
 import { usuarios            } from './table-usuarios';
 import { operaciones         } from './table-operaciones';
@@ -51,9 +50,9 @@ import { areas               } from './table-areas';
 import { sincronizaciones    } from './table-sincronizaciones';
 import { tareas              } from './table-tareas';
 import { tareas_tem, 
-         tareas_tem_encu, 
-         tareas_tem_recu, 
-         tareas_tem_supe     } from './table-tareas_tem';
+         tareas_tem_asignacion_encu, 
+         tareas_tem_asignacion_recu, 
+         tareas_tem_asignacion_supe     } from './table-tareas_tem';
 import { tareas_areas        } from './table-tareas_areas';
 import { areas_asignacion_general } from './table-areas_asignacion_general';
 import { grilla_hoja_ruta    } from './table-grilla_hoja_ruta';
@@ -582,11 +581,11 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 }
                 submenuAsignacion.push(
                     { menuType: 'table', name: 'encuestador', table: 't_encu_areas', ff: { tarea: 'encu', ...filtroRecepcionista } },
-                    { menuType: 'table', name: 'recuperador', table: 'tareas_tem_recu', ff: { tarea_asignar: 'recu', tarea: 'recu', ...filtroRecepcionista } },
+                    { menuType: 'table', name: 'recuperador', table: 'tareas_tem_asignacion_recu', ff: { tarea_actual: 'recu', tarea: 'recu', ...filtroRecepcionista } },
                 );
                 if(context.puede?.campo?.administrar){
                     submenuAsignacion.push(
-                        { menuType: 'table', name: 'supervisor' , table: 'tareas_tem_supe', ff: { tarea_asignar: 'supe', tarea: 'supe', ...filtroRecepcionista } },
+                        { menuType: 'table', name: 'supervisor' , table: 'tareas_tem_asignacion_supe', ff: { tarea_actual: 'supe', tarea: 'supe', ...filtroRecepcionista } },
                     );
                 }
                 submenuRecepcion.push(
@@ -722,7 +721,6 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , estados_acciones
             , tareas_proximas
             , tem
-            , tem_recepcion
             , historial_tem
             , parametros
             , operaciones
@@ -731,9 +729,9 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , sincronizaciones
             , tareas
             , tareas_tem
-            , tareas_tem_encu
-            , tareas_tem_recu
-            , tareas_tem_supe
+            , tareas_tem_asignacion_encu
+            , tareas_tem_asignacion_recu
+            , tareas_tem_asignacion_supe
             , tareas_areas
             , areas_asignacion_general
             , grilla_hoja_ruta
@@ -805,7 +803,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 return {name: fn   , typeName: 'text'  , editable: false, inTable: false}
             }))
             tableDef.sql!.from=`
-                (select i.*, t.tarea_actual,tt.tarea_anterior
+                (select i.*, t.tarea_actual,'TODO' as tarea_anterior
                   from inconsistencias i join tem t on i.vivienda=t.enc and i.operativo=t.operativo 
                   left join tareas_tem tt on t.operativo=tt.operativo and t.enc=tt.enc and t.tarea_actual=tt.tarea 
                 )  

@@ -9,22 +9,25 @@ AS $BODY$
     declare 
         v_estado_al_asignar text;
         v_tarea_actual  text;
-        v_tarea_proxima text;
+        v_tarea_inicial text;
 begin
-    select tarea_actual, habilitada, tarea_proxima into v_tarea_actual, v_tarea_proxima
+    select tarea_actual into v_tarea_actual
         from tem 
         where operativo = new.operativo and enc = new.enc;
     select estado_al_asignar into v_estado_al_asignar from estados where operativo = new.operativo and estado = new.estado;
+    select tarea into v_tarea_inicial
+        from tareas 
+        where operativo = new.operativo and es_inicial;
     if new.asignado is null then
-        if coalesce(v_tarea_actual,'nulo') = new.tarea then    
+        if new.tarea = v_tarea_inicial then
             update tem 
-                set tarea_proxima = new.tarea, tarea_actual = new.tarea_anterior
+                set tarea_actual = null
                 where operativo = new.operativo and enc = new.enc;
         end if;
     else
-        if v_tarea_actual is distinct from new.tarea then    
+        if v_tarea_actual is null and v_tarea_actual is distinct from new.tarea then    
             update tem 
-                set tarea_actual = tarea_proxima, tarea_proxima = null
+                set tarea_actual = v_tarea_inicial
                 where operativo = new.operativo and enc = new.enc;
         end if;
     end if;

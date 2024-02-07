@@ -412,19 +412,22 @@ var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
                     tarea: depot.row.tarea,
                     enc: depot.row.enc,
                     condicion: action.condicion,
-                    accion: action
+                    accion: action,
+                    tareasTemTable: depot.def.name
                 });
-                console.log(result)
                 var grid=depot.manager;
-                grid.retrieveRowAndRefresh(depot)
+                //@ts-ignore depotRefresh existe
+                // uso depotRefresh con el resultado del procedure (registro de tareas_tem basado en la definicion de ela tabla)
+                // y reasigno el row porque si pasa de tarea(ej verificar), con retrieveRowAndRefresh(depot) pierdo el registro
+                grid.depotRefresh(depot,{updatedRow:result, sendedForUpdate:{}}, undefined);
+                depot.row = result;
                 if(action.nombre_wscreen){
                     //TODO acomodar esto en algun momento
                     let params = depot.row;
-                    params.enc = Number(params.enc);
                     var up = {
                         operativo:params.operativo,
                         tarea:params.tarea,
-                        enc:params.enc
+                        enc: Number(params.enc)
                     }
                     window.open(location.origin+location.pathname+my.menuSeparator+`w=${action.nombre_wscreen}&up=${JSON.stringify(up)}&autoproced=true`, ABRIR_TAB)
                 }

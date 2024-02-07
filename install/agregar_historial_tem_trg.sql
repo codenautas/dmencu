@@ -17,7 +17,7 @@ AS $BODY$
         v_rea_sup integer;
         v_norea_sup integer;
 begin
-    if old.tarea_actual is distinct from new.tarea_actual and old.tarea_actual is not null then
+    if old.tarea_actual is distinct from new.tarea_actual and new.tarea_actual is not null and old.tarea_actual is not null then
         select coalesce(max(orden),0)+1 into v_proximo_orden
             from historial_tem 
             where operativo = old.operativo and enc = old.enc;

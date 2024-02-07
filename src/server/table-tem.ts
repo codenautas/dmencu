@@ -55,7 +55,6 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {name:'tarea_actual'         , typeName:'text'    , editable: false  },
             {name:"habilitar"            , typeName: "text"   , editable:false   , inTable:false, clientSide:'habilitar'},
             {name:"habilitada"           , typeName: 'boolean', editable:puedeEditarCampo, nullable: false},
-            {name:'tarea_proxima'        , typeName:'text'    , editable: false  },
             {name:'area'                 , typeName:'integer' , editable: false  },
             {name:'zona'                 , typeName:'text'    , editable: false  },
             {name:'rea'                  , typeName:'integer' , editable: false  },
@@ -153,17 +152,13 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
         "primaryKey": [ "operativo", "enc" ],
         foreignKeys:[
             {references:'areas'   , fields:['operativo', 'area']},
-            {references:'tareas' , fields:[
-                {source:'operativo', target:'operativo'},
-                {source:'tarea_actual', target:'tarea'}
-            ],
+            {
+                references:'tareas' , 
+                fields:[
+                    {source:'operativo', target:'operativo'},
+                    {source:'tarea_actual', target:'tarea'}
+                ],
                 alias:'taract'
-            },
-            {references:'tareas' , fields:[
-                {source:'operativo', target:'operativo'},
-                {source:'tarea_proxima', target:'tarea'}
-            ], 
-                alias:'tarprox'
             },
         //    {references:'usuarios', fields:[{source:'carga_persona', target:'idper'}], displayFields:['apellido','nombre']},
         ],        

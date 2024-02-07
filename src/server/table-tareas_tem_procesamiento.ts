@@ -19,8 +19,6 @@ export function tareas_tem_procesamiento(context:TableContext):TableDefinition {
         .forEach((field)=>field.visible=true);    
     var tableDefTT = tareas_tem(context);
     tableDef.sql!.from=getSqlFrom(tableDefTT,{desde:"procesa"});
-    tableDef.sql!.where = `"tareas_tem".tarea = 'proc' and 
-                            ("tem".tarea_actual = 'proc' or
-                             "tem".tarea_actual is null and "tem".tarea_proxima = 'proc')`;
+    tableDef.sql!.where = `"tareas_tem".tarea = 'proc' and "tem".tarea_actual = 'proc'`;
     return tableDef;
 }
