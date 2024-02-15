@@ -601,7 +601,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                         {menuType:'table', name:'supervisor' , table:'supervisores_asignados' },
                         {menuType:'table', name: 'mis_supervisores' , table: 'mis_supervisores_asignados'}
                     );
-                    menu.push({menuType:'table', name:'tareas_tem_fin_campo', label:'fin campo'})
+                    menu.push({menuType:'table', name:'tareas_tem_fin_campo', label:'espera fin campo'})
                 }else{
                     menu.push(
                         {menuType:'menu', name:'supervision', label:'supervisión' ,menuContent:[
@@ -803,10 +803,17 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 return {name: fn   , typeName: 'text'  , editable: false, inTable: false}
             }))
             tableDef.sql!.from=`
-                (select i.*, t.tarea_actual,'TODO' as tarea_anterior
+                (select i.*, t.tarea_actual, tarea_anterior
                   from inconsistencias i join tem t on i.vivienda=t.enc and i.operativo=t.operativo 
                   left join tareas_tem tt on t.operativo=tt.operativo and t.enc=tt.enc and t.tarea_actual=tt.tarea 
-                )  
+                  left join lateral (
+                        select tarea as tarea_anterior
+                            from historial_tem ht
+                            where t.operativo = ht.operativo and t.enc = ht.enc
+                            order by ts_salida desc
+                            limit 1
+                    ) as ta on true
+                )   
             `
         })
         be.appendToTableDefinition('operativos',function(tableDef, context){
