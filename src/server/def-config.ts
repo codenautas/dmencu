@@ -9,9 +9,7 @@ db:
   host: localhost
   database: dmencu_db
   schema: base
-  search_path: 
-  - base
-  - comun
+  search_path: [base, comun, his]
 install:
   dump:
     db:
