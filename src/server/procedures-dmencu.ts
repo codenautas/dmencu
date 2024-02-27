@@ -900,7 +900,6 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'enc'             , typeName:'text'},
             {name:'condicion'       , typeName:'text'},
             {name:'accion'          , typeName:'jsonb'},
-            {name:'tareasTemTable'  , typeName:'text'},        
         ],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var be =  context.be;
@@ -988,16 +987,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 ).fetchUniqueRow();
             }
             // FIN PASE DE TAREA
-
-            var mainDefTable=be.tableStructures[params.tareasTemTable](context);
-            console.log("from:", mainDefTable.sql!.from)
-            return (await context.client.query(`
-                select ${[...mainDefTable.sql!.select].join(', ')}
-                    from ${mainDefTable.sql!.from}
-                    where "tareas_tem".operativo = $1 and "tareas_tem".enc = $2 and "tareas_tem".tarea = $3`
-                ,[params.operativo, params.enc, params.tarea]
-            ).fetchUniqueRow()).row;
-
+            return "ok";
         }
     },
     {
@@ -1140,6 +1130,42 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         }
     },
     {
+        action: 'encuesta_cerrar',
+        parameters:[
+            {name:'operativo'       , typeName:'text'},
+            {name:'tarea'           , typeName:'text'},
+            {name:'enc'             , typeName:'text'},
+        ],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            await context.client.query(`
+                UPDATE tareas_tem
+                    set verificado = '1', asignado = $4
+                    where operativo=$1 and tarea= $2 and enc=$3
+                    returning *`,
+                [params.operativo, params.tarea, params.enc, context.user.idper])
+            .fetchUniqueRow();
+            return 'ok';
+        }
+    },
+    {
+        action: 'encuesta_no_cerrar',
+        parameters:[
+            {name:'operativo'       , typeName:'text'},
+            {name:'tarea'           , typeName:'text'},
+            {name:'enc'             , typeName:'text'},
+        ],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            await context.client.query(`
+                UPDATE tareas_tem
+                    set verificado = null
+                    where operativo=$1 and tarea= $2 and enc=$3
+                    returning *`,
+                [params.operativo, params.tarea, params.enc])
+            .fetchUniqueRow();
+            return 'ok';
+        }
+    },
+    {
         action: 'encuesta_supervisar_presencial',
         parameters:[
             {name:'operativo'       , typeName:'text'},
@@ -1193,8 +1219,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             return 'ok';
         }
     },
-    /**
-     * {
+    {
         action: 'encuesta_pasar_a_anac',
         parameters:[
             {name:'operativo'       , typeName:'text'},
@@ -1212,10 +1237,10 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             await context.client.query(`
                 UPDATE tareas_tem
                     set estado = 'CC'
-                    where operativo=$1 and tarea= $2 and enc=$3
-                    returning *`,
-                [params.operativo, params.tarea, params.enc])
-            .fetchUniqueRow();
+                    where operativo=$1 and enc=$2 and tarea in ($3,$4) --quiero pasar las 2 tareas a CC
+                `,
+                [params.operativo, params.enc, 'anac', 'proc'])
+            .execute();
             return 'ok';
         }
     },
@@ -1237,14 +1262,62 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             await context.client.query(`
                 UPDATE tareas_tem
                     set estado = 'A'
-                    where operativo=$1 and tarea= $2 and enc=$3
+                    where operativo=$1 and enc=$2 and tarea= $3
                     returning *`,
-                [params.operativo, 'proc', params.enc])
+                [params.operativo, params.enc, 'proc'])
+            .fetchUniqueRow();
+            await context.client.query(`
+                UPDATE tareas_tem
+                    set estado = '0D'
+                    where operativo=$1 and enc=$2 and tarea= $3
+                    returning *`,
+                [params.operativo, params.enc, 'anac'])
             .fetchUniqueRow();
             return 'ok';
         }
     },
     {
+        action: 'encuesta_devolver_proc_desde_anac',
+        parameters:[
+            {name:'operativo'       , typeName:'text'},
+            {name:'enc'             , typeName:'text'},
+            {name:'tarea'           , typeName:'text'},
+        ],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            var be = context.be;
+            await context.client.query(`
+                UPDATE tem
+                    set tarea_actual = $3
+                    where operativo=$1 and enc=$2
+                    returning *`,
+                [params.operativo, params.enc, 'proc'])
+            .fetchUniqueRow();
+            await context.client.query(`
+                UPDATE tareas_tem
+                    set estado = 'A'
+                    where operativo=$1 and enc=$2 and tarea= $3
+                    returning *`,
+                [params.operativo, params.enc, 'proc'])
+            .fetchUniqueRow();
+            await be.procedure.encuesta_verificar.coreFunction(context,params);
+            return 'ok';
+        }
+    },
+    {
+        action: 'encuesta_no_devolver_proc_desde_anac',
+        parameters:[
+            {name:'operativo'       , typeName:'text'},
+            {name:'enc'             , typeName:'text'},
+            {name:'tarea'           , typeName:'text'},
+        ],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            var be = context.be;
+            await be.procedure.encuesta_no_verificar.coreFunction(context,params);
+            await be.procedure.encuesta_pasar_a_anac.coreFunction(context,params);
+            return 'ok';
+        }
+    },
+    /*{
         action: 'encuesta_recuperar_desde_anac',
         parameters:[
             {name:'operativo'       , typeName:'text'},
@@ -1307,7 +1380,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             return 'ok';
         }
     },
-     */
+    */
     {
         action: 'encuesta_habilitar_deshabilitar',
         parameters:[

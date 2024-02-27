@@ -19,7 +19,8 @@ export function tareas(context:TableContext, opts?:any):TableDefinition {
             {name:'rol_recepcionista'       , typeName:'text', visible:false},
             {name:'main_form'               , typeName:'text'},
             {name:'registra_estado_en_tem'  , typeName:'boolean'},
-            {name:'es_inicial'              , typeName:'boolean'}
+            {name:'es_inicial'              , typeName:'boolean'},
+            {name:'es_final'                , typeName:'boolean'},
         ],
         primaryKey:['operativo','tarea'],
         foreignKeys:[

@@ -12,7 +12,8 @@ export var definicionComunFincAnacProc = (tableDef:TableDefinition)=>{
         .forEach((field:FieldDefinition)=>field.visible=false)
     tableDef.hiddenColumns=tableDef.hiddenColumns?.concat(['asignado__nombre','asignado__apellido',
              'rec__nombre','rec__apellido']);
-    tableDef.refrescable = false;
+    tableDef.selfRefresh = true;
+    tableDef.refrescable = true;
 }
 
 export function tareas_tem_fin_campo(context:TableContext):TableDefinition {

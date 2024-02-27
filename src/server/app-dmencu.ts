@@ -65,6 +65,7 @@ import { tareas_tem_recepcion} from './table-tareas_tem_recepcion';
 import { tareas_tem_ingreso} from './table-tareas_tem_ingreso';
 import { tareas_tem_fin_campo} from './table-tareas_tem_fin_campo';
 import { tareas_tem_procesamiento} from './table-tareas_tem_procesamiento';
+import { tareas_tem_analisis_campo} from './table-tareas_tem_analisis_campo';
 import { mis_tareas_areas    } from './table-mis_tareas_areas';
 import { control_campo       } from './table-control_campo';
 import { control_resumen     } from './table-control_resumen';
@@ -601,7 +602,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                         {menuType:'table', name:'supervisor' , table:'supervisores_asignados' },
                         {menuType:'table', name: 'mis_supervisores' , table: 'mis_supervisores_asignados'}
                     );
-                    menu.push({menuType:'table', name:'tareas_tem_fin_campo', label:'espera fin campo'})
+                    menu.push({menuType:'table', name:'tareas_tem_fin_campo', label:'espera fin de campo'})
+                    menu.push({menuType:'table', name:'tareas_tem_analisis_campo', label:'análisis de campo'})
                 }else{
                     menu.push(
                         {menuType:'menu', name:'supervision', label:'supervisión' ,menuContent:[
@@ -744,6 +746,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , tareas_tem_ingreso
             , tareas_tem_fin_campo
             , tareas_tem_procesamiento
+            , tareas_tem_analisis_campo
             , mis_tareas_areas
             , control_campo
             , control_resumen
