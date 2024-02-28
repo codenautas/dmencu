@@ -1317,7 +1317,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             return 'ok';
         }
     },
-    /*{
+    {
         action: 'encuesta_recuperar_desde_anac',
         parameters:[
             {name:'operativo'       , typeName:'text'},
@@ -1326,10 +1326,26 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         ],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var be = context.be;
-            var forzarTareaEncuestaProc = be.procedure.encuesta_forzar_tarea;
+            var {operativo, enc, tarea} = params;
+            await context.client.query(`
+                update tem 
+                    set tarea_actual = $3
+                    where operativo = $1 and enc = $2
+                    returning *`,
+                [operativo, enc, 'recu'])
+            .fetchUniqueRow();
+            await context.client.query(`
+                update tareas_tem 
+                    set estado = 'V' 
+                    where operativo = $1 and enc = $2 and tarea = $3
+                    returning *`,
+                [operativo, enc, tarea])
+            .fetchUniqueRow();
+            return 'ok';
+            /*var forzarTareaEncuestaProc = be.procedure.encuesta_forzar_tarea;
             var {operativo,enc,tarea:tarea_actual} = params;
             await forzarTareaEncuestaProc.coreFunction(context,{operativo,enc,tarea_actual,tarea_nueva:'recu'});
-            return 'ok'
+            return 'ok'*/
         }
     },
     {
@@ -1349,38 +1365,23 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     returning *`,
                 [operativo, enc, tarea_actual, tarea_nueva])
             .fetchUniqueRow();
-            var result = await context.client.query(`
-                update tareas_tem 
-                    set estado = '0D' 
-                    where operativo = $1 and enc = $2 and tarea in ($3, $4)
-                    returning *`,
-                [operativo, enc, tarea_actual, tarea_nueva])
-            .fetchAll();
-
-            if(result.rowCount != 2){
-                throw Error(`Se esperaban 2 registros y se obtuvo/obtuvieron ${result.rowCount}`)
-            }
-        
             await context.client.query(`
                 update tareas_tem 
-                    set asignado = null
-                    where operativo = $1 and enc = $2 and tarea  = $3
+                    set estado = 'V' 
+                    where operativo = $1 and enc = $2 and tarea = $3
+                    returning *`,
+                [operativo, enc, tarea_actual])
+            .fetchUniqueRow();
+            await context.client.query(`
+                update tareas_tem 
+                    set estado = '0D'
+                    where operativo = $1 and enc = $2 and tarea = $3
                     returning *`,
                 [operativo, enc, tarea_nueva])
             .fetchUniqueRow();
-
-            await context.client.query(`
-                update tareas_tem 
-                    set recepcionista = null
-                    where operativo = $1 and enc = $2 and tarea  = $3
-                    returning *`,
-                [operativo, enc, tarea_nueva])
-            .fetchUniqueRow();
-
             return 'ok';
         }
     },
-    */
     {
         action: 'encuesta_habilitar_deshabilitar',
         parameters:[
