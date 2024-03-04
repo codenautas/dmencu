@@ -805,9 +805,15 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             tableDef.fields=tableDef.fields.concat(['tarea_actual','tarea_anterior'].map(fn=>{
                 return {name: fn   , typeName: 'text'  , editable: false, inTable: false}
             }))
+            //sacar campos de vitales! 
+            const regExpFieldsVita= new RegExp('^(comp|infe|cod_causa|domi)$');
+            tableDef.fields = tableDef.fields.filter(f=>!(regExpFieldsVita.test(f.name)))
+                
+            var q_inconsist= tableDef.sql!.from
             tableDef.sql!.from=`
                 (select i.*, t.tarea_actual, tarea_anterior
-                  from inconsistencias i join tem t on i.vivienda=t.enc and i.operativo=t.operativo 
+                  from ${q_inconsist} i 
+                  join tem t on i.vivienda=t.enc and i.operativo=t.operativo 
                   left join tareas_tem tt on t.operativo=tt.operativo and t.enc=tt.enc and t.tarea_actual=tt.tarea 
                   left join lateral (
                         select tarea as tarea_anterior
