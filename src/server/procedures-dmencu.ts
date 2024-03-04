@@ -1228,19 +1228,19 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         ],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             await context.client.query(`
-                UPDATE tem
-                    set tarea_actual = $3
-                    where operativo=$1 and enc=$2
-                    returning *`,
-                [params.operativo, params.enc, 'anac'])
-            .fetchUniqueRow();
-            await context.client.query(`
                 UPDATE tareas_tem
                     set estado = 'CC'
                     where operativo=$1 and enc=$2 and tarea in ($3,$4) --quiero pasar las 2 tareas a CC
                 `,
                 [params.operativo, params.enc, 'anac', 'proc'])
             .execute();
+            await context.client.query(`
+                UPDATE tem
+                    set tarea_actual = $3
+                    where operativo=$1 and enc=$2
+                    returning *`,
+                [params.operativo, params.enc, 'anac'])
+            .fetchUniqueRow();
             return 'ok';
         }
     },
@@ -1252,13 +1252,6 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'tarea'           , typeName:'text'},
         ],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
-            await context.client.query(`
-                UPDATE tem
-                    set tarea_actual = $3
-                    where operativo=$1 and enc=$2
-                    returning *`,
-                [params.operativo, params.enc, 'proc'])
-            .fetchUniqueRow();
             await context.client.query(`
                 UPDATE tareas_tem
                     set estado = 'A'
@@ -1273,6 +1266,13 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     returning *`,
                 [params.operativo, params.enc, 'anac'])
             .fetchUniqueRow();
+            await context.client.query(`
+                UPDATE tem
+                    set tarea_actual = $3
+                    where operativo=$1 and enc=$2
+                    returning *`,
+                [params.operativo, params.enc, 'proc'])
+            .fetchUniqueRow();
             return 'ok';
         }
     },
@@ -1285,13 +1285,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         ],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var be = context.be;
-            await context.client.query(`
-                UPDATE tem
-                    set tarea_actual = $3
-                    where operativo=$1 and enc=$2
-                    returning *`,
-                [params.operativo, params.enc, 'proc'])
-            .fetchUniqueRow();
+            await be.procedure.encuesta_verificar.coreFunction(context,params);
             await context.client.query(`
                 UPDATE tareas_tem
                     set estado = 'A'
@@ -1299,7 +1293,13 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     returning *`,
                 [params.operativo, params.enc, 'proc'])
             .fetchUniqueRow();
-            await be.procedure.encuesta_verificar.coreFunction(context,params);
+            await context.client.query(`
+                UPDATE tem
+                    set tarea_actual = $3
+                    where operativo=$1 and enc=$2
+                    returning *`,
+                [params.operativo, params.enc, 'proc'])
+            .fetchUniqueRow();
             return 'ok';
         }
     },
@@ -1312,8 +1312,14 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         ],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var be = context.be;
+            await context.client.query(`
+                UPDATE tareas_tem
+                    set estado = 'CC'
+                    where operativo=$1 and enc=$2 and tarea in ($3,$4) --quiero pasar las 2 tareas a CC
+                `,
+                [params.operativo, params.enc, 'anac', 'proc'])
+            .execute();
             await be.procedure.encuesta_no_verificar.coreFunction(context,params);
-            await be.procedure.encuesta_pasar_a_anac.coreFunction(context,params);
             return 'ok';
         }
     },
@@ -1327,19 +1333,13 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var be = context.be;
             var {operativo, enc, tarea} = params;
+            await be.procedure.encuesta_verificar.coreFunction(context,params);
             await context.client.query(`
                 update tem 
                     set tarea_actual = $3
                     where operativo = $1 and enc = $2
                     returning *`,
                 [operativo, enc, 'recu'])
-            .fetchUniqueRow();
-            await context.client.query(`
-                update tareas_tem 
-                    set estado = 'V' 
-                    where operativo = $1 and enc = $2 and tarea = $3
-                    returning *`,
-                [operativo, enc, tarea])
             .fetchUniqueRow();
             return 'ok';
             /*var forzarTareaEncuestaProc = be.procedure.encuesta_forzar_tarea;

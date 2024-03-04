@@ -20,7 +20,8 @@ BEGIN
     ' and t.estado='||quote_literal(p_estado)||
     ' and t.enc='||quote_literal(p_enc)||
     ' and ea.eaccion='||quote_literal(p_eaccion)||
-    ' and '||v_cond||';';
+    ' and '||v_cond||
+    ' and te.habilitada;';
  --raise notice 'esto %',vsent;
  execute v_sent into v_salida;
  IF v_salida=1 THEN
