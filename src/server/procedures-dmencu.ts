@@ -977,13 +977,13 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 let q = context.be.db.quoteLiteral;
                 await context.client.query(`
                     update tareas_tem
-                        set ts_entrada = current_timestamp
+                        set ts_entrada = current_timestamp, adelantar = null, estado = $4
                             ${autoAsignado?
                                 ", recepcionista="+q(autoAsignado)
                             :""}
                         where operativo = $1 and enc = $2 and tarea = $3
                         returning *`
-                    ,[params.operativo, params.enc, tareaSiguiente.tarea_destino]
+                    ,[params.operativo, params.enc, tareaSiguiente.tarea_destino, tareaSiguiente.estado_destino]
                 ).fetchUniqueRow();
             }
             // FIN PASE DE TAREA
@@ -1342,10 +1342,27 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 [operativo, enc, 'recu'])
             .fetchUniqueRow();
             return 'ok';
-            /*var forzarTareaEncuestaProc = be.procedure.encuesta_forzar_tarea;
-            var {operativo,enc,tarea:tarea_actual} = params;
-            await forzarTareaEncuestaProc.coreFunction(context,{operativo,enc,tarea_actual,tarea_nueva:'recu'});
-            return 'ok'*/
+        }
+    },
+    {
+        action: 'encuesta_no_recuperar_desde_anac',
+        parameters:[
+            {name:'operativo'       , typeName:'text'},
+            {name:'enc'             , typeName:'text'},
+            {name:'tarea'           , typeName:'text'},
+        ],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            var be = context.be;
+            var {operativo, enc, tarea} = params;
+            await context.client.query(`
+                update tem 
+                    set tarea_actual = $4
+                    where operativo = $1 and enc = $2 and tarea_actual = $3
+                    returning *`,
+                [operativo, enc, 'recu', 'anac'])
+            .fetchUniqueRow();
+            await be.procedure.encuesta_no_verificar.coreFunction(context,params);
+            return 'ok';
         }
     },
     {

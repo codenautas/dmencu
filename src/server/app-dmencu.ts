@@ -650,9 +650,6 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             var menuConfigurar:MenuInfoBase[] = [];
             if(context.puede?.campo?.administrar||context.puede?.encuestas?.procesar){
                 let submenuMuestra:MenuInfoBase[] = [{menuType:'table', name:'tem', label: 'TEM'}]
-                if(context.puede?.campo?.administrar){
-                    submenuMuestra.push({menuType:'table', name:'tareas'})
-                } 
                 menuConfigurar.push(
                     {menuType:'menu', name:'muestra', label:'muestra', menuContent:submenuMuestra}
                 );
@@ -671,6 +668,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             if(context.superuser){
                 menuConfigurar.push(
                     {menuType:'menu', name:'estados_acciones_tareas', label:'estados/acciones/tareas', menuContent:[
+                        {menuType:'table', name:'tareas'},
                         {menuType:'table', name:'estados'},
                         {menuType:'table', name:'acciones'},
                         {menuType:'table', name:'estados_acciones'},

@@ -37,7 +37,7 @@ begin
                 raise 'ERROR: no se puede desverificar la tarea % ya que la tarea siguiente (%) se encuentra asignada', new.tarea, v_tarea_actual;
             end if;
         else
-            if v_tarea_final is distinct from new.tarea then
+            if v_tarea_actual is distinct from new.tarea then
                 raise 'ERROR: no se puede desverificar la tarea % ya que no es la ultima anterior a la actual', new.tarea;
             end if;
         end if;

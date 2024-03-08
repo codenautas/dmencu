@@ -13,6 +13,7 @@ export function historial_tem(context:TableContext):TableDefinition {
         {name:'ts_salida'           , typeName:'timestamp'},
         {name:'tarea'               , typeName:'text'     },
         {name:'estado'              , typeName:'text'     },
+        {name:'verificado'          , typeName:'text'     },
         {name:'recepcionista'       , typeName:'text'     },
         {name:'asignado'            , typeName:'text'     },
         {name:'json_encuesta'       , typeName:'jsonb'    },
