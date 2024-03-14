@@ -950,7 +950,7 @@ var botonFormularioConResumen = (
     var sufijoIdElemento = toPlainForPk(forPk)+(defBoton.esConfirmar?'-listo':'');
     var id = `div-boton-formulario-${sufijoIdElemento}`;
     var estado = feedbackForm.resumen;
-    return html.div({
+    return html.tr({
         id, 
         class:"seccion-boton-formulario" , 
         $attrs:{
@@ -960,8 +960,10 @@ var botonFormularioConResumen = (
             "def-button":JSON.stringify(defBoton)
         }
     }, [
-        casillero.aclaracion || html.div({class:"aclaracion"}, [breakeableText(casillero.aclaracion)??null]),
-        html.div([
+        casillero.aclaracion?
+            html.td({class:"aclaracion"}, [breakeableText(casillero.aclaracion)])
+        :null,
+        html.td([
             Button2({
                 // id:`var-${idVariable}`,
                 id:`boton-formulario-${sufijoIdElemento}`, 
@@ -1003,14 +1005,15 @@ var botonFormularioConResumen = (
                             html.path({d:materialIoIconsSvgPath.DeleteForever})
                         ]), 
                     onClick:()=>accion_borrar_formulario({forPk, forPkPadre})})
-            :null),
-            (defBoton.num !== false && !defBoton.esAgregar && !defBoton.esConfirmar?
-                html.span((casillero.especial?.camposResumen??[defBoton.num.toString()]).map(
-                    (campo:string)=>respuestasAumentadas[formularioAAbrir.unidad_analisis][defBoton.num-1][campo as IdVariable]
-                ).join(', ') )
-            :null)
-            // html.div({class:'inline-dialog', $attrs:{"inline-dialog-open": confirmarForzarIr == defBoton.num?'visible':'hidden'}},[                ])
-        ])
+            :null) 
+        ]),
+        (defBoton.num !== false && !defBoton.esAgregar && !defBoton.esConfirmar?
+            (casillero.especial?.camposResumen??[defBoton.num.toString()]).map(
+                (campo:string)=>html.td(respuestasAumentadas[formularioAAbrir.unidad_analisis][defBoton.num-1][campo as IdVariable])
+            )
+        :null)
+        // html.div({class:'inline-dialog', $attrs:{"inline-dialog-open": confirmarForzarIr == defBoton.num?'visible':'hidden'}},[                ])
+        
         /*
             {defBoton.esAgregar?<> <span>  </span> <Button
                 variant="outlined"
@@ -1155,9 +1158,21 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                         casillero, props.forPk, idButton, formularioAAbrir
                     )
                 )
+                let nombresCamposResumen = likeAr((casillero.especial?.camposResumen||[])).array().map(c=>c);
                 var htmlSeccion=document.getElementById(idSeccion)!;
                 htmlSeccion.innerHTML="";
-                htmlSeccion.appendChild(html.div(todosLosBotones).create());
+                htmlSeccion.appendChild(html.table({class:`table ${nombresCamposResumen.length?'w-auto':''}`},[
+                    html.thead([
+                        html.tr([
+                            casillero.aclaracion?html.th():null,
+                            html.th(casillero.nombre),
+                            nombresCamposResumen.map((nombreCampo)=>html.th(nombreCampo)),
+                        ])
+                    ]),
+                    html.tbody([
+                        todosLosBotones
+                    ])
+                ]).create());
             }catch(err){
                 var error = unexpected(err);
                 console.log("entra al catch")
