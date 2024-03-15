@@ -963,7 +963,9 @@ var botonFormularioConResumen = (
         casillero.aclaracion?
             html.td({class:"aclaracion"}, [breakeableText(casillero.aclaracion)])
         :null,
-        html.td([
+        html.td({colspan:(defBoton.esAgregar || defBoton.esConfirmar)?
+                (casillero.especial?.camposResumen.length??1)+(casillero.aclaracion?0:1)
+            :null},[
             Button2({
                 // id:`var-${idVariable}`,
                 id:`boton-formulario-${sufijoIdElemento}`, 
@@ -1008,7 +1010,7 @@ var botonFormularioConResumen = (
             :null) 
         ]),
         (defBoton.num !== false && !defBoton.esAgregar && !defBoton.esConfirmar?
-            (casillero.especial?.camposResumen??[defBoton.num.toString()]).map(
+            (casillero.especial?.camposResumen??[/*defBoton.num.toString()*/]).map(
                 (campo:string)=>html.td(respuestasAumentadas[formularioAAbrir.unidad_analisis][defBoton.num-1][campo as IdVariable])
             )
         :null)
@@ -1161,7 +1163,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                 let nombresCamposResumen = likeAr((casillero.especial?.camposResumen||[])).array().map(c=>c);
                 var htmlSeccion=document.getElementById(idSeccion)!;
                 htmlSeccion.innerHTML="";
-                htmlSeccion.appendChild(html.table({class:`table ${nombresCamposResumen.length?'w-auto':''}`},[
+                htmlSeccion.appendChild(html.table({class:`table table-striped ${nombresCamposResumen.length?'w-auto':''}`},[
                     html.thead([
                         html.tr([
                             casillero.aclaracion?html.th():null,
