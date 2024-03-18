@@ -31,7 +31,7 @@ export type generarIdEncFun = (area:number,index:number)=>string
 
 var generarIdEncFun: generarIdEncFun;  
 
-const setGenerarIdEncFun = (fun:generarIdEncFun)=>
+export const setGenerarIdEncFun = (fun:generarIdEncFun)=>
     generarIdEncFun = fun;
 
 setGenerarIdEncFun((area:number,index:number)=>area.toString() + (index+10).toString());
