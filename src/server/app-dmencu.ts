@@ -649,7 +649,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             }
             var menuConfigurar:MenuInfoBase[] = [];
             if(context.puede?.campo?.administrar||context.puede?.encuestas?.procesar){
-                let submenuMuestra:MenuInfoBase[] = [{menuType:'table', name:'tem', label: 'TEM'}]
+                let submenuMuestra:MenuInfoBase[] = [
+                    {menuType:'table', name:'tem', label: 'TEM'},
+                    {menuType:'proc',  name:'muestra_generar', label:'generar muestra'},
+                ]
                 menuConfigurar.push(
                     {menuType:'menu', name:'muestra', label:'muestra', menuContent:submenuMuestra}
                 );
@@ -842,6 +845,11 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 typeName:'boolean', 
                 editable: false,
                 defaultDbValue: 'true'
+            },{
+                name:'permite_generar_muestra', 
+                typeName:'boolean', 
+                editable: false,
+                defaultDbValue: 'false'
             });
         })
         be.appendToTableDefinition('usuarios',function(tableDef, context){

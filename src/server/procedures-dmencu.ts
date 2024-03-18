@@ -27,6 +27,15 @@ const MAIN_TABLENAME ='viviendas';
 const ESTADO_POSTERIOR_CARGA = 'C';
 const ESTADO_POSTERIOR_DESCARGA = 'D';
 
+export type generarIdEncFun = (area:number,index:number)=>string
+
+var generarIdEncFun: generarIdEncFun;  
+
+const setGenerarIdEncFun = (fun:generarIdEncFun)=>
+    generarIdEncFun = fun;
+
+setGenerarIdEncFun((area:number,index:number)=>area.toString() + (index+10).toString());
+
 export const getOperativoActual = async (context:ProcedureContext)=>{
     var be = context.be;
     var result = await be.procedure.table_data.coreFunction(context,{table: `parametros`, fixedFields:[]});
@@ -890,6 +899,47 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             const enc = await context.client.query(`select enc from tem where operativo=$1 and (libre or ${minsSinceBloqued} > ${minsToExpire}) limit 1;`,[params.operativo]).fetchUniqueValue();
             await context.client.query(`UPDATE tem set libre = false, fecha_bloqueo=current_timestamp where operativo=$1 and enc=$2`,[params.operativo, enc.value]).execute();
             return enc.value;
+        }
+    },
+    {
+        action: 'muestra_generar',
+        parameters:[
+            {name:'operativo'          , typeName:'text',    references: "operativos"},
+            {name:'area'               , typeName:'integer', references: "areas"},
+            {name:'dominio'            , typeName:'integer', defaultValue: 3},
+            {name:'cant_encuestas'     , typeName:'integer'},
+        ],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            const be =  context.be;
+            var {permite_generar_muestra} = (await context.client.query(`
+                select permite_generar_muestra 
+                    from operativos 
+                    where operativo = $1
+            `,[params.operativo]).fetchUniqueRow()).row;
+            if(permite_generar_muestra){
+                var temTableDef:TableDefinition = be.tableStructures['tem'](context);
+                const MAX_ENCS = 100;
+                for(let i = 0; i < Math.min(params.cant_encuestas,MAX_ENCS); i++){
+                    let enc = generarIdEncFun(params.area, i);
+                    await context.client.query(`
+                        INSERT into tem (operativo, enc, area, dominio, habilitada) values ($1, $2, $3, $4, $5)
+                        on conflict (${sqlTools.quoteIdentArray(temTableDef.primaryKey).join(',')}) do nothing`,
+                    [params.operativo, enc, params.area, params.dominio, true])
+                    .execute();
+                }
+                await context.client.query(`
+                    insert into tareas_tem (operativo, enc, tarea)
+                        select ta.operativo, ta.enc, ta.tarea
+                        from (select ta.*, t.enc,t.area from tareas ta, tem t where ta.operativo=t.operativo) ta 
+                        where ta.operativo = $1 
+                            and not (ta.operativo, ta.enc, ta.tarea) in (select operativo, enc, tarea from tareas_tem)
+                        order by 1,3,2;`,
+                    [params.operativo])
+                .execute();
+                return 'ok';
+            }else{
+                throw Error("el operativo no permite generar muestra");
+            }
         }
     },
     {
