@@ -59,7 +59,7 @@ export function areas(context:TableContext):TableDefinition {
         fields:[
             {name: "operativo"              , typeName: "text"   , nullable: false, editable: false},
             {name: 'area'                   , typeName: 'integer', nullable: false, editable: false},
-            {name:'clusters'                , typeName:'text'    , visible: false},
+            {name:'clusters'                , typeName:'text'    , visible: false , inTable:false },
             {name:'recepcionista'           , typeName:'text', references:'recepcionistas'},
             {name:'encuestador'             , typeName:'text'                    },
             //{name:'recuperador'             , typeName:'text'                    },
@@ -92,11 +92,7 @@ export function areas(context:TableContext):TableDefinition {
         sql:{
             isTable:true,
             from:` 
-            (select a.operativo, a.area, a.recepcionista, ta.asignado encuestador
-                ,  a.observaciones_hdr, a.verificado_rec, a.obs_recepcionista
-                  --a.operacion_area, a.fecha,
-                , a.cargadas_bkp, a.reas_bkp, a.no_reas_bkp, a.incompletas_bkp, a.vacias_bkp, a.inhabilitadas_bkp
-                , t.*
+            (select a.*, ta.asignado, t.*
                 from areas a left join tareas_areas ta on ta.tarea='encu' and ta.area=a.area and ta.operativo=a.operativo, lateral (
                     ${cuentasSql(be, `t.area=a.area /*and tt.tarea='encu'*/`)}
                 ) t
