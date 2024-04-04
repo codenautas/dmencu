@@ -2,6 +2,7 @@
 
 import {TableDefinition, TableContext} from "./types-dmencu";
 import { FieldDefinition } from "rel-enc";
+import {OperativoGenerator } from "procesamiento";
 
 export type OptsTareasTem = {
     rol: 'encu'|'recu'|'supe'|null
@@ -107,7 +108,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
             {references:'recepcionistas', fields:[{source:'recepcionista', target:'persona'}], alias:'rec'},
         ],
         detailTables: [
-            {table: "inconsistencias", abr: "I", fields: [{source:'operativo', target:'operativo'},{source:'enc', target:'vivienda'}], refreshParent:true, refreshFromParent:true}
+            {table: "inconsistencias", abr: "I", fields: [{source:'operativo', target:'operativo'},{source:'enc', target:OperativoGenerator.mainTDPK}], refreshParent:true, refreshFromParent:true}
         ],
         sql:{
             isTable: true,
@@ -128,7 +129,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
                     , t.rea_sup ult_rea_sup, t.norea_sup as ult_norea_sup, t.resumen_estado_sup ult_resumen_estado_sup
                     , t.proie
                     , dominio
-                    , v.consistido
+                    , aux.consistido
                     , e.visible_en_recepcion
                     , e.visible_en_ingreso
                     , e.visible_en_fin_campo
@@ -152,7 +153,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
                         left join tareas ta on tt.operativo = ta.operativo and tt.tarea = ta.tarea
                         left join areas a on tt.operativo = a.operativo and t.area = a.area
                         left join no_rea y on t.norea=y.no_rea::integer
-                        left join viviendas v on v.operativo=t.operativo and v.vivienda=t.enc 
+                        left join ${OperativoGenerator.mainTD} aux on aux.operativo=t.operativo and aux.${OperativoGenerator.mainTDPK}=t.enc 
                         join estados e on t.operativo = e.operativo and tt.estado = e.estado
                     ) x
             )`,

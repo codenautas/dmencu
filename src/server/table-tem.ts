@@ -1,6 +1,8 @@
 "use strict";
 
 import {TableDefinition, ContextForDump, FieldDefinition} from "./types-dmencu";
+import {OperativoGenerator } from "procesamiento";
+
 
 export var getDomicilioFields = ():FieldDefinition[] => [
     {name:'codcalle'             , typeName:'integer' , editable: false  },
@@ -193,7 +195,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
                     , tt.etareas->'recu'->>'asignado' as recuperador
                     , tt.etareas->'supe'->>'asignado' as supervisor
                     , null notas
-                    , v.consistido
+                    , aux.consistido
                     , usu_enc.nombre as nombre_enc
                     , usu_enc.apellido as apellido_enc
                     , usu_rec.nombre as nombre_rec
@@ -205,7 +207,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
                         select tt.operativo, tt.enc, bool_or(cargado) cargado, string_agg(cargado_dm,',') cargado_dm,jsonb_object_agg(tarea,jsonb_build_object('asignado',asignado,'cargado',cargado,'cargado_dm',cargado_dm))etareas 
                             from tareas_tem tt group by tt.operativo, tt.enc  )tt on t.operativo=tt.operativo and t.enc=tt.enc
                             left join no_rea y on y.no_rea::integer=t.norea
-                            left join viviendas v on v.operativo=t.operativo and v.vivienda=t.enc 
+                            left join ${OperativoGenerator.mainTD} aux on aux.operativo=t.operativo and aux.${OperativoGenerator.mainTDPK}=t.enc 
                             left join usuarios usu_enc on usu_enc.idper = tt.etareas->'encu'->>'asignado'
                             left join usuarios usu_rec on usu_rec.idper = tt.etareas->'recu'->>'asignado'
                             left join usuarios usu_sup on usu_sup.idper = tt.etareas->'supe'->>'asignado'
