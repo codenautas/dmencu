@@ -6,6 +6,8 @@ import * as likeAr from "like-ar";
 export * from "./types-dmencu";
 import { IdUnidadAnalisis, UnidadAnalisis, EstadoAccion, IdEnc, IdTarea, RespuestasRaiz, IdOperativo } from "../unlogged/tipos";
 
+import {OperativoGenerator } from "procesamiento";
+
 import {json, jsono} from "pg-promise-strict";
 
 import {changing, date } from 'best-globals';
@@ -16,6 +18,7 @@ import { tareas } from "./table-tareas";
 import { prependListener } from "process";
 import { getDiasAPasarQuery } from "./table-tareas_tem";
 import { error } from "console";
+import { Context } from "vm";
 
 var path = require('path');
 var sqlTools = require('sql-tools');
@@ -23,7 +26,7 @@ var sqlTools = require('sql-tools');
 var discrepances = require('discrepances');
 
 const formPrincipal = 'F:F1';
-const MAIN_TABLENAME ='viviendas';
+
 const ESTADO_POSTERIOR_CARGA = 'C';
 const ESTADO_POSTERIOR_DESCARGA = 'D';
 
@@ -142,9 +145,9 @@ var simularGuardadoDeEncuestaDesdeAppEscritorio = async (context: ProcedureConte
 }
 
 
-var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
+var getHdrQuery =  function getHdrQuery(quotedCondViv:string, context:Context){
     return `
-    with viviendas as 
+    with ${context.be.db.quoteIdent(OperativoGenerator.mainTD)} as 
         (select t.enc, t.json_encuesta as respuestas, t.resumen_estado as "resumenEstado", 
             jsonb_build_object(
                 'dominio'       , dominio       ,
@@ -177,18 +180,18 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string){
         )
         select jsonb_build_object(
                 'viviendas', ${jsono(
-                    `select enc, respuestas, jsonb_build_object('resumenEstado',"resumenEstado") as otras from viviendas`,
+                    `select enc, respuestas, jsonb_build_object('resumenEstado',"resumenEstado") as otras from ${context.be.db.quoteIdent(OperativoGenerator.mainTD)}`,
                     'enc',
                     `otras || coalesce(respuestas,'{}'::jsonb)`
                 )}
             ) as respuestas,
             ${json(`
                 select area as carga, observaciones_hdr as observaciones, min(fecha_asignacion) as fecha
-                    from viviendas inner join areas using (area) 
+                    from ${context.be.db.quoteIdent(OperativoGenerator.mainTD)} inner join areas using (area) 
                     group by area, observaciones_hdr`, 
                 'fecha')} as cargas,
             ${jsono(
-                `select enc, jsonb_build_object('tem', tem, 'tarea', tarea) as otras from viviendas`,
+                `select enc, jsonb_build_object('tem', tem, 'tarea', tarea) as otras from ${context.be.db.quoteIdent(OperativoGenerator.mainTD)}`,
                  'enc',
                  `otras ||'{}'::jsonb`
                 )}
@@ -457,10 +460,10 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             var be = context.be;
             var tableStructures_app:TableDefinitions = be.tableStructures;
         
-            var struct_dmencu = createStructure(context, MAIN_TABLENAME);
+            var struct_dmencu = createStructure(context, OperativoGenerator.mainTD);
             datos_json['operativo'] = parameters.operativo;
-            //TODO : vivienda ó enc???
-            datos_json['vivienda'] = parameters.id_caso;
+            
+            datos_json[OperativoGenerator.mainTDPK] = parameters.id_caso;
             function completar_ult_pk_en_arr( ult_pk, ua_arr){
                 var con_pk_completa=ua_arr; 
                 if (ua_arr && ua_arr.length>=1){
@@ -526,7 +529,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         definedIn: 'dmencu',
         coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters){
             var client=context.client;
-             var struct_dmencu = createStructure(context, MAIN_TABLENAME);
+             var struct_dmencu = createStructure(context, OperativoGenerator.mainTD);
             var sql = sqlTools.structuredData.sqlRead({operativo: parameters.operativo, vivienda:parameters.id_caso}, struct_dmencu);
             var result = await client.query(sql).fetchUniqueValue();
             var response = {
@@ -567,7 +570,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             var be=context.be;
             /* FIN-GENERALIZAR: */
             const OPERATIVO = await getOperativoActual(context);
-            let resultMain = await context.client.query(`SELECT * FROM ${MAIN_TABLENAME} LIMIT 1`).fetchAll();
+            let resultMain = await context.client.query(`SELECT * FROM ${OperativoGenerator.mainTD} LIMIT 1`).fetchAll();
             if(resultMain.rowCount>0){
                 console.log('HAY DATOS',resultMain.rows)
                 throw new Error('HAY DATOS. NO SE PUEDE INICIAR EL PASAJE');
@@ -634,7 +637,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         cargado_dm is not null or 
                         not permite_editar_encuesta and asignado <> ${context.be.db.quoteLiteral(context.user.idper)}
                     )`, [operativo, vivienda]).fetchOneRowIfExists()).rowCount;
-            var {row} = await context.client.query(getHdrQuery(condviv),[operativo,vivienda]).fetchUniqueRow();
+            var {row} = await context.client.query(getHdrQuery(condviv, context),[operativo,vivienda]).fetchUniqueRow();
             row.informacionHdr[vivienda].tarea={
                 tarea,
                 main_form
@@ -774,10 +777,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
 
                 }).array());
             }
-            console.log("condviv: ", condviv);
-            console.log("query: ", getHdrQuery(condviv));
-            var {row} = await context.client.query(getHdrQuery(condviv),[OPERATIVO,context.user.idper]).fetchUniqueRow();
-            // console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxx',getHdrQuery(condviv));
+            var {row} = await context.client.query(getHdrQuery(condviv, context),[OPERATIVO,context.user.idper]).fetchUniqueRow();
             await context.client.query(
                 `update tareas_tem tt
                     set  estado = $4, cargado_dm=$3::text
@@ -1567,7 +1567,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 let [enc1,enc2] = [regEnc[0], regEnc[1]]
                 if(params.paso == 1){
                     await context.client.query(
-                        `delete from viviendas where operativo=$1 and (vivienda=$2 OR vivienda=$3)`
+                        `delete from ${context.be.db.quoteIdent(OperativoGenerator.mainTD)} where operativo=$1 and (vivienda=$2 OR vivienda=$3)`
                         , [OPERATIVO, enc1.enc, enc2.enc]
                         ).execute();
                 }
