@@ -34,10 +34,17 @@ export type generarIdEncFun = (area:number,index:number)=>string
 
 var generarIdEncFun: generarIdEncFun;  
 
+var maxAGenerar = 50
+
 export const setGenerarIdEncFun = (fun:generarIdEncFun)=>
     generarIdEncFun = fun;
 
+export const setMaxAgenerar = (max:number)=>
+    maxAGenerar = max;
+
 setGenerarIdEncFun((area:number,index:number)=>area.toString() + (index+10).toString());
+
+setMaxAgenerar(100);
 
 export const getOperativoActual = async (context:ProcedureContext)=>{
     var be = context.be;
@@ -918,8 +925,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             `,[params.operativo]).fetchUniqueRow()).row;
             if(permite_generar_muestra){
                 var temTableDef:TableDefinition = be.tableStructures['tem'](context);
-                const MAX_ENCS = 100;
-                for(let i = 0; i < Math.min(params.cant_encuestas,MAX_ENCS); i++){
+                for(let i = 0; i < Math.min(params.cant_encuestas,maxAGenerar); i++){
                     let enc = generarIdEncFun(params.area, i);
                     await context.client.query(`
                         INSERT into tem (operativo, enc, area, dominio, habilitada) values ($1, $2, $3, $4, $5)
