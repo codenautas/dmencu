@@ -7,7 +7,7 @@ import { IdTarea } from "../unlogged/tipos";
 
 export function areas_asignacion_general(context:TableContext):TableDefinition {
     var tareas: IdTarea[] = ['encu','recu','supe'];
-    var tareas_fields = [
+    var tareasFields = [
         {name:'recepcionista', prefijo:'recep', editable:true},
         {name:'asignado', prefijo:'', editable:true},
     ]
@@ -17,7 +17,7 @@ export function areas_asignacion_general(context:TableContext):TableDefinition {
     var otherTableDefs:OtherTableDefs = {}
 
     tareas.forEach(t=>{
-        tareas_fields.forEach(f=>{
+        tareasFields.forEach(f=>{
             extraFields.push({name:`${f.prefijo}_${t}`, typeName:'text', table:`areas_${t}`, nameForUpsert:f.name, editable:f.editable});
             extraSelect += `, areas_${t}.${f.name} as ${f.prefijo}_${t}`;
         })
@@ -47,6 +47,7 @@ export function areas_asignacion_general(context:TableContext):TableDefinition {
     tableDef.detailTables = [
         {table:'tem_asignacion' , fields:['operativo','area'], abr:'A', refreshParent:true, refreshFromParent:true, label:'asignables'},
     ];
+    tableDef = {...tableDef, tareasFields};
     return tableDef
 }
 

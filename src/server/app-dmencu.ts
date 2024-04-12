@@ -559,9 +559,49 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             {menuType:'proc', name:'intercambiar_encuestas'},
         ];
     }    
+    getMenuVarios(context:Context) { 
+        let submenuVarios:MenuInfoBase[] = [{menuType: 'abrir_encuesta', name: 'abrir_encuesta'}]
+        if(context.puede?.campo?.editar){
+            submenuVarios.push({menuType: 'table', name: 'hoja_ruta', table: 'grilla_hoja_ruta', label: 'hoja de ruta'})
+        }
+        if(context.puede?.campo?.administrar){
+            submenuVarios.push({menuType:'proc', name:'encuestador_dms_mostrar', label:'forzar descarga encuestas DM'})
+        } 
+        return {menuType: 'menu', name: 'varios', menuContent: submenuVarios}
+    }
+    getMenuAsignacion(context:Context) { 
+        let filtroRecepcionista = context.user.rol=='recepcionista' ? {recepcionista: context.user.idper} : {};
+        let submenuAsignacion:MenuInfoBase[] = [];
+        if (context.puede?.campo?.administrar) {
+            submenuAsignacion.push({ menuType: 'table', name: 'general', table: 'areas_asignacion_general' });
+        }
+        submenuAsignacion.push(
+            { menuType: 'table', name: 'encuestador', table: 't_encu_areas', ff: { tarea: 'encu', ...filtroRecepcionista } },
+            { menuType: 'table', name: 'recuperador', table: 'tareas_tem_asignacion_recu', ff: { tarea_actual: 'recu', tarea: 'recu', ...filtroRecepcionista } },
+        );
+        if(context.puede?.campo?.administrar){
+            submenuAsignacion.push(
+                { menuType: 'table', name: 'supervisor' , table: 'tareas_tem_asignacion_supe', ff: { tarea_actual: 'supe', tarea: 'supe', ...filtroRecepcionista } },
+            );
+        };
+        return {menuType:'menu', name:'asignacion', label:'asignación' ,menuContent: submenuAsignacion}
+    }
+    getMenuRecepcion(context:Context) { 
+        let submenuRecepcion:MenuInfoBase[] = []
+        submenuRecepcion.push(
+            {menuType:'table', name:'encuestador', table:'encuestadores_asignados'},
+            {menuType:'table', name:'recuperador', table:'recuperadores_asignados'},
+        );
+        if(context.puede?.campo?.administrar){
+            submenuRecepcion.push(
+                {menuType:'table', name:'supervisor' , table:'supervisores_asignados' },
+                {menuType:'table', name: 'mis_supervisores' , table: 'mis_supervisores_asignados'}
+            );
+        }
+        return {menuType:'menu', name:'recepcion', label:'recepción' ,menuContent:submenuRecepcion}
+    }
     getMenu(context:Context){
         let menu:MenuInfoBase[] = [];
-        let filtroRecepcionista = context.user.rol=='recepcionista' ? {recepcionista: context.user.idper} : {};
         if(this.config.server.policy=='web'){
             if(context.puede?.encuestas.relevar){
                 if(this.config['client-setup'].ambiente=='demo' || this.config['client-setup'].ambiente=='test' || this.config['client-setup'].ambiente=='capa'){
@@ -575,33 +615,11 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             }
         }else{
             if(context.puede?.campo?.editar){
-                let submenuAsignacion:MenuInfoBase[] = []
-                let submenuRecepcion:MenuInfoBase[] = []
-                if (context.puede?.campo?.administrar) {
-                    submenuAsignacion.push({ menuType: 'table', name: 'general', table: 'areas_asignacion_general' });
-                }
-                submenuAsignacion.push(
-                    { menuType: 'table', name: 'encuestador', table: 't_encu_areas', ff: { tarea: 'encu', ...filtroRecepcionista } },
-                    { menuType: 'table', name: 'recuperador', table: 'tareas_tem_asignacion_recu', ff: { tarea_actual: 'recu', tarea: 'recu', ...filtroRecepcionista } },
-                );
-                if(context.puede?.campo?.administrar){
-                    submenuAsignacion.push(
-                        { menuType: 'table', name: 'supervisor' , table: 'tareas_tem_asignacion_supe', ff: { tarea_actual: 'supe', tarea: 'supe', ...filtroRecepcionista } },
-                    );
-                }
-                submenuRecepcion.push(
-                    {menuType:'table', name:'encuestador', table:'encuestadores_asignados'},
-                    {menuType:'table', name:'recuperador', table:'recuperadores_asignados'},
-                )
                 menu.push(
-                    {menuType:'menu', name:'asignacion', label:'asignación' ,menuContent: submenuAsignacion},
-                    {menuType:'menu', name:'recepcion', label:'recepción' ,menuContent:submenuRecepcion},  
+                    this.getMenuAsignacion(context),
+                    this.getMenuRecepcion(context)
                 );
                 if(context.puede?.campo?.administrar){
-                    submenuRecepcion.push(
-                        {menuType:'table', name:'supervisor' , table:'supervisores_asignados' },
-                        {menuType:'table', name: 'mis_supervisores' , table: 'mis_supervisores_asignados'}
-                    );
                     menu.push({menuType:'table', name:'tareas_tem_fin_campo', label:'espera fin de campo'})
                     menu.push({menuType:'table', name:'tareas_tem_analisis_campo', label:'análisis de campo'})
                 }else{
@@ -613,17 +631,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 }    
             }
             if(context.puede?.campo?.editar||context.puede?.encuestas?.procesar){
-                let submenuVarios:MenuInfoBase[] = [{menuType: 'abrir_encuesta', name: 'abrir_encuesta'}]
-                if(context.puede?.campo?.editar){
-                    submenuVarios.push({menuType: 'table', name: 'hoja_ruta', table: 'grilla_hoja_ruta', label: 'hoja de ruta'})
-                }
-                if(context.puede?.campo?.administrar){
-                    submenuVarios.push({menuType:'proc', name:'encuestador_dms_mostrar', label:'forzar descarga encuestas DM'})
-                } 
-                menu.push(      
-                    {menuType: 'menu', name: 'varios', menuContent: submenuVarios}
-                );
-            }    
+                menu.push(this.getMenuVarios(context));
+            }
             if(context.puede?.campo?.administrar||context.puede?.encuestas?.procesar){
                 menu.push(
                     {menuType:'menu', name:'control', menuContent:  this.getMenuControles(context) } )  ;
