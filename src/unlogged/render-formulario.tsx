@@ -53,7 +53,7 @@ import {
     Dialog, DialogActions, DialogContent, DialogContentText, 
     DialogTitle, Divider, Fab, IconButton,
     Menu, MenuItem, Paper, Popover,
-    Table, TableBody, TableCell, TableHead, TableRow, Toolbar
+    Table, TableBody, TableCell, TableHead, TableRow, Toolbar, CssBaselineProps
 } from "@material-ui/core";
 import { EstadoVariable, FormStructureState } from "row-validator";
 import { CSSProperties } from "@material-ui/core/styles/withStyles";
@@ -723,12 +723,19 @@ function PreguntaDespliegue(props:{
         direct:true, 
         fun: registradorDeVariable(pregunta)
     })
+    var style: CSSProperties = {}
+    if(pregunta.despliegue == 'grid'){
+        style.display = 'grid';
+        style.gridTemplateColumns = 'repeat(3,1fr)';
+    }
     return <DesplegarCasillero
         id={id}
         casillero={pregunta}
+        style={style}
         nuestro-tipovar={pregunta.tipovar||"multiple"} 
         ocultar-salteada={pregunta.despliegueOculta?(pregunta.expresion_habilitar_js?'INHABILITAR':'SI'):'NO'}
         despliegueEncabezado={props.despliegueEncabezado}
+
     >
         <EncabezadoDespliegue 
             casillero={pregunta} 
