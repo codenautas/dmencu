@@ -11,8 +11,8 @@ export function usuarios(context:TableContext):TableDefinition{
         title:'Usuarios de la Aplicación',
         editable:true,
         fields:[
-            {name:'usuario'          , typeName:'text'    , nullable:false  },
-            {name:'idper'            , typeName:'text'    },
+            {name:'usuario'          , typeName:'text'    , nullable: false  },
+            {name:'idper'            , typeName:'text'    , nullable: false  },
             {name:'rol'              , typeName:'text'    },
             {name:'md5clave'         , typeName:'text'    , allow:{select: context.forDump} },
             {name:'activo'           , typeName:'boolean' , nullable:false ,defaultValue:false},
