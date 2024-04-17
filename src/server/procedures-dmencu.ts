@@ -206,7 +206,7 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string, context:Context){
 `
 }
 
-export var setHdrQuery = (myFun:(quotedCondViv:string)=>string)=> getHdrQuery=myFun
+export var setHdrQuery = (myFun:(quotedCondViv:string, context?:Context)=>string)=> getHdrQuery=myFun
 
 const getUAPrincipal = async (client:Client, operativo:string)=>
     (await client.query(
