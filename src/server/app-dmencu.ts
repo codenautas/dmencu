@@ -92,11 +92,11 @@ import { table } from "console";
 
 const APP_DM_VERSION="#22-12-15";
 
-var registrarCronJobPasarAProie = async (be) => {
+const registrarCronJobPasarAProie = async (be:AppBackend) => {
     let procedures = await be.getProcedures()
     var procPasar = procedures.find((proc:ProcedureDef)=>proc.action == ACCION_PASAR_PROIE)
     var context = be.getContextForDump();
-    setInterval(async ()=>{
+    const interval = setInterval(async ()=>{
         try{
             console.log('inicia cron posaje a proie')
             var result = await be.inTransaction(null, async (client)=>{
@@ -110,6 +110,13 @@ var registrarCronJobPasarAProie = async (be) => {
             console.log('termina cron proie')
         }
     },1000*60*60)
+    be.shutdownCallbackListAdd({
+        message:'apaga cron pasar a proie',
+        fun:async function(){
+            clearInterval(interval);
+            return Promise.resolve();
+        }
+    });
 }
 
 export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamiento.AppProcesamientoType>>(Base:T){
