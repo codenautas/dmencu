@@ -352,6 +352,7 @@ export type Estructura = {
     operativo:IdOperativo
     configSorteo: ConfiguracionSorteo
     habilitacionBotonFormulario: ConfiguracionHabilitarBotonFormulario
+    permiteGenerarMuestra: boolean
     conReaHogar: boolean
 	noReas: { 
 	      no_rea: string  
