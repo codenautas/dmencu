@@ -43,7 +43,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
         },
         editable: puedeEditarCampo||puedeEditarProc,
         hiddenColumns:[
-            'seleccionado_anterior','cita','notas', 'cluster',
+            'seleccionado_ant','cita','notas', 'cluster',
             'codviviendaparticular', 'casa', 'obsdatosdomicilio', 'obsconjunto', 'reserva', 'rotacion_etoi', 'rotacion_eah'
             , 'trimestre'   , 'procedencia', 'sel_etoi_villa'   , 'marco'      , 'semana' , 'periodicidad' 
             , 'cargado_dm', 'estados__permite_editar_encuesta'
@@ -54,7 +54,9 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {name: "abrir"               , typeName:'text'    , editable: false  , inTable:false, clientSide:'abrir'},
             {name:"consistir"            , typeName: 'text'   , editable: false  , inTable:false, clientSide:'consistir'},
             {name: "cluster"             , typeName:'integer' , editable: false, isName:true},
-            {name:'seleccionado_anterior'    , typeName:'text'    , editable: false  },
+            {name:'enc_ant'              , typeName:'text'    , editable: false  },
+            {name:'area_ant'             , typeName:'integer' , editable: false  },
+            {name:'seleccionado_ant'     , typeName:'text'    , editable: false  },
             {name:'cita'                 , typeName:'text'    , editable: true   },
             {name:'tarea_actual'         , typeName:'text'    , editable: false  },
             {name:"habilitar"            , typeName: "text"   , editable:false   , inTable:false, clientSide:'habilitar'},
