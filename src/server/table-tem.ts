@@ -43,7 +43,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
         },
         editable: puedeEditarCampo||puedeEditarProc,
         hiddenColumns:[
-            'cita','notas', 'cluster',
+            'info_seleccionado','cita','notas', 'cluster',
             'codviviendaparticular', 'casa', 'obsdatosdomicilio', 'obsconjunto', 'reserva', 'rotacion_etoi', 'rotacion_eah'
             , 'trimestre'   , 'procedencia', 'sel_etoi_villa'   , 'marco'      , 'semana' , 'periodicidad' 
             , 'cargado_dm', 'estados__permite_editar_encuesta'
@@ -144,7 +144,8 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {name:"x"                    , typeName:'decimal' , editable: false  },
             {name:"y"                    , typeName:'decimal' , editable: false  },
             {name:'notas'                , typeName:'text'    , editable: false, inTable:false},
-            {name:'cita'                 , typeName:'text'    , editable: false  },
+            {name:'info_seleccionado'    , typeName:'text'    , editable: false  },
+            {name:'cita'                 , typeName:'text'    , editable: true  },
             {name:"modificado"           , typeName: 'timestamp', editable: false},
             {name: "libre" , typeName: "boolean", defaultDbValue:"true"  , visible:false, editable:false},
             {name: "fecha_bloqueo", typeName: "timestamp", visible:false, editable:false}
