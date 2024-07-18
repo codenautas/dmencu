@@ -677,10 +677,11 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 menuConfigurar.push(
                     {menuType:'menu', name:'metadatos', menuContent:[
                         {menuType:'table', name:'operativos'},
-                        {menuType:'table', name:'formularios' , table:'casilleros_principales'},
-                        {menuType:'table', name:'plano'       , table:'casilleros'},
-                        {menuType:'table', name:'tipoc'       , label:'tipos de celdas'},
-                        {menuType:'table', name:'tipoc_tipoc' , label:'inclusiones de celdas'},
+                        {menuType:'table', name:'formularios'   , table:'casilleros_principales'},
+                        {menuType:'table', name:'plano'         , table:'casilleros'},
+                        {menuType:'table', name:'consistencias' , table:'casilleros', ff:{tipoc:'CONS'}},
+                        {menuType:'table', name:'tipoc'         , label:'tipos de celdas'},
+                        {menuType:'table', name:'tipoc_tipoc'   , label:'inclusiones de celdas'},
                     ]},
                 );
             }
