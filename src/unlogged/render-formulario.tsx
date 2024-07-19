@@ -1766,7 +1766,7 @@ export function DesplegarCarga(props:{
     }
 }){
     const {carga, idCarga, informacionHdr, respuestas} = props;
-    return <Paper className="carga">
+    return <Paper className="carga" style={{marginBottom: '10px', padding: '10px'}}>
         <div className="informacion-carga">
             <div className="carga">Área: {idCarga}</div>
             <div className="observaciones">{carga.observaciones}</div>
