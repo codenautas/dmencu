@@ -84,7 +84,6 @@ import { estados_acciones    } from './table-estados_acciones';
 import { tareas_proximas     } from './table-tareas_proximas';
 import { historial_tem       } from './table-historial_tem';
 
-
 export * from "./types-dmencu";
 import {defConfig} from "./def-config"
 import { ProcedureDef } from "backend-plus";
@@ -680,6 +679,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                         {menuType:'table', name:'formularios'   , table:'casilleros_principales'},
                         {menuType:'table', name:'plano'         , table:'casilleros'},
                         {menuType:'table', name:'consistencias' , table:'casilleros', ff:{tipoc:'CONS'}},
+                        {menuType:'table', name:'variables'     , table:'casilleros', fc:[{column:'var_name', operator:'!=\u2205', value:null}]},
                         {menuType:'table', name:'tipoc'         , label:'tipos de celdas'},
                         {menuType:'table', name:'tipoc_tipoc'   , label:'inclusiones de celdas'},
                     ]},
