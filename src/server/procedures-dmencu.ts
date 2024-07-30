@@ -1046,6 +1046,9 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         returning *`
                     ,[params.operativo, params.enc, tareaSiguiente.tarea_destino, tareaSiguiente.estado_destino]
                 ).fetchUniqueRow();
+                if(tareaSiguiente.nombre_procedure){
+                    await be.procedure[tareaSiguiente.nombre_procedure].coreFunction(context, params);
+                }
             }
             // FIN PASE DE TAREA
             return "ok";
