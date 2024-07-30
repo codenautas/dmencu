@@ -649,11 +649,13 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 menu.push(
                     {menuType:'menu', name:'procesar', menuContent:[
                         {menuType:'table', name:'variables'    },
+                        {menuType:'table', name:'consistencias_cuestionario' , table:'casilleros', ff:{tipoc:'CONS'}},
                         {menuType:'table', name:'consistencias'},
+                        {menuType:'table', name:'variables_cuestionario'     , table:'casilleros', td: {editable:false, allow:{update:false, import: false, delete:false, insert:false}}, fc:[{column:'var_name', operator:'!=\u2205', value:null}]},
                         {menuType:'table', name:'inconsistencias'},
                         {menuType:'table', name:'tabla_datos'  },
                         {menuType:'table', name:'diccionario'  , label:'diccionarios' },
-                        {menuType:'table', name:'tareas_tem_procesamiento', label:'encuestas'}
+                        {menuType:'table', name:'tareas_tem_procesamiento', label:'encuestas'},
                     ]},
                 );
                 if (this.getMenuLimpieza(context).length){
@@ -678,7 +680,6 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                         {menuType:'table', name:'operativos'},
                         {menuType:'table', name:'formularios'   , table:'casilleros_principales'},
                         {menuType:'table', name:'plano'         , table:'casilleros'},
-                        {menuType:'table', name:'consistencias' , table:'casilleros', ff:{tipoc:'CONS'}},
                         {menuType:'table', name:'variables'     , table:'casilleros', fc:[{column:'var_name', operator:'!=\u2205', value:null}]},
                         {menuType:'table', name:'tipoc'         , label:'tipos de celdas'},
                         {menuType:'table', name:'tipoc_tipoc'   , label:'inclusiones de celdas'},
