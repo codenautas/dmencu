@@ -649,9 +649,9 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 menu.push(
                     {menuType:'menu', name:'procesar', menuContent:[
                         {menuType:'table', name:'variables'    },
-                        {menuType:'table', name:'consistencias_cuestionario' , table:'casilleros', ff:{tipoc:'CONS'}},
-                        {menuType:'table', name:'consistencias'},
                         {menuType:'table', name:'variables_cuestionario'     , table:'casilleros', td: {editable:false, allow:{update:false, import: false, delete:false, insert:false}}, fc:[{column:'var_name', operator:'!=\u2205', value:null}]},
+                        {menuType:'table', name:'consistencias'},
+                        {menuType:'table', name:'consistencias_cuestionario' , table:'casilleros', ff:{tipoc:'CONS'}},
                         {menuType:'table', name:'inconsistencias'},
                         {menuType:'table', name:'tabla_datos'  },
                         {menuType:'table', name:'diccionario'  , label:'diccionarios' },

@@ -4,11 +4,17 @@ import {TableDefinition, TableContext, FieldDefinition, OtherTableDefs} from "./
 
 export function grilla_hoja_ruta(context:TableContext):TableDefinition {
     //var be=context.be;
-    var puedeEditar = false;
+    var puedeEditar = true;
     return {   
         name:'grilla_hoja_ruta',
         elementName:'hdr',
-        editable:puedeEditar,
+        //editable:puedeEditar,
+        allow:{
+            insert: false,
+            delete: false,
+            import: false,
+            update: true,
+        },
         fields:[
             {name:'operativo'            , typeName:'text'    , editable: false  , nullable: false, defaultValue: 'etoi211'},
             {name:'enc'                  , typeName:'text'    , editable: false  , nullable: false                       },
@@ -20,7 +26,7 @@ export function grilla_hoja_ruta(context:TableContext):TableDefinition {
             {name:'area'                 , typeName:'integer' , editable: false  },
             {name:'zona'                 , typeName:'text'    , editable: false  },
             {name:'seleccionado_ant'     , typeName:'text'    , editable: false  },
-            {name:'cita'                 , typeName:'text'    , editable: false   },
+            {name:'cita'                 , typeName:'text'    , editable:true , table: 'tem' },
             {name:'semana'               , typeName:'integer' , editable: false  ,visible: true   },
             {name:'codcalle'             , typeName:'integer' , editable: false  },
             {name:'nomcalle'             , typeName:'text'    , editable: false  },
