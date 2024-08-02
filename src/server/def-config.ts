@@ -56,6 +56,7 @@ install:
       - asignar_desasignar_tareas_tem_trg.sql
       - desverificar_tarea_trg.sql
       - inicial_update_varcal_por_encuesta.sql
+      - diccionario_func.sql
 login:
   infoFieldList: [usuario, rol, idper]
   table: usuarios
