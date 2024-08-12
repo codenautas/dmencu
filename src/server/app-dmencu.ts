@@ -77,6 +77,9 @@ import { personas            } from './table-personas';
 import { visitas_sup         } from './table-visitas_sup';
 import { hogares_sup         } from './table-hogares_sup';
 import { personas_sup        } from './table-personas_sup';
+import { diccionario         } from './table-diccionario';
+import { dictra              } from './table-dictra';
+import { dicvar              } from './table-dicvar';
 
 import { estados             } from './table-estados';
 import { acciones            } from './table-acciones';
@@ -791,6 +794,9 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , visitas_sup
             , hogares_sup
             , personas_sup
+            , diccionario
+            , dicvar
+            , dictra
         }
         be.appendToTableDefinition('consistencias',function(tableDef, context){
             tableDef.editable=tableDef.editable || context.puede?.encuestas?.procesar;
