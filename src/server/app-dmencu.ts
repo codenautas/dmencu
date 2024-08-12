@@ -628,13 +628,12 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 if(context.puede?.campo?.administrar){
                     menu.push({menuType:'table', name:'tareas_tem_fin_campo', label:'espera fin de campo'})
                     menu.push({menuType:'table', name:'tareas_tem_analisis_campo', label:'análisis de campo'})
-                }else{
-                    menu.push(
-                        {menuType:'menu', name:'supervision', label:'supervisión' ,menuContent:[
-                            {menuType:'table', name:'supervisar' , table:'tareas_tem_ingreso', ff:{tarea:'supe', asignado:context.user.idper } }
-                        ]}
-                    )
-                }    
+                }
+                menu.push(
+                    {menuType:'menu', name:'supervision', label:'supervisión' ,menuContent:[
+                        {menuType:'table', name:'supervisar' , table:'tareas_tem_ingreso', ff:{tarea:'supe', asignado:context.user.idper } }
+                    ]}
+                )
             }
             if(context.puede?.campo?.editar||context.puede?.encuestas?.procesar){
                 menu.push(this.getMenuVarios(context));

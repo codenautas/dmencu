@@ -1299,7 +1299,7 @@ function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Blo
             volcadoInicialElementosRegistrados(props.forPk);
         }
     },[toPlainForPk(props.forPk),verTodo])
-    useLayoutEffect(() => {
+    useEffect(() => {
         if(props.bloqueOFormulario.tipoc=='F' && verTodo){
             var {siguienteVariable, variableActual} = dispatchByPass(accion_registrar_respuesta, {respuesta:null, variable:NO_CAMBIAR__SOLO_TRAER_STATUS, forPk:props.forPk});
             if(variableActual || siguienteVariable){

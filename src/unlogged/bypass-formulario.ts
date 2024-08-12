@@ -1204,12 +1204,18 @@ export function calcularResumenVivienda(
                         configuracionSorteoFormulario, 
                         habilitacionBotonFormulario,
                         JSON.parse(plainPk).persona, 
-                        JSON.parse(plainPk).formulario, 
-                        JSON.parse(plainPk).hogar?respuestasForPk({
-                            vivienda:forPkRaiz.vivienda, 
-                            formulario:configuracionSorteoFormulario.id_formulario_padre!,
-                            hogar:JSON.parse(plainPk).hogar 
-                        }).respuestas:{} as Respuestas
+                        JSON.parse(plainPk).formulario,
+                        estructura.conReaHogar? 
+                            JSON.parse(plainPk).hogar?respuestasForPk({
+                                vivienda:forPkRaiz.vivienda, 
+                                formulario:configuracionSorteoFormulario.id_formulario_padre!,
+                                hogar:JSON.parse(plainPk).hogar 
+                            }).respuestas:{} as Respuestas
+                        :
+                            respuestasForPk({
+                                vivienda:forPkRaiz.vivienda, 
+                                formulario:configuracionSorteoFormulario.id_formulario_padre!,
+                            }).respuestas
                     )
                 :true)
     }).array();
