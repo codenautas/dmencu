@@ -1,5 +1,4 @@
 db:
-  port: 5435
   password: 39ddkan3a__xfhfheu..33!!
 log:
   req: false
