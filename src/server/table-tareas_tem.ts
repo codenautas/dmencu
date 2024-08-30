@@ -87,7 +87,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
         tableName:`tareas_tem`,
         allow:{
             insert:false,
-            delete:false,
+            delete:context.forDump
         },
         editable:puedeEditar,
         fields,
@@ -179,4 +179,5 @@ export function tareas_tem_asignacion_supe(context:TableContext){
     var tableDef = tareas_tem(context, {rol:'supe', name:'supervisor', abre:true, consiste:false}) 
     tableDef.sql!.isTable = false;
     return tableDef;
+}
 }

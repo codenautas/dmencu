@@ -151,7 +151,6 @@ var simularGuardadoDeEncuestaDesdeAppEscritorio = async (context: ProcedureConte
     )
 }
 
-
 var getHdrQuery =  function getHdrQuery(quotedCondViv:string, context:Context){
     return `
     with ${context.be.db.quoteIdent(OperativoGenerator.mainTD)} as 
@@ -268,6 +267,16 @@ function compilarExpresiones(casillero:CasilleroDeAca){
     }
     for(var casilleroInterno of casillero.childs) compilarExpresiones(casilleroInterno);
 }
+
+const generarTareasTemFaltantes = async (context: ProcedureContext, operativo: IdOperativo) => 
+    await context.client.query(`
+        insert into tareas_tem (operativo, enc, tarea)
+            select ta.operativo, ta.enc, ta.tarea
+            from (select ta.*, t.enc,t.area from tareas ta, tem t where ta.operativo=t.operativo) ta 
+            where ta.operativo = $1 
+                and not (ta.operativo, ta.enc, ta.tarea) in (select operativo, enc, tarea from tareas_tem)
+            order by 1,3,2;
+    `,[operativo]).execute();
 
 export const ACCION_PASAR_PROIE = 'encuestas_procesamiento_pasar';
 export const ProceduresDmEncu : ProcedureDef[] = [
@@ -938,19 +947,90 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     [params.operativo, enc, params.area, params.dominio, true])
                     .execute();
                 }
-                await context.client.query(`
-                    insert into tareas_tem (operativo, enc, tarea)
-                        select ta.operativo, ta.enc, ta.tarea
-                        from (select ta.*, t.enc,t.area from tareas ta, tem t where ta.operativo=t.operativo) ta 
-                        where ta.operativo = $1 
-                            and not (ta.operativo, ta.enc, ta.tarea) in (select operativo, enc, tarea from tareas_tem)
-                        order by 1,3,2;`,
-                    [params.operativo])
-                .execute();
+                await generarTareasTemFaltantes(context, params.operativo);
                 return 'ok';
             }else{
                 throw Error("el operativo no permite generar muestra");
             }
+        }
+    },
+    {     
+        action: 'encuesta_blanquear_previsualizar',
+        parameters:[
+            {name:'operativo'       , typeName:'text', references:"operativos"},
+            {name:'enc'     , typeName:'text'},
+        ],
+        roles:['coor_proc','admin'],
+        resultOk:'mostrar_encuesta_a_blanquear_contenido',
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            try{
+                var result = await context.client.query(`
+                    select *
+                        from tem
+                        where operativo = $1 and enc = $2 --pk verificada
+                `,[params.operativo, params.enc]).fetchUniqueRow();
+            }catch(err){
+                throw Error (`No se encontró la encuesta ${params.enc} para el operativo ${params.operativo}. ${err.message}` )
+            }
+            return {casoTem: result.row};
+        }
+    },
+    {
+        action: 'encuesta_blanquear',
+        parameters:[
+            {name:'operativo'       , typeName:'text', references:"operativos"},
+            {name:'enc'             , typeName:'text'},
+        ],
+        roles:['coor_proc','admin'],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            var be = context.be;
+            await context.client.query(
+                `delete 
+                    from ${be.db.quoteIdent(OperativoGenerator.mainTD)} 
+                    where operativo=$1 and ${be.db.quoteIdent(OperativoGenerator.mainTDPK)} = $2
+            `, [params.operativo, params.enc]).execute();
+            //paso a encu para guardar en historial
+            await context.client.query(`
+                update tem
+                    set 
+                        tarea_actual = 'encu'
+                    where operativo = $1 and enc = $2 --pk verificada
+                    returning *
+            `,[params.operativo, params.enc]).fetchUniqueRow();
+            await context.client.query(`
+                delete 
+                    from tareas_tem 
+                    where operativo = $1 and enc = $2
+            `,[params.operativo, params.enc]).execute();
+            await generarTareasTemFaltantes(context, params.operativo);         
+            //reseteo tem (no se guarda historial porque tarea_actual es null)
+            //guardo backup por las dudas
+            await context.client.query(`
+                update tem
+                    set 
+                        json_backup = json_encuesta, json_encuesta = null, tarea_actual = null,
+                        fecha_modif_encuesta = null, fecha_backup = current_timestamp, modificado = null,
+                        resumen_estado = null, resumen_estado_sup = null, supervision_dirigida = null,
+                        pase_tabla = null, rea = null, norea = null, rea_sup = null, norea_sup = null
+                    where operativo = $1 and enc = $2 --pk verificada
+                    returning *
+            `,[params.operativo, params.enc]).fetchUniqueRow();
+            await context.client.query(`
+                delete 
+                    from inconsistencias
+                    where operativo = $1 and ${be.db.quoteIdent(OperativoGenerator.mainTDPK)} = $2
+            `,[params.operativo, params.enc]).execute();
+            await context.client.query(`
+                delete 
+                    from in_con_var
+                    where operativo = $1 and pk_integrada->>${be.db.quoteLiteral(OperativoGenerator.mainTDPK)} = $2
+            `,[params.operativo, params.enc]).execute();
+            await context.client.query(`
+                delete 
+                    from inconsistencias_ultimas
+                    where operativo = $1 and pk_integrada->>${be.db.quoteLiteral(OperativoGenerator.mainTDPK)} = $2
+            `,[params.operativo, params.enc]).execute();
+            return `la encuesta ${params.enc} se blanqueó correctamente`;
         }
     },
     {
@@ -1600,6 +1680,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'operativo'       , typeName:'text', references:"operativos"},
             {name:'encuestador'     , typeName:'text'},
         ],
+        roles:['coor_proc','admin'],
         resultOk:'mostrar_encuestas_a_blanquear',
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var result = await context.client.query(`
@@ -1622,6 +1703,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'operativo'       , typeName:'text', references:"operativos"},
             {name:'token'         , typeName:'text'},
         ],
+        roles:['coor_proc','admin'],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var be = context.be;
             const UA_PRINCIPAL = await getUAPrincipal(context.client, params.operativo);

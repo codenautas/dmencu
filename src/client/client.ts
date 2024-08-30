@@ -656,6 +656,59 @@ myOwn.wScreens.proc.result.mostrar_encuestas_a_blanquear=function(result, divRes
     }
 }
 
+myOwn.wScreens.proc.result.mostrar_encuesta_a_blanquear_contenido=function(result, divResult){
+    let {casoTem} =  result;
+    if(casoTem){
+        if(casoTem.json_encuesta){
+            var encuestaDiv = html.div({id:'backup-div'}).create();
+            divResult.appendChild(encuestaDiv);
+            my.agregar_json(encuestaDiv, casoTem.json_encuesta);
+            var button = html.button({
+                class:`boton-blanquear-encuesta-accion`
+            }, 'blanquear encuesta').create();
+            button.onclick = async ()=> {
+                var mainDiv = html.div().create()
+                mainDiv.appendChild(
+                    html.div({},[
+                        html.div({class:'danger'}, [`Está por blanquear la encuesta ${casoTem.enc}. Se perderán los datos de la misma.`])
+                    ]).create()
+                );
+                var inputForzar = html.input({class:'input-forzar'}).create();
+                mainDiv.appendChild(html.div([
+                    html.div(['Se puede forzar el blanqueo ',inputForzar])
+                ]).create());
+                var forzar = await confirmPromise(mainDiv, {
+                    withCloseButton: false,
+                    reject:false,
+                    buttonsDef:[
+                        {label:'forzar blanqueo', value:true},
+                        {label:'cancelar blanqueo', value:false}
+                    ]
+                });
+                if(forzar){
+                    if(inputForzar.value=='forzar'){
+                        try{
+                            button.disabled=true;
+                            var resultBlanqueo = await my.ajax.encuesta_blanquear(casoTem);
+                            divResult.innerHTML=resultBlanqueo;
+                            
+                        }catch(err){
+                            alertPromise(err.message);
+                        }finally{
+                            button.disabled=false;
+                        };
+                    }else{
+                        alertPromise('si necesita blanquear escriba forzar.')
+                    }
+                }
+            }
+            divResult.appendChild(button);
+        }else{
+            divResult.appendChild(html.p({id:'mensaje-no-hay-json-encuesta'},`no se encontró informacion cargada para la encuesta ${casoTem.enc}`).create());
+        }
+    }
+}
+
 myOwn.wScreens.demo=async function(_addrParams){
     // @ts-ignore desplegarFormularioActual global
     window.desplegarFormularioActual({modoDemo:true});
