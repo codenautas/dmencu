@@ -687,8 +687,11 @@ myOwn.wScreens.proc.result.mostrar_encuesta_a_blanquear_contenido=function(resul
                 });
                 if(forzar){
                     if(inputForzar.value=='forzar'){
+                        var waitGif = html.img({src:'img/loading16.gif'}).create();
                         try{
                             button.disabled=true;
+                            waitGif.style.display = 'block';
+                            divResult.appendChild(waitGif);
                             var resultBlanqueo = await my.ajax.encuesta_blanquear(casoTem);
                             divResult.innerHTML=resultBlanqueo;
                             
@@ -696,6 +699,7 @@ myOwn.wScreens.proc.result.mostrar_encuesta_a_blanquear_contenido=function(resul
                             alertPromise(err.message);
                         }finally{
                             button.disabled=false;
+                            waitGif.style.display = 'none';
                         };
                     }else{
                         alertPromise('si necesita blanquear escriba forzar.')
