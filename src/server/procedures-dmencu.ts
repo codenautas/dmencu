@@ -151,7 +151,7 @@ var simularGuardadoDeEncuestaDesdeAppEscritorio = async (context: ProcedureConte
     )
 }
 
-var getHdrQuery =  function getHdrQuery(quotedCondViv:string, context:Context){
+var getHdrQuery =  function getHdrQuery(quotedCondViv:string, context:ProcedureContext, opts?:{permiteGenerarMuestra:boolean}){
     return `
     with ${context.be.db.quoteIdent(OperativoGenerator.mainTD)} as 
         (select t.enc, t.json_encuesta as respuestas, t.resumen_estado as "resumenEstado", 
@@ -205,7 +205,7 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string, context:Context){
 `
 }
 
-export var setHdrQuery = (myFun:(quotedCondViv:string, context?:Context)=>string)=> getHdrQuery=myFun
+export var setHdrQuery = (myFun:(quotedCondViv:string, context:ProcedureContext, opts?:{permiteGenerarMuestra:boolean})=>string)=> getHdrQuery=myFun
 
 const getUAPrincipal = async (client:Client, operativo:string)=>
     (await client.query(
@@ -348,7 +348,41 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     form.expr_habilitar_boton_js=compilarExpresion(form.expr_habilitar_boton)
                 })
             }
-            return {timestamp: be.caches.timestampEstructura, ...result.row, operativo:parameters.operativo, conReaHogar, configSorteo, habilitacionBotonFormulario, permiteGenerarMuestra, noReas:be.caches.tableContent.no_rea, noReasSup:be.caches.tableContent.no_rea_sup};
+            const DEFAULT_DOMINIO = 3;
+            var defaultTarea = (await context.client.query(`
+                select * 
+                    from tareas 
+                    where es_inicial
+            `).fetchUniqueRow()).row;
+            var defaultInformacionHdr = (await context.client.query(
+                `select  
+                    jsonb_build_object(
+                    'dominio'       , ${context.be.db.quoteLiteral(DEFAULT_DOMINIO)},
+                    'nomcalle'      , null          ,
+                    'sector'        , null          ,
+                    'edificio'      , null          ,
+                    'entrada'       , null          ,
+                    'nrocatastral'  , null          ,
+                    'piso'          , null          ,
+                    'departamento'  , null          ,
+                    'habitacion'    , null          ,
+                    'casa'          , null          ,
+                    'prioridad'     , null          ,
+                    'observaciones' , null          ,
+                    'cita'          , null          ,
+                    'carga'         , null         
+                ) as tem,
+                jsonb_build_object(
+                    'tarea', ${context.be.db.quoteLiteral(defaultTarea.tarea)},
+                    'fecha_asignacion', null,
+                    'asignado', ${context.be.db.quoteLiteral(context.user.idper)},
+                    'main_form', ${context.be.db.quoteLiteral(defaultTarea.main_form)}
+                ) as tarea
+                `,
+                []
+            ).fetchUniqueRow()).row;
+            
+            return {timestamp: be.caches.timestampEstructura, ...result.row, operativo:parameters.operativo, conReaHogar, configSorteo, habilitacionBotonFormulario, permiteGenerarMuestra, noReas:be.caches.tableContent.no_rea, noReasSup:be.caches.tableContent.no_rea_sup, defaultInformacionHdr};
         }
     },
     {

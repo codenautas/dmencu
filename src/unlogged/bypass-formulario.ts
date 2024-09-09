@@ -21,7 +21,8 @@ import {
     DefOperativo,
     iterator,
     ConfiguracionHabilitarBotonFormulario,
-    CampoPk
+    CampoPk,
+    IdCarga
 } from "./tipos";
 
 var especiales = {} as {
@@ -61,6 +62,23 @@ export async function persistirDatosByPass(dbpp:DatosByPassPersistibles){
     datosByPass.dirty = false
     refrescarMarcaDirty();
 }
+
+export const crearEncuesta = (idCarga: IdCarga, callBack:(forPk:ForPk)=>void)=> {
+    const VIVIENDA = my.getLocalVar('proxima_vivienda') || 1;
+    const estructura = getEstructura();
+    my.setLocalVar('proxima_vivienda', VIVIENDA + 1);
+    datosByPass.respuestas.viviendas[VIVIENDA]={} as RespuestasRaiz;
+    datosByPass.informacionHdr[VIVIENDA] = {
+        ...estructura.defaultInformacionHdr, 
+        tem: {...estructura.defaultInformacionHdr.tem,
+            carga: {...estructura.defaultInformacionHdr.tem.carga}
+        }
+    };
+    datosByPass.informacionHdr[VIVIENDA].tem.carga = idCarga;
+    calcularFeedbackHojaDeRuta();
+    persistirDatosByPass(datosByPass).then(()=>callBack({formulario:estructura.defaultInformacionHdr.tarea.main_form, vivienda:VIVIENDA}))
+}
+    
 
 export function setEncolarBackup(
     encolarBackupFun:(token:string|undefined, forPkRaiz:ForPkRaiz, respuestasRaiz:Respuestas)=>void

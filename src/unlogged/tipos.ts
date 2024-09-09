@@ -27,7 +27,7 @@ export type IdTarea = 'encu'|'recu'|'supe';
 
 export type FeedbackVariable = Feedback<IdVariable, IdFin>
 
-export type TipoVariables = 'texto'|'numero'|'fecha'|'horas'
+export type TipoVariables = 'texto'|'numero'|'fecha'|'horas'|'hora'
 
 export type Despliegue = 'horizontal'|'oculta'
 
@@ -304,7 +304,7 @@ export type  DatosHdrUaPpal= {
 */
 }
 
-export type IdCarga="2020-07-07"|"2020-07-08"
+export type IdCarga="1"|"2"|"etc"
 
 export type EstadoCarga='resumen'|'relevamiento'|'recibo'
 
@@ -369,6 +369,7 @@ export type Estructura = {
         variable_sup:  string
         valor_sup:     string
         grupo0_sup:    string
+        defaultInformacionHdr: DatosHdrUaPpal
   }[]
 }
 

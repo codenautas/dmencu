@@ -31,6 +31,7 @@ import{
     calcularDisabledBF,
     calcularPermiteBorrarBF,
     calcularResumenVivienda,
+    crearEncuesta,
     getDatosByPass,
     getFormulariosForIdVivienda,
     getMainFormForVivienda,
@@ -285,7 +286,7 @@ function SaltoDespliegue({casillero,prefijo}:{casillero:Pregunta|Opcion|Filtro, 
 
 function OpcionDespliegue(props:{casillero:Opcion, valorOpcion:number, variable:IdVariable, forPk:ForPk, leer:boolean, conBotonBorrar:boolean}){
     const {casillero} = props;
-    var dispatch = useDispatch();
+    const dispatch = useDispatch();
     var saltoAutomatico = useSelector((state:CasoState)=>state.opciones.saltoAutomatico);
     var handleClick:React.MouseEventHandler<HTMLButtonElement> = async (event)=>{
         var container = subirHasta(event.target as HTMLElement, elemento=>elemento.classList.contains('pregunta') || elemento.classList.contains('multiple')) || document.getElementById('main_layout')!;
@@ -519,7 +520,7 @@ function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?
 
 function DesplegarConfirmarBorrarRespuesta(props:{forPk:ForPk, variableBorrar:IdVariable}){
     var [open, setOpen] = useState(!!props.variableBorrar)
-    var dispatch = useDispatch();
+    const dispatch = useDispatch();
     const handleClose = () => {
         dispatch(dispatchers.CONFIRMAR_BORRAR_RESPUESTA({forPk:props.forPk, variable:null}));
         setOpen(false);
@@ -715,7 +716,7 @@ function PreguntaDespliegue(props:{
     despliegueEncabezado:'lateral'|'superior'
 }){
     var {pregunta} = props;
-    var dispatch=useDispatch();
+    const dispatch=useDispatch();
     var estado:EstadoVariable;
     var id = `pregunta-${pregunta.id_casillero}`
     registrarElemento({
@@ -862,7 +863,7 @@ function botonesDelFormulario(r:Respuestas, unidad_analisis:IdUnidadAnalisis, es
 
 function TextoDespliegue(props:{casillero:Texto, forPk:ForPk}){
     var {casillero, forPk} = props;
-    var dispatch = useDispatch();
+    const dispatch = useDispatch();
     var habilitador = casillero.expresion_habilitar_js?getFuncionHabilitar(casillero.expresion_habilitar_js):()=>true;
     var {modoDespliegue} = useSelectorVivienda(forPk);
     var id = `texto-${casillero.id_casillero}`;
@@ -1083,7 +1084,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
         fun: (_r:Respuestas)=>false
     });
     */
-    var dispatch = useDispatch();
+    const dispatch = useDispatch();
     var [confirmarForzarIr, setConfirmarForzarIr] = useState<DefinicionFormularioAbrir|false|null>(null);
     var multipleFormularios=formularioAAbrir.unidad_analisis != props.formulario.unidad_analisis;
     var nuevoCampoPk = defOperativo.defUA[formularioAAbrir.unidad_analisis].pk;
@@ -1707,7 +1708,7 @@ export function DesplegarLineaResumenUAPrincipal(props:{
     const id='viv-'+numVivienda;
     const forPk:ForPk={formulario:formPrincipal, vivienda:Number(numVivienda) as IdEnc}; //no quitar el casteo porque viene como texto y necesito que sea número
     var tem = getDatosByPass().informacionHdr[numVivienda].tem;
-    var dispatch = useDispatch();
+    const dispatch = useDispatch();
     useEffect(()=>{
         volcadoInicialElementosRegistrados(forPk);
         intentarBackup(forPk)
@@ -1765,7 +1766,11 @@ export function DesplegarCarga(props:{
         [formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin> 
     }
 }){
+    const [newSurvey, setNewSurvey] = useState(0);
     const {carga, idCarga, informacionHdr, respuestas} = props;
+    var estructura = getEstructura();
+    let cantLineasResumen = likeAr(informacionHdr).filter((informacion)=>informacion.tem.carga==idCarga).array().length;
+    const dispatch = useDispatch();
     return <Paper className="carga" style={{marginBottom: '10px', padding: '10px'}}>
         <div className="informacion-carga">
             <div className="carga">Área: {idCarga}</div>
@@ -1790,14 +1795,17 @@ export function DesplegarCarga(props:{
                 <col style={{width:"10%"}}/>    
                 <col style={{width:"15%"}}/>    
             </colgroup>
-            <TableHead style={{fontSize: "1.2rem"}}>
-                <TableRow className="tr-carga">
-                    <TableCell>domicilio</TableCell>
-                    <TableCell>tarea</TableCell>
-                    <TableCell>enc</TableCell>
-                </TableRow>
-            </TableHead>
+            {cantLineasResumen?
+                <TableHead style={{fontSize: "1.2rem"}}>
+                    <TableRow className="tr-carga">
+                        <TableCell>domicilio</TableCell>
+                        <TableCell>tarea</TableCell>
+                        <TableCell>enc</TableCell>
+                    </TableRow>
+                </TableHead>
+            :null}
             <TableBody>
+                <>
                 {likeAr(informacionHdr).filter((informacion)=>informacion.tem.carga==idCarga).map((informacion, numVivienda)=>
                     <DesplegarLineaResumenUAPrincipal 
                         key={numVivienda} 
@@ -1807,6 +1815,24 @@ export function DesplegarCarga(props:{
                         respuestas={respuestas.viviendas[numVivienda] as RespuestasRaiz}
                     />
                 ).array()}
+                {estructura.permiteGenerarMuestra?
+                    <TableRow className="tr-carga-nuevo">
+                        <TableCell colSpan={3}>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={()=>
+                                    crearEncuesta(idCarga,(forPk:{formulario:IdFormulario, vivienda:IdEnc})=>{
+                                        dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk, apilarVuelta:false}));
+                                    })
+                                }
+                            >
+                                <ICON.Add/>
+                            </Button>
+                        </TableCell>
+                    </TableRow>
+                :null}
+                </>
             </TableBody>
         </Table>:
         <Table>
@@ -1864,7 +1890,7 @@ export function HojaDeRutaDespliegue(){
     var {cargas, num_sincro, informacionHdr, respuestas} = getDatosByPass();
     var {modo} = useSelector((state:CasoState)=>({modo:state.modo}));
     var feedbackRowValidator = getFeedbackRowValidator()
-    var dispatch = useDispatch();
+    const dispatch = useDispatch();
     const updateOnlineStatus = function(){
         setOnline(window.navigator.onLine);
     }
@@ -1929,7 +1955,7 @@ export function ListaTextos(props:{textos:string[]}){
 }
 
 export function BienvenidaDespliegue(props:{modo:CasoState["modo"]}){
-    var dispatch=useDispatch();
+    const dispatch=useDispatch();
     return <Paper className="bienvenida">
         {props.modo.demo?
             <>
