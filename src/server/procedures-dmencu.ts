@@ -960,7 +960,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'operativo'       , typeName:'text', references:"operativos"},
             {name:'enc'     , typeName:'text'},
         ],
-        roles:['coor_proc','admin'],
+        roles:['coor_proc','coor_campo','admin'],
         resultOk:'mostrar_encuesta_a_blanquear_contenido',
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             try{
@@ -981,7 +981,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'operativo'       , typeName:'text', references:"operativos"},
             {name:'enc'             , typeName:'text'},
         ],
-        roles:['coor_proc','admin'],
+        roles:['coor_proc','coor_campo','admin'],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var be = context.be;
             await context.client.query(
@@ -1680,7 +1680,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'operativo'       , typeName:'text', references:"operativos"},
             {name:'encuestador'     , typeName:'text'},
         ],
-        roles:['coor_proc','admin'],
+        roles:['coor_proc','coor_campo','admin'],
         resultOk:'mostrar_encuestas_a_blanquear',
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var result = await context.client.query(`
@@ -1703,7 +1703,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'operativo'       , typeName:'text', references:"operativos"},
             {name:'token'         , typeName:'text'},
         ],
-        roles:['coor_proc','admin'],
+        roles:['coor_proc','coor_campo','admin'],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var be = context.be;
             const UA_PRINCIPAL = await getUAPrincipal(context.client, params.operativo);
