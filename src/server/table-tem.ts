@@ -140,10 +140,12 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {name:'semana'               , typeName:'integer' , editable: false  ,visible: false  },
             {name:'periodicidad'         , typeName:'text'    , editable: false  ,visible: false  },
             //solo tem 
-            {name: 'fecha_modif_encuesta', typeName: "timestamp", editable:false  },
+            {name:'fecha_modif_encuesta' , typeName: "timestamp", editable:false  },
             {name:'json_encuesta'        , typeName:'jsonb'     , editable:false  },
-            {name: 'fecha_backup'        , typeName: "timestamp", editable:false},
+            {name:'fecha_backup'         , typeName: "timestamp", editable:false},
             {name:"json_backup"          , typeName:'jsonb'   , editable: false, visible:false},
+            {name:"token_autogenerado_dm", typeName:'text'    , editable: false, visible:false},
+            {name:"enc_autogenerado_dm"  , typeName:'text'    , editable: false  },
             {name:"h4"                   , typeName:'text'    , editable: false  },
             {name:"x"                    , typeName:'decimal' , editable: false  },
             {name:"y"                    , typeName:'decimal' , editable: false  },
@@ -175,7 +177,8 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {table: "historial_tem", abr: "H", fields: ['operativo','enc']}
         ],
         constraints:[
-            {constraintType:'check', consName:"vresult_sup_ck", expr:"(result_sup between 1 and 9 or result_sup in (11,12,21,22 ) or result_sup between 60 and 68)"}
+            {constraintType:'check', consName:"vresult_sup_ck", expr:"(result_sup between 1 and 9 or result_sup in (11,12,21,22 ) or result_sup between 60 and 68)"},
+            {constraintType:'unique', consName:"autogenerado_dm_uk", fields:['token_autogenerado_dm','enc_autogenerado_dm']}
         ]
     };
     if (opts.recepcion) {

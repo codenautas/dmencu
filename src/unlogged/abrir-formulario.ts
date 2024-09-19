@@ -3,11 +3,15 @@ import {DatosByPassPersistibles, Estructura, ForPkRaiz,
     ModoAlmacenamiento,
     PlainForPk,
     toPlainForPk,
+    Carga,
+    IdEnc,
+    IdCarga,
 } from "./tipos";
 
 import * as likeAr from "like-ar";
 
 import { 
+    getDatosByPass,
     setDatosByPass, setEncolarBackup, setEstructura, setPersistirDatosByPass 
 } from "./bypass-formulario"
 
@@ -65,7 +69,7 @@ export function cargarEstructura(estructuraACargar:Estructura){
 type Backups={
     idActual:number,
     token:string|undefined,
-    tem:{[key in PlainForPk]:{idBackup:number, forPkRaiz:ForPkRaiz, respuestasRaiz:Respuestas}}
+    tem:{[key in PlainForPk]:{idBackup:number, forPkRaiz:ForPkRaiz, respuestasRaiz:Respuestas, carga:Carga, idper:string}},
 }
 
 var backupPendiente = Promise.resolve();
@@ -90,12 +94,14 @@ setEncolarBackup(
     function encolarBackup(token:string|undefined, forPkRaiz:ForPkRaiz, respuestasRaiz:Respuestas){
         var backups:Backups = my.existsLocalVar(BACKUPS)?my.getLocalVar(BACKUPS):{
             idActual:0,
-            tem:{}
+            tem:{},
         };
         backups.idActual+=1;
         backups.token=token;
         let plainForPk = toPlainForPk(forPkRaiz);
-        backups.tem[plainForPk]={idBackup:backups.idActual, forPkRaiz, respuestasRaiz};
+        const datosByPass = getDatosByPass();
+        let carga = datosByPass.cargas[datosByPass.informacionHdr[forPkRaiz.vivienda as IdEnc].tem.carga as IdCarga];
+        backups.tem[plainForPk]={idBackup:backups.idActual, forPkRaiz, respuestasRaiz, carga, idper: datosByPass.idper};
         my.setLocalVar(BACKUPS,backups);
         backupPendiente = backupPendiente.then(enviarBackup)
     }

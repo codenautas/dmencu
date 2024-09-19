@@ -22,7 +22,8 @@ import {
     iterator,
     ConfiguracionHabilitarBotonFormulario,
     CampoPk,
-    IdCarga
+    IdCarga,
+    Carga
 } from "./tipos";
 
 var especiales = {} as {
@@ -64,9 +65,9 @@ export async function persistirDatosByPass(dbpp:DatosByPassPersistibles){
 }
 
 export const crearEncuesta = (idCarga: IdCarga, callBack:(forPk:ForPk)=>void)=> {
-    const VIVIENDA = my.getLocalVar('proxima_vivienda') || 1;
+    const VIVIENDA = my.getLocalVar('proxima_vivienda') || '-1'
     const estructura = getEstructura();
-    my.setLocalVar('proxima_vivienda', VIVIENDA + 1);
+    my.setLocalVar('proxima_vivienda', (Number(VIVIENDA) - 1).toString());
     datosByPass.respuestas.viviendas[VIVIENDA]={} as RespuestasRaiz;
     datosByPass.informacionHdr[VIVIENDA] = {
         ...estructura.defaultInformacionHdr, 
@@ -76,7 +77,7 @@ export const crearEncuesta = (idCarga: IdCarga, callBack:(forPk:ForPk)=>void)=> 
     };
     datosByPass.informacionHdr[VIVIENDA].tem.carga = idCarga;
     calcularFeedbackHojaDeRuta();
-    persistirDatosByPass(datosByPass).then(()=>callBack({formulario:estructura.defaultInformacionHdr.tarea.main_form, vivienda:VIVIENDA}))
+    persistirDatosByPass(datosByPass).then(()=>callBack({formulario:estructura.defaultInformacionHdr.tarea.main_form, vivienda:Number(VIVIENDA) as IdEnc}))//no quitar el casteo porque viene como texto y necesito que sea número
 }
     
 
@@ -94,7 +95,7 @@ export var intentarBackup = (forPk:ForPk)=>{
     var {respuestasRaiz, forPkRaiz} = respuestasForPk(forPk, true)
     var token = datosByPass.token;
     if(token){
-        encolarBackup(token, forPkRaiz, respuestasRaiz)
+        encolarBackup(token, forPkRaiz, respuestasRaiz);
     }else{
         console.log("no hay token, no se pudo hacer el backup")
     }

@@ -313,6 +313,7 @@ export type Carga={
     estado_carga: EstadoCarga
     necesarias: number
     observaciones: string
+    recepcionista: string
 }
 
 export type Cargas={
@@ -409,7 +410,7 @@ export type DatosByPassPersistibles = {
     tarea:IdTarea
     idper:string
     cargas: Cargas
-    informaciinformacionHdr: InformacionHdr
+    informacionHdr: InformacionHdr
     soloLectura: boolean
     token?:string
     num_sincro?:number
