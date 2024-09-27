@@ -1,6 +1,7 @@
 "use strict";
 import {Structure, Feedback} from "row-validator";
 import * as LikeAr from "like-ar";
+import { OperativoGenerator } from "meta-enc";
 
 export type ModoAlmacenamiento = 'session'| // cuando sea para una sola pestaña, se usa en modo directo,
                                  'local'    // para todo el dispositivo, se usa al cargar hojas de ruta entres
@@ -206,18 +207,16 @@ export type CasillerosImplementados=Formulario|Bloque|Filtro|ConjuntoPreguntas|P
 
 export type CampoPkRaiz = 'vivienda'|'etc...';
 
+export type ValuePkRaiz = IdEnc
+
 export type ForPkRaiz={
-    formulario:IdFormulario, 
-    vivienda:IdEnc
+    formulario:IdFormulario
 } & {
-    [campo in CampoPkRaiz]?:number
+    [campo in CampoPkRaiz]:ValuePkRaiz
 }
 
 export type CampoPk = 'vivienda'|'hogar'|'persona'|'etc...';
-export type ForPk = {
-    formulario:IdFormulario, 
-    vivienda:IdEnc
-} & {
+export type ForPk = ForPkRaiz & {
     [campo in CampoPk]?:number
 }
 export type PlainForPk='{"formulario":"F:F1","vivienda":"10202","persona":null}'|'etc...';
@@ -349,6 +348,8 @@ export type Estructura = {
         [idUnidadAnalisis in IdUnidadAnalisis]: UnidadAnalisis
     }
     tareas:TareasEstructura
+    mainTD: IdUnidadAnalisis
+    mainTDPK: CampoPkRaiz
     timestamp:number
     operativo:IdOperativo
     configSorteo: ConfiguracionSorteo
@@ -370,8 +371,8 @@ export type Estructura = {
         variable_sup:  string
         valor_sup:     string
         grupo0_sup:    string
-        defaultInformacionHdr: DatosHdrUaPpal
   }[]
+    defaultInformacionHdr: DatosHdrUaPpal
 }
 
 export type IdEnc = 130031|130032;

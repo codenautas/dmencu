@@ -2,6 +2,7 @@ import {html} from "js-to-html";
 import {traerEstructura} from "../unlogged/redux-formulario";
 import { CasoState,  
     IdFormulario, DatosByPassPersistibles, IdEnc, IdOperativo, IdTarea, EstadoAccion, DireccionAccion,
+    CampoPkRaiz,
 } from "../unlogged/tipos";
 import * as likeAr from "like-ar";
 import {getEstructura, setPersistirDatosByPass} from "../unlogged/bypass-formulario"
@@ -35,7 +36,7 @@ myOwn.autoSetupFunctions.push(async ()=>{
             // antes: abrirDirecto
             var {operativo, enc, tarea} = params;
             var estructura = getEstructura();
-            var carga = await my.ajax.dm_forpkraiz_cargar({operativo, vivienda:enc, tarea}) as DatosByPassPersistibles;
+            var carga = await my.ajax.dm_forpkraiz_cargar({operativo, pk_raiz_value:enc, tarea}) as DatosByPassPersistibles;
             if(!estructura || (estructura.timestamp??0) < carga.timestampEstructura! || estructura.operativo != operativo || my.config.config.devel){
                 estructura = await traerEstructura({operativo})
                 cargarEstructura(estructura);
@@ -43,7 +44,7 @@ myOwn.autoSetupFunctions.push(async ()=>{
             //@ts-ignore
             var state:CasoState = {}
             inicializarState(state);
-            var forPkRaiz = {formulario:carga.informacionHdr[enc as IdEnc].tarea.main_form, vivienda:enc};
+            var forPkRaiz = {formulario:carga.informacionHdr[enc as IdEnc].tarea.main_form, [estructura.mainTDPK]:enc};
             setPersistirDatosByPass(
                 async function persistirDatosByPassEnBaseDeDatos(persistentes:DatosByPassPersistibles){
                     if(persistentes.soloLectura){
@@ -52,8 +53,8 @@ myOwn.autoSetupFunctions.push(async ()=>{
                     await my.ajax.dm_forpkraiz_descargar({operativo, persistentes});
                 }
             )
-            if(!carga.respuestas.viviendas[forPkRaiz.vivienda!]){
-                throw new Error(`No se encuentra la vivienda ${forPkRaiz.vivienda!}`);
+            if(!carga.respuestas[estructura.mainTD][forPkRaiz[estructura.mainTDPK as CampoPkRaiz]]){
+                throw new Error(`No se encuentra el/la ${estructura.mainTDPK} ${forPkRaiz[estructura.mainTDPK]}`);
             }
             cargarHojaDeRuta({...carga, modoAlmacenamiento:'session'});
             // @ts-ignore
@@ -160,7 +161,7 @@ var mostrarInfoLocal = (divAvisoSincro:HTMLDivElement, titulo:string, nroSincro:
             nroSincro?html.p(["Número de sincronización: ", html.b(""+nroSincro.toString())]):null,
             html.h4(titulo),
             html.p([htmlNumero(likeAr(datosByPass.cargas).array().length),' areas: ',likeAr(datosByPass.cargas).keys().join(', ')]),
-            html.p([htmlNumero(likeAr(datosByPass.respuestas.viviendas).array().length),' viviendas']),
+            html.p([htmlNumero(likeAr(datosByPass.respuestas[getEstructura().mainTD]).array().length),' viviendas']),
             mostrarLinkHdr?html.a({href:'./campo'},[html.b('IR A LA HOJA DE RUTA')]):null
         ]).create());
     }else{

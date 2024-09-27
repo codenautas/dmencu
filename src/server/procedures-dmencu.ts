@@ -281,7 +281,7 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string, context:ProcedureC
             group by t.enc, t.json_encuesta, t.resumen_estado, dominio, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area, tt.tarea, fecha_asignacion, asignado, main_form
         )
         select jsonb_build_object(
-                'viviendas', ${jsono(
+                ${context.be.db.quoteLiteral(OperativoGenerator.mainTD)}, ${jsono(
                     `select enc, respuestas, jsonb_build_object('resumenEstado',"resumenEstado") as otras from ${context.be.db.quoteIdent(OperativoGenerator.mainTD)}`,
                     'enc',
                     `otras || coalesce(respuestas,'{}'::jsonb)`
@@ -486,7 +486,20 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 []
             ).fetchUniqueRow()).row;
             
-            return {timestamp: be.caches.timestampEstructura, ...result.row, operativo:parameters.operativo, conReaHogar, configSorteo, habilitacionBotonFormulario, permiteGenerarMuestra, noReas:be.caches.tableContent.no_rea, noReasSup:be.caches.tableContent.no_rea_sup, defaultInformacionHdr};
+            return {
+                timestamp: be.caches.timestampEstructura, 
+                ...result.row, 
+                operativo:parameters.operativo, 
+                conReaHogar, 
+                configSorteo, 
+                habilitacionBotonFormulario, 
+                permiteGenerarMuestra, 
+                noReas:be.caches.tableContent.no_rea, 
+                noReasSup:be.caches.tableContent.no_rea_sup, 
+                defaultInformacionHdr,
+                mainTD: OperativoGenerator.mainTD,
+                mainTDPK: OperativoGenerator.mainTDPK
+            };
         }
     },
     {
@@ -689,11 +702,11 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters){
             var client=context.client;
              var struct_dmencu = createStructure(context, OperativoGenerator.mainTD);
-            var sql = sqlTools.structuredData.sqlRead({operativo: parameters.operativo, vivienda:parameters.id_caso}, struct_dmencu);
+            var sql = sqlTools.structuredData.sqlRead({operativo: parameters.operativo, [OperativoGenerator.mainTDPK]:parameters.id_caso}, struct_dmencu);
             var result = await client.query(sql).fetchUniqueValue();
             var response = {
                 operativo: parameters.operativo,
-                vivienda: parameters.id_caso,
+                id_caso: parameters.id_caso,
                 datos_caso: result.value,
                 //formulario: formPrincipal,
             };
@@ -756,8 +769,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     console.log(errMessage)
                 }     
                 if(resultado.includes('ok')){ 
-                    var {datos_caso, vivienda, operativo} = await be.procedure.caso_traer.coreFunction(context, {operativo:row.operativo, id_caso:row.id_caso})
-                    var verQueGrabo = {datos_caso, vivienda, operativo}
+                    var {datos_caso, id_caso, operativo} = await be.procedure.caso_traer.coreFunction(context, {operativo:row.operativo, id_caso:row.id_caso})
+                    var verQueGrabo = {datos_caso, id_caso, operativo}
                     try{
                         discrepances.showAndThrow(verQueGrabo,row)
                     }catch(err){
@@ -776,12 +789,12 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         action:'dm_forpkraiz_cargar',
         parameters:[
             {name:'operativo'         , typeName:'text'},
-            {name:'vivienda'          , typeName:'text'},
+            {name:'pk_raiz_value'           , typeName:'text'},
             {name:'tarea'             , typeName:'text', references:"tareas"},
         ],
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             var be=context.be;
-            var {operativo,vivienda, tarea} = parameters;
+            var {operativo,pk_raiz_value, tarea} = parameters;
             var main_form = (await context.client.query(
                 `select main_form
                     from tareas
@@ -795,14 +808,14 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     where operativo= $1 and enc = $2 and (
                         cargado_dm is not null or 
                         not permite_editar_encuesta and asignado <> ${context.be.db.quoteLiteral(context.user.idper)}
-                    )`, [operativo, vivienda]).fetchOneRowIfExists()).rowCount;
+                    )`, [operativo, pk_raiz_value]).fetchOneRowIfExists()).rowCount;
             var permiteGenerarMuestra = (await context.client.query(`
                 select permite_generar_muestra 
                     from operativos 
                     where operativo = $1
             `,[operativo]).fetchUniqueValue()).value;
-            var {row} = await context.client.query(getHdrQuery(condviv, context, permiteGenerarMuestra),[operativo,vivienda]).fetchUniqueRow();
-            row.informacionHdr[vivienda].tarea={
+            var {row} = await context.client.query(getHdrQuery(condviv, context, permiteGenerarMuestra),[operativo,pk_raiz_value]).fetchUniqueRow();
+            row.informacionHdr[pk_raiz_value].tarea={
                 tarea,
                 main_form
             } ;
@@ -938,7 +951,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                             [OPERATIVO, idEnc, resultado]
                         ).fetchUniqueRow();
                     }else{
-                        await fs.appendFile('local-recibido-sin-token.txt', JSON.stringify({now:new Date(),user:context.username,idCaso: idEnc,vivienda: respuestasUAPrincipal})+'\n\n', 'utf8');
+                        await fs.appendFile('local-recibido-sin-token.txt', JSON.stringify({now:new Date(),user:context.username,idCaso: idEnc,[OperativoGenerator.mainTDPK]: respuestasUAPrincipal})+'\n\n', 'utf8');
                     }
                 }
   
@@ -993,7 +1006,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 for(let backup of likeAr(parameters.tem).array()){
                     let area = backup.carga.carga;
                     let respuestasRaiz = backup.respuestasRaiz;
-                    let idEncDM = backup.forPkRaiz.vivienda.toString();
+                    let idEncDM = backup.forPkRaiz[OperativoGenerator.mainTD].toString();
                     let recepcionista = backup.carga.recepcionista;
                     let asignado = backup.idper;
                     if(Number(idEncDM)<0){
@@ -1020,13 +1033,13 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         action: 'consistir_vivienda',
         parameters: [
             {name:'operativo'     ,references:'operativos',  typeName:'text'},
-            {name:'vivienda'       ,typeName:'text'},
+            {name:'caso'       ,typeName:'text'},
         ],
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             var {be, client} =context;
             let param_proc={
                 operativo: parameters.operativo,
-                id_caso: parameters.vivienda
+                id_caso: parameters.caso
             } 
             let errMessage: string|null;
             let resultado: string|null;
@@ -1035,10 +1048,10 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         param_proc, client
                 );    
             }catch(err){
-                errMessage = " consistir_vivienda. "+ err ;
+                errMessage = " consistir_caso. "+ err ;
                 console.log(errMessage)
             } 
-            console.log('****** consistir_vivienda resultado:',resultado)               
+            console.log('****** consistir_caso resultado:',resultado)               
             return {
                 ok:'ok'
             };

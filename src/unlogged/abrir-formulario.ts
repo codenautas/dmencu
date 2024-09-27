@@ -6,12 +6,15 @@ import {DatosByPassPersistibles, Estructura, ForPkRaiz,
     Carga,
     IdEnc,
     IdCarga,
+    CampoPk,
+    CampoPkRaiz,
 } from "./tipos";
 
 import * as likeAr from "like-ar";
 
 import { 
     getDatosByPass,
+    getEstructura,
     setDatosByPass, setEncolarBackup, setEstructura, setPersistirDatosByPass 
 } from "./bypass-formulario"
 
@@ -100,7 +103,8 @@ setEncolarBackup(
         backups.token=token;
         let plainForPk = toPlainForPk(forPkRaiz);
         const datosByPass = getDatosByPass();
-        let carga = datosByPass.cargas[datosByPass.informacionHdr[forPkRaiz.vivienda as IdEnc].tem.carga as IdCarga];
+        let estructura = getEstructura();
+        let carga = datosByPass.cargas[datosByPass.informacionHdr[forPkRaiz[estructura.mainTDPK] as IdEnc].tem.carga as IdCarga];
         backups.tem[plainForPk]={idBackup:backups.idActual, forPkRaiz, respuestasRaiz, carga, idper: datosByPass.idper};
         my.setLocalVar(BACKUPS,backups);
         backupPendiente = backupPendiente.then(enviarBackup)

@@ -23,7 +23,9 @@ import {
     ConfiguracionHabilitarBotonFormulario,
     CampoPk,
     IdCarga,
-    Carga
+    Carga,
+    CampoPkRaiz,
+    ValuePkRaiz
 } from "./tipos";
 
 var especiales = {} as {
@@ -64,20 +66,24 @@ export async function persistirDatosByPass(dbpp:DatosByPassPersistibles){
     refrescarMarcaDirty();
 }
 
-export const crearEncuesta = (idCarga: IdCarga, callBack:(forPk:ForPk)=>void)=> {
-    const VIVIENDA = my.getLocalVar('proxima_vivienda') || '-1'
+export const crearEncuesta = (idCarga: IdCarga, callBack:(forPkRaiz:ForPkRaiz)=>void)=> {
+    const LAST_AUTO_VALUE_PK_RAIZ= 'proximo_valor_pk_raiz'
+    const NEXT_AUTO_VALUE_PK_RAIZ: ValuePkRaiz = my.getLocalVar(LAST_AUTO_VALUE_PK_RAIZ) || '-1'
     const estructura = getEstructura();
-    my.setLocalVar('proxima_vivienda', (Number(VIVIENDA) - 1).toString());
-    datosByPass.respuestas.viviendas[VIVIENDA]={} as RespuestasRaiz;
-    datosByPass.informacionHdr[VIVIENDA] = {
+    my.setLocalVar(LAST_AUTO_VALUE_PK_RAIZ, (Number(NEXT_AUTO_VALUE_PK_RAIZ) - 1).toString());
+    datosByPass.respuestas[estructura.mainTD][NEXT_AUTO_VALUE_PK_RAIZ]={} as RespuestasRaiz;
+    datosByPass.informacionHdr[NEXT_AUTO_VALUE_PK_RAIZ] = {
         ...estructura.defaultInformacionHdr, 
-        tem: {...estructura.defaultInformacionHdr.tem,
-            carga: {...estructura.defaultInformacionHdr.tem.carga}
-        }
+        tem: {...estructura.defaultInformacionHdr.tem}
     };
-    datosByPass.informacionHdr[VIVIENDA].tem.carga = idCarga;
+    datosByPass.informacionHdr[NEXT_AUTO_VALUE_PK_RAIZ].tem.carga = idCarga;
     calcularFeedbackHojaDeRuta();
-    persistirDatosByPass(datosByPass).then(()=>callBack({formulario:estructura.defaultInformacionHdr.tarea.main_form, vivienda:Number(VIVIENDA) as IdEnc}))//no quitar el casteo porque viene como texto y necesito que sea número
+    persistirDatosByPass(datosByPass).then(
+        ()=>callBack({
+            formulario:estructura.defaultInformacionHdr.tarea.main_form, 
+            [estructura.mainTDPK]:Number(NEXT_AUTO_VALUE_PK_RAIZ) as ValuePkRaiz
+        } as ForPkRaiz)
+    )//no quitar el casteo porque viene como texto y necesito que sea número
 }
     
 
@@ -430,7 +436,7 @@ export function accion_registrar_respuesta(payload:{
         variablesCalculadas(respuestasRaiz, forPk);
         if(estructura.configSorteo && !datosByPass?.soloLectura){
             verificarSorteo({
-                configuracionSorteo: estructura.configSorteo[getMainFormForVivienda(forPk.vivienda!)], 
+                configuracionSorteo: estructura.configSorteo[getMainFormForVivienda(forPk[estructura.mainTDPK])], 
                 respuestas,
                 respuestasRaiz,
                 variableActual: variable, 
@@ -463,30 +469,14 @@ export function accion_registrar_nota(payload:{forPkRaiz:ForPkRaiz, tarea:IdTare
 
 export function accion_agregar_visita(payload:{forPkRaiz:ForPkRaiz, observaciones:string|null}, _datosByPass:DatosByPass){
     let { forPkRaiz, observaciones } = payload;
-    /*
-    if(!datosByPass.hojaDeRuta[vivienda].visitas){
-        datosByPass.hojaDeRuta[vivienda].visitas = [];
-    }
-    var visitas = datosByPass.hojaDeRuta[vivienda].visitas;
-    visitas.push({
-        fecha: datetime.now().toYmd(),
-        hora: datetime.now().toHm(),
-        idper: null, // TODO: VER DE DONDE SE SACA EL IDPER state.datos.idper,
-        observaciones:observaciones
-    })
-    */
 }
 
 export function accion_modificar_visita(payload: {forPkRaiz:ForPkRaiz, index:number, opcion:keyof Visita , valor:string|null}, _datosByPass:DatosByPass){
     let { forPkRaiz, index, opcion, valor} = payload;
-    // var visitas = datosByPass.hojaDeRuta[vivienda].visitas;
-    // visitas[index][opcion] = valor;
 }
 
 export function accion_borrar_visita(payload: {forPkRaiz:ForPkRaiz, index:number}, _datosByPass:DatosByPass){
     let { forPkRaiz, index} = payload;
-    // var visitas = datosByPass.hojaDeRuta[vivienda].visitas;
-    // visitas.splice(index, 1);
 }
 
 export function accion_agregar_formulario({forPk}: {forPk:ForPk}, _datosByPass:DatosByPass){
@@ -861,7 +851,7 @@ export function verificarSorteo(opts:{
     }
 
     var {configuracionSorteo, variableActual, respuestas, forPk, respuestasRaiz} = opts;
-    var idEnc = forPk.vivienda!;
+    var idEnc = forPk[estructura.mainTDPK];
     var {respuestasAumentadas, respuestasRaiz} = respuestasForPk(forPk, true);
     var expr_incompletitud_fun = getFuncionHabilitar(configuracionSorteo.expr_incompletitud_js[respuestasAumentadas.vdominio].expr);
     var filtro_fun =  getFuncionHabilitar(configuracionSorteo.filtro_js[respuestasAumentadas.vdominio].expr);
@@ -1038,7 +1028,7 @@ export function calcularFeedbackUnidadAnalisis(
                 // feedbackRowValidator[plainForPk].estados[varname as IdVariable] = 'actual';
             })
             var BF_varname = '$B.'+formulario as IdVariable
-            var formPrincipalForVivienda = getMainFormForVivienda(forPk.vivienda!);
+            var formPrincipalForVivienda = getMainFormForVivienda(forPk[estructura.mainTDPK]);
             if(estructura.configSorteo && !estructura.configSorteo[formPrincipalForVivienda]){
                 throw new Error(`no hay configuracion de sorteo para el formulario ${formPrincipalForVivienda}`)
             }
@@ -1068,9 +1058,8 @@ export function numberOrStringIncIfArray(numberOrString:number|string, object:ob
     return Number(numberOrString)+(object instanceof Array?1:0);
 }
 
-export var getMainFormForVivienda = (vivienda:number):IdFormulario=>{
-    //@ts-ignore la vivienda es el parametro correcto
-    return datosByPass.informacionHdr[vivienda].tarea.main_form
+export var getMainFormForVivienda = (valuePkRaiz:ValuePkRaiz):IdFormulario=>{
+    return datosByPass.informacionHdr[valuePkRaiz].tarea.main_form
 }
 
 export function calcularFeedbackHojaDeRuta(){
@@ -1106,10 +1095,10 @@ function calcularFeedback(respuestas: Respuestas, forPkRaiz:ForPkRaiz, opts:Opci
     // @ts-ignore Partial
     var nuevosRows : {[x in PlainForPk]:FormStructureState<IdVariable,IdFin>}={}
     calcularFeedbackEncuesta(nuevosRows, estructura.formularios, forPkRaiz, respuestas, opts);
-    datosByPass.feedbackRowValidator = likeAr(datosByPass.feedbackRowValidator).filter((_feedback:any, plainPk:PlainForPk)=>JSON.parse(plainPk).vivienda != forPkRaiz.vivienda).plain();
+    datosByPass.feedbackRowValidator = likeAr(datosByPass.feedbackRowValidator).filter((_feedback:any, plainPk:PlainForPk)=>JSON.parse(plainPk)[estructura.mainTDPK] != forPkRaiz[estructura.mainTDPK]).plain();
     datosByPass.feedbackRowValidator = {...datosByPass.feedbackRowValidator, ...nuevosRows};
-    datosByPass.respuestas.viviendas[forPkRaiz.vivienda!] = {
-        ...datosByPass.respuestas.viviendas[forPkRaiz.vivienda!],
+    datosByPass.respuestas[estructura.mainTD][forPkRaiz[estructura.mainTDPK]] = {
+        ...datosByPass.respuestas[estructura.mainTD][forPkRaiz[estructura.mainTDPK]],
         ...calcularResumenVivienda(
             forPkRaiz, 
             nuevosRows,
@@ -1133,10 +1122,10 @@ export var buscarFormulariosHijos = (idFormulario:IdFormulario | undefined, form
     return formsFeedback;
 }
 
-export var getFormulariosForIdVivienda = (idVivienda:number)=>{
-    var mainFormForVivienda = getMainFormForVivienda(idVivienda);
-    var formsFeedback = [mainFormForVivienda];
-    buscarFormulariosHijos(mainFormForVivienda, formsFeedback);
+export var getFormulariosForValuePkRaiz = (valuePkRaiz:ValuePkRaiz)=>{
+    var mainFormForValuePkRaiz = getMainFormForVivienda(valuePkRaiz);
+    var formsFeedback = [mainFormForValuePkRaiz];
+    buscarFormulariosHijos(mainFormForValuePkRaiz, formsFeedback);
     return formsFeedback;
 }
 
@@ -1197,18 +1186,18 @@ export function calcularResumenVivienda(
     var {codNoRea, esNoRea} = defOperativo.esNoRea(respuestas)
     var {codReaSup,esReaSup} = defOperativo.esRealizadaSup(respuestas)
     var {codNoReaSup, esNoReaSup} = defOperativo.esNoReaSup(respuestas)
-    var formsFeedback = getFormulariosForIdVivienda(forPkRaiz.vivienda!);
-    var configuracionSorteoFormulario = estructura.configSorteo && estructura.configSorteo[getMainFormForVivienda(forPkRaiz.vivienda!)]
+    var formsFeedback = getFormulariosForValuePkRaiz(forPkRaiz[estructura.mainTDPK]);
+    var configuracionSorteoFormulario = estructura.configSorteo && estructura.configSorteo[getMainFormForVivienda(forPkRaiz[estructura.mainTDPK])]
     var habilitacionBotonFormulario = estructura.habilitacionBotonFormulario;
     var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>{
         var tieneIndividual = configuracionSorteoFormulario && !!(configuracionSorteoFormulario.id_formulario_individual && configuracionSorteoFormulario.id_formulario_padre)
         var tieneBotonDesHabilitable = habilitacionBotonFormulario && habilitacionBotonFormulario[JSON.parse(plainPk).formulario as IdFormulario];
         var pkAgregada = null;
         if(tieneBotonDesHabilitable){
-            pkAgregada = likeAr(estructura.unidades_analisis).find((ua,idUA)=>
+            pkAgregada = likeAr(estructura.unidades_analisis).find((ua,_idUA)=>
                 ua.unidad_analisis==habilitacionBotonFormulario[JSON.parse(plainPk).formulario as IdFormulario].unidad_analisis)?.pk_agregada;
         }
-        return JSON.parse(plainPk).vivienda==forPkRaiz.vivienda && 
+        return JSON.parse(plainPk)[estructura.mainTDPK]==forPkRaiz[estructura.mainTDPK] && 
             formsFeedback.includes(JSON.parse(plainPk).formulario) &&
             (tieneBotonDesHabilitable?
                 !calcularDisabledBF(
@@ -1226,15 +1215,15 @@ export function calcularResumenVivienda(
                         JSON.parse(plainPk).formulario,
                         estructura.conReaHogar? 
                             JSON.parse(plainPk).hogar?respuestasForPk({
-                                vivienda:forPkRaiz.vivienda, 
+                                [estructura.mainTDPK]:forPkRaiz[estructura.mainTDPK], 
                                 formulario:configuracionSorteoFormulario.id_formulario_padre!,
                                 hogar:JSON.parse(plainPk).hogar 
-                            }).respuestas:{} as Respuestas
+                            } as ForPk).respuestas:{} as Respuestas
                         :
                             respuestasForPk({
-                                vivienda:forPkRaiz.vivienda, 
+                                [estructura.mainTDPK]:forPkRaiz[estructura.mainTDPK], 
                                 formulario:configuracionSorteoFormulario.id_formulario_padre!,
-                            }).respuestas
+                            } as ForPk).respuestas
                     )
                 :true)
     }).array();
@@ -1265,7 +1254,7 @@ export function calcularResumenVivienda(
     }
     
     //TODO ARREGLAR ESTE HORROR, GENERALIZAR
-    var tarea = datosByPass.informacionHdr[forPkRaiz.vivienda as unknown as IdEnc].tarea.tarea;
+    var tarea = datosByPass.informacionHdr[forPkRaiz[estructura.mainTDPK] as unknown as IdEnc].tarea.tarea;
     var resumenEstado:ResumenEstado;
     var resumenEstadoSup:ResumenEstado = 'vacio';
     if(tarea=='supe'){

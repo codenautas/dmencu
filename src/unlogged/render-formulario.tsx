@@ -22,7 +22,9 @@ import {Bloque, BotonFormulario,
     IdCasillero,
     PreguntaConSiNo,
     Texto, Estructura, InformacionHdr, DatosHdrUaPpal, ConfiguracionSorteoFormulario, ResumenEstado, DatosByPassPersistibles, IdOperativo, IdEnc, Libre, UnidadAnalisis,
-    iterator, empty, ConfiguracionHabilitarBotonFormulario
+    iterator, empty, ConfiguracionHabilitarBotonFormulario,
+    CampoPkRaiz,
+    ValuePkRaiz
 } from "./tipos";
 import{ 
     accion_abrir_formulario,
@@ -33,7 +35,7 @@ import{
     calcularResumenVivienda,
     crearEncuesta,
     getDatosByPass,
-    getFormulariosForIdVivienda,
+    getFormulariosForValuePkRaiz,
     getMainFormForVivienda,
     intentarBackup,
     setCalcularVariables
@@ -806,7 +808,7 @@ var calcularDisabledBFAgregarListo = (
 }
 
 function botonesDelFormulario(r:Respuestas, unidad_analisis:IdUnidadAnalisis, estructura:Estructura, forPkPadre:ForPk, feedbackAll:{[formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin>}):HtmlTag<HTMLDivElement>{
-    var formsVivienda = getFormulariosForIdVivienda(forPkPadre.vivienda);
+    var formsVivienda = getFormulariosForValuePkRaiz(forPkPadre[estructura.mainTDPK]);
     var uaDef = estructura.unidades_analisis[unidad_analisis];
     var arrayEstructuraFormularios = (likeAr(estructura.formularios)).array();
     var x = likeAr(uaDef.hijas).filter(uaHija=>
@@ -822,7 +824,7 @@ function botonesDelFormulario(r:Respuestas, unidad_analisis:IdUnidadAnalisis, es
                 likeAr(r[uaHija.unidad_analisis]||[]).map((respuestasHija, i)=>{
                     var num = Number(i)+1
                     var forPkHijaParcial = {...forPkPadre, [uaHija.pk_agregada]: num};
-                    var configSorteoFormulario = estructura.configSorteo?estructura.configSorteo[getMainFormForVivienda(forPkPadre.vivienda!)]:null
+                    var configSorteoFormulario = estructura.configSorteo?estructura.configSorteo[getMainFormForVivienda(forPkPadre[estructura.mainTDPK])]:null
                     var habilitacionBotonFormulario = estructura.habilitacionBotonFormulario;
                     return html.div({class:'numerador-ua'}, [
                         html.div({class:'botones-ua'},[
@@ -1115,7 +1117,7 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                   //  var estadoDelBoton = feedbackRow.feedback['$B.F:'+casillero.salto as IdVariable].estado   //original
                       var estadoDelBoton = feedbackRow.feedback['$B.F:'+armoNomSalto as IdVariable].estado
                    // console.log('BotonFormularioDespliegue estadoDelBoton ' +estadoDelBoton  );
-                    var configSorteoFormulario = estructura.configSorteo?estructura.configSorteo[getMainFormForVivienda(forPk.vivienda)]:null
+                    var configSorteoFormulario = estructura.configSorteo?estructura.configSorteo[getMainFormForVivienda(forPk[estructura.mainTDPK])]:null
                     var habilitacionBotonFormulario = estructura.habilitacionBotonFormulario;
                     listaDeBotonesAbrir = likeAr(conjunto).map((_, i)=>{
                         let num:number = numberOrStringIncIfArray(i, conjunto) as number;
@@ -1425,14 +1427,14 @@ function BarraDeNavegacion(props:{forPk:ForPk, soloLectura:boolean, modoDirecto:
     const forPk = props.forPk;
     const {opciones} = useSelectorVivienda(forPk);
     const [confirmaCerrar, setConfirmaCerrar] = useState<boolean|null>(false);
-    var dominio = getDatosByPass().informacionHdr[forPk.vivienda].tem.dominio;
+    var estructura = getEstructura();
+    var dominio = getDatosByPass().informacionHdr[forPk[estructura.mainTDPK]].tem.dominio;
     var cerrarDirecto = async function(){
         removeCSSById(BOOTSTRAP_5_1_3_SRC);
-        var estructura = getEstructura();
         gotoConsistir(
             estructura.operativo as IdOperativo,
-            getDatosByPass().informacionHdr[forPk.vivienda].tarea.tarea,
-            forPk.vivienda
+            getDatosByPass().informacionHdr[forPk[estructura.mainTDPK]].tarea.tarea,
+            forPk[estructura.mainTDPK]
         );
         //var hash=new URLSearchParams(location.hash?.replace(/^\#/,'').split('&autoproced')[0]);
         ////hash.delete('autoproced')
@@ -1706,7 +1708,8 @@ export function DesplegarLineaResumenUAPrincipal(props:{
 }){
     const {numVivienda, respuestas, formPrincipal, tarea} = props;
     const id='viv-'+numVivienda;
-    const forPk:ForPk={formulario:formPrincipal, vivienda:Number(numVivienda) as IdEnc}; //no quitar el casteo porque viene como texto y necesito que sea número
+    const estructura = getEstructura();
+    const forPk:ForPk={formulario:formPrincipal, [estructura.mainTDPK]:Number(numVivienda) as IdEnc} as ForPk; //no quitar el casteo porque viene como texto y necesito que sea número
     var tem = getDatosByPass().informacionHdr[numVivienda].tem;
     const dispatch = useDispatch();
     useEffect(()=>{
@@ -1724,7 +1727,7 @@ export function DesplegarLineaResumenUAPrincipal(props:{
             //pregunto si es la misma vivienda porque la funcion se dispara 
             //con todas las combinaciones de respuestas para cada forPk
             //@ts-ignore vivienda existe
-            if(r.vivienda == forPk.vivienda){
+            if(r[estructura.mainTDPK] == forPk[estructura.mainTDPK]){
                 elemento.setAttribute('resumen-estado',calcularResumenVivienda(forPk, feedbackAll, r).resumenEstado);
             }
         }
@@ -1812,7 +1815,7 @@ export function DesplegarCarga(props:{
                         numVivienda={numVivienda}
                         tarea={informacion.tarea.tarea}
                         formPrincipal={informacion.tarea.main_form}
-                        respuestas={respuestas.viviendas[numVivienda] as RespuestasRaiz}
+                        respuestas={respuestas[estructura.mainTD][numVivienda] as RespuestasRaiz}
                     />
                 ).array()}
                 {estructura.permiteGenerarMuestra?
@@ -1822,8 +1825,8 @@ export function DesplegarCarga(props:{
                                 variant="contained"
                                 color="primary"
                                 onClick={()=>
-                                    crearEncuesta(idCarga,(forPk:{formulario:IdFormulario, vivienda:IdEnc})=>{
-                                        dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk, apilarVuelta:false}));
+                                    crearEncuesta(idCarga,(forPkRaiz:ForPkRaiz)=>{
+                                        dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:forPkRaiz, apilarVuelta:false}));
                                     })
                                 }
                             >
@@ -2232,7 +2235,7 @@ setCalcularVariables((respuestasRaiz:RespuestasRaiz, forPk:ForPk)=>{
             autoCargarPersonas(configPadre,'viviendas', estructura)
         })        
     }
-    respuestasRaiz.vdominio=getDatosByPass().informacionHdr[forPk.vivienda].tem.dominio;
+    respuestasRaiz.vdominio=getDatosByPass().informacionHdr[forPk[estructura.mainTDPK]].tem.dominio;
     //TODO: MEJORAR EN ALGUN MOMENTO EL BOTON LISTO
     let totalH = respuestasRaiz['total_h' as IdVariable];
     respuestasRaiz['$B.F:S1' as IdVariable] = (respuestasRaiz['hogares'] || []).length == totalH?'ok':null;
