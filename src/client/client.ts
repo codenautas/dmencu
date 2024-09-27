@@ -162,14 +162,14 @@ var mostrarInfoLocal = (divAvisoSincro:HTMLDivElement, titulo:string, nroSincro:
             nroSincro?html.p(["Número de sincronización: ", html.b(""+nroSincro.toString())]):null,
             html.h4(titulo),
             html.p([htmlNumero(likeAr(datosByPass.cargas).array().length),' areas: ',likeAr(datosByPass.cargas).keys().join(', ')]),
-            html.p([htmlNumero(likeAr(datosByPass.respuestas[estructura.mainTD]).array().length),' viviendas']),
+            html.p([htmlNumero(likeAr(datosByPass.respuestas[estructura.mainTD]).array().length), ' ' + estructura.mainTD]),
             mostrarLinkHdr?html.a({href:'./campo'},[html.b('IR A LA HOJA DE RUTA')]):null
         ]).create());
     }else{
         divAvisoSincro.appendChild(html.div({class:'aviso'},[
             html.h4('Sistema vacío'),
             html.p('No hay información de formularios'),
-            html.p('No hay información de viviendas')
+            html.p(`No hay información de ${estructura.mainTD}`)
         ]).create());
     }
 }

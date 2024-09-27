@@ -1006,7 +1006,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 for(let backup of likeAr(parameters.tem).array()){
                     let area = backup.carga.carga;
                     let respuestasRaiz = backup.respuestasRaiz;
-                    let idEncDM = backup.forPkRaiz[OperativoGenerator.mainTD].toString();
+                    let idEncDM = backup.forPkRaiz[OperativoGenerator.mainTDPK].toString();
                     let recepcionista = backup.carga.recepcionista;
                     let asignado = backup.idper;
                     if(Number(idEncDM)<0){
