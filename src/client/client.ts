@@ -169,7 +169,6 @@ var mostrarInfoLocal = (divAvisoSincro:HTMLDivElement, titulo:string, nroSincro:
         divAvisoSincro.appendChild(html.div({class:'aviso'},[
             html.h4('Sistema vacío'),
             html.p('No hay información de formularios'),
-            html.p(`No hay información de ${estructura.mainTD}`)
         ]).create());
     }
 }
