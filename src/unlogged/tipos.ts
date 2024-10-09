@@ -348,8 +348,8 @@ export type Estructura = {
         [idUnidadAnalisis in IdUnidadAnalisis]: UnidadAnalisis
     }
     tareas:TareasEstructura
-    mainTD: IdUnidadAnalisis
-    mainTDPK: CampoPkRaiz
+    uaPpal: IdUnidadAnalisis
+    pkAgregadaUaPpal: CampoPkRaiz
     timestamp:number
     operativo:IdOperativo
     configSorteo: ConfiguracionSorteo

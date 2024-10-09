@@ -71,7 +71,7 @@ export const crearEncuesta = (idCarga: IdCarga, callBack:(forPkRaiz:ForPkRaiz)=>
     const NEXT_AUTO_VALUE_PK_RAIZ: ValuePkRaiz = my.getLocalVar(LAST_AUTO_VALUE_PK_RAIZ) || '-1'
     const estructura = getEstructura();
     my.setLocalVar(LAST_AUTO_VALUE_PK_RAIZ, (Number(NEXT_AUTO_VALUE_PK_RAIZ) - 1).toString());
-    datosByPass.respuestas[estructura.mainTD][NEXT_AUTO_VALUE_PK_RAIZ]={} as RespuestasRaiz;
+    datosByPass.respuestas[estructura.uaPpal][NEXT_AUTO_VALUE_PK_RAIZ]={} as RespuestasRaiz;
     datosByPass.informacionHdr[NEXT_AUTO_VALUE_PK_RAIZ] = {
         ...estructura.defaultInformacionHdr, 
         tem: {...estructura.defaultInformacionHdr.tem}
@@ -81,7 +81,7 @@ export const crearEncuesta = (idCarga: IdCarga, callBack:(forPkRaiz:ForPkRaiz)=>
     persistirDatosByPass(datosByPass).then(
         ()=>callBack({
             formulario:estructura.defaultInformacionHdr.tarea.main_form, 
-            [estructura.mainTDPK]:Number(NEXT_AUTO_VALUE_PK_RAIZ) as ValuePkRaiz
+            [estructura.pkAgregadaUaPpal]:Number(NEXT_AUTO_VALUE_PK_RAIZ) as ValuePkRaiz
         } as ForPkRaiz)
     )//no quitar el casteo porque viene como texto y necesito que sea número
 }
@@ -436,7 +436,7 @@ export function accion_registrar_respuesta(payload:{
         variablesCalculadas(respuestasRaiz, forPk);
         if(estructura.configSorteo && !datosByPass?.soloLectura){
             verificarSorteo({
-                configuracionSorteo: estructura.configSorteo[getMainFormForVivienda(forPk[estructura.mainTDPK])], 
+                configuracionSorteo: estructura.configSorteo[getMainFormForVivienda(forPk[estructura.pkAgregadaUaPpal])], 
                 respuestas,
                 respuestasRaiz,
                 variableActual: variable, 
@@ -851,7 +851,7 @@ export function verificarSorteo(opts:{
     }
 
     var {configuracionSorteo, variableActual, respuestas, forPk, respuestasRaiz} = opts;
-    var idEnc = forPk[estructura.mainTDPK];
+    var idEnc = forPk[estructura.pkAgregadaUaPpal];
     var {respuestasAumentadas, respuestasRaiz} = respuestasForPk(forPk, true);
     var expr_incompletitud_fun = getFuncionHabilitar(configuracionSorteo.expr_incompletitud_js[respuestasAumentadas.vdominio].expr);
     var filtro_fun =  getFuncionHabilitar(configuracionSorteo.filtro_js[respuestasAumentadas.vdominio].expr);
@@ -1028,7 +1028,7 @@ export function calcularFeedbackUnidadAnalisis(
                 // feedbackRowValidator[plainForPk].estados[varname as IdVariable] = 'actual';
             })
             var BF_varname = '$B.'+formulario as IdVariable
-            var formPrincipalForVivienda = getMainFormForVivienda(forPk[estructura.mainTDPK]);
+            var formPrincipalForVivienda = getMainFormForVivienda(forPk[estructura.pkAgregadaUaPpal]);
             if(estructura.configSorteo && !estructura.configSorteo[formPrincipalForVivienda]){
                 throw new Error(`no hay configuracion de sorteo para el formulario ${formPrincipalForVivienda}`)
             }
@@ -1095,10 +1095,10 @@ function calcularFeedback(respuestas: Respuestas, forPkRaiz:ForPkRaiz, opts:Opci
     // @ts-ignore Partial
     var nuevosRows : {[x in PlainForPk]:FormStructureState<IdVariable,IdFin>}={}
     calcularFeedbackEncuesta(nuevosRows, estructura.formularios, forPkRaiz, respuestas, opts);
-    datosByPass.feedbackRowValidator = likeAr(datosByPass.feedbackRowValidator).filter((_feedback:any, plainPk:PlainForPk)=>JSON.parse(plainPk)[estructura.mainTDPK] != forPkRaiz[estructura.mainTDPK]).plain();
+    datosByPass.feedbackRowValidator = likeAr(datosByPass.feedbackRowValidator).filter((_feedback:any, plainPk:PlainForPk)=>JSON.parse(plainPk)[estructura.pkAgregadaUaPpal] != forPkRaiz[estructura.pkAgregadaUaPpal]).plain();
     datosByPass.feedbackRowValidator = {...datosByPass.feedbackRowValidator, ...nuevosRows};
-    datosByPass.respuestas[estructura.mainTD][forPkRaiz[estructura.mainTDPK]] = {
-        ...datosByPass.respuestas[estructura.mainTD][forPkRaiz[estructura.mainTDPK]],
+    datosByPass.respuestas[estructura.uaPpal][forPkRaiz[estructura.pkAgregadaUaPpal]] = {
+        ...datosByPass.respuestas[estructura.uaPpal][forPkRaiz[estructura.pkAgregadaUaPpal]],
         ...calcularResumenVivienda(
             forPkRaiz, 
             nuevosRows,
@@ -1186,8 +1186,8 @@ export function calcularResumenVivienda(
     var {codNoRea, esNoRea} = defOperativo.esNoRea(respuestas)
     var {codReaSup,esReaSup} = defOperativo.esRealizadaSup(respuestas)
     var {codNoReaSup, esNoReaSup} = defOperativo.esNoReaSup(respuestas)
-    var formsFeedback = getFormulariosForValuePkRaiz(forPkRaiz[estructura.mainTDPK]);
-    var configuracionSorteoFormulario = estructura.configSorteo && estructura.configSorteo[getMainFormForVivienda(forPkRaiz[estructura.mainTDPK])]
+    var formsFeedback = getFormulariosForValuePkRaiz(forPkRaiz[estructura.pkAgregadaUaPpal]);
+    var configuracionSorteoFormulario = estructura.configSorteo && estructura.configSorteo[getMainFormForVivienda(forPkRaiz[estructura.pkAgregadaUaPpal])]
     var habilitacionBotonFormulario = estructura.habilitacionBotonFormulario;
     var feedBackVivienda = likeAr(feedbackRowValidator).filter((_row, plainPk)=>{
         var tieneIndividual = configuracionSorteoFormulario && !!(configuracionSorteoFormulario.id_formulario_individual && configuracionSorteoFormulario.id_formulario_padre)
@@ -1197,7 +1197,7 @@ export function calcularResumenVivienda(
             pkAgregada = likeAr(estructura.unidades_analisis).find((ua,_idUA)=>
                 ua.unidad_analisis==habilitacionBotonFormulario[JSON.parse(plainPk).formulario as IdFormulario].unidad_analisis)?.pk_agregada;
         }
-        return JSON.parse(plainPk)[estructura.mainTDPK]==forPkRaiz[estructura.mainTDPK] && 
+        return JSON.parse(plainPk)[estructura.pkAgregadaUaPpal]==forPkRaiz[estructura.pkAgregadaUaPpal] && 
             formsFeedback.includes(JSON.parse(plainPk).formulario) &&
             (tieneBotonDesHabilitable?
                 !calcularDisabledBF(
@@ -1215,13 +1215,13 @@ export function calcularResumenVivienda(
                         JSON.parse(plainPk).formulario,
                         estructura.conReaHogar? 
                             JSON.parse(plainPk).hogar?respuestasForPk({
-                                [estructura.mainTDPK]:forPkRaiz[estructura.mainTDPK], 
+                                [estructura.pkAgregadaUaPpal]:forPkRaiz[estructura.pkAgregadaUaPpal], 
                                 formulario:configuracionSorteoFormulario.id_formulario_padre!,
                                 hogar:JSON.parse(plainPk).hogar 
                             } as ForPk).respuestas:{} as Respuestas
                         :
                             respuestasForPk({
-                                [estructura.mainTDPK]:forPkRaiz[estructura.mainTDPK], 
+                                [estructura.pkAgregadaUaPpal]:forPkRaiz[estructura.pkAgregadaUaPpal], 
                                 formulario:configuracionSorteoFormulario.id_formulario_padre!,
                             } as ForPk).respuestas
                     )
@@ -1254,7 +1254,7 @@ export function calcularResumenVivienda(
     }
     
     //TODO ARREGLAR ESTE HORROR, GENERALIZAR
-    var tarea = datosByPass.informacionHdr[forPkRaiz[estructura.mainTDPK] as unknown as IdEnc].tarea.tarea;
+    var tarea = datosByPass.informacionHdr[forPkRaiz[estructura.pkAgregadaUaPpal] as unknown as IdEnc].tarea.tarea;
     var resumenEstado:ResumenEstado;
     var resumenEstadoSup:ResumenEstado = 'vacio';
     if(tarea=='supe'){

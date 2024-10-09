@@ -44,7 +44,7 @@ myOwn.autoSetupFunctions.push(async ()=>{
             //@ts-ignore
             var state:CasoState = {}
             inicializarState(state);
-            var forPkRaiz = {formulario:carga.informacionHdr[enc as IdEnc].tarea.main_form, [estructura.mainTDPK]:enc};
+            var forPkRaiz = {formulario:carga.informacionHdr[enc as IdEnc].tarea.main_form, [estructura.pkAgregadaUaPpal]:enc};
             setPersistirDatosByPass(
                 async function persistirDatosByPassEnBaseDeDatos(persistentes:DatosByPassPersistibles){
                     if(persistentes.soloLectura){
@@ -53,8 +53,8 @@ myOwn.autoSetupFunctions.push(async ()=>{
                     await my.ajax.dm_forpkraiz_descargar({operativo, persistentes});
                 }
             )
-            if(!carga.respuestas[estructura.mainTD][forPkRaiz[estructura.mainTDPK as CampoPkRaiz]]){
-                throw new Error(`No se encuentra el/la ${estructura.mainTDPK} ${forPkRaiz[estructura.mainTDPK]}`);
+            if(!carga.respuestas[estructura.uaPpal][forPkRaiz[estructura.pkAgregadaUaPpal as CampoPkRaiz]]){
+                throw new Error(`No se encuentra el/la ${estructura.pkAgregadaUaPpal} ${forPkRaiz[estructura.pkAgregadaUaPpal]}`);
             }
             cargarHojaDeRuta({...carga, modoAlmacenamiento:'session'});
             // @ts-ignore
@@ -162,7 +162,7 @@ var mostrarInfoLocal = (divAvisoSincro:HTMLDivElement, titulo:string, nroSincro:
             nroSincro?html.p(["Número de sincronización: ", html.b(""+nroSincro.toString())]):null,
             html.h4(titulo),
             html.p([htmlNumero(likeAr(datosByPass.cargas).array().length),' areas: ',likeAr(datosByPass.cargas).keys().join(', ')]),
-            html.p([htmlNumero(likeAr(datosByPass.respuestas[estructura.mainTD]).array().length), ' ' + estructura.mainTD]),
+            html.p([htmlNumero(likeAr(datosByPass.respuestas[estructura.uaPpal]).array().length), ' ' + estructura.uaPpal]),
             mostrarLinkHdr?html.a({href:'./campo'},[html.b('IR A LA HOJA DE RUTA')]):null
         ]).create());
     }else{

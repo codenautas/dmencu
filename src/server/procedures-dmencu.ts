@@ -224,7 +224,7 @@ var guardarEncuestaEnTem = async (context:ProcedureContext, operativo:IdOperativ
 
 var simularGuardadoDeEncuestaDesdeAppEscritorio = async (context: ProcedureContext ,operativo: string, enc: IdEnc, tarea: IdTarea, json_encuesta:any )=>{
     var be = context.be;
-    const UA_PRINCIPAL = await getUAPrincipal(context.client, operativo);
+    const UA_PRINCIPAL = (await getUAPrincipal(context.client, operativo)).unidad_analisis;
     return await be.procedure.dm_forpkraiz_descargar.coreFunction(
         context, 
         {
@@ -247,9 +247,9 @@ var simularGuardadoDeEncuestaDesdeAppEscritorio = async (context: ProcedureConte
     )
 }
 
-var getHdrQuery =  function getHdrQuery(quotedCondViv:string, context:ProcedureContext, permiteGenerarMuestra:boolean){
+var getHdrQuery =  function getHdrQuery(quotedCondViv:string, context:ProcedureContext, unidadAnalisisPrincipal:IdUnidadAnalisis, permiteGenerarMuestra:boolean){
     return `
-    with ${context.be.db.quoteIdent(OperativoGenerator.mainTD)} as 
+    with ${context.be.db.quoteIdent(unidadAnalisisPrincipal)} as 
         (select t.enc, t.json_encuesta as respuestas, t.resumen_estado as "resumenEstado", 
             jsonb_build_object(
                 'dominio'       , dominio       ,
@@ -281,15 +281,15 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string, context:ProcedureC
             group by t.enc, t.json_encuesta, t.resumen_estado, dominio, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area, tt.tarea, fecha_asignacion, asignado, main_form
         )
         select jsonb_build_object(
-                ${context.be.db.quoteLiteral(OperativoGenerator.mainTD)}, ${jsono(
-                    `select enc, respuestas, jsonb_build_object('resumenEstado',"resumenEstado") as otras from ${context.be.db.quoteIdent(OperativoGenerator.mainTD)}`,
+                ${context.be.db.quoteLiteral(unidadAnalisisPrincipal)}, ${jsono(
+                    `select enc, respuestas, jsonb_build_object('resumenEstado',"resumenEstado") as otras from ${context.be.db.quoteIdent(unidadAnalisisPrincipal)}`,
                     'enc',
                     `otras || coalesce(respuestas,'{}'::jsonb)`
                 )}
             ) as respuestas,
             ${json(`
                 select a.area as carga, observaciones_hdr as observaciones, min(fecha_asignacion) as fecha, ta.recepcionista
-                    from ${context.be.db.quoteIdent(OperativoGenerator.mainTD)} aux inner join areas a using (area) inner join tareas_areas ta on (a.area = ta.area and aux.tarea->>'tarea' = ta.tarea)
+                    from ${context.be.db.quoteIdent(unidadAnalisisPrincipal)} aux inner join areas a using (area) inner join tareas_areas ta on (a.area = ta.area and aux.tarea->>'tarea' = ta.tarea)
                     group by a.area, observaciones_hdr, ta.recepcionista 
                 ${permiteGenerarMuestra?`
                     union -- este union permite visualizar areas asignadas sin encuestas generadas
@@ -297,7 +297,7 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string, context:ProcedureC
                         from tareas_areas where asignado = ${context.be.db.quoteLiteral(context.user.idper)} and tarea = 'encu'`:''}
                 `,'fecha')} as cargas,
             ${jsono(
-                `select enc, jsonb_build_object('tem', tem, 'tarea', tarea) as otras from ${context.be.db.quoteIdent(OperativoGenerator.mainTD)}`,
+                `select enc, jsonb_build_object('tem', tem, 'tarea', tarea) as otras from ${context.be.db.quoteIdent(unidadAnalisisPrincipal)}`,
                  'enc',
                  `otras ||'{}'::jsonb`
                 )}
@@ -305,17 +305,17 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string, context:ProcedureC
 `
 }
 
-export var setHdrQuery = (myFun:(quotedCondViv:string, context:ProcedureContext, permiteGenerarMuestra:boolean)=>string)=> getHdrQuery=myFun
+export var setHdrQuery = (myFun:(quotedCondViv:string, context:ProcedureContext, unidadAnalisisPrincipal:IdUnidadAnalisis, permiteGenerarMuestra:boolean)=>string)=> getHdrQuery=myFun
 
 const getUAPrincipal = async (client:Client, operativo:string)=>
     (await client.query(
-        `select unidad_analisis
+        `select *
             from unidad_analisis
             where operativo= $1 and principal
         `
         ,
         [operativo]
-    ).fetchUniqueValue()).value
+    ).fetchUniqueRow()).row
 
 var funcionesConocidas:{[k in string]:boolean} = {}
 
@@ -485,7 +485,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 `,
                 []
             ).fetchUniqueRow()).row;
-            
+            var {unidad_analisis, pk_agregada} = (await getUAPrincipal(context.client, parameters.operativo));
             return {
                 timestamp: be.caches.timestampEstructura, 
                 ...result.row, 
@@ -497,8 +497,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 noReas:be.caches.tableContent.no_rea, 
                 noReasSup:be.caches.tableContent.no_rea_sup, 
                 defaultInformacionHdr,
-                mainTD: OperativoGenerator.mainTD,
-                mainTDPK: OperativoGenerator.mainTDPK
+                uaPpal: unidad_analisis,
+                pkAgregadaUaPpal: pk_agregada
             };
         }
     },
@@ -627,15 +627,16 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             id_caso:string,
             datos_caso:AnyObject
         },newClient:Client){
+            var {unidad_analisis, pk_agregada} = (await getUAPrincipal(context.client, parameters.operativo));
             var client=newClient || context.client;
             var datos_json=parameters.datos_caso;
             var be = context.be;
             var tableStructures_app:TableDefinitions = be.tableStructures;
         
-            var struct_dmencu = createStructure(context, OperativoGenerator.mainTD);
+            var struct_dmencu = createStructure(context, unidad_analisis);
             datos_json['operativo'] = parameters.operativo;
             
-            datos_json[OperativoGenerator.mainTDPK] = parameters.id_caso;
+            datos_json[pk_agregada] = parameters.id_caso;
             function completar_ult_pk_en_arr( ult_pk, ua_arr){
                 var con_pk_completa=ua_arr; 
                 if (ua_arr && ua_arr.length>=1){
@@ -700,9 +701,10 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         resultOk: 'goToEnc',
         definedIn: 'dmencu',
         coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters){
+            var {unidad_analisis, pk_agregada} = (await getUAPrincipal(context.client, parameters.operativo));
             var client=context.client;
-             var struct_dmencu = createStructure(context, OperativoGenerator.mainTD);
-            var sql = sqlTools.structuredData.sqlRead({operativo: parameters.operativo, [OperativoGenerator.mainTDPK]:parameters.id_caso}, struct_dmencu);
+             var struct_dmencu = createStructure(context, unidad_analisis);
+            var sql = sqlTools.structuredData.sqlRead({operativo: parameters.operativo, [pk_agregada]:parameters.id_caso}, struct_dmencu);
             var result = await client.query(sql).fetchUniqueValue();
             var response = {
                 operativo: parameters.operativo,
@@ -742,7 +744,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             var be=context.be;
             /* FIN-GENERALIZAR: */
             const OPERATIVO = await getOperativoActual(context);
-            let resultMain = await context.client.query(`SELECT * FROM ${OperativoGenerator.mainTD} LIMIT 1`).fetchAll();
+            var {unidad_analisis, pk_agregada} = (await getUAPrincipal(context.client, OPERATIVO));
+            let resultMain = await context.client.query(`SELECT * from ${be.db.quoteIdent(unidad_analisis)} LIMIT 1`).fetchAll();
             if(resultMain.rowCount>0){
                 console.log('HAY DATOS',resultMain.rows)
                 throw new Error('HAY DATOS. NO SE PUEDE INICIAR EL PASAJE');
@@ -802,6 +805,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 ,
                 [operativo, tarea]
             ).fetchUniqueValue()).value;
+            var {unidad_analisis} = (await getUAPrincipal(context.client, parameters.operativo));
             var condviv= ` t.operativo= $1 and t.enc =$2`;
             var soloLectura = !!(await context.client.query(`select *
                     from tareas_tem join estados using (operativo, estado) --pk estado verificada
@@ -814,7 +818,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     from operativos 
                     where operativo = $1
             `,[operativo]).fetchUniqueValue()).value;
-            var {row} = await context.client.query(getHdrQuery(condviv, context, permiteGenerarMuestra),[operativo,pk_raiz_value]).fetchUniqueRow();
+            var {row} = await context.client.query(getHdrQuery(condviv, context, unidad_analisis, permiteGenerarMuestra),[operativo,pk_raiz_value]).fetchUniqueRow();
             row.informacionHdr[pk_raiz_value].tarea={
                 tarea,
                 main_form
@@ -838,7 +842,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             var be=context.be;
             var {operativo, persistentes} = parameters;
-            const UA_PRINCIPAL = await getUAPrincipal(context.client, operativo);
+            const UA_PRINCIPAL = (await getUAPrincipal(context.client, operativo)).unidad_analisis;
             await Promise.all(likeAr(persistentes.respuestas[UA_PRINCIPAL]).map(async (respuestasUAPrincipal,idEnc)=>{
                 if(respuestasUAPrincipal.s1a1_obs == '!prueba de error al grabar!'){
                     throw new Error('DIO PRUEBA DE ERROR AL GRABAR');
@@ -898,7 +902,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         and tt.operacion='cargar' 
                         and (tt.cargado_dm is null or tt.cargado_dm = ${context.be.db.quoteLiteral(token)})
             `;
-            const UA_PRINCIPAL = await getUAPrincipal(context.client, OPERATIVO);
+            const {unidad_analisis:UA_PRINCIPAL, pk_agregada} = (await getUAPrincipal(context.client, OPERATIVO));
             if (persistentes) {
                 for (let idEnc in persistentes.respuestas[UA_PRINCIPAL]) {
                     let respuestasUAPrincipal = persistentes.respuestas[UA_PRINCIPAL][idEnc];
@@ -951,7 +955,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                             [OPERATIVO, idEnc, resultado]
                         ).fetchUniqueRow();
                     }else{
-                        await fs.appendFile('local-recibido-sin-token.txt', JSON.stringify({now:new Date(),user:context.username,idCaso: idEnc,[OperativoGenerator.mainTDPK]: respuestasUAPrincipal})+'\n\n', 'utf8');
+                        await fs.appendFile('local-recibido-sin-token.txt', JSON.stringify({now:new Date(),user:context.username,idCaso: idEnc,[pk_agregada]: respuestasUAPrincipal})+'\n\n', 'utf8');
                     }
                 }
   
@@ -961,7 +965,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     from operativos 
                     where operativo = $1
             `,[OPERATIVO]).fetchUniqueValue()).value;
-            var {row} = await context.client.query(getHdrQuery(condviv, context, permiteGenerarMuestra),[OPERATIVO,context.user.idper]).fetchUniqueRow();
+            var {row} = await context.client.query(getHdrQuery(condviv, context, UA_PRINCIPAL, permiteGenerarMuestra),[OPERATIVO,context.user.idper]).fetchUniqueRow();
             await context.client.query(
                 `update tareas_tem tt
                     set  estado = $4, cargado_dm=$3::text
@@ -1002,11 +1006,12 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     return {ok:'ok:N/T'};
                 }
             }
+            var {unidad_analisis, pk_agregada} = (await getUAPrincipal(context.client, OPERATIVO));
             if(parameters.tem){
                 for(let backup of likeAr(parameters.tem).array()){
                     let area = backup.carga.carga;
                     let respuestasRaiz = backup.respuestasRaiz;
-                    let idEncDM = backup.forPkRaiz[OperativoGenerator.mainTDPK].toString();
+                    let idEncDM = backup.forPkRaiz[pk_agregada].toString();
                     let recepcionista = backup.carga.recepcionista;
                     let asignado = backup.idper;
                     if(Number(idEncDM)<0){
@@ -1184,10 +1189,11 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         roles:['coor_proc','coor_campo','admin'],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var be = context.be;
+            var {unidad_analisis, pk_agregada} = (await getUAPrincipal(context.client, parameters.operativo));
             await context.client.query(
                 `delete 
-                    from ${be.db.quoteIdent(OperativoGenerator.mainTD)} 
-                    where operativo=$1 and ${be.db.quoteIdent(OperativoGenerator.mainTDPK)} = $2
+                    from ${be.db.quoteIdent(unidad_analisis)} 
+                    where operativo=$1 and ${be.db.quoteIdent(pk_agregada)} = $2
             `, [params.operativo, params.enc]).execute();
             //paso a encu para guardar en historial
             await context.client.query(`
@@ -1218,17 +1224,17 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             await context.client.query(`
                 delete 
                     from inconsistencias
-                    where operativo = $1 and ${be.db.quoteIdent(OperativoGenerator.mainTDPK)} = $2
+                    where operativo = $1 and ${be.db.quoteIdent(pk_agregada)} = $2
             `,[params.operativo, params.enc]).execute();
             await context.client.query(`
                 delete 
                     from in_con_var
-                    where operativo = $1 and pk_integrada->>${be.db.quoteLiteral(OperativoGenerator.mainTDPK)} = $2
+                    where operativo = $1 and pk_integrada->>${be.db.quoteLiteral(pk_agregada)} = $2
             `,[params.operativo, params.enc]).execute();
             await context.client.query(`
                 delete 
                     from inconsistencias_ultimas
-                    where operativo = $1 and pk_integrada->>${be.db.quoteLiteral(OperativoGenerator.mainTDPK)} = $2
+                    where operativo = $1 and pk_integrada->>${be.db.quoteLiteral(pk_agregada)} = $2
             `,[params.operativo, params.enc]).execute();
             return `la encuesta ${params.enc} se blanqueó correctamente`;
         }
@@ -1836,7 +1842,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             }
             // CONTROLAR QUE NINGUNA DE LAS 2 encuestas ESTE CARGADA, ABIERTA FALTA
             const OPERATIVO = await getOperativoActual(context);
-           
+            var {unidad_analisis, pk_agregada} = (await getUAPrincipal(context.client, OPERATIVO));
             const cant_hogs=(await context.client.query(`
                 select vivienda, count(*)nh from hogares where operativo=$1 and (vivienda=$2 or vivienda=$3)
                 group by vivienda order by vivienda
@@ -1861,7 +1867,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 let [enc1,enc2] = [regEnc[0], regEnc[1]]
                 if(params.paso == 1){
                     await context.client.query(
-                        `delete from ${context.be.db.quoteIdent(OperativoGenerator.mainTD)} where operativo=$1 and (vivienda=$2 OR vivienda=$3)`
+                        `delete from ${context.be.db.quoteIdent(unidad_analisis)} where operativo=$1 and (vivienda=$2 OR vivienda=$3)`
                         , [OPERATIVO, enc1.enc, enc2.enc]
                         ).execute();
                 }
@@ -1906,7 +1912,6 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         roles:['coor_proc','coor_campo','admin'],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var be = context.be;
-            const UA_PRINCIPAL = await getUAPrincipal(context.client, params.operativo);
             let tareasTemResult = await context.client.query(`
                 UPDATE tareas_tem
                     set cargado_dm = null, operacion = $3, estado = $4

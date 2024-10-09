@@ -104,7 +104,7 @@ setEncolarBackup(
         let plainForPk = toPlainForPk(forPkRaiz);
         const datosByPass = getDatosByPass();
         let estructura = getEstructura();
-        let carga = datosByPass.cargas[datosByPass.informacionHdr[forPkRaiz[estructura.mainTDPK] as IdEnc].tem.carga as IdCarga];
+        let carga = datosByPass.cargas[datosByPass.informacionHdr[forPkRaiz[estructura.pkAgregadaUaPpal] as IdEnc].tem.carga as IdCarga];
         backups.tem[plainForPk]={idBackup:backups.idActual, forPkRaiz, respuestasRaiz, carga, idper: datosByPass.idper};
         my.setLocalVar(BACKUPS,backups);
         backupPendiente = backupPendiente.then(enviarBackup)
