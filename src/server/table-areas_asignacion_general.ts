@@ -6,7 +6,7 @@ import { areas } from "./table-areas";
 import { IdTarea } from "../unlogged/tipos";
 
 export function areas_asignacion_general(context:TableContext):TableDefinition {
-    var tareas: IdTarea[] = ['encu','recu','supe'];
+    var tareas: IdTarea[] = ['encu','ingr','recu','supe'];
     var tareasFields = [
         {name:'recepcionista', prefijo:'recep', editable:true},
         {name:'asignado', prefijo:'', editable:true},

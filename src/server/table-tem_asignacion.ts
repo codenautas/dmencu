@@ -6,7 +6,7 @@ import { tem } from "./table-tem";
 import { IdTarea } from "../unlogged/tipos";
 
 export function tem_asignacion(context:TableContext):TableDefinition {
-    var tareas: IdTarea[] = ['encu','recu','supe'];
+    var tareas: IdTarea[] = ['encu','ingr','recu','supe'];
     var tareas_fields = [
         {name:'recepcionista', prefijo:'recep', editable:true},
         {name:'asignado', prefijo:'', editable:true},

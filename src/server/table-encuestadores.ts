@@ -5,7 +5,7 @@ import {TableDefinition, TableContext} from "./types-dmencu";
 import { cuentasSql, cuentasFields } from "./table-areas";  
 
 export type OptsAsignados = {
-    tarea: 'encu'|'recu'|'supe'|null
+    tarea: 'encu'|'recu'|'supe'|'ingr'|null
     name: string
     verComoRecepcionista: boolean
 }
@@ -53,6 +53,10 @@ export function asignados(context:TableContext, opts?:OptsAsignados){
 
 export function encuestadores_asignados(context:TableContext):TableDefinition {
     return asignados(context, {tarea:'encu', name:'encuestador', verComoRecepcionista:false})    
+}
+
+export function ingresadores_asignados(context:TableContext):TableDefinition {
+    return asignados(context, {tarea:'ingr', name:'ingresador', verComoRecepcionista:false})    
 }
 
 export function recuperadores_asignados(context:TableContext):TableDefinition {

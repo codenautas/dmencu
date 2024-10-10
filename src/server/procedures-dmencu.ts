@@ -368,12 +368,12 @@ function compilarExpresiones(casillero:CasilleroDeAca){
     for(var casilleroInterno of casillero.childs) compilarExpresiones(casilleroInterno);
 }
 
-const generarEncuestaTem = async (context: ProcedureContext, operativo: IdOperativo, i: number, area: number, dominio: number) => {
+const generarEncuestaTem = async (context: ProcedureContext, operativo: IdOperativo, i: number, area: number, dominio: number, tarea_actual:IdTarea) => {
     let enc = generarIdEncFun(area, i);
     await context.client.query(`
-        INSERT into tem (operativo, enc, area, dominio, habilitada) values ($1, $2, $3, $4, $5)
+        INSERT into tem (operativo, enc, area, dominio, habilitada, tarea_actual) values ($1, $2, $3, $4, $5, $6)
             on conflict (operativo, enc) do nothing`,
-    [operativo, enc, area, dominio, true]).execute();
+    [operativo, enc, area, dominio, true, tarea_actual]).execute();
 }
 
 const generarTareasTemFaltantes = async (context: ProcedureContext, operativo: IdOperativo) => {
@@ -1108,6 +1108,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'area'               , typeName:'integer', references: "areas"},
             {name:'dominio'            , typeName:'integer', defaultValue: 3},
             {name:'cant_encuestas'     , typeName:'integer'},
+            {name:'tarea_actual'       , typeName:'integer', references:'tareas'},
         ],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             const be =  context.be;
@@ -1118,7 +1119,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             `,[params.operativo]).fetchUniqueValue()).value;
             if(permiteGenerarMuestra){
                 for(let i = 0; i < Math.min(params.cant_encuestas,maxAGenerar); i++){
-                    await generarEncuestaTem(context, params.operativo, i, params.area, params.dominio);
+                    await generarEncuestaTem(context, params.operativo, i, params.area, params.dominio, params.tarea_actual);
                 }
                 await generarTareasTemFaltantes(context, params.operativo);
                 return 'ok';
@@ -1134,6 +1135,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'area'               , typeName:'integer', references: "areas"},
             {name:'dominio'            , typeName:'integer', defaultValue: 3},
             {name:'cant_encuestas'     , typeName:'integer'},
+            {name:'tarea_actual'       , typeName:'integer', references:'tareas'},
         ],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             const be =  context.be;
@@ -1150,7 +1152,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     [params.operativo, params.area]
                 ).fetchUniqueValue()).value;
                 for(let i = total; i < Math.min(total + params.cant_encuestas,maxAEncPorArea); i++){
-                    await generarEncuestaTem(context, params.operativo, i, params.area, params.dominio);
+                    await generarEncuestaTem(context, params.operativo, i, params.area, params.dominio, params.tarea_actual);
                 }
                 await generarTareasTemFaltantes(context, params.operativo);
                 return 'ok';

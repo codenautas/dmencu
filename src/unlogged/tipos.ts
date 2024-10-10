@@ -24,7 +24,7 @@ export type Valor = string|number|null;
 export type TipocDestinos = 'P'|'CP'|'B'|'FILTRO'|'BF'
 export type Tipoc = TipocDestinos | 'F'|'O'|'OM'|'CONS' |'TEXTO' | 'LIBRE'
 
-export type IdTarea = 'encu'|'recu'|'supe';
+export type IdTarea = 'encu'|'recu'|'supe'|'ingr';
 
 export type FeedbackVariable = Feedback<IdVariable, IdFin>
 

@@ -71,8 +71,18 @@ export function t_encu_areas(context:TableContext){
     return tableDef;
 }
 
+export function t_ingr_areas(context:TableContext){
+    var tableDef = tareas_areas(context, {tarea:'ingr', name:'ingresador'}) 
+    tableDef.hiddenColumns?.push('areas__encuestador');
+    tableDef.sql!.isTable = false;
+    tableDef.detailTables=[
+        {table:`tareas_tem_asignacion_ingr`, fields:['operativo', 'tarea', 'area'], abr:'T', refreshParent:true, refreshFromParent:true}
+    ];
+    return tableDef;
+}
+
 export function t_recu_areas(context:TableContext){
-    var tableDef = tareas_areas(context, {tarea:'recu', name:'recuperador'}) 
+    var tableDef = tareas_areas(context, {tarea:'ingr', name:'ingresador'}) 
     tableDef.hiddenColumns?.push('areas__encuestador');
     tableDef.sql!.isTable = false;
     tableDef.detailTables=[

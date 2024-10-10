@@ -5,7 +5,7 @@ import { FieldDefinition } from "rel-enc";
 import {OperativoGenerator } from "procesamiento";
 
 export type OptsTareasTem = {
-    rol: 'encu'|'recu'|'supe'|null
+    rol: 'encu'|'recu'|'supe'|'ingr'|null
     name: string
     abre?:boolean
     consiste?:boolean
@@ -180,4 +180,9 @@ export function tareas_tem_asignacion_supe(context:TableContext){
     tableDef.sql!.isTable = false;
     return tableDef;
 }
+
+export function tareas_tem_asignacion_ingr(context:TableContext){
+    var tableDef = tareas_tem(context, {rol:'ingr', name:'ingresador', abre:false, consiste:false}) 
+    tableDef.sql!.isTable = false;
+    return tableDef;
 }
