@@ -1919,7 +1919,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     set cargado_dm = null, operacion = $3, estado = $4
                     where operativo=$1 and cargado_dm = $2
                     returning *`,
-                [params.operativo, params.token, ESTADO_POSTERIOR_DESCARGA, OPERACION_PREPARAR_DESCARGA])
+                [params.operativo, params.token, OPERACION_PREPARAR_DESCARGA, ESTADO_POSTERIOR_DESCARGA])
             .fetchAll();
             if(tareasTemResult.rowCount == 0){
                 throw error('No se blanqueó ninguna encuesta')

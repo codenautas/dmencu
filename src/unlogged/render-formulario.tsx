@@ -125,7 +125,7 @@ export type LibreDespliegueType = (props:{
 
 var LibreDespliegue: LibreDespliegueType
 
-const Button = ({variant, onClick, disabled, children, className, color, size, 
+export const Button = ({variant, onClick, disabled, children, className, color, size, 
         disableElevation, disableFocusRipple, disableRipple, 
         ...other
     }:{
@@ -491,7 +491,27 @@ function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?
             </div>
         </div>
         <div className="nombre-div">
-            <div className="nombre">{breakeableText(casillero.nombre)}</div>
+            <div className="nombre">{breakeableText(casillero.nombre)}
+                {casillero.especial?.gps?
+                    <span>
+                        <Button color="primary" variant="outlined" style={{marginLeft:'10px'}} onClick={(event)=>{
+                            navigator.geolocation.getCurrentPosition(position => {
+                                let {siguienteVariable} = dispatchByPass(accion_registrar_respuesta, {forPk:props.forPk, variable:casillero.var_name, respuesta:JSON.stringify(position)})
+                                console.log(position);
+                                if(siguienteVariable){
+                                    enfocarElementoDeVariable(siguienteVariable);
+                                }
+                            }, e => {
+                                let {siguienteVariable} = dispatchByPass(accion_registrar_respuesta, {forPk:props.forPk, variable:casillero.var_name, respuesta:"no se pudo obtener el punto, active el gps"})
+                                if(siguienteVariable){
+                                    enfocarElementoDeVariable(siguienteVariable);
+                                }
+                            });
+
+                        }}><ICON.Location/></Button>
+                    </span>
+                :null}
+            </div>
             {casillero.aclaracion?
                 <div className="aclaracion">
                     {casillero.salto && casillero.tipoc=='FILTRO'?
@@ -597,7 +617,8 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpcio
         <div className="input-campo">
             <TextField 
                 id={`var-${pregunta.var_name}`}
-                disabled={disabled}
+                //@ts-ignore algunos casilleros tienen especial y otros no
+                disabled={disabled || pregunta.especial?.gps}
                 className="variable" 
                 //var-length={pregunta.longitud} 
                 fullWidth={true}
@@ -1689,8 +1710,8 @@ export function Atributo(props:{nombre:string, valor:any}){
     </span>:null
 }
 
-const listaEstadosCarga:EstadoCarga[]=['resumen','relevamiento','recibo'];
-var resumidores = [
+export const listaEstadosCarga:EstadoCarga[]=['resumen','relevamiento','recibo'];
+export var resumidores = [
     {nombre:'REA'         , f:(rr:RespuestasRaiz)=>rr.resumenEstado=="ok"          },
     {nombre:'Cita pactada', f:(rr:RespuestasRaiz)=>rr.resumenEstado=="cita pactada"},
     {nombre:'Pendientes'  , f:(rr:RespuestasRaiz)=>rr.resumenEstado=="vacio"       },
@@ -1700,12 +1721,23 @@ resumidores.push(
     {nombre:'Otros', f:resumidores.reduce((g,r)=>(rr=>!r.f(rr) && g(rr) ),(_:RespuestasRaiz)=>true) }
 )
 
-export function DesplegarLineaResumenUAPrincipal(props:{
+export type DesplegarLineaResumenUAPrincipalType = (props:{
     numVivienda:IdEnc,
     formPrincipal:IdFormulario,
     tarea: string,
     respuestas:RespuestasRaiz,
-}){
+})=>JSX.Element;
+
+export var DesplegarLineaResumenUAPrincipal: DesplegarLineaResumenUAPrincipalType
+
+export const setDesplegarLineaResumenUAPrincipal = (lineaResumenUAPrincipal:DesplegarLineaResumenUAPrincipalType)=>DesplegarLineaResumenUAPrincipal = lineaResumenUAPrincipal;
+
+setDesplegarLineaResumenUAPrincipal((props:{
+    numVivienda:IdEnc,
+    formPrincipal:IdFormulario,
+    tarea: string,
+    respuestas:RespuestasRaiz,
+})=>{
     const {numVivienda, respuestas, formPrincipal, tarea} = props;
     const id='viv-'+numVivienda;
     const estructura = getEstructura();
@@ -1757,9 +1789,9 @@ export function DesplegarLineaResumenUAPrincipal(props:{
             </Button>
         </TableCell>
     </TableRow>
-}
+});
 
-export function DesplegarCarga(props:{
+export type DesplegarCargaType = (props:{
     carga:Carga, 
     idCarga:IdCarga, 
     posicion:number,
@@ -1768,7 +1800,22 @@ export function DesplegarCarga(props:{
     feedbackRowValidator:{
         [formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin> 
     }
-}){
+})=>JSX.Element;
+
+export var DesplegarCarga: DesplegarCargaType
+
+export const setDesplegarCarga = (despliegueCarga:DesplegarCargaType)=>DesplegarCarga = despliegueCarga;
+
+setDesplegarCarga((props:{
+    carga:Carga, 
+    idCarga:IdCarga, 
+    posicion:number,
+    informacionHdr:InformacionHdr, 
+    respuestas: RespuestaLasUA,
+    feedbackRowValidator:{
+        [formulario in PlainForPk]:FormStructureState<IdVariable, Valor, IdFin> 
+    }
+})=>{
     const [newSurvey, setNewSurvey] = useState(0);
     const {carga, idCarga, informacionHdr, respuestas} = props;
     var estructura = getEstructura();
@@ -1851,7 +1898,8 @@ export function DesplegarCarga(props:{
         </Table>
         }
     </Paper>
-}
+});
+
 export function DesplegarCitaPactada(props:{respuestas:Respuestas}){
     const {respuestas} = props;
     return <div className="cita-pactada">
@@ -1889,7 +1937,13 @@ export function DesplegarTem(props:{tem:TEM}){
     </div>
 }
 
-export function HojaDeRutaDespliegue(){
+export type HojaDeRutaDespliegueType = (props:{})=>JSX.Element;
+
+export var HojaDeRutaDespliegue: HojaDeRutaDespliegueType
+
+export const setHojaDeRutaDespliegue = (hojaDeRuta:HojaDeRutaDespliegueType)=>HojaDeRutaDespliegue = hojaDeRuta
+
+setHojaDeRutaDespliegue((_props:{})=>{
     var {cargas, num_sincro, informacionHdr, respuestas} = getDatosByPass();
     var {modo} = useSelector((state:CasoState)=>({modo:state.modo}));
     var feedbackRowValidator = getFeedbackRowValidator()
@@ -1949,7 +2003,7 @@ export function HojaDeRutaDespliegue(){
             </div>
         </>
     );
-}
+});
 
 export function ListaTextos(props:{textos:string[]}){
     return <ul>
