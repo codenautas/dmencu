@@ -38,6 +38,7 @@ import{
     getFormulariosForValuePkRaiz,
     getMainFormForVivienda,
     intentarBackup,
+    respuestasForPk,
     setCalcularVariables
 } from "./bypass-formulario"
 import { dmTraerDatosFormulario, dispatchers, 
@@ -442,6 +443,8 @@ type CasilleroEncabezable = Formulario|Bloque|Filtro|ConjuntoPreguntas|Pregunta|
 
 function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?:boolean, leer?:boolean, forPk:ForPk}){
     var {casillero, forPk} = props;
+    var [openConfirm, setOpenConfirm] = useState(false)
+    var [posGPS, setPosGPS] = useState(null)
     var conCampoOpciones = useSelector((state:CasoState)=>state.opciones.conCampoOpciones)
     var handleClickBorrar=()=>{
         dispatchByPass(accion_registrar_respuesta, {respuesta:null, variable:casillero.var_name as IdVariable, forPk:forPk})
@@ -451,6 +454,9 @@ function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?
     var calculada = casillero.calculada;
     var id = `id-div-${casillero.var_name||casillero.casillero}`;
     var idAcciones = "acciones-"+id;
+    const handleClose = () => {
+        setOpenConfirm(false);
+    };
     return <div 
         className="encabezado" 
         debe-leer={props.leer?'SI':'NO'} 
@@ -494,20 +500,55 @@ function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?
             <div className="nombre">{breakeableText(casillero.nombre)}
                 {casillero.especial?.gps?
                     <span>
-                        <Button color="primary" variant="outlined" style={{marginLeft:'10px'}} onClick={(event)=>{
+                        {openConfirm?
+                            <Dialog
+                                open={openConfirm}
+                                onClose={handleClose}
+                                aria-labelledby="responsive-dialog-title"
+                            >
+                                <DialogTitle id="responsive-dialog-title">Registro punto GPS</DialogTitle>
+                                <DialogContent>
+                                    <DialogContentText>
+                                        Ya existe un punto registrado, si continúa se va a sobrescribir, <b>si no está un DM DESCARTE el punto</b>
+                                    </DialogContentText>
+                                </DialogContent>
+                                <DialogActions>
+                                    <Button onClick={()=>{
+                                        let {siguienteVariable} = dispatchByPass(accion_registrar_respuesta, {forPk:props.forPk, variable:casillero.var_name, respuesta:posGPS})
+                                        if(siguienteVariable){
+                                            enfocarElementoDeVariable(siguienteVariable);
+                                        }
+                                        handleClose();
+                                    }} color="secondary" variant="outlined">
+                                        Guardar
+                                    </Button>
+                                    <Button onClick={handleClose} color="primary" variant="outlined">
+                                        Descartar
+                                    </Button>
+                                </DialogActions>
+                            </Dialog>
+                        :null}
+                        <Button color="primary" variant="outlined" style={{marginLeft:'10px'}} onClick={(_event)=>{
+                            const {respuestas} = respuestasForPk(forPk);
+                            const checkGPS = () =>{
+                                if(!respuestas[casillero.var_name!]){
+                                    let {siguienteVariable} = dispatchByPass(accion_registrar_respuesta, {forPk:props.forPk, variable:casillero.var_name, respuesta:posGPS})
+                                    if(siguienteVariable){
+                                        enfocarElementoDeVariable(siguienteVariable);
+                                    }
+                                    setOpenConfirm(false);
+                                }else{
+                                    setOpenConfirm(true);
+                                }
+                            }
                             navigator.geolocation.getCurrentPosition(position => {
-                                let {siguienteVariable} = dispatchByPass(accion_registrar_respuesta, {forPk:props.forPk, variable:casillero.var_name, respuesta:JSON.stringify(position)})
-                                console.log(position);
-                                if(siguienteVariable){
-                                    enfocarElementoDeVariable(siguienteVariable);
-                                }
+                                setPosGPS(JSON.stringify(position));
+                                checkGPS();
+                                
                             }, e => {
-                                let {siguienteVariable} = dispatchByPass(accion_registrar_respuesta, {forPk:props.forPk, variable:casillero.var_name, respuesta:"no se pudo obtener el punto, active el gps"})
-                                if(siguienteVariable){
-                                    enfocarElementoDeVariable(siguienteVariable);
-                                }
+                                setPosGPS(e.message);
+                                checkGPS();
                             });
-
                         }}><ICON.Location/></Button>
                     </span>
                 :null}
@@ -644,7 +685,7 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpcio
                 }}
             />
         </div>
-        {disabled || mini?null:
+        {disabled || pregunta.especial?.gps || mini?null:
             <div className="boton-confirmar-campo">
                 <Button variant={editando?"contained":'outlined'} size="small" color={editando?'primary':'default'}
                     boton-confirmar={pregunta.var_name}
