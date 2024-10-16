@@ -509,7 +509,7 @@ function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?
                                 <DialogTitle id="responsive-dialog-title">Registro punto GPS</DialogTitle>
                                 <DialogContent>
                                     <DialogContentText>
-                                        Ya existe un punto registrado, si continúa se va a sobrescribir, <b>si no está un DM DESCARTE el punto</b>
+                                        Ya existe un punto registrado, si continúa se va a sobrescribir, <b>si no está utilizando un DM DESCARTE el punto</b>
                                     </DialogContentText>
                                 </DialogContent>
                                 <DialogActions>
