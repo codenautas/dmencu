@@ -49,7 +49,7 @@ import { dmTraerDatosFormulario, dispatchers,
 import { useState, useEffect, useLayoutEffect } from "react";
 import { useSelector, useDispatch } from "react-redux"; 
 import { strict as likeAr, beingArray } from "like-ar";
-import {sleep, coalesce} from "best-globals";
+import {sleep, coalesce, datetime} from "best-globals";
 import { unexpected } from "cast-error";
 
 import {
@@ -443,8 +443,6 @@ type CasilleroEncabezable = Formulario|Bloque|Filtro|ConjuntoPreguntas|Pregunta|
 
 function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?:boolean, leer?:boolean, forPk:ForPk}){
     var {casillero, forPk} = props;
-    var [openConfirm, setOpenConfirm] = useState(false)
-    var [posGPS, setPosGPS] = useState(null)
     var conCampoOpciones = useSelector((state:CasoState)=>state.opciones.conCampoOpciones)
     var handleClickBorrar=()=>{
         dispatchByPass(accion_registrar_respuesta, {respuesta:null, variable:casillero.var_name as IdVariable, forPk:forPk})
@@ -454,9 +452,6 @@ function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?
     var calculada = casillero.calculada;
     var id = `id-div-${casillero.var_name||casillero.casillero}`;
     var idAcciones = "acciones-"+id;
-    const handleClose = () => {
-        setOpenConfirm(false);
-    };
     return <div 
         className="encabezado" 
         debe-leer={props.leer?'SI':'NO'} 
@@ -500,54 +495,22 @@ function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?
             <div className="nombre">{breakeableText(casillero.nombre)}
                 {casillero.especial?.gps?
                     <span>
-                        {openConfirm?
-                            <Dialog
-                                open={openConfirm}
-                                onClose={handleClose}
-                                aria-labelledby="responsive-dialog-title"
-                            >
-                                <DialogTitle id="responsive-dialog-title">Registro punto GPS</DialogTitle>
-                                <DialogContent>
-                                    <DialogContentText>
-                                        Ya existe un punto registrado, si continúa se va a sobrescribir, <b>si no está utilizando un DM DESCARTE el punto</b>
-                                    </DialogContentText>
-                                </DialogContent>
-                                <DialogActions>
-                                    <Button onClick={()=>{
-                                        let {siguienteVariable} = dispatchByPass(accion_registrar_respuesta, {forPk:props.forPk, variable:casillero.var_name, respuesta:posGPS})
-                                        if(siguienteVariable){
-                                            enfocarElementoDeVariable(siguienteVariable);
-                                        }
-                                        handleClose();
-                                    }} color="secondary" variant="outlined">
-                                        Guardar
-                                    </Button>
-                                    <Button onClick={handleClose} color="primary" variant="outlined">
-                                        Descartar
-                                    </Button>
-                                </DialogActions>
-                            </Dialog>
-                        :null}
                         <Button color="primary" variant="outlined" style={{marginLeft:'10px'}} onClick={(_event)=>{
                             const {respuestas} = respuestasForPk(forPk);
-                            const checkGPS = () =>{
-                                if(!respuestas[casillero.var_name!]){
-                                    let {siguienteVariable} = dispatchByPass(accion_registrar_respuesta, {forPk:props.forPk, variable:casillero.var_name, respuesta:posGPS})
-                                    if(siguienteVariable){
-                                        enfocarElementoDeVariable(siguienteVariable);
-                                    }
-                                    setOpenConfirm(false);
-                                }else{
-                                    setOpenConfirm(true);
-                                }
+                            const agregarInfoGPS = (respuestaGPS:Valor, info:string)=>{
+                                let aux = JSON.parse(respuestaGPS || JSON.stringify([]));
+                                aux.unshift(info);
+                                respuestaGPS = JSON.stringify(aux);
+                                return dispatchByPass(accion_registrar_respuesta, {forPk:props.forPk, variable:casillero.var_name, respuesta:respuestaGPS});
+                            }
+                            let {siguienteVariable} = agregarInfoGPS(respuestas[casillero.var_name!], `${datetime.now().toYmdHms()} - esperando punto gps`);
+                            if(siguienteVariable){
+                                enfocarElementoDeVariable(siguienteVariable);
                             }
                             navigator.geolocation.getCurrentPosition(position => {
-                                setPosGPS(JSON.stringify(position));
-                                checkGPS();
-                                
+                                agregarInfoGPS(respuestas[casillero.var_name!], JSON.stringify(position));
                             }, e => {
-                                setPosGPS(e.message);
-                                checkGPS();
+                                agregarInfoGPS(respuestas[casillero.var_name!], e.message);
                             });
                         }}><ICON.Location/></Button>
                     </span>
