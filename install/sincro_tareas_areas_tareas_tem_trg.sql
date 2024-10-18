@@ -14,7 +14,8 @@ begin
         where tt.operativo=t.operativo 
             and tt.enc=t.enc 
             and tt.tarea=new.tarea
-            and t.area=new.area;            
+            and t.area=new.area
+            and (t.tarea_actual is null or t.tarea_actual = tt.tarea);          
     return new;
 end;
 $BODY$;
