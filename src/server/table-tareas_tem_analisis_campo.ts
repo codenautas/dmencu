@@ -15,6 +15,8 @@ export function tareas_tem_analisis_campo(context:TableContext):TableDefinition 
     definicionComunFincAnacProc(tableDef);
     var tableDefTT = tareas_tem(context);
     tableDef.sql!.from=getSqlFrom(tableDefTT,{desde:"analisis_campo"});
+    tableDef.refrescable = false;
+    tableDef.selfRefresh = false;
     tableDef.sql!.where = `"tareas_tem".tarea = 'anac' and "tem".tarea_actual = 'anac'`;
     return tableDef;
 }

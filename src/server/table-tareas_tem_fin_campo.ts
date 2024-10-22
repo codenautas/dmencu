@@ -28,6 +28,8 @@ export function tareas_tem_fin_campo(context:TableContext):TableDefinition {
         .forEach((field)=>field.visible=true);
     var tableDefTT = tareas_tem(context);
     tableDef.sql!.from=getSqlFrom(tableDefTT,{desde:"fin_campo"});
+    tableDef.refrescable = false;
+    tableDef.selfRefresh = false;
     tableDef.sql!.where = `"tareas_tem".tarea = 'finc' and "tem".tarea_actual = 'finc'`;
     return tableDef;
 }

@@ -563,13 +563,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         {menuType:'table', name:'zona'   , table:'control_campo_zona'  },
         {menuType:'table', name:'comuna' , table:'control_campo_comuna'},
         {menuType:'table', name:'área'   , table:'control_campo_area'  },
-    ];
-    }
-    getMenuLimpieza(context:Context) { 
-        return [
-            {menuType:'proc', name:'intercambiar_encuestas'},
-        ];
-    }    
+    ]};
     getMenuVarios(context:Context) { 
         let submenuVarios:MenuInfoBase[] = [{menuType: 'abrir_encuesta', name: 'abrir_encuesta'}]
         if(context.puede?.campo?.editar){
@@ -578,6 +572,9 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         if(context.puede?.campo?.administrar){
             submenuVarios.push({menuType:'proc', name:'encuestador_dms_mostrar', label:'forzar descarga encuestas DM'});
             submenuVarios.push({menuType:'proc', name:'encuesta_blanquear_previsualizar', label:'blanquear encuesta'});
+        }
+        if(context.puede?.encuestas?.procesar){
+            submenuVarios.push({menuType:'proc', name:'intercambiar_encuestas'});
         } 
         return {menuType: 'menu', name: 'varios', menuContent: submenuVarios}
     }
@@ -665,11 +662,6 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                         {menuType:'table', name:'tareas_tem_procesamiento', label:'encuestas'},
                     ]},
                 );
-                if (this.getMenuLimpieza(context).length){
-                    menu.push(
-                        {menuType:'menu', name:'limpieza', menuContent:this.getMenuLimpieza(context)},                       
-                    );
-                }    
             }
             var menuConfigurar:MenuInfoBase[] = [];
             if(context.puede?.campo?.administrar||context.puede?.encuestas?.procesar){
