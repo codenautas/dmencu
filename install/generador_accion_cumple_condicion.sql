@@ -66,4 +66,4 @@ update estados_acciones ea
   where ea.operativo= aux.operativo and
     ea.estado=aux.estado and 
     ea.eaccion=aux.eaccion and
-    ea.estado_destino=aux.estado_destino    
+    ea.estado_destino=aux.estado_destino;
