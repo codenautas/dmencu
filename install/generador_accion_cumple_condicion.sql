@@ -58,8 +58,7 @@ CREATE OR REPLACE TRIGGER update_accion_cumple_condicion_trg
     FOR EACH ROW
     EXECUTE FUNCTION base.regenerar_accion_cumple_condicion_trg();
 
---regenerar la primera vez
-/*
+--regenerar la primera vez (ya que se cargan antes en el dump los estados_acciones)
 with aux as (select * from estados_acciones limit 1)
 update estados_acciones ea
   set condicion=aux.condicion
@@ -67,5 +66,4 @@ update estados_acciones ea
   where ea.operativo= aux.operativo and
     ea.estado=aux.estado and 
     ea.eaccion=aux.eaccion and
-    ea.estado_destino=aux.estado_destino
-*/    
+    ea.estado_destino=aux.estado_destino    
