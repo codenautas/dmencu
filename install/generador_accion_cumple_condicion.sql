@@ -3,7 +3,8 @@
 
 CREATE OR REPLACE FUNCTION regenerar_accion_cumple_condicion_trg()
   RETURNS trigger 
-  LANGUAGE plpgsql AS
+  LANGUAGE plpgsql
+  SECURITY DEFINER AS
 $CREATOR$
 DECLARE
   xcase_condiciones TEXT;
