@@ -1,7 +1,7 @@
 --set search_path= base, his, comun;
 --set role esede241_owner;
 
-CREATE OR REPLACE FUNCTION regenerar_accion_cumple_condicion_v2_trg()
+CREATE OR REPLACE FUNCTION regenerar_accion_cumple_condicion_trg()
   RETURNS trigger 
   LANGUAGE plpgsql AS
 $CREATOR$
@@ -9,7 +9,7 @@ DECLARE
   xcase_condiciones TEXT;
   v_sql text := $SQL_CON_TAG$
 
-CREATE OR REPLACE FUNCTION accion_cumple_condicion_v2(
+CREATE OR REPLACE FUNCTION accion_cumple_condicion(
     p_operativo text,
     p_estado text,
     p_enc text,
@@ -24,7 +24,6 @@ AS $SQL$
     from base.tareas_tem t
     inner join base.estados_acciones ea using (operativo, estado)
     inner join tem te using (operativo,enc)
-    left join tokens tok on t.cargado_dm=tok.token
     left join no_rea nr on (te.norea::text = nr.no_rea)
     left join tareas_tem tta on (te.operativo = tta.operativo and te.enc = tta.enc and te.tarea_actual = tta.tarea)
     where t.operativo = p_operativo
@@ -53,11 +52,11 @@ BEGIN
 END;
 $CREATOR$;
 
-CREATE OR REPLACE TRIGGER update_accion_cumple_condicion_v2_trg
+CREATE OR REPLACE TRIGGER update_accion_cumple_condicion_trg
     AFTER UPDATE of condicion
     ON base.estados_acciones
     FOR EACH ROW
-    EXECUTE FUNCTION base.regenerar_accion_cumple_condicion_v2_trg();
+    EXECUTE FUNCTION base.regenerar_accion_cumple_condicion_trg();
 
 --regenerar la primera vez
 /*

@@ -48,7 +48,7 @@ install:
       - sincronizacion_tem.sql
       - control_disform_cerrado_trg.sql
       - control_cargado_tareas_tem_trg.sql
-      - accion_cumple_condicion.sql
+      - generador_accion_cumple_condicion.sql
       - tarea_cumple_condicion.sql
       - agregar_historial_tem_trg.sql
       - carga_inicial_tareas_tem.sql
