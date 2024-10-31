@@ -22,7 +22,7 @@ import {
     Table, TableBody, TableCell, TableHead, TableRow, TextField, ThemeProvider, Toolbar, Typography, Zoom,
     useScrollTrigger,
     // styles:
-    createStyles, makeStyles, Theme, fade, createMuiTheme
+    createStyles, makeStyles, Theme, createTheme
 } from "@material-ui/core";
 import { Store, Action } from "redux";
 import { TipoVariables } from "./tipos";
@@ -202,7 +202,7 @@ export class RenderAndCaptureError extends React.Component<
     }
 }
 
-const theme = createMuiTheme({
+const theme = createTheme({
   overrides: {
     MuiCssBaseline: {
       '@global': {

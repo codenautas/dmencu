@@ -117,7 +117,7 @@ anchoNormal(ancho)
     margin-left 48px
     font-size 0.8em
 
-.multiple, .pregunta, .conjuntopreguntas
+.multiple, .pregunta, .conjuntopreguntas, .preguntaenformadematriz
   font-size 1.2rem
   > .encabezado
     > .id-div
@@ -209,7 +209,42 @@ anchoNormal(ancho)
       &[nuestra-longitud="1"]
         .input-campo
           width 2ch
-
+          
+.preguntaenformadematriz
+  .campo
+    &[nuestra-longitud]
+      .input-campo, input
+        width 100%
+      width 100%
+    &[nuestra-longitud="telefono"]
+      .input-campo, input
+        width 100%
+      width 100%
+    &[nuestra-longitud="10"]
+      .input-campo, input
+        width 11ch
+    &[nuestra-longitud="8"]
+      .input-campo, input
+        width 9ch
+    &[nuestra-longitud="6"]
+      .input-campo, input
+        width 7ch
+    &[nuestra-longitud="4"]
+      .input-campo, input
+        width 5ch
+    &[nuestra-longitud="3"]
+      .input-campo, input
+        width 4ch
+    &[nuestra-longitud="2"]
+      .input-campo, input
+        width 3ch
+    &[nuestra-longitud="1"]
+      .input-campo, input
+        width 2ch
+.preguntaenformadematriz
+  .campo
+    .input-campo
+      margin auto
 .bloque
   > .encabezado
     background colorFondoEncabezadoBloque

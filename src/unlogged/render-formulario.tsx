@@ -24,7 +24,8 @@ import {Bloque, BotonFormulario,
     Texto, Estructura, InformacionHdr, DatosHdrUaPpal, ConfiguracionSorteoFormulario, ResumenEstado, DatosByPassPersistibles, IdOperativo, IdEnc, Libre, UnidadAnalisis,
     iterator, empty, ConfiguracionHabilitarBotonFormulario,
     CampoPkRaiz,
-    ValuePkRaiz
+    ValuePkRaiz,
+    PMatriz
 } from "./tipos";
 import{ 
     accion_abrir_formulario,
@@ -439,7 +440,24 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
     </DesplegarCasillero>
 }
 
-type CasilleroEncabezable = Formulario|Bloque|Filtro|ConjuntoPreguntas|Pregunta|OpcionMultiple|PreguntaSimple|Consistencia|Texto
+type CasilleroEncabezable = Formulario|Bloque|Filtro|ConjuntoPreguntas|Pregunta|OpcionMultiple|PreguntaSimple|Consistencia|Texto|PMatriz
+
+const getLosMetadatos = (casillero: CasilleroEncabezable): React.JSX.Element =>
+    <div los-metadatos="si">
+        <span el-metadato="variable">{casillero.var_name}</span>
+        {casillero.tipovar && casillero.tipovar!='opciones' && casillero.tipovar!='si_no'?
+            <span el-metadato="tipovar">{casillero.tipovar}</span>
+        :null}
+        {   //@ts-ignore una opción múltiple nunca lo a a ser, no tiene el campo, no importa
+            casillero.optativo?<span el-metadato="optativa">optativa</span>:null
+        }
+        {casillero.calculada?<span el-metadato="calculada">calculada</span>:null}
+        {casillero.despliegueOculta?<span el-metadato="oculta">oculta</span>:null}
+        {casillero.expresion_habilitar?<span el-metadato="expresion_habilitar">habilita: {casillero.expresion_habilitar}</span>:null}
+        {   //@ts-ignore altunos casilleros no tienen especial, no importa, es solo para poner los metadatos
+            casillero.especial?.autoing?<span el-metadato="expresion_autoing">autoing: {casillero.especial?.autoing}</span>:null
+        }
+    </div>
 
 function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?:boolean, leer?:boolean, forPk:ForPk}){
     var {casillero, forPk} = props;
@@ -525,21 +543,7 @@ function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?
                     }        
                 </div>
             :null}
-            <div los-metadatos="si">
-                <span el-metadato="variable">{casillero.var_name}</span>
-                {casillero.tipovar && casillero.tipovar!='opciones' && casillero.tipovar!='si_no'?
-                    <span el-metadato="tipovar">{casillero.tipovar}</span>
-                :null}
-                {   //@ts-ignore una opción múltiple nunca lo a a ser, no tiene el campo, no importa
-                    casillero.optativo?<span el-metadato="optativa">optativa</span>:null
-                }
-                {calculada?<span el-metadato="calculada">calculada</span>:null}
-                {casillero.despliegueOculta?<span el-metadato="oculta">oculta</span>:null}
-                {casillero.expresion_habilitar?<span el-metadato="expresion_habilitar">habilita: {casillero.expresion_habilitar}</span>:null}
-                {   //@ts-ignore altunos casilleros no tienen especial, no importa, es solo para poner los metadatos
-                    casillero.especial?.autoing?<span el-metadato="expresion_autoing">autoing: {casillero.especial?.autoing}</span>:null
-                }
-            </div>
+            {getLosMetadatos(casillero)}
         </div>
     </div>
 }
@@ -611,7 +615,7 @@ function Campo(props:{disabled:boolean, pregunta:PreguntaSimple|PreguntaConOpcio
             (pregunta.especial?.noScroll == true)?null:enfocarElementoDeVariable(pregunta.especial?.scrollTo ?? siguienteVariable);
         }
     };
-    var nuestraLongitud = calcularNuestraLongitud(longitud)
+    var nuestraLongitud = calcularNuestraLongitud(pregunta.longitud || longitud)
     return <div className="campo" nuestra-longitud={nuestraLongitud} style={props.hidden=='quitar'?{display:'none'}:props.hidden?{visibility:'hidden'}:undefined}>
         {mini?null:<BotonBorrar
             id={`borrar-abierta-${pregunta.var_name}`}
@@ -717,10 +721,11 @@ const nombreCasillero={
     CONS: 'consistencia',
     BF: 'botonformulario',
     TEXTO: 'aclaracionsuperior',
+    PMATRIZ: 'preguntaenformadematriz',
 }
 
 function DesplegarCasillero(props:{
-    casillero:Pregunta|Bloque|Filtro|ConjuntoPreguntas|BotonFormulario|Consistencia|OpcionMultiple|Texto,
+    casillero:Pregunta|Bloque|Filtro|ConjuntoPreguntas|BotonFormulario|Consistencia|OpcionMultiple|Texto|PMatriz,
     id?:string,
     style?:React.CSSProperties,
     despliegueEncabezado?:'lateral'|'superior'
@@ -740,7 +745,8 @@ function DesplegarCasillero(props:{
 function PreguntaDespliegue(props:{
     pregunta:Pregunta, 
     forPk:ForPk, 
-    despliegueEncabezado:'lateral'|'superior'
+    despliegueEncabezado:'lateral'|'superior',
+    paraPMatriz?:true
 }){
     var {pregunta} = props;
     const dispatch=useDispatch();
@@ -751,12 +757,24 @@ function PreguntaDespliegue(props:{
         direct:true, 
         fun: registradorDeVariable(pregunta)
     })
+    var id = `pregunta-${pregunta.id_casillero}`
     var style: CSSProperties = {}
     if(pregunta.despliegue == 'grid'){
         style.display = 'grid';
         style.gridTemplateColumns = 'repeat(3,1fr)';
     }
-    return <DesplegarCasillero
+    
+    return props.paraPMatriz?
+        <>
+            {getLosMetadatos(pregunta)}
+            <Campo
+                disabled={pregunta.calculada?true:false}
+                pregunta={pregunta}
+                forPk={props.forPk}
+                mini={true}
+            />
+        </>
+    :<DesplegarCasillero
         id={id}
         casillero={pregunta}
         style={style}
@@ -817,6 +835,63 @@ function PreguntaDespliegue(props:{
                 ):""}
             />
         </div>
+    </DesplegarCasillero>}
+}
+
+function PMatrizDespliegue(props:{
+    casillero:PMatriz, 
+    forPk:ForPk, 
+}){
+    var {casillero} = props;
+    var id = `pregunta-${casillero.id_casillero}`
+    const cols = (casillero.casilleros as (OpcionMultiple|Consistencia)[])
+        .find((opcionMultiple)=>opcionMultiple.tipoc=='OM')?.casilleros
+        .map((pregunta)=>pregunta.nombre);    
+    const tdStyle:React.CSSProperties={textAlign: 'center', width:cols?(550/(cols.length)).toString()+'px':''};
+    return <DesplegarCasillero
+        id={id}
+        casillero={casillero}
+        ocultar-salteada={casillero.despliegueOculta?(casillero.expresion_habilitar_js?'INHABILITAR':'SI'):'NO'}
+    >
+        <EncabezadoDespliegue 
+            casillero={casillero} 
+            leer={casillero.leer!==false}  
+            forPk={props.forPk}
+        />
+        <table className="table table-striped">
+            <thead>
+                <tr>
+                    <th></th>
+                    {cols?.map((col, i)=><th key={i} scope="col" style={tdStyle}>{col}</th>)}
+                </tr>
+            </thead>
+            <tbody>
+            {(casillero.casilleros as (OpcionMultiple|Consistencia)[]).map((opcionMultiple, i)=>
+                opcionMultiple.tipoc=='OM'?    
+                    <tr key={i}>
+                        <td>{opcionMultiple.nombre}</td>
+                        {opcionMultiple.casilleros.map((pregunta)=>{
+                            var id = `pregunta-${pregunta.id_casillero}`
+                            registrarElemento({
+                                id, 
+                                direct:true, 
+                                fun: registradorDeVariable(pregunta)
+                            })
+                            return <td key={id} id={id}><PreguntaDespliegue forPk={props.forPk} pregunta={pregunta} despliegueEncabezado="superior" paraPMatriz={true} /></td>
+                        })}
+                    </tr>
+                    
+                : //las consistencias pueden ser hermanas de OM
+                    <ConsistenciaDespliegue
+                        key={opcionMultiple.id_casillero}
+                        casillero={opcionMultiple}
+                        forPk={props.forPk}
+                    />    
+            )}
+            </tbody>
+        </table>
+        
+        <div className="pie-pregunta"></div>
     </DesplegarCasillero>
 }
 
@@ -1355,6 +1430,7 @@ function DesplegarContenidoInternoBloqueOFormulario(props:{bloqueOFormulario:Blo
                     casillero.tipoc == "CONS"?<ConsistenciaDespliegue key={key} casillero={casillero} forPk={props.forPk}/>:
                     casillero.tipoc == "CP"?<ConjuntoPreguntasDespliegue key={key} casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
                     casillero.tipoc == "TEXTO"?<TextoDespliegue key={key} casillero={casillero} forPk={props.forPk}/>:
+                    casillero.tipoc == "PMATRIZ"?<PMatrizDespliegue key={key} casillero={casillero} forPk={props.forPk}/>:
                     casillero.tipoc == "LIBRE"?<LibreDespliegue key={key} casillero={casillero} formulario={props.formulario} forPk={props.forPk}/>:
                     <CasilleroDesconocido key={key} casillero={casillero} forPk={props.forPk}/>
                 )
