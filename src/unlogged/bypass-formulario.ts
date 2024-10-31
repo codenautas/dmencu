@@ -416,6 +416,7 @@ export function accion_registrar_respuesta(payload:{
     var unidad_analisis = estructura.formularios[forPk.formulario];
     var recentModified = false;
     var valorAnterior = variable != NO_CAMBIAR__SOLO_TRAER_STATUS ? respuestas[variable] : null;
+    var feedbackRow = datosByPass.feedbackRowValidator[toPlainForPk(forPk)]
     if(respuesta !== NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO && variable != NO_CAMBIAR__SOLO_TRAER_STATUS){
         if(respuesta === ''){
             respuesta = null;
@@ -428,9 +429,10 @@ export function accion_registrar_respuesta(payload:{
         recentModified = respuesta ? valorAnterior != respuesta : valorAnterior !== respuesta
         if(recentModified){
             respuestas[variable] = respuesta ?? null; // cambio undefined por null
+        }else{
+            siguienteVariable = feedbackRow.feedback[variable]?.siguiente;
         }
     }
-    var feedbackRow = datosByPass.feedbackRowValidator[toPlainForPk(forPk)];
     var siguienteVariable:IdVariable|IdFin|null|undefined;
     if(variable != NO_CAMBIAR__SOLO_TRAER_STATUS && (recentModified || NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO && feedbackRow.autoIngresadas?.[variable])){
         variablesCalculadas(respuestasRaiz, forPk);
