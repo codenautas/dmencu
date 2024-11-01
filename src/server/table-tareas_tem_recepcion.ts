@@ -1,7 +1,7 @@
 "use strict";
 
 import {TableDefinition, TableContext, FieldDefinition, getDomicilioFields} from "./types-dmencu";
-
+import * as sqlTools from 'sql-tools';
 import {tareas_tem, OptsTareasTem, getReaFields} from "./table-tareas_tem";
 
 export var getSqlFrom = (tableDef:TableDefinition, opts:{desde:'ingresa'|'recepciona'|'fin_campo'|'analisis_campo'|'procesa'})=> `(select * from (${tableDef.sql!.from}) aux
@@ -10,7 +10,7 @@ export var getSqlFrom = (tableDef:TableDefinition, opts:{desde:'ingresa'|'recepc
         from (
             select ea.*, ac.path_icono_svg, ac.desactiva_boton, ac.confirma
                 from estados_acciones ea join acciones ac using (operativo, eaccion)
-                where ea.operativo = aux.operativo and ea.estado = aux.estado and ac.${opts.desde}
+                where ea.operativo = aux.operativo and ea.estado = aux.estado and ac.${sqlTools.quoteIdent(opts.desde)}
                 and accion_cumple_condicion(aux.operativo, ea.estado, aux.enc, ea.eaccion, ea.condicion)
             order by ac.eaccion
         ) z

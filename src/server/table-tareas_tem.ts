@@ -3,6 +3,7 @@
 import {TableDefinition, TableContext} from "./types-dmencu";
 import { FieldDefinition } from "rel-enc";
 import {OperativoGenerator } from "procesamiento";
+import * as sqlTools from 'sql-tools';
 
 export type OptsTareasTem = {
     rol: 'encu'|'recu'|'supe'|'ingr'|null
@@ -153,7 +154,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
                         left join tareas ta on tt.operativo = ta.operativo and tt.tarea = ta.tarea
                         left join areas a on tt.operativo = a.operativo and t.area = a.area
                         left join no_rea y on t.norea=y.no_rea::integer
-                        left join ${OperativoGenerator.mainTD} aux on aux.operativo=t.operativo and aux.${OperativoGenerator.mainTDPK}=t.enc 
+                        left join ${sqlTools.quoteIdent(OperativoGenerator.mainTD)} aux on aux.operativo=t.operativo and aux.${sqlTools.quoteIdent(OperativoGenerator.mainTDPK)}=t.enc 
                         join estados e on t.operativo = e.operativo and tt.estado = e.estado
                     ) x
             )`,
