@@ -59,9 +59,8 @@ import {
     DialogTitle, Divider, Fab, IconButton,
     Menu, MenuItem, Paper, Popover,
     Table, TableBody, TableCell, TableHead, TableRow, Toolbar, CssBaselineProps
-} from "@material-ui/core";
+} from "@mui/material";
 import { EstadoVariable, FormStructureState } from "row-validator";
-import { CSSProperties } from "@material-ui/core/styles/withStyles";
 
 import { 
     registrarElemento, setAttrDistinto, setValorDistinto, dispatchByPass, 
@@ -115,7 +114,7 @@ window.addEventListener('load', ()=>{
 
 // /*
 
-type CommonAttributes = {className?:string,style?:CSSProperties,id?:string, tabIndex?:number} // CSSProperties
+type CommonAttributes = {className?:string,style?:React.CSSProperties,id?:string, tabIndex?:number} // CSSProperties
 type ColorValues = 'primary'|'secondary'|'default'|'inherit'
 
 export type LibreDespliegueType = (props:{
@@ -758,7 +757,7 @@ function PreguntaDespliegue(props:{
         fun: registradorDeVariable(pregunta)
     })
     var id = `pregunta-${pregunta.id_casillero}`
-    var style: CSSProperties = {}
+    var style: React.CSSProperties = {}
     if(pregunta.despliegue == 'grid'){
         style.display = 'grid';
         style.gridTemplateColumns = 'repeat(3,1fr)';
@@ -1102,7 +1101,7 @@ var botonFormularioConResumen = (
                 }
                 , children:[
                     (defBoton.esAgregar?'agregar':defBoton.esConfirmar?'Listo':casillero.nombre + ' ' + (defBoton.num||'')),
-                    html.svg({class:"MuiSvgIcon-root", focusable:false, viewbox:"0 0 24 24", "aria-hidden":"true"},[
+                    html.svg({class:"MuiSvgIcon-root css-i4bv87-MuiSvgIcon-root", focusable:false, viewbox:"0 0 24 24", "aria-hidden":"true"},[
                         html.path({d:(defBoton.esAgregar?materialIoIconsSvgPath.Add:defBoton.esConfirmar?materialIoIconsSvgPath.Check:casillero.salto?materialIoIconsSvgPath.Forward:materialIoIconsSvgPath.ExitToApp)})
                     ])
                 ]
@@ -1113,7 +1112,7 @@ var botonFormularioConResumen = (
                     color:"default",
                     variant:"outlined",
                     children:
-                        html.svg({class:"MuiSvgIcon-root", focusable:false, viewbox:"0 0 24 24", "aria-hidden":"true"},[
+                        html.svg({class:"MuiSvgIcon-root css-i4bv87-MuiSvgIcon-root", focusable:false, viewbox:"0 0 24 24", "aria-hidden":"true"},[
                             html.path({d:materialIoIconsSvgPath.DeleteForever})
                         ]), 
                     onClick:()=>accion_borrar_formulario({forPk, forPkPadre})})

@@ -22,8 +22,8 @@ import {
     Table, TableBody, TableCell, TableHead, TableRow, TextField, ThemeProvider, Toolbar, Typography, Zoom,
     useScrollTrigger,
     // styles:
-    createStyles, makeStyles, Theme, createTheme
-} from "@material-ui/core";
+    createStyles, Theme, createTheme
+} from "@mui/material";
 import { Store, Action } from "redux";
 import { TipoVariables } from "./tipos";
 
@@ -94,17 +94,6 @@ export function adaptarTipoVarCasillero(casilleroDataType:TipoVariables|'opcione
     return adapter[casilleroDataType]
 }
 
-
-const useStylesScrollTop = makeStyles((theme: Theme) =>
-    createStyles({
-        root: {
-            position: 'fixed',
-            bottom: theme.spacing(2),
-            right: theme.spacing(2),
-        },
-    }),
-);
-
 export const scrollToTop = () => {
     window.scroll({behavior:'smooth', top:0, left:0})
 };
@@ -116,7 +105,7 @@ export const scrollToBottom = () => {
 
 export function ScrollTop(props: any) {
     const { children } = props;
-    const classes = useStylesScrollTop();
+    //const classes = useStylesScrollTop();
     // Note that you normally won't need to set the window ref as useScrollTrigger
     // will default to window.
     // This is only being set here because the demo is in an iframe.
@@ -126,7 +115,7 @@ export function ScrollTop(props: any) {
     });
     return (
         <Zoom in={trigger}>
-            <div onClick={scrollToTop} role="presentation" className={classes.root}>
+            <div onClick={scrollToTop} role="presentation" /*className={classes.root}*/>
                 {children}
             </div>
         </Zoom>

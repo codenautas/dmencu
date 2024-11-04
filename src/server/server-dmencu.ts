@@ -6,7 +6,8 @@ import { emergeAppDmEncu } from "./app-dmencu";
 
 OperativoGenerator.mainTD = 'viviendas';
 OperativoGenerator.mainTDPK = 'vivienda'; // TODO: hacer esto dinámico en paquete consistencias
-
+OperativoGenerator.mainTD = 'grupo_personas';
+OperativoGenerator.mainTDPK = 'id_caso'; // TODO: hacer esto dinámico en paquete consistencias
 pgWhiteList.push('blanco');
 
 var AppDmEncu = emergeAppDmEncu(
