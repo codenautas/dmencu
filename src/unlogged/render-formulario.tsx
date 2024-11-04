@@ -1101,7 +1101,7 @@ var botonFormularioConResumen = (
                 }
                 , children:[
                     (defBoton.esAgregar?'agregar':defBoton.esConfirmar?'Listo':casillero.nombre + ' ' + (defBoton.num||'')),
-                    html.svg({class:"MuiSvgIcon-root css-i4bv87-MuiSvgIcon-root", focusable:false, viewbox:"0 0 24 24", "aria-hidden":"true"},[
+                    html.svg({focusable:false, viewbox:"0 0 24 24", "aria-hidden":"true"},[
                         html.path({d:(defBoton.esAgregar?materialIoIconsSvgPath.Add:defBoton.esConfirmar?materialIoIconsSvgPath.Check:casillero.salto?materialIoIconsSvgPath.Forward:materialIoIconsSvgPath.ExitToApp)})
                     ])
                 ]
@@ -1112,7 +1112,7 @@ var botonFormularioConResumen = (
                     color:"default",
                     variant:"outlined",
                     children:
-                        html.svg({class:"MuiSvgIcon-root css-i4bv87-MuiSvgIcon-root", focusable:false, viewbox:"0 0 24 24", "aria-hidden":"true"},[
+                        html.svg({focusable:false, viewbox:"0 0 24 24", "aria-hidden":"true"},[
                             html.path({d:materialIoIconsSvgPath.DeleteForever})
                         ]), 
                     onClick:()=>accion_borrar_formulario({forPk, forPkPadre})})
