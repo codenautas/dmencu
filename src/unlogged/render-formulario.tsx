@@ -2073,7 +2073,7 @@ setHojaDeRutaDespliegue((_props:{})=>{
                     </Button>
                 </div>:null}
                 <div className="nombre-version">
-                    <div>Dirección General de Estadística y Censos - C.A.B.A.</div>
+                    <div>Instituto de Estadística y Censos de la Ciudad Autónoma de Buenos Aires - IDECBA</div>
                     <div>{my.getLocalVar('app-version')} sincro {num_sincro} - versión {appVersion}</div>
                 </div>
                 {likeAr(cargas).map((carga, idCarga, _, posicion)=>
