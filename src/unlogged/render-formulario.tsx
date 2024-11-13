@@ -419,6 +419,12 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
         direct:true, 
         fun: registradorDeVariable(opcionM)
     })
+    const updateWindowWidth = function(){
+        setWindowWidth(window.innerWidth);
+    }
+    
+    const [windowWidth, setWindowWidth] = useState();
+    window.addEventListener('resize',  updateWindowWidth);
     return <DesplegarCasillero 
         id={id}
         casillero={opcionM}
@@ -430,7 +436,7 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
             verIdGuion={true} 
             leer={opcionM.leer!==false} 
             forPk={props.forPk}
-            style={{maxWidth:'60%'}}
+            style={{maxWidth:windowWidth-400}} //TODO MEJORAR
         />
         <SiNoDespliegue 
             casilleroConOpciones={opcionM} 
