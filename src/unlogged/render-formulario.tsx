@@ -413,7 +413,7 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
     const {opcionM} = props;
     var id = `opcionM-${opcionM.id_casillero}`;
     //@ts-ignore altunos casilleros no tienen especial, no importa, es solo para poner los metadatos
-    var styles = opcionM.especial?.flexDirection?{flexDirection:opcionM.especial.flexDirection}:{};
+    var styles: React.CSSProperties = opcionM.especial?.flexDirection?{flexDirection:opcionM.especial.flexDirection}:{flexWrap:'wrap'};
     registrarElemento({
         id, 
         direct:true, 
@@ -430,6 +430,7 @@ function OpcionMultipleDespliegue(props:{opcionM:OpcionMultiple, forPk:ForPk}){
             verIdGuion={true} 
             leer={opcionM.leer!==false} 
             forPk={props.forPk}
+            style={{maxWidth:'60%'}}
         />
         <SiNoDespliegue 
             casilleroConOpciones={opcionM} 
@@ -458,7 +459,13 @@ const getLosMetadatos = (casillero: CasilleroEncabezable): React.JSX.Element =>
         }
     </div>
 
-function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?:boolean, leer?:boolean, forPk:ForPk}){
+function EncabezadoDespliegue(props:{
+    style?:React.CSSProperties,
+    casillero:CasilleroEncabezable, 
+    verIdGuion?:boolean, 
+    leer?:boolean, 
+    forPk:ForPk
+}){
     var {casillero, forPk} = props;
     var conCampoOpciones = useSelector((state:CasoState)=>state.opciones.conCampoOpciones)
     var handleClickBorrar=()=>{
@@ -471,7 +478,8 @@ function EncabezadoDespliegue(props:{casillero:CasilleroEncabezable, verIdGuion?
     var idAcciones = "acciones-"+id;
     return <div 
         className="encabezado" 
-        debe-leer={props.leer?'SI':'NO'} 
+        debe-leer={props.leer?'SI':'NO'}
+        style={props.style}
     >
         <div id={id} className="id-div" title={`${casillero.casillero} - ${casillero.var_name}`}
             onClick={()=>{
@@ -677,7 +685,7 @@ function OpcionesDespliegue(
 ){
     const desplegarOtros = (opcion:Opcion, soloParaDespliegue:'vertical'|'horizontal'|null) => opcion.casilleros.map((subPregunta:Pregunta)=>(
         soloParaDespliegue == null || soloParaDespliegue == subPregunta.despliegueContenido ?
-        <div className="otros-especificar" key={subPregunta.id_casillero}>
+        <div className="otros-especificar" style={{width:'100%'}} key={subPregunta.id_casillero}>
             <PreguntaDespliegue 
                 pregunta={subPregunta} 
                 forPk={forPk} 
@@ -685,8 +693,8 @@ function OpcionesDespliegue(
             />
         </div>:null
     ))
-    return <div className="contenido">
-            <div className="opciones" despliegue-contenido={despliegueContenido??'vertical'}>
+    return <><div className="contenido">
+        <div className="opciones" despliegue-contenido={despliegueContenido??'vertical'}>
             {casilleroConOpciones.casilleros.map((opcion:Opcion, i:number)=>
                 <Grid key={opcion.id_casillero} item
                     ocultar-salteada={opcion.despliegueOculta?(opcion.expresion_habilitar_js?'INHABILITAR':'SI'):'NO'}
@@ -703,10 +711,10 @@ function OpcionesDespliegue(
                 </Grid>
             )}
         </div>
-        {despliegueContenido=='horizontal'?casilleroConOpciones.casilleros.map((opcion:Opcion)=>
-            desplegarOtros(opcion,null)
-        ):null}
     </div>
+    {despliegueContenido=='horizontal'?casilleroConOpciones.casilleros.map((opcion:Opcion)=>
+        desplegarOtros(opcion,null)
+    ):null}</>
 }
 
 const nombreCasillero={
@@ -834,7 +842,7 @@ function PreguntaDespliegue(props:{
                 ):""}
             />
         </div>
-    </DesplegarCasillero>}
+    </DesplegarCasillero>
 }
 
 function PMatrizDespliegue(props:{
