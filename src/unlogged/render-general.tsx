@@ -4,9 +4,6 @@ import {useState, useEffect, useRef} from "react";
 import { Provider, useSelector, useDispatch } from "react-redux"; 
 import * as memoizeBadTyped from "memoize-one";
 import * as likeAr from "like-ar";
-import * as clsxx from 'clsx';
-//@ts-ignore el módulo clsx no tiene bien puesto los tipos en su .d.ts
-export var clsx: (<T>(a1:string|T, a2?:T)=> string) = clsxx;
 
 //@ts-ignore el módulo memoize-one no tiene bien puesto los tipos en su .d.ts
 export var memoize:typeof memoizeBadTyped.default = memoizeBadTyped;

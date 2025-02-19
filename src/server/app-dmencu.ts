@@ -375,7 +375,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             { type: 'js', module: 'react-dom', modPath: 'umd', fileDevelopment:'react-dom.development.js', file:'react-dom.production.min.js' },
             //{ type: 'js', module: '@material-ui/core', modPath: 'umd', fileDevelopment:'material-ui.development.js', file:'material-ui.production.min.js' },
             { type: 'js', module: '@mui/material', modPath: '../umd', fileDevelopment:'material-ui.development.js', file:'material-ui.production.min.js' },
-            { type: 'js', module: 'clsx', file:'clsx.min.js' },
+
             { type: 'js', module: 'redux', modPath:'../dist', fileDevelopment:'redux.js', file:'redux.min.js' },
             { type: 'js', module: 'react-redux', modPath:'../dist', fileDevelopment:'react-redux.js', file:'react-redux.min.js' },
             { type: 'js', module: 'memoize-one',  file:'memoize-one.js' },
@@ -471,7 +471,6 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 "lib/react.production.min.js",
                 "lib/react-dom.production.min.js",
                 "lib/material-ui.production.min.js",
-                "lib/clsx.min.js",
                 "lib/redux.min.js",
                 "lib/react-redux.min.js",
                 "lib/memoize-one.js",
