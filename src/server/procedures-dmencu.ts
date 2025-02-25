@@ -1108,7 +1108,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'area'               , typeName:'integer', references: "areas"},
             {name:'dominio'            , typeName:'integer', defaultValue: 3},
             {name:'cant_encuestas'     , typeName:'integer'},
-            {name:'tarea_actual'       , typeName:'integer', references:'tareas'},
+            {name:'tarea_actual'       , typeName:'text', references:'tareas'},
         ],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             const be =  context.be;
@@ -1135,7 +1135,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'area'               , typeName:'integer', references: "areas"},
             {name:'dominio'            , typeName:'integer', defaultValue: 3},
             {name:'cant_encuestas'     , typeName:'integer'},
-            {name:'tarea_actual'       , typeName:'integer', references:'tareas'},
+            {name:'tarea_actual'       , typeName:'text', references:'tareas'},
         ],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             const be =  context.be;
