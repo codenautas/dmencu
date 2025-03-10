@@ -14,7 +14,6 @@ import { stringify } from "querystring";
 
 //TODO GENERALIZAR
 
-const ABRIR_TAB = "_abrir";
 const TAREA_DEFAULT = 'encu';
 var OPERATIVO_DEFAULT:string|null= null;
 
@@ -312,6 +311,11 @@ var crearBotonCerrarEncuesta = (label:string)=>{
     return ver
 }
 
+const abrirEncuestaEnPestanniaDedicada = (url:string)=>{
+    const ABRIR_TAB = "_abrir";
+    window.open(url, ABRIR_TAB);
+}
+
 var crearBotonVerAbrirEncuesta = (operativo:IdOperativo,tarea:IdTarea,encuesta:number, label:string)=>{
     var up = {
         operativo:operativo,
@@ -319,7 +323,7 @@ var crearBotonVerAbrirEncuesta = (operativo:IdOperativo,tarea:IdTarea,encuesta:n
         enc:encuesta
     }
     let ver = html.button({id:'boton-volver-a-encuesta'},label).create();
-    ver.onclick = ()=> window.open(location.origin+location.pathname+my.menuSeparator+`w=abrir_encuesta&up=${JSON.stringify(up)}&autoproced=true`, ABRIR_TAB)
+    ver.onclick = ()=> abrirEncuestaEnPestanniaDedicada(location.origin+location.pathname+my.menuSeparator+`w=abrir_encuesta&up=${JSON.stringify(up)}&autoproced=true`)
     return ver
 }
 
@@ -428,7 +432,7 @@ var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
                         tarea:params.tarea,
                         enc: Number(params.enc)
                     }
-                    window.open(location.origin+location.pathname+my.menuSeparator+`w=${action.nombre_wscreen}&up=${JSON.stringify(up)}&autoproced=true`, ABRIR_TAB)
+                    abrirEncuestaEnPestanniaDedicada(location.origin+location.pathname+my.menuSeparator+`w=${action.nombre_wscreen}&up=${JSON.stringify(up)}&autoproced=true`)
                 }
             }catch(err){
                 alertPromise(err.message)

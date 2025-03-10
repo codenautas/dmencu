@@ -1719,6 +1719,10 @@ function FormularioDespliegue(props:{forPk:ForPk}){
                 );
             }
         }
+        const idCaso = likeAr(props.forPk).find((_,k)=>{
+            return k!='formulario'
+        })?.toString();
+        window.document.title = getEstructura().operativo + '- ' + idCaso;
         window.addEventListener('scroll', controlScroll);
         controlScroll();
         return ()=>{
