@@ -342,9 +342,11 @@ var crearBotonesVerAbrirTareas = async (depot:myOwn.Depot, fieldName:string, lab
     })
 }
 
-var getAbrirOver = (depot:myOwn.Depot,_fieldName:string)=>
-    (depot.row.cargado_dm || !depot.row['estados__permite_editar_encuesta'] && depot.row.asignado != my.config.idper)?
+var getAbrirOver = (_depot:myOwn.Depot,_fieldName:string):'abrir'=>'abrir'
+    //
+    /*(depot.row.cargado_dm || !depot.row['estados__permite_editar_encuesta'] && depot.row.asignado != my.config.idper)?
         'ver':'abrir'
+    */
 
 
 myOwn.clientSides.abrir={

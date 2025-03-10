@@ -807,12 +807,16 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             ).fetchUniqueValue()).value;
             var {unidad_analisis} = (await getUAPrincipal(context.client, parameters.operativo));
             var condviv= ` t.operativo= $1 and t.enc =$2`;
-            var soloLectura = !!(await context.client.query(`select *
-                    from tareas_tem join estados using (operativo, estado) --pk estado verificada
+            var usuarioPuedeProcesarEncuestas = context.puede?.encuestas?.procesar || false;
+            var soloLectura = (await context.client.query(`
+                select count(*)
+                    from tareas_tem join tem using(operativo, enc) join estados using (operativo, estado) --pk estado y tem verificada
                     where operativo= $1 and enc = $2 and (
                         cargado_dm is not null or 
-                        not permite_editar_encuesta and asignado <> ${context.be.db.quoteLiteral(context.user.idper)}
-                    )`, [operativo, pk_raiz_value]).fetchOneRowIfExists()).rowCount;
+                        not permite_editar_encuesta and asignado <> ${context.be.db.quoteLiteral(context.user.idper)} or
+                        tarea = tarea_actual and tarea_actual = 'proc' and $3 or 
+                        tarea = tarea_actual and tarea_actual = 'proc' and estado = 'V'
+            )`, [operativo, pk_raiz_value, !usuarioPuedeProcesarEncuestas]).fetchUniqueValue()).value > 0;
             var permiteGenerarMuestra = (await context.client.query(`
                 select permite_generar_muestra 
                     from operativos 
