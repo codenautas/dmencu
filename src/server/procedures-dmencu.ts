@@ -69,12 +69,12 @@ export const getOperativoActual = async (context:ProcedureContext)=>{
     }
 }
 
-async function getDefaultTarea(context: ProcedureContext) {
+async function getDefaultTarea(context: ProcedureContext, operativo:string) {
     return (await context.client.query(`
         select * 
             from tareas 
-            where es_inicial
-    `).fetchUniqueRow()).row;
+            where es_inicial and operativo = $1
+    `,[operativo]).fetchUniqueRow()).row;
 }
 
 async function persistirEncuestaAutogeneradaEnDM(context: ProcedureContext, OPERATIVO: IdOperativo, area: number, encAutogeneradoDm: string, token: string, respuestasRaiz: RespuestasRaiz, recepcionista: string, asignado: string):Promise<IdEnc>{
@@ -92,7 +92,7 @@ async function persistirEncuestaAutogeneradaEnDM(context: ProcedureContext, OPER
             [OPERATIVO, area]
         ).fetchUniqueValue()).value;
         console.log(i);
-        const defaultTarea = await getDefaultTarea(context);
+        const defaultTarea = await getDefaultTarea(context, OPERATIVO);
         let enc = generarIdEncFun(area, i);
         const resultInsertTem = await context.client.query(`
             INSERT into tem (
@@ -457,7 +457,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     form.expr_habilitar_boton_js=compilarExpresion(form.expr_habilitar_boton)
                 })
             }
-            var defaultTarea = await getDefaultTarea(context);
+            var defaultTarea = await getDefaultTarea(context, parameters.operativo);
             var defaultInformacionHdr = (await context.client.query(
                 `select  
                     jsonb_build_object(
