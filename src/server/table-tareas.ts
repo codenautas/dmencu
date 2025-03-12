@@ -30,6 +30,13 @@ export function tareas(context:TableContext, opts?:any):TableDefinition {
             {table:`${mis}tareas_areas`     , fields:['operativo','tarea'], abr:'A'},
             {table:`${mis}tareas_tem`       , fields:['operativo','tarea'], abr:'E'},
         ],
+        constraints:[
+            {constraintType:'check', consName:"es_inicial o es_final", expr:"not (es_inicial and es_final)"},
+            {constraintType:'check', consName:"es_inicial puede ser -si- o -vacio-", expr:"es_inicial IS NULL OR es_inicial = TRUE"},
+            {constraintType:'check', consName:"es_final puede ser -si- o -vacio-", expr:"es_final IS NULL OR es_final = TRUE"},
+            {constraintType:'unique', consName:"es_inicial es unico por operativo", fields:['operativo', 'es_inicial']},
+            {constraintType:'unique', consName:"es_final es unico por operativo", fields:['operativo', 'es_final']},
+        ],
         sql:{
             isTable:!opts.mis
         }
