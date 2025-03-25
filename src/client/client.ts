@@ -108,7 +108,7 @@ myOwn.autoSetupFunctions.push(async ()=>{
                     )
                 ]).create()
                 mainLayout.insertBefore(divBotones, mainLayout.firstChild);
-                my.tableGrid("inconsistencias", divGrilla,{tableDef:{},fixedFields: fixedFields});
+                my.tableGrid("inconsistencias_cumplen_condicion", divGrilla,{tableDef:{},fixedFields: fixedFields});
             }else{
                 throw new Error(result.message);
             }

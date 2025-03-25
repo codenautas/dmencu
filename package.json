@@ -14,7 +14,7 @@
     "@mui/material": "^5.16.7",
     "memoize-one": "~6.0.0",
     "meta-enc": "^1.4.9",
-    "procesamiento": "^1.0.16",
+    "procesamiento": "^2.0.3",
     "backend-plus": "^2.0.3",
     "qrcode": "^1.5.3",
     "react": "~17.0.2",

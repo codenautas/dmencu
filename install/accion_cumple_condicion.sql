@@ -13,7 +13,7 @@ BEGIN
     from base.tareas_tem t
     inner join base.estados_acciones ea using (operativo, estado)
     inner join tem te using (operativo,enc)
-    left join tokens tok on t.cargado_dm=tok.token
+    --left join tokens tok on t.cargado_dm=tok.token
     left join no_rea nr on (te.norea::text = nr.no_rea)
     left join tareas_tem tta on (te.operativo = tta.operativo and te.enc = tta.enc and te.tarea_actual = tta.tarea)
     where t.operativo='||quote_literal(p_operativo)||

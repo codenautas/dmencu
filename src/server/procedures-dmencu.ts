@@ -1457,6 +1457,26 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'enc'             , typeName:'text'},
         ],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            var cantidad:number = (await context.client.query(`
+                select count(*) as cumple
+                    from inconsistencias i 
+                        join consistencias c using (operativo, consistencia) 
+                        join momentos_consistencia mc using (operativo, momento)
+                    where 
+                        operativo = $1 and 
+                        vivienda = $2 and 
+                        momento_consistencia_cumple_condicion(
+                            mc.operativo,
+                            i.vivienda,
+                            '${context?.username}', 
+                            (select condicion from momentos_consistencia where operativo = mc.operativo and momento = mc.momento)
+                        ) and
+                        i.justificacion is null`,
+                [params.operativo,params.enc])
+            .fetchUniqueValue()).value
+            if(cantidad){
+                throw Error(`no se puede verificar la tarea porque hay inconsistencias, por favor resuélvalas o justifíquelas en caso de ser necesario.`)
+            }
             await context.client.query(`
                 UPDATE tareas_tem
                     set verificado = '1'

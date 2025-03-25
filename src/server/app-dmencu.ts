@@ -88,6 +88,7 @@ import { acciones            } from './table-acciones';
 import { estados_acciones    } from './table-estados_acciones';
 import { tareas_proximas     } from './table-tareas_proximas';
 import { historial_tem       } from './table-historial_tem';
+import { inconsistencias_cumplen_condicion       } from './table-inconsistencias_cumplen_condicion';
 
 export * from "./types-dmencu";
 import {defConfig} from "./def-config"
@@ -694,6 +695,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                         {menuType:'table', name:'estados_acciones'},
                         {menuType:'table', name:'tareas_proximas'},
                     ]},
+                    {menuType:'table', name:'momentos_consistencia'},
                     {menuType:'table', name:'parametros'},
                 )
             }
@@ -797,6 +799,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , diccionario
             , dicvar
             , dictra
+            , inconsistencias_cumplen_condicion
         }
         be.appendToTableDefinition('consistencias',function(tableDef, context){
             tableDef.editable=tableDef.editable || context.puede?.encuestas?.procesar;
@@ -884,6 +887,11 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             var esAdmin= context?.user.rol==='admin';
             tableDef.editable=tableDef.editable || context?.puede?.encuestas?.procesar;
             tableDef.allow={delete: esAdmin};            
+        })
+        be.appendToTableDefinition('momentos_consistencia',function(tableDef, _context){
+            tableDef.fields.push(
+                {name:'condicion', typeName:'text' ,  nullable: false, defaultDbValue:'true'},
+            )
         })
 
         // be.appendToTableDefinition('casilleros',function(tableDef, context){

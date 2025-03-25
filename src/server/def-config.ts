@@ -50,6 +50,7 @@ install:
       - control_cargado_tareas_tem_trg.sql
       - generador_accion_cumple_condicion.sql
       - tarea_cumple_condicion.sql
+      - momento_consistencia_cumple_condicion.sql
       - agregar_historial_tem_trg.sql
       - carga_inicial_tareas_tem.sql
       - validar_tareas_tem_trg.sql
