@@ -5,19 +5,17 @@
 -- TODO reveer si agregamos campos asociados a las tareas supe y recu a areas
 
 --delete from tareas_areas;
-/*
-insert into tareas_areas(operativo, tarea, area, asignado, asignante, obs_asignante)
+insert into tareas_areas(operativo, tarea, area, asignado, recepcionista, obs_recepcion)
     select * 
         from (
           select a.operativo, t.tarea, area, case when tarea='encu' then encuestador else null end asignado, recepcionista, obs_recepcionista
             from areas a ,(select t.operativo, t.tarea 
                 from tareas t join parametros p on unico_registro and t.operativo=p.operativo
             )t
-            where a.operativo= t.operativo and a.operativo='UT_2022'
         ) n
-        --where not exists (select 1 from tareas_areas t where t.operativo= n.operativo and t.tarea=n.tarea and t.area=n.area)
+        where not exists (select 1 from tareas_areas t where t.operativo= n.operativo and t.tarea=n.tarea and t.area=n.area)
         order by 1,2,3;
-*/
+
 --delete from tareas_tem;
 insert into tareas_tem (operativo, enc, tarea)
     select ta.operativo, ta.enc, ta.tarea

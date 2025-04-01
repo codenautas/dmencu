@@ -45,13 +45,9 @@ export function tareas_areas(context:TableContext, opts?:OptsAsignados):TableDef
         ],
         sql:{
             isTable: true,
-            insertIfNotUpdate:true,
             from:`(
-                select t.operativo,t.tarea, a.area
-                    ${fields.filter(x=>!(x.isPk||x.inTable==false)).map(x=>`, ta.${db.quoteIdent(x.name)}`).join('')}
-                    , cargado
-                    from tareas t join areas a on t.operativo=a.operativo
-                        left join lateral (select * from tareas_areas where area=a.area and tarea=t.tarea and operativo = t.operativo ) ta on true
+                select ta.*, cargado
+                    from tareas_areas ta 
                         left join lateral (select bool_or( tt.cargado_dm is not null ) as cargado 
                             from tareas_tem tt join tem t using (operativo, enc)  where tt.operativo=t.operativo and tt.enc=t.enc and tt.tarea=ta.tarea and t.area=ta.area and t.operativo = ta.operativo
                         ) tt on true
