@@ -1,0 +1,6 @@
+usuario|idper|rol|activo|md5clave
+bob|11|admin|true|6bdb73cceeff578319840176854246e5
+encu1|101|encuestador|true|c36445db3bfb8add74d4c3b5316de5ea
+rece1|102|recepcionista|true|c36445db3bfb8add74d4c3b5316de5ea
+recu1|103|recuperador|true|c36445db3bfb8add74d4c3b5316de5ea
+supe1|104|supervisor|true|c36445db3bfb8add74d4c3b5316de5ea
