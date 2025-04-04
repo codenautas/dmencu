@@ -427,7 +427,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             select grupo0_sup as grupo, jsonb_agg(to_json(r.*)) as codigos from no_rea_sup r group by grupo0_sup order by 1
         `).fetchAll()).rows;
            this.caches.tableContent.conReaHogar = (await client.query(`
-            select con_rea_hogar,operativo, config_sorteo from operativos
+            select con_rea_hogar,operativo, config_sorteo from operativos join parametros using (operativo) where unico_registro
              `).fetchUniqueRow()).row;
             console.log('caches ',this.caches.tableContent.conReaHogar )
         })
