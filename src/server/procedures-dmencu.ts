@@ -1195,7 +1195,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         roles:['coor_proc','coor_campo','admin'],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var be = context.be;
-            var {unidad_analisis, pk_agregada} = (await getUAPrincipal(context.client, parameters.operativo));
+            var {unidad_analisis, pk_agregada} = (await getUAPrincipal(context.client, params.operativo));
             await context.client.query(
                 `delete 
                     from ${be.db.quoteIdent(unidad_analisis)} 
