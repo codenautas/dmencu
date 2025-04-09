@@ -1,7 +1,7 @@
 {
   "name": "dmencu",
   "description": "DM Encu - Encuestas en dispositivo móvil",
-  "version": "1.0.26",
+  "version": "1.0.27",
   "author": "Codenautas <codenautas@googlegroups.com>",
   "license": "MIT",
   "main": "dist/server/server/app-dmencu.js",

@@ -429,7 +429,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
            this.caches.tableContent.conReaHogar = (await client.query(`
             select con_rea_hogar,operativo, config_sorteo from operativos join parametros using (operativo) where unico_registro
              `).fetchUniqueRow()).row;
-            console.log('caches ',this.caches.tableContent.conReaHogar )
+            //console.log('caches ',this.caches.tableContent.conReaHogar )
         })
         console.log('caches ok');
     }
