@@ -1280,7 +1280,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 const {casoTem} =  await buscarEncuestaEnTem(context,params);
                 await context.client.query(`
                     insert into 
-                        tem_borradas (operativo, enc, area, cluster, dominio, tarea_actual, json_encuesta, token_autogenerado_dm, enc_autogenerado_dm)
+                        tem_borradas (operativo, enc, area, cluster, dominio, tarea_actual, json_encuesta, token_autogenerado_dm, enc_autogenerado_dm, proie)
                         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
                         returning *
                     `,[
