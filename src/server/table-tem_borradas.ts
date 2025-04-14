@@ -16,6 +16,7 @@ export function tem_borradas(context:TableContext):TableDefinition {
             {name:'json_encuesta'        , typeName:'jsonb'   , editable: false  },
             {name:"token_autogenerado_dm", typeName:'text'    , editable: false  },
             {name:"enc_autogenerado_dm"  , typeName:'text'    , editable: false  },
+            {name:'proie'                , typeName:'text'    , editable: false  },
         ],
         primaryKey: [ "operativo", "enc" ],
     }

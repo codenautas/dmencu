@@ -1281,7 +1281,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 await context.client.query(`
                     insert into 
                         tem_borradas (operativo, enc, area, cluster, dominio, tarea_actual, json_encuesta, token_autogenerado_dm, enc_autogenerado_dm)
-                        values ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+                        values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
                         returning *
                     `,[
                         casoTem.operativo,
@@ -1292,7 +1292,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         casoTem.tarea_actual,
                         casoTem.json_encuesta,
                         casoTem.token_autogenerado_dm,
-                        casoTem.enc_autogenerado_dm
+                        casoTem.enc_autogenerado_dm,
+                        casoTem.proie
                     ]).fetchUniqueRow();
                 await context.client.query(
                     `delete 
