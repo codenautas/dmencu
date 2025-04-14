@@ -1277,6 +1277,23 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             `, [params.operativo]).fetchUniqueValue()).value;
             if (permite_generar_muestra) {
                 var {unidad_analisis, pk_agregada} = (await getUAPrincipal(context.client, params.operativo));
+                const {casoTem} =  await buscarEncuestaEnTem(context,params);
+                await context.client.query(`
+                    insert into 
+                        tem_borradas (operativo, enc, area, cluster, dominio, tarea_actual, json_encuesta, token_autogenerado_dm, enc_autogenerado_dm)
+                        values ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+                        returning *
+                    `,[
+                        casoTem.operativo,
+                        casoTem.enc,
+                        casoTem.area,
+                        casoTem.cluster,
+                        casoTem.dominio,
+                        casoTem.tarea_actual,
+                        casoTem.json_encuesta,
+                        casoTem.token_autogenerado_dm,
+                        casoTem.enc_autogenerado_dm
+                    ]).fetchUniqueRow();
                 await context.client.query(
                     `delete 
                         from ${be.db.quoteIdent(unidad_analisis)} 

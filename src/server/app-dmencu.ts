@@ -89,6 +89,7 @@ import { estados_acciones    } from './table-estados_acciones';
 import { tareas_proximas     } from './table-tareas_proximas';
 import { historial_tem       } from './table-historial_tem';
 import { inconsistencias_cumplen_condicion       } from './table-inconsistencias_cumplen_condicion';
+import { tem_borradas       } from './table-tem_borradas';
 
 export * from "./types-dmencu";
 import {defConfig} from "./def-config"
@@ -801,6 +802,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , dicvar
             , dictra
             , inconsistencias_cumplen_condicion
+            , tem_borradas
         }
         be.appendToTableDefinition('consistencias',function(tableDef, context){
             tableDef.editable=tableDef.editable || context.puede?.encuestas?.procesar;
