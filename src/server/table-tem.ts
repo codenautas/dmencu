@@ -40,7 +40,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
         muestraAbrirEnTodasLasTareas:true,
         allow:{
             insert:false,
-            delete:false,
+            delete:context.forDump,
         },
         editable: puedeEditarCampo||puedeEditarProc,
         hiddenColumns:[

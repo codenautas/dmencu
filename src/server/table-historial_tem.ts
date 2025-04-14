@@ -32,7 +32,7 @@ export function historial_tem(context:TableContext):TableDefinition {
         tableName:`historial_tem`,
         allow:{
             insert:false,
-            delete:false,
+            delete:context.forDump,
         },
         editable:context.forDump,
         fields,

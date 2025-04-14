@@ -387,6 +387,19 @@ const generarTareasTemFaltantes = async (context: ProcedureContext, operativo: I
     `,[operativo]).execute();
 }
 
+const buscarEncuestaEnTem = async (context:ProcedureContext, params: CoreFunctionParameters) => {
+    try{
+        var result = await context.client.query(`
+            select *
+                from tem
+                where operativo = $1 and enc = $2 --pk verificada
+        `,[params.operativo, params.enc]).fetchUniqueRow();
+    }catch(err){
+        throw Error (`No se encontró la encuesta ${params.enc} para el operativo ${params.operativo}. ${err.message}` )
+    }
+    return {casoTem: result.row};
+}
+
 export const ACCION_PASAR_PROIE = 'encuestas_procesamiento_pasar';
 export const ProceduresDmEncu : ProcedureDef[] = [
     {
@@ -1174,16 +1187,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         roles:['coor_proc','coor_campo','admin'],
         resultOk:'mostrar_encuesta_a_blanquear_contenido',
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
-            try{
-                var result = await context.client.query(`
-                    select *
-                        from tem
-                        where operativo = $1 and enc = $2 --pk verificada
-                `,[params.operativo, params.enc]).fetchUniqueRow();
-            }catch(err){
-                throw Error (`No se encontró la encuesta ${params.enc} para el operativo ${params.operativo}. ${err.message}` )
-            }
-            return {casoTem: result.row};
+            return await buscarEncuestaEnTem(context,params);
         }
     },
     {
@@ -1243,6 +1247,77 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     where operativo = $1 and pk_integrada->>${be.db.quoteLiteral(pk_agregada)} = $2
             `,[params.operativo, params.enc]).execute();
             return `la encuesta ${params.enc} se blanqueó correctamente`;
+        }
+    },
+    {     
+        action: 'encuesta_borrar_previsualizar',
+        parameters:[
+            {name:'operativo'       , typeName:'text', references:"operativos"},
+            {name:'enc'     , typeName:'text'},
+        ],
+        roles:['coor_proc','coor_campo','admin'],
+        resultOk:'mostrar_encuesta_a_borrar',
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            return await buscarEncuestaEnTem(context,params);
+        }
+    },
+    {
+        action: 'encuesta_borrar',
+        parameters:[
+            {name:'operativo'       , typeName:'text', references:"operativos"},
+            {name:'enc'             , typeName:'text'},
+        ],
+        roles:['coor_proc','coor_campo','admin'],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            var be = context.be;
+            var permite_generar_muestra = (await context.client.query(`
+                select permite_generar_muestra 
+                    from operativos 
+                    where operativo = $1
+            `, [params.operativo]).fetchUniqueValue()).value;
+            if (permite_generar_muestra) {
+                var {unidad_analisis, pk_agregada} = (await getUAPrincipal(context.client, params.operativo));
+                await context.client.query(
+                    `delete 
+                        from ${be.db.quoteIdent(unidad_analisis)} 
+                        where operativo=$1 and ${be.db.quoteIdent(pk_agregada)} = $2
+                `, [params.operativo, params.enc]).execute();
+                await context.client.query(`
+                    delete 
+                        from tareas_tem 
+                        where operativo = $1 and enc = $2
+                        returning *
+                `,[params.operativo, params.enc]).fetchAll();
+                await context.client.query(`
+                    delete 
+                        from tem
+                        where operativo = $1 and enc = $2 --pk verificada
+                        returning *
+                `,[params.operativo, params.enc]).fetchUniqueRow();
+                await context.client.query(`
+                    delete 
+                        from historial_tem
+                        where operativo = $1 and enc = $2 --pk verificada
+                `,[params.operativo, params.enc]).execute();
+                await context.client.query(`
+                    delete 
+                        from inconsistencias
+                        where operativo = $1 and ${be.db.quoteIdent(pk_agregada)} = $2
+                `,[params.operativo, params.enc]).execute();
+                await context.client.query(`
+                    delete 
+                        from in_con_var
+                        where operativo = $1 and pk_integrada->>${be.db.quoteLiteral(pk_agregada)} = $2
+                `,[params.operativo, params.enc]).execute();
+                await context.client.query(`
+                    delete 
+                        from inconsistencias_ultimas
+                        where operativo = $1 and pk_integrada->>${be.db.quoteLiteral(pk_agregada)} = $2
+                `,[params.operativo, params.enc]).execute();
+                return `la encuesta ${params.enc} se borró correctamente`;
+            }else{
+                throw Error('no se puede borrar la encuesta porque el operativo tiene muestra estática');
+            }
         }
     },
     {

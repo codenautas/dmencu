@@ -663,61 +663,88 @@ myOwn.wScreens.proc.result.mostrar_encuestas_a_blanquear=function(result, divRes
     }
 }
 
-myOwn.wScreens.proc.result.mostrar_encuesta_a_blanquear_contenido=function(result, divResult){
-    let {casoTem} =  result;
-    if(casoTem){
-        if(casoTem.json_encuesta){
-            var encuestaDiv = html.div({id:'backup-div'}).create();
-            divResult.appendChild(encuestaDiv);
+const previsualizarEncuesta = (
+    resultTem:any, 
+    divResult:HTMLDivElement, 
+    params:{
+        nombreProcedure:string,
+        ignoraJsonEncuestaVacio:boolean
+        labelAction: string
+    }
+) =>{
+    let {casoTem} =  resultTem;
+    if(!casoTem.json_encuesta){
+        divResult.appendChild(html.p({id:'mensaje-no-hay-json-encuesta'},`no se encontró informacion cargada en la encuesta ${casoTem.enc}`).create());
+    }
+    if(casoTem.json_encuesta || params.ignoraJsonEncuestaVacio){
+        var encuestaDiv = html.div({id:'backup-div'}).create();
+        divResult.appendChild(encuestaDiv);
+        try{
             my.agregar_json(encuestaDiv, casoTem.json_encuesta);
-            var button = html.button({
-                class:`boton-blanquear-encuesta-accion`
-            }, 'blanquear encuesta').create();
-            button.onclick = async ()=> {
-                var mainDiv = html.div().create()
-                mainDiv.appendChild(
-                    html.div({},[
-                        html.div({class:'danger'}, [`Está por blanquear la encuesta ${casoTem.enc}. Se perderán los datos de la misma.`])
-                    ]).create()
-                );
-                var inputForzar = html.input({class:'input-forzar'}).create();
-                mainDiv.appendChild(html.div([
-                    html.div(['Se puede forzar el blanqueo ',inputForzar])
-                ]).create());
-                var forzar = await confirmPromise(mainDiv, {
-                    withCloseButton: false,
-                    reject:false,
-                    buttonsDef:[
-                        {label:'forzar blanqueo', value:true},
-                        {label:'cancelar blanqueo', value:false}
-                    ]
-                });
-                if(forzar){
-                    if(inputForzar.value=='forzar'){
-                        var waitGif = html.img({src:'img/loading16.gif'}).create();
-                        try{
-                            button.disabled=true;
-                            waitGif.style.display = 'block';
-                            divResult.appendChild(waitGif);
-                            var resultBlanqueo = await my.ajax.encuesta_blanquear(casoTem);
-                            divResult.innerHTML=resultBlanqueo;
-                            
-                        }catch(err){
-                            alertPromise(err.message);
-                        }finally{
-                            button.disabled=false;
-                            waitGif.style.display = 'none';
-                        };
-                    }else{
-                        alertPromise('si necesita blanquear escriba forzar.')
-                    }
+        }catch(err){
+            divResult.appendChild(html.p({id:'mensaje-error-json-encuesta'},`no se pudo al previsualizar la encuesta ${casoTem.enc} correctamente. ${err.message}`).create());
+        }
+        var button = html.button({
+            class:`boton-blanquear-encuesta-accion`
+        }, `${params.labelAction} encuesta`).create();
+        button.onclick = async ()=> {
+            var mainDiv = html.div().create()
+            mainDiv.appendChild(
+                html.div({},[
+                    html.div({class:'danger'}, [`Está por ${params.labelAction} la encuesta ${casoTem.enc}. Se perderán los datos de la misma.`])
+                ]).create()
+            );
+            var inputForzar = html.input({class:'input-forzar'}).create();
+            mainDiv.appendChild(html.div([
+                html.div([`para ${params.labelAction} escriba forzar `,inputForzar])
+            ]).create());
+            var forzar = await confirmPromise(mainDiv, {
+                withCloseButton: false,
+                reject:false,
+                buttonsDef:[
+                    {label:'forzar', value:true},
+                    {label:'cancelar', value:false}
+                ]
+            });
+            if(forzar){
+                if(inputForzar.value=='forzar'){
+                    var waitGif = html.img({src:'img/loading16.gif'}).create();
+                    try{
+                        button.disabled=true;
+                        waitGif.style.display = 'block';
+                        divResult.appendChild(waitGif);
+                        var resultBlanqueo = await my.ajax[params.nombreProcedure](casoTem);
+                        divResult.innerHTML=resultBlanqueo;
+                        
+                    }catch(err){
+                        alertPromise(err.message);
+                    }finally{
+                        button.disabled=false;
+                        waitGif.style.display = 'none';
+                    };
+                }else{
+                    alertPromise(`si necesita ${params.labelAction} escriba forzar.`)
                 }
             }
-            divResult.appendChild(button);
-        }else{
-            divResult.appendChild(html.p({id:'mensaje-no-hay-json-encuesta'},`no se encontró informacion cargada para la encuesta ${casoTem.enc}`).create());
         }
+        divResult.appendChild(button);
     }
+}
+
+myOwn.wScreens.proc.result.mostrar_encuesta_a_blanquear_contenido=function(result, divResult){
+    previsualizarEncuesta(result, divResult, {
+        nombreProcedure:'encuesta_blanquear',
+        ignoraJsonEncuestaVacio: false,
+        labelAction: 'blanquear'
+    })
+}
+
+myOwn.wScreens.proc.result.mostrar_encuesta_a_borrar=function(result, divResult){
+    previsualizarEncuesta(result, divResult, {
+        nombreProcedure:'encuesta_borrar',
+        ignoraJsonEncuestaVacio: true,
+        labelAction: 'borrar'
+    })
 }
 
 myOwn.wScreens.demo=async function(_addrParams){
