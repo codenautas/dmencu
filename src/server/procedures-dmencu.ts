@@ -1543,7 +1543,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         }
     },
     {
-        action: 'encuesta_verificar',
+        action: 'inconsistencias_encuesta_controlar',
         parameters:[
             {name:'operativo'       , typeName:'text'},
             {name:'tarea'           , typeName:'text'},
@@ -1570,6 +1570,19 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             if(cantidad){
                 throw Error(`no se puede verificar la tarea porque hay inconsistencias, por favor resuélvalas o justifíquelas en caso de ser necesario.`)
             }
+            return 'ok';
+        }
+    },
+    {
+        action: 'encuesta_verificar',
+        parameters:[
+            {name:'operativo'       , typeName:'text'},
+            {name:'tarea'           , typeName:'text'},
+            {name:'enc'             , typeName:'text'},
+        ],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            var be = context.be;
+            await be.procedure.inconsistencias_encuesta_controlar.coreFunction(context,params);
             await context.client.query(`
                 UPDATE tareas_tem
                     set verificado = '1'
