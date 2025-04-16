@@ -1196,7 +1196,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'operativo'       , typeName:'text', references:"operativos"},
             {name:'enc'             , typeName:'text'},
         ],
-        roles:['coor_proc','coor_campo','admin'],
+        roles:['coor_proc','subcoor_campo','coor_campo','admin'],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var be = context.be;
             var {unidad_analisis, pk_agregada} = (await getUAPrincipal(context.client, params.operativo));
@@ -1255,7 +1255,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'operativo'       , typeName:'text', references:"operativos"},
             {name:'enc'     , typeName:'text'},
         ],
-        roles:['coor_proc','coor_campo','admin'],
+        roles:['coor_proc','subcoor_campo','coor_campo','admin'],
         resultOk:'mostrar_encuesta_a_borrar',
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             return await buscarEncuestaEnTem(context,params);
@@ -1267,7 +1267,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'operativo'       , typeName:'text', references:"operativos"},
             {name:'enc'             , typeName:'text'},
         ],
-        roles:['coor_proc','coor_campo','admin'],
+        roles:['coor_proc','subcoor_campo','coor_campo','admin'],
         coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
             var be = context.be;
             var permite_generar_muestra = (await context.client.query(`

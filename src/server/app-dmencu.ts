@@ -643,7 +643,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     ]}
                 )
             }
-            if(context.puede?.campo?.editar||context.puede?.encuestas?.procesar){
+            if(context.puede?.campo?.editar||context.puede?.campo?.administrar||context.puede?.encuestas?.procesar){
                 menu.push(this.getMenuVarios(context));
             }
             if(context.puede?.campo?.administrar||context.puede?.encuestas?.procesar){

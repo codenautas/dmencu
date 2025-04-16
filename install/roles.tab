@@ -2,11 +2,13 @@ rol|superuser|nombre
 admin|true|Administrador
 auxiliar|false|Auxiliar de campo
 coor_campo|false|Coordinador de Campo
+coor_proc|false|Coordinador de Procesamiento
 direccion|false|Dirección
 dis_conceptual|false|Diseño Conceptual
 encuestador|false|Encuestador
+ingresador|false|Ingresador
 procesamiento|false|Procesamiento
 recepcionista|false|Recepcionista
 recuperador|false|Recuperador
+subcoor_campo|false|Subcoordinador de Campo
 supervisor|false|Supervisor
-coor_proc|false|Coordinador de Procesamiento
