@@ -891,7 +891,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             let claveNuevaField = tableDef.fields.find((field)=>field.name == 'clave_nueva')!;
             var adminOCoord = 'admin'===context?.user.rol||context?.puede?.campo?.administrar;
             claveNuevaField.allow = {select:adminOCoord, update:true, insert:false};
-            //agregar flags
+            //tableDef.fields.push(
+                //{name:''  , typeName:'boolean',  editable:true},
+                //{name:''  , typeName:'boolean',  editable:true}
+            //)
         })
         be.appendToTableDefinition('variables',function(tableDef, context){
             var esAdmin= context?.user.rol==='admin';

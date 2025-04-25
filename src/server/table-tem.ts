@@ -180,7 +180,8 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
         ],
         constraints:[
             {constraintType:'check', consName:"vresult_sup_ck", expr:"(result_sup between 1 and 9 or result_sup in (11,12,21,22 ) or result_sup between 60 and 68)"},
-            {constraintType:'unique', consName:"autogenerado_dm_uk", fields:['token_autogenerado_dm','enc_autogenerado_dm']}
+            {constraintType:'unique', consName:"autogenerado_dm_uk", fields:['token_autogenerado_dm','enc_autogenerado_dm']},
+            {constraintType:'unique', consName:"autogenerado_dm_capa_uk", fields:['token_autogenerado_dm','enc_autogenerado_dm_capa']}
         ]
     };
     if (opts.recepcion) {
