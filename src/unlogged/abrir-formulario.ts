@@ -8,6 +8,7 @@ import {DatosByPassPersistibles, Estructura, ForPkRaiz,
     IdCarga,
     CampoPk,
     CampoPkRaiz,
+    ModoDM
 } from "./tipos";
 
 import * as likeAr from "like-ar";
@@ -15,7 +16,8 @@ import * as likeAr from "like-ar";
 import { 
     getDatosByPass,
     getEstructura,
-    setDatosByPass, setEncolarBackup, setEstructura, setPersistirDatosByPass 
+    setDatosByPass, setEncolarBackup, setEstructura, setPersistirDatosByPass ,
+    MODO_DM_LOCALSTORAGE_KEY
 } from "./bypass-formulario"
 
 export const GLOVAR_DATOSBYPASS='datosbypass';
@@ -82,7 +84,10 @@ async function enviarBackup(){
     var {token, tem} = backups;
     if(likeAr(tem).array().length){
         try{
-            await my.ajax.dm_backup({token, tem})
+            const modoDmDefecto = await my.ajax.modo_dm_defecto_obtener({});
+            let modoDM: ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY) || modoDmDefecto;
+            my.setLocalVar(MODO_DM_LOCALSTORAGE_KEY, modoDM);
+            await my.ajax.dm_backup({token, tem, modo_dm:modoDM});
             // tengo que levantarlo de nuevo porque acá hay una interrupción del flujo
             var backupsALimpiar:Backups = my.getLocalVar(BACKUPS);
             backupsALimpiar.tem=likeAr(backupsALimpiar.tem).filter(caso=>caso.idBackup>backups.idActual).plain();

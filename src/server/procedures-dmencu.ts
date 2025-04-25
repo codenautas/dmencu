@@ -4,7 +4,7 @@ import { ProcedureDef, TableDefinition, Client, TableDefinitions } from "./types
 import { ProcedureContext, CoreFunctionParameters, ForeignKey } from "meta-enc";
 import * as likeAr from "like-ar";
 export * from "./types-dmencu";
-import { IdUnidadAnalisis, UnidadAnalisis, EstadoAccion, IdEnc, IdTarea, RespuestasRaiz, IdOperativo, IdCarga } from "../unlogged/tipos";
+import { IdUnidadAnalisis, UnidadAnalisis, EstadoAccion, IdEnc, IdTarea, RespuestasRaiz, IdOperativo, IdCarga, ModoDM } from "../unlogged/tipos";
 
 import {OperativoGenerator } from "procesamiento";
 
@@ -77,7 +77,7 @@ async function getDefaultTarea(context: ProcedureContext, operativo:string) {
     `,[operativo]).fetchUniqueRow()).row;
 }
 
-async function persistirEncuestaAutogeneradaEnDM(context: ProcedureContext, OPERATIVO: IdOperativo, area: number, encAutogeneradoDm: string, token: string, respuestasRaiz: RespuestasRaiz, recepcionista: string, asignado: string):Promise<IdEnc>{
+async function persistirEncuestaAutogeneradaEnDM(context: ProcedureContext, OPERATIVO: IdOperativo, area: number, encAutogeneradoDm: string, token: string, respuestasRaiz: RespuestasRaiz, recepcionista: string, asignado: string, modo_dm:ModoDM, cambia_modo_dm:boolean):Promise<IdEnc>{
     let idEnc = null;
     var permite_generar_muestra = (await context.client.query(`
         select permite_generar_muestra 
@@ -94,6 +94,7 @@ async function persistirEncuestaAutogeneradaEnDM(context: ProcedureContext, OPER
         console.log(i);
         const defaultTarea = await getDefaultTarea(context, OPERATIVO);
         let enc = generarIdEncFun(area, i);
+        const autogeneradoField = modo_dm == 'produc'?'enc_autogenerado_dm':'enc_autogenerado_dm_capa';
         const resultInsertTem = await context.client.query(`
             INSERT into tem (
                 operativo,
@@ -101,7 +102,7 @@ async function persistirEncuestaAutogeneradaEnDM(context: ProcedureContext, OPER
                 area,
                 dominio,
                 habilitada,
-                enc_autogenerado_dm,
+                ${context.be.db.quoteIdent(autogeneradoField)},
                 token_autogenerado_dm,
                 tarea_actual,
                 json_backup,
@@ -109,7 +110,7 @@ async function persistirEncuestaAutogeneradaEnDM(context: ProcedureContext, OPER
                 fecha_backup
             ) 
                 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, current_timestamp)
-                on conflict (enc_autogenerado_dm, token_autogenerado_dm) do nothing
+                on conflict (${context.be.db.quoteIdent(autogeneradoField)}, token_autogenerado_dm) do nothing
                 returning *
         `,[
             OPERATIVO,
@@ -128,7 +129,7 @@ async function persistirEncuestaAutogeneradaEnDM(context: ProcedureContext, OPER
                 UPDATE tem 
                     set (json_backup, json_encuesta, fecha_backup) = 
                         ($4, $5, current_timestamp)
-                    where (operativo = $1 and enc_autogenerado_dm = $2 and token_autogenerado_dm = $3)
+                    where (operativo = $1 and ${context.be.db.quoteIdent(autogeneradoField)} = $2 and token_autogenerado_dm = $3)
                     returning *
             `,[OPERATIVO, encAutogeneradoDm, token, respuestasRaiz, respuestasRaiz]).fetchUniqueRow()).row.enc;
         }
@@ -146,7 +147,7 @@ async function persistirEncuestaAutogeneradaEnDM(context: ProcedureContext, OPER
                     set cargado_dm = $4, estado = $5, operacion = $6
                     where operativo= $1 and enc = $2 and tarea = $3
                 returning *
-            `,[OPERATIVO, resultInsertTem.row.enc, defaultTarea.tarea, token, ESTADO_POSTERIOR_CARGA, OPERACION_PREPARAR_CARGA]
+            `,[OPERATIVO, resultInsertTem.row.enc, defaultTarea.tarea, token, ESTADO_POSTERIOR_CARGA, cambia_modo_dm?null:OPERACION_PREPARAR_CARGA]
             ).fetchUniqueRow();
         }
     }
@@ -896,11 +897,13 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         action:'dm_sincronizar',
         parameters:[
             {name:'persistentes'       , typeName:'jsonb'},
+            {name:'modo_dm'            , typeName:'text'},
+            {name:'cambia_modo_dm'     , typeName:'boolean'},
         ],
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
             const OPERATIVO = await getOperativoActual(context);
             var be=context.be;
-            var {persistentes} = parameters;
+            var {persistentes, modo_dm, cambia_modo_dm} = parameters;
             var num_sincro:number=0;
             var token:string=persistentes?.token || (await be.procedure.token_get.coreFunction(context, {
                 useragent: context.session.req.useragent, 
@@ -914,10 +917,10 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             ).fetchUniqueValue();
             num_sincro=value;
             var condviv= `
-                        tt.operativo= $1 
-                        and asignado = $2
-                        and tt.operacion='cargar' 
-                        and (tt.cargado_dm is null or tt.cargado_dm = ${context.be.db.quoteLiteral(token)})
+                tt.operativo= $1 
+                and asignado = $2
+                and tt.operacion='cargar' 
+                and (tt.cargado_dm is null or tt.cargado_dm = ${context.be.db.quoteLiteral(token)})
             `;
             const {unidad_analisis:UA_PRINCIPAL, pk_agregada} = (await getUAPrincipal(context.client, OPERATIVO));
             if (persistentes) {
@@ -926,7 +929,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     let carga = persistentes.cargas[persistentes.informacionHdr[idEnc].tem.carga];
                     var tarea = persistentes.informacionHdr[idEnc].tarea.tarea;
                     if(Number(idEnc)<0){
-                        idEnc = await persistirEncuestaAutogeneradaEnDM(context, OPERATIVO, carga.carga, idEnc, token, respuestasUAPrincipal, carga.recepcionista, context.user.idper);
+                        idEnc = await persistirEncuestaAutogeneradaEnDM(context, OPERATIVO, carga.carga, idEnc, token, respuestasUAPrincipal, carga.recepcionista, context.user.idper, modo_dm, cambia_modo_dm);
                     }
                     var puedoGuardarEnTEM=true;
                     var {params,setters} = getSettersAndParametersForReaNoReaResumenEstado({
@@ -938,6 +941,9 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         ],
                         params: [OPERATIVO, idEnc, tarea, token]
                     })
+                    if(cambia_modo_dm){
+                        setters.push(`operacion = 'descargar'`);
+                    }
                     var queryTareasTem = await context.client.query(
                         `update tareas_tem
                             set ${setters.join(',')}
@@ -1006,8 +1012,9 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
     {
         action:'dm_backup',
         parameters:[
-            {name:'token'       , typeName:'text'},
-            {name:'tem'         , typeName:'jsonb'}
+            {name:'token'       , typeName:'text' },
+            {name:'tem'         , typeName:'jsonb'},
+            {name:'modo_dm'     , typeName:'text' },
         ],
         unlogged:true,
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
@@ -1032,7 +1039,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     let recepcionista = backup.carga.recepcionista;
                     let asignado = backup.idper;
                     if(Number(idEncDM)<0){
-                        await persistirEncuestaAutogeneradaEnDM(context, OPERATIVO, area, idEncDM, token, respuestasRaiz, recepcionista, asignado);
+                        await persistirEncuestaAutogeneradaEnDM(context, OPERATIVO, area, idEncDM, token, respuestasRaiz, recepcionista, asignado, parameters.modo_dm, false);
                     }else{
                         let result = await context.client.query(
                             `update tem
@@ -2083,6 +2090,17 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 }
             }
             return tareasTemResult.rows;
+        }
+    },
+    {
+        action:'modo_dm_defecto_obtener',
+        parameters:[
+        ],
+        unlogged:true,
+        coreFunction:async function(context: ProcedureContext, _parameters: CoreFunctionParameters){
+            const {client} =context;
+            const modoDmDefecto = (await (client.query(`select modo_dm_defecto from parametros where unico_registro`,[]).fetchUniqueValue())).value;
+            return modoDmDefecto;
         }
     },
 ];

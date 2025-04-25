@@ -36,6 +36,7 @@ import { supervisores        } from "./table-supervisores";
 import { personal_rol        } from "./table-personal_rol";
 import { permisos            } from "./table-permisos";
 import { roles_permisos      } from "./table-roles_permisos";
+import { modos_dm            } from "./table-modos_dm";
 import { parametros          } from "./table-parametros";
 import { roles_subordinados  } from "./table-roles_subordinados";
 
@@ -553,7 +554,9 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 {"path":"login", "fallback":"offline"},
                 {"path":"logout", "fallback":"offline"},
                 {"path":"login#i=sincronizar", "fallback":"offline"},
-                {"path":"menu#i=sincronizar", "fallback":"offline"}
+                {"path":"menu#i=sincronizar", "fallback":"offline"},
+                {"path":"login#i=cambiar_modo_dm", "fallback":"offline"},
+                {"path":"menu#i=cambiar_modo_dm", "fallback":"offline"}
             ]
         };
         return jsonResult
@@ -625,6 +628,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 }
                 menu.push(
                     {menuType:'sincronizar_dm', name:'sincronizar'},
+                    {menuType:'cambiar_modo_dm', name:'cambiar_modo'},
                 );
             }
         }else{
@@ -699,6 +703,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     ]},
                     {menuType:'table', name:'momentos_consistencia'},
                     {menuType:'table', name:'parametros'},
+                    {menuType:'table', name:'modos_dm'},
                 )
             }
             if(context.puede?.campo?.administrar || context.puede?.encuestas?.procesar){
@@ -747,6 +752,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , tareas_proximas
             , tem
             , historial_tem
+            , modos_dm
             , parametros
             , operaciones
             , comunas
@@ -885,6 +891,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             let claveNuevaField = tableDef.fields.find((field)=>field.name == 'clave_nueva')!;
             var adminOCoord = 'admin'===context?.user.rol||context?.puede?.campo?.administrar;
             claveNuevaField.allow = {select:adminOCoord, update:true, insert:false};
+            //agregar flags
         })
         be.appendToTableDefinition('variables',function(tableDef, context){
             var esAdmin= context?.user.rol==='admin';
@@ -897,9 +904,15 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             )
         })
 
-        // be.appendToTableDefinition('casilleros',function(tableDef, context){
-        //     tableDef.constraints = tableDef.constraints.filter(c=>c.consName!='casilleros salto REL')
-        // })
+        be.appendToTableDefinition('parametros',function(tableDef){
+            tableDef.fields.push(
+                {name:'modo_dm_defecto'  , typeName:'text'  , editable: true, nullable: false, defaultDbValue:"'capa'"},
+            );
+            tableDef.foreignKeys = tableDef.foreignKeys || [];
+            tableDef.foreignKeys.push(
+                {references:'modos_dm', fields:[{source:'modo_dm_defecto', target:'modo_dm'}]}
+            );
+        })
     }
   }
 }

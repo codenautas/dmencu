@@ -2,6 +2,8 @@
 import {html}  from 'js-to-html';
 import { desplegarFormularioActual, dmPantallaInicialSinCarga } from './render-formulario';
 import { cargarEstructura, cargarHojaDeRuta, GLOVAR_ESTRUCTURA, GLOVAR_DATOSBYPASS } from './abrir-formulario';
+import { MODO_DM_LOCALSTORAGE_KEY } from './bypass-formulario';
+import { ModoDM } from './tipos';
 const ServiceWorkerAdmin = require("service-worker-admin");
 
 function siExisteId(id: string, hacer: (arg0: HTMLElement) => void){
@@ -93,6 +95,12 @@ window.addEventListener('load', async function(){
                 }
             }else{
                 startApp = async ()=>{
+                    try{
+                        const modoDmDefecto = await my.ajax.modo_dm_defecto_obtener({});
+                        my.setLocalVar(MODO_DM_LOCALSTORAGE_KEY, my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY) || modoDmDefecto);
+                    }catch(err){
+                        console.log('no se pudo traer el modo por defecto')
+                    }
                     //@ts-ignore existe 
                     dmPantallaInicialSinCarga();
                 }

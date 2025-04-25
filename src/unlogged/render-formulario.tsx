@@ -25,7 +25,8 @@ import {Bloque, BotonFormulario,
     iterator, empty, ConfiguracionHabilitarBotonFormulario,
     CampoPkRaiz,
     ValuePkRaiz,
-    PMatriz
+    PMatriz,
+    ModoDM
 } from "./tipos";
 import{ 
     accion_abrir_formulario,
@@ -75,7 +76,8 @@ import {
     accion_id_pregunta,
     accion_agregar_formulario,
     NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO,
-    NO_CAMBIAR__SOLO_TRAER_STATUS
+    NO_CAMBIAR__SOLO_TRAER_STATUS,
+    MODO_DM_LOCALSTORAGE_KEY
 } from "./bypass-formulario"
 
 import {html, HtmlTag} from "js-to-html";
@@ -1754,11 +1756,13 @@ function FormularioDespliegue(props:{forPk:ForPk}){
     })
     // @ts-expect-error especial hay que leerlo en el parser de casilleros si esto termina quedando así
     var pantallaCompleta = formulario.especial?.pantallaCompleta;
+    const modoDM:ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY);
     return (
         <>
-            <AppBar position="fixed" color={soloLectura?'secondary':'primary'}>
+            <AppBar position="fixed" color={soloLectura?'secondary':(modoDM=='capa'?'success':'primary')}>
                 <Toolbar>
                     <BarraDeNavegacion forPk={forPk} soloLectura={soloLectura || false} modoDirecto={opciones.modoDirecto}/>
+                    <Typography><span style={{marginLeft:'5px'}}>{modoDM=='capa'?' MODO CAPACITACIÓN':''}</span></Typography>
                 </Toolbar>
                 <div id="mini-console"></div>
             </AppBar>
@@ -2052,9 +2056,10 @@ setHojaDeRutaDespliegue((_props:{})=>{
     const [online, setOnline] = useState(window.navigator.onLine);
     window.addEventListener('online',  updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
+    const modoDM:ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY);
     return (
         <>
-            <AppBar position="fixed">
+            <AppBar position="fixed" color={modoDM=='capa'?'success':'primary'}>
                 <Toolbar>
                     <Typography variant="h6">
                         Hoja de ruta
@@ -2079,6 +2084,7 @@ setHojaDeRutaDespliegue((_props:{})=>{
                             </IconButton>
                         </>
                     :null}
+                    <Typography><span style={{marginLeft:'5px'}}>{modoDM=='capa'?' MODO CAPACITACIÓN':''}</span></Typography>
                 </Toolbar>
             </AppBar>
             <div className="hoja-de-ruta">
@@ -2186,11 +2192,12 @@ function PantallaInicialSinCarga(_props:{}){
     window.addEventListener('online',  updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
     const paragraphStyles={fontSize:"1.2rem", fontWeight:600, padding: "5px 10px"};
+    const modoDM:ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY);
     return (
         <>
-            <AppBar position="fixed">
+            <AppBar position="fixed" color={modoDM=='capa'?'success':'primary'}>
                 <Typography variant="h6" style={{margin:25}}>
-                    Dispositivo sin carga
+                    Dispositivo sin carga - {modoDM=='capa'?'MODO CAPACITACIÓN':''}
                 </Typography>
             </AppBar>
             <main>

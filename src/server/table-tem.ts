@@ -147,6 +147,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {name:"json_backup"          , typeName:'jsonb'   , editable: false, visible:false},
             {name:"token_autogenerado_dm", typeName:'text'    , editable: false, visible:false},
             {name:"enc_autogenerado_dm"  , typeName:'text'    , editable: false  },
+            {name:"enc_autogenerado_dm_capa", typeName:'text'    , editable: false  },
             {name:"h4"                   , typeName:'text'    , editable: false  },
             {name:"x"                    , typeName:'decimal' , editable: false  },
             {name:"y"                    , typeName:'decimal' , editable: false  },

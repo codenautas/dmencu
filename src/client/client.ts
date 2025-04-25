@@ -2,15 +2,11 @@ import {html} from "js-to-html";
 import {traerEstructura} from "../unlogged/redux-formulario";
 import { CasoState,  
     IdFormulario, DatosByPassPersistibles, IdEnc, IdOperativo, IdTarea, EstadoAccion, DireccionAccion,
-    CampoPkRaiz,
+    CampoPkRaiz, ModoDM
 } from "../unlogged/tipos";
 import * as likeAr from "like-ar";
-import {getEstructura, setPersistirDatosByPass} from "../unlogged/bypass-formulario"
+import {getEstructura, setPersistirDatosByPass, MODO_DM_LOCALSTORAGE_KEY} from "../unlogged/bypass-formulario"
 import {BACKUPS, cargarEstructura, cargarHojaDeRuta, GLOVAR_DATOSBYPASS, GLOVAR_ESTRUCTURA, GLOVAR_MODOBYPASS} from "../unlogged/abrir-formulario"
-import { Operativo } from "meta-enc";
-import {sleep, coalesce} from "best-globals";
-import { stringify } from "querystring";
-
 
 //TODO GENERALIZAR
 
@@ -141,8 +137,11 @@ var persistirEnMemoria = async (persistentes:DatosByPassPersistibles) => {
         my.setSessionVar(GLOVAR_MODOBYPASS, modoAlmacenamiento)
 }
 
-async function sincronizarDatos(persistentes:DatosByPassPersistibles|null){
-    var datos = await my.ajax.dm_sincronizar({persistentes});
+async function sincronizarDatos(persistentes:DatosByPassPersistibles|null, cambiaModoDM:boolean){
+    const modoDmDefecto = await my.ajax.modo_dm_defecto_obtener({});
+    let modoDM: ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY) || modoDmDefecto;
+    my.setLocalVar(MODO_DM_LOCALSTORAGE_KEY, modoDM);
+    var datos = await my.ajax.dm_sincronizar({persistentes, modo_dm:modoDM, cambia_modo_dm:cambiaModoDM});
     var operativo = datos.operativo;
     persistirEnMemoria({...datos, modoAlmacenamiento:'local'});
     var estructura = await traerEstructura({operativo})
@@ -171,13 +170,24 @@ var mostrarInfoLocal = (divAvisoSincro:HTMLDivElement, titulo:string, nroSincro:
         ]).create());
     }
 }
-var procederSincroFun = async (button:HTMLButtonElement, divAvisoSincro:HTMLDivElement)=>{
+
+function cambiarModoDMEnLocalStorage(modoActual:ModoDM){
+    modoActual = modoActual=='produc'?'capa':'produc';
+    my.setLocalVar(MODO_DM_LOCALSTORAGE_KEY,modoActual);
+}
+
+var procederSincroFun = async (button:HTMLButtonElement, divAvisoSincro:HTMLDivElement, cambiaModoDM:boolean)=>{
     button.disabled=true;
     button.className='download-dm-button';
     divAvisoSincro.innerHTML='';
     try{
         var datosByPass:DatosByPassPersistibles = my.getLocalVar(GLOVAR_DATOSBYPASS);
-        var datos = await sincronizarDatos(datosByPass);
+        var datos = await sincronizarDatos(datosByPass, cambiaModoDM);
+        const modoDmDefecto = await my.ajax.modo_dm_defecto_obtener({});
+        let modoDMActual: ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY) || modoDmDefecto;
+        if(cambiaModoDM){
+            cambiarModoDMEnLocalStorage(modoDMActual);
+        }
         mostrarInfoLocal(divAvisoSincro, 'datos recibidos', datos.num_sincro, true)
     }catch(err){
         alertPromise(err.message)
@@ -188,13 +198,41 @@ var procederSincroFun = async (button:HTMLButtonElement, divAvisoSincro:HTMLDivE
     }
 }
 myOwn.wScreens.sincronizar_dm=async function(){
+    const modoDmDefecto = await my.ajax.modo_dm_defecto_obtener({});
+    my.setLocalVar(MODO_DM_LOCALSTORAGE_KEY,my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY) || modoDmDefecto);
     var mainLayout = document.getElementById('main_layout')!;
     var procederButton = html.button({class:'download-dm-button-cont'},'proceder ⇒').create();
+    mainLayout.appendChild(
+        html.div(my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY)=='capa'?'(ATENCION!!! el DM está en MODO CAPACITACIÓN)':'').create()
+    )
     var divAvisoSincro:HTMLDivElement=html.div().create();
     mostrarInfoLocal(mainLayout as HTMLDivElement, 'información a transmitir', null, false)
     mainLayout.appendChild(procederButton);
     mainLayout.appendChild(divAvisoSincro);
-    procederButton.onclick = ()=>procederSincroFun(procederButton, divAvisoSincro)
+    procederButton.onclick = ()=>procederSincroFun(procederButton, divAvisoSincro, false)
+};
+
+myOwn.wScreens.cambiar_modo_dm=async function(){
+    var mainLayout = document.getElementById('main_layout')!;
+    const modoDmDefecto = await my.ajax.modo_dm_defecto_obtener({});
+    let modoDM: ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY) || modoDmDefecto;
+    my.setLocalVar(MODO_DM_LOCALSTORAGE_KEY, modoDM);
+    var divAvisoModo:HTMLDivElement=html.div([
+        html.div(`modo actual: ${modoDM}`)
+    ]).create();
+    var procederButton = html.button({class:'cambiar-modo-dm-button'},`cambiar a modo ${modoDM == 'produc'?'capa':'produc'} ⇒`).create();
+    var divAvisoSincro:HTMLDivElement=html.div().create();
+    mainLayout.appendChild(divAvisoModo);
+    mostrarInfoLocal(mainLayout as HTMLDivElement, `información modo "${modoDM}" a transmitir`, null, false)
+    mainLayout.appendChild(procederButton);
+    mainLayout.appendChild(divAvisoSincro);
+    procederButton.onclick = async ()=>{
+        await procederSincroFun(procederButton, divAvisoSincro, true);
+        mainLayout.innerHTML='';
+        mainLayout.appendChild(
+            html.div(`MODO ${my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY)} ACTIVADO`).create()
+        )
+    }
 };
 
 function inicializarState(state: CasoState) {

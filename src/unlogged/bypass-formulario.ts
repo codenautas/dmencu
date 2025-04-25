@@ -28,6 +28,8 @@ import {
     ValuePkRaiz
 } from "./tipos";
 
+export const MODO_DM_LOCALSTORAGE_KEY = 'modo_dm';
+
 var especiales = {} as {
     calcularVariables?:(respuestasRaiz:RespuestasRaiz, forPk:ForPk)=>void
     calcularVariablesEspecificasOperativo?:(respuestasRaiz:RespuestasRaiz, forPk:ForPk)=>void
@@ -1070,6 +1072,8 @@ export function calcularFeedbackHojaDeRuta(){
             let formularioPrincipal = getMainFormForVivienda(enc);
             return formularioPrincipal?formularioPrincipal==f.id_casillero:f.formulario_principal
         }
+
+        //acá hay que sanitizar porque evidentemente puede venir con hashs de encuestas sin info el datosByPass.respuestas
         var conjuntoRespuestasUA = datosByPass.respuestas[uaDef.unidad_analisis]
         beingArray(conjuntoRespuestasUA).forEach((respuestas, valorPkOPosicion)=>{
             var valorPk = numberOrStringIncIfArray(valorPkOPosicion, conjuntoRespuestasUA);

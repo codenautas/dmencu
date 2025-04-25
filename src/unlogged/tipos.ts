@@ -521,3 +521,4 @@ export type EstadoAccion = {
     desactiva_boton: boolean
     confirma: boolean
 }
+export type ModoDM = 'produc'|'capa';
