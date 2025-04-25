@@ -891,10 +891,14 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             let claveNuevaField = tableDef.fields.find((field)=>field.name == 'clave_nueva')!;
             var adminOCoord = 'admin'===context?.user.rol||context?.puede?.campo?.administrar;
             claveNuevaField.allow = {select:adminOCoord, update:true, insert:false};
-            //tableDef.fields.push(
-                //{name:''  , typeName:'boolean',  editable:true},
-                //{name:''  , typeName:'boolean',  editable:true}
-            //)
+            tableDef.fields.push(
+                {name:'muestra_encuestas_prod'  , typeName:'boolean',  editable:true, defaultDbValue:'true'},
+                {name:'muestra_encuestas_capa'  , typeName:'boolean',  editable:true}
+            )
+            tableDef.constraints = tableDef.constraints ||[];
+            tableDef.constraints.push(
+                {consName:'muestra encuestas not false', constraintType:'check', expr:'muestra_encuestas_prod is not false and muestra_encuestas_capa is not false'}
+            )
         })
         be.appendToTableDefinition('variables',function(tableDef, context){
             var esAdmin= context?.user.rol==='admin';

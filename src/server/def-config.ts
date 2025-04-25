@@ -59,7 +59,7 @@ install:
       - inicial_update_varcal_por_encuesta.sql
       - diccionario_func.sql
 login:
-  infoFieldList: [usuario, rol, idper]
+  infoFieldList: [usuario, rol, idper, muestra_encuestas_prod, muestra_encuestas_capa]
   table: usuarios
   userFieldName: usuario
   passFieldName: md5clave

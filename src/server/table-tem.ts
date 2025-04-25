@@ -220,6 +220,13 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
                             left join usuarios usu_enc on usu_enc.idper = tt.etareas->'encu'->>'asignado'
                             left join usuarios usu_rec on usu_rec.idper = tt.etareas->'recu'->>'asignado'
                             left join usuarios usu_sup on usu_sup.idper = tt.etareas->'supe'->>'asignado'
+                            join usuarios usu_con on usu_con.usuario = ${sqlTools.quoteLiteral(context.user.usuario)}
+                            where 
+                                usu_con.muestra_encuestas_prod and t.enc_autogenerado_dm is not null
+                                    or 
+                                usu_con.muestra_encuestas_capa and t.enc_autogenerado_dm_capa is not null
+                                    or 
+                                t.enc_autogenerado_dm is null and t.enc_autogenerado_dm_capa is null
                 )
             `     
         };

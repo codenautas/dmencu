@@ -156,7 +156,16 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
                         left join no_rea y on t.norea=y.no_rea::integer
                         left join ${sqlTools.quoteIdent(OperativoGenerator.mainTD)} aux on aux.operativo=t.operativo and aux.${sqlTools.quoteIdent(OperativoGenerator.mainTDPK)}=t.enc 
                         join estados e on t.operativo = e.operativo and tt.estado = e.estado
+                        join usuarios usu_con on usu_con.usuario = ${sqlTools.quoteLiteral(context.user.usuario)}
+                        where 
+                            usu_con.muestra_encuestas_prod and t.enc_autogenerado_dm is not null
+                                or 
+                            usu_con.muestra_encuestas_capa and t.enc_autogenerado_dm_capa is not null
+                                or                        
+                            t.enc_autogenerado_dm is null and t.enc_autogenerado_dm_capa is null
                     ) x
+                    
+                        
             )`,
         },
         //refrescable: true, //no está permitido aún
