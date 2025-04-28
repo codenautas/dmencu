@@ -1076,11 +1076,16 @@ export function calcularFeedbackHojaDeRuta(){
         //acá hay que sanitizar porque evidentemente puede venir con hashs de encuestas sin info el datosByPass.respuestas
         var conjuntoRespuestasUA = datosByPass.respuestas[uaDef.unidad_analisis]
         beingArray(conjuntoRespuestasUA).forEach((respuestas, valorPkOPosicion)=>{
-            var valorPk = numberOrStringIncIfArray(valorPkOPosicion, conjuntoRespuestasUA);
-            likeAr(estructura.formularios).filter(f=>f.casilleros.unidad_analisis == uaDef.unidad_analisis && esPrincipal(f.casilleros, valorPk as number)).forEach((_defF, formulario)=>{
-                var forPkRaiz = {formulario, [uaDef.pk_agregada]:valorPk} as ForPkRaiz
-                calcularFeedback(respuestas, forPkRaiz, {});
-            })
+            //TODO: provisorio hasta detectar posible problema
+            if(datosByPass.informacionHdr[valorPkOPosicion as IdEnc]){
+                var valorPk = numberOrStringIncIfArray(valorPkOPosicion, conjuntoRespuestasUA);
+                likeAr(estructura.formularios).filter(f=>f.casilleros.unidad_analisis == uaDef.unidad_analisis && esPrincipal(f.casilleros, valorPk as number)).forEach((_defF, formulario)=>{
+                    var forPkRaiz = {formulario, [uaDef.pk_agregada]:valorPk} as ForPkRaiz
+                    calcularFeedback(respuestas, forPkRaiz, {});
+                })
+            }else{
+                delete(datosByPass.informacionHdr[valorPkOPosicion as IdEnc])
+            }
         })
     });
 }

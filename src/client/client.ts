@@ -171,6 +171,17 @@ var mostrarInfoLocal = (divAvisoSincro:HTMLDivElement, titulo:string, nroSincro:
     }
 }
 
+const mostrarInfoModo = async(mainLayout:HTMLElement) => {
+    const modoDmDefecto = await my.ajax.modo_dm_defecto_obtener({});
+    let modoDM: ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY) || modoDmDefecto;
+    my.setLocalVar(MODO_DM_LOCALSTORAGE_KEY, modoDM);
+    var divAvisoModo:HTMLDivElement=html.div([
+        html.div(`modo actual: ${modoDM}.`)
+    ]).create();
+    mainLayout.appendChild(divAvisoModo)
+    return modoDM;
+}
+
 function cambiarModoDMEnLocalStorage(modoActual:ModoDM){
     modoActual = modoActual=='produc'?'capa':'produc';
     my.setLocalVar(MODO_DM_LOCALSTORAGE_KEY,modoActual);
@@ -198,13 +209,9 @@ var procederSincroFun = async (button:HTMLButtonElement, divAvisoSincro:HTMLDivE
     }
 }
 myOwn.wScreens.sincronizar_dm=async function(){
-    const modoDmDefecto = await my.ajax.modo_dm_defecto_obtener({});
-    my.setLocalVar(MODO_DM_LOCALSTORAGE_KEY,my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY) || modoDmDefecto);
     var mainLayout = document.getElementById('main_layout')!;
+    await mostrarInfoModo(mainLayout);
     var procederButton = html.button({class:'download-dm-button-cont'},'proceder ⇒').create();
-    mainLayout.appendChild(
-        html.div(my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY)=='capa'?'(ATENCION!!! el DM está en MODO CAPACITACIÓN)':'').create()
-    )
     var divAvisoSincro:HTMLDivElement=html.div().create();
     mostrarInfoLocal(mainLayout as HTMLDivElement, 'información a transmitir', null, false)
     mainLayout.appendChild(procederButton);
@@ -214,15 +221,9 @@ myOwn.wScreens.sincronizar_dm=async function(){
 
 myOwn.wScreens.cambiar_modo_dm=async function(){
     var mainLayout = document.getElementById('main_layout')!;
-    const modoDmDefecto = await my.ajax.modo_dm_defecto_obtener({});
-    let modoDM: ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY) || modoDmDefecto;
-    my.setLocalVar(MODO_DM_LOCALSTORAGE_KEY, modoDM);
-    var divAvisoModo:HTMLDivElement=html.div([
-        html.div(`modo actual: ${modoDM}`)
-    ]).create();
+    const modoDM = await mostrarInfoModo(mainLayout);
     var procederButton = html.button({class:'cambiar-modo-dm-button'},`cambiar a modo ${modoDM == 'produc'?'capa':'produc'} ⇒`).create();
     var divAvisoSincro:HTMLDivElement=html.div().create();
-    mainLayout.appendChild(divAvisoModo);
     mostrarInfoLocal(mainLayout as HTMLDivElement, `información modo "${modoDM}" a transmitir`, null, false)
     mainLayout.appendChild(procederButton);
     mainLayout.appendChild(divAvisoSincro);

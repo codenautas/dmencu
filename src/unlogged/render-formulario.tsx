@@ -117,7 +117,7 @@ window.addEventListener('load', ()=>{
 // /*
 
 type CommonAttributes = {className?:string,style?:React.CSSProperties,id?:string, tabIndex?:number} // CSSProperties
-type ColorValues = 'primary'|'secondary'|'default'|'inherit'
+type ColorValues = 'primary'|'secondary'|'default'|'inherit'|'success'
 
 export type LibreDespliegueType = (props:{
     key:string
@@ -1922,6 +1922,7 @@ setDesplegarCarga((props:{
     var estructura = getEstructura();
     let cantLineasResumen = likeAr(informacionHdr).filter((informacion)=>informacion.tem.carga==idCarga).array().length;
     const dispatch = useDispatch();
+    const modoDM:ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY);
     return <Paper className="carga" style={{marginBottom: '10px', padding: '10px'}}>
         <div className="informacion-carga">
             <div className="carga">Área: {idCarga}</div>
@@ -1971,7 +1972,7 @@ setDesplegarCarga((props:{
                         <TableCell colSpan={3}>
                             <Button
                                 variant="contained"
-                                color="primary"
+                                color={modoDM=="capa"?"success":"primary"}
                                 onClick={()=>
                                     crearEncuesta(idCarga,(forPkRaiz:ForPkRaiz)=>{
                                         dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk:forPkRaiz, apilarVuelta:false}));
