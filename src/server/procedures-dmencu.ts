@@ -672,7 +672,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                             elemI=recorrer_datos_agregando_pks(elemI)
                         });
                     };                            
-                    if (keyName.startsWith('$')||keyName.startsWith('_')) {
+                    if (keyName.startsWith('$')||keyName.startsWith('_')||keyName=='null') {
                         delete datosj[keyName];
                     }
                 }

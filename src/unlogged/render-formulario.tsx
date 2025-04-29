@@ -1104,7 +1104,9 @@ var botonFormularioConResumen = (
                                 var BF_varname = '$B.F:'+ casillero.salto as IdVariable
                                 dispatchByPass(accion_registrar_respuesta,{forPk:forPkPadre, variable:BF_varname, respuesta:defBoton.num==0?null:defBoton.num as Valor});
                             }
-                            dispatchByPass(accion_registrar_respuesta,{forPk:forPkPadre, variable:casillero.expresion_habilitar as IdVariable, respuesta:defBoton.num as Valor});
+                            if(casillero.expresion_habilitar){
+                                dispatchByPass(accion_registrar_respuesta,{forPk:forPkPadre, variable:casillero.expresion_habilitar as IdVariable, respuesta:defBoton.num as Valor});
+                            }
                         }
                     }else{
                         var button = document.getElementById(idButton)! as HTMLButtonElement;
