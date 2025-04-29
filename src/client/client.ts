@@ -228,11 +228,42 @@ myOwn.wScreens.cambiar_modo_dm=async function(){
     mainLayout.appendChild(procederButton);
     mainLayout.appendChild(divAvisoSincro);
     procederButton.onclick = async ()=>{
-        await procederSincroFun(procederButton, divAvisoSincro, true);
-        mainLayout.innerHTML='';
-        mainLayout.appendChild(
-            html.div(`MODO ${my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY)} ACTIVADO`).create()
-        )
+        var mainDiv = html.div().create()
+        mainDiv.appendChild(
+            html.div({},[
+                html.div({}, [`Confirma cambio de modo "${modoDM}" a ${modoDM=='produc'?'"capa"':'"produc"'}.`])
+            ]).create()
+        );
+        var inputCambiarModo = html.input({class:'input-cambiar-modo'}).create();
+        mainDiv.appendChild(html.div([
+            html.div(['Por favor ingrese la contraseña ',inputCambiarModo])
+        ]).create());
+        var cambiarModoValue = await confirmPromise(mainDiv, {
+            withCloseButton: false,
+            reject:false,
+            buttonsDef:[
+                {label:`cambiar`, value:true},
+                {label:`cancelar`, value:false}
+            ]
+        });
+        if(cambiarModoValue){
+            if(inputCambiarModo.value=='1234'){
+                try{
+                    procederButton.disabled=true;
+                    await procederSincroFun(procederButton, divAvisoSincro, true);
+                    mainLayout.innerHTML='';
+                    mainLayout.appendChild(
+                        html.div(`MODO ${my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY)} ACTIVADO`).create()
+                    )
+                }catch(err){
+                    alertPromise(err.message);
+                }finally{
+                    procederButton.disabled=false;
+                };
+            }else{
+                alertPromise('contraseña incorrecta.')
+            }
+        }
     }
 };
 
