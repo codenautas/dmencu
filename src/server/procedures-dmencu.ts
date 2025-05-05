@@ -1346,6 +1346,34 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         }
     },
     {
+        action: 'encuestas_capacitacion_borrar',
+        parameters:[
+            {name:'operativo'       , typeName:'text', references:"operativos"}
+        ],
+        roles:['admin'],
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+            var be = context.be;
+            var permite_generar_muestra = (await context.client.query(`
+                select permite_generar_muestra 
+                    from operativos 
+                    where operativo = $1
+            `, [params.operativo]).fetchUniqueValue()).value;
+            if (permite_generar_muestra) {
+                const encsABorrar = (await context.client.query(
+                    `select * 
+                        from tem
+                        where operativo=$1 and enc_autogenerado_dm_capa is not null
+                `, [params.operativo]).fetchAll()).rows;              
+                for(let row of encsABorrar){
+                    await be.procedure.encuesta_borrar.coreFunction(context, {operativo:params.operativo, enc:row.enc})
+                }
+                return 'se borraron las encuestas de capacitación';
+            }else{
+                throw Error('no se puede borrar la encuesta porque el operativo tiene muestra estática');
+            }
+        }
+    },
+    {
         action: 'accion_tareas_tem_ejecutar',
         parameters:[
             {name:'operativo'       , typeName:'text'},

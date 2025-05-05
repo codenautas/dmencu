@@ -578,6 +578,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             submenuVarios.push({menuType:'proc', name:'encuestador_dms_mostrar', label:'forzar descarga encuestas DM'});
             submenuVarios.push({menuType:'proc', name:'encuesta_blanquear_previsualizar', label:'blanquear encuesta'});
             submenuVarios.push({menuType:'proc', name:'encuesta_borrar_previsualizar', label:'quitar encuesta de la muestra'});
+            submenuVarios.push({menuType:'proc', name:'encuestas_capacitacion_borrar', label:'quitar encuestas de capa de la muestra'});
         }
         if(context.puede?.encuestas?.procesar){
             submenuVarios.push({menuType:'proc', name:'intercambiar_encuestas'});
