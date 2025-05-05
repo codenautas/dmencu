@@ -15,7 +15,8 @@ begin
             and tt.enc=t.enc 
             and tt.tarea=new.tarea
             and t.area=new.area
-            and (t.tarea_actual is null or t.tarea_actual = tt.tarea);          
+            and (t.tarea_actual is null or t.tarea_actual = tt.tarea)
+            and t.enc_autogenerado_dm_capa is null; --ignora las encuestas de capa
     return new;
 end;
 $BODY$;
