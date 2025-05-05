@@ -5,7 +5,14 @@ coor_campo|encuestador
 coor_campo|recepcionista
 coor_campo|recuperador
 coor_campo|supervisor
+coor_campo|ingresador
 dis_conceptual|dis_conceptual
 procesamiento|procesamiento
 coor_proc|coor_campo
 coor_proc|procesamiento
+coor_campo|subcoor_campo
+subcoor_campo|encuestador
+subcoor_campo|recepcionista
+subcoor_campo|recuperador
+subcoor_campo|supervisor
+subcoor_campo|ingresador
