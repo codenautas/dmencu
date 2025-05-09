@@ -926,62 +926,64 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             if (persistentes) {
                 for (let idEnc in persistentes.respuestas[UA_PRINCIPAL]) {
                     let respuestasUAPrincipal = persistentes.respuestas[UA_PRINCIPAL][idEnc];
-                    let carga = persistentes.cargas[persistentes.informacionHdr[idEnc].tem.carga];
-                    var tarea = persistentes.informacionHdr[idEnc].tarea.tarea;
-                    if(Number(idEnc)<0){
-                        idEnc = await persistirEncuestaAutogeneradaEnDM(context, OPERATIVO, carga.carga, idEnc, token, respuestasUAPrincipal, carga.recepcionista, context.user.idper, modo_dm, cambia_modo_dm);
-                    }
-                    var puedoGuardarEnTEM=true;
-                    var {params,setters} = getSettersAndParametersForReaNoReaResumenEstado({
-                        tarea,
-                        respuestasUAPrincipal,
-                        setters: [
-                            `estado = ${context.be.db.quoteLiteral(ESTADO_POSTERIOR_DESCARGA)}`, 
-                            `cargado_dm=null`
-                        ],
-                        params: [OPERATIVO, idEnc, tarea, token]
-                    })
-                    if(cambia_modo_dm){
-                        setters.push(`operacion = 'descargar'`);
-                    }
-                    var queryTareasTem = await context.client.query(
-                        `update tareas_tem
-                            set ${setters.join(',')}
-                            where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm = $4
-                            returning 'ok'`
-                        ,
-                        params
-                    ).fetchOneRowIfExists();
-                    puedoGuardarEnTEM=queryTareasTem.rowCount==1;
-                    if(puedoGuardarEnTEM){
-                        await guardarEncuestaEnTem(context, OPERATIVO, idEnc, respuestasUAPrincipal, tarea);
-                        //guardar paralelamente en tablas ua
-                        var procedureGuardar = be.procedure.caso_guardar;
-                        let resultado = `id enc ${idEnc}: `;
-                        let param_guardar={operativo: OPERATIVO,id_caso:idEnc, datos_caso:respuestasUAPrincipal}
-                        let errMessage: string|null;
-                        try{
-                            await be.inTransaction(null, async function(client){
-                                resultado+= await procedureGuardar.coreFunction(context, param_guardar, client);    
-                            })
-                        }catch(err){
-                            errMessage = resultado + "dm_forpkraiz_descargar. "+ err ;
-                            resultado = errMessage
-                            console.log(errMessage)
-                        }                
-                        await context.client.query(
-                            `update tem
-                                set pase_tabla= $3
-                                where operativo= $1 and enc = $2
+                    //TODO ENCONTRAR EL PROBLEMA
+                    if(Object.keys(respuestasUAPrincipal).length>0){
+                        let carga = persistentes.cargas[persistentes.informacionHdr[idEnc].tem.carga];
+                        var tarea = persistentes.informacionHdr[idEnc].tarea.tarea;
+                        if(Number(idEnc)<0){
+                            idEnc = await persistirEncuestaAutogeneradaEnDM(context, OPERATIVO, carga.carga, idEnc, token, respuestasUAPrincipal, carga.recepcionista, context.user.idper, modo_dm, cambia_modo_dm);
+                        }
+                        var puedoGuardarEnTEM=true;
+                        var {params,setters} = getSettersAndParametersForReaNoReaResumenEstado({
+                            tarea,
+                            respuestasUAPrincipal,
+                            setters: [
+                                `estado = ${context.be.db.quoteLiteral(ESTADO_POSTERIOR_DESCARGA)}`, 
+                                `cargado_dm=null`
+                            ],
+                            params: [OPERATIVO, idEnc, tarea, token]
+                        })
+                        if(cambia_modo_dm){
+                            setters.push(`operacion = 'descargar'`);
+                        }
+                        var queryTareasTem = await context.client.query(
+                            `update tareas_tem
+                                set ${setters.join(',')}
+                                where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm = $4
                                 returning 'ok'`
                             ,
-                            [OPERATIVO, idEnc, resultado]
-                        ).fetchUniqueRow();
-                    }else{
-                        await fs.appendFile('local-recibido-sin-token.txt', JSON.stringify({now:new Date(),user:context.username,idCaso: idEnc,[pk_agregada]: respuestasUAPrincipal})+'\n\n', 'utf8');
+                            params
+                        ).fetchOneRowIfExists();
+                        puedoGuardarEnTEM=queryTareasTem.rowCount==1;
+                        if(puedoGuardarEnTEM){
+                            await guardarEncuestaEnTem(context, OPERATIVO, idEnc, respuestasUAPrincipal, tarea);
+                            //guardar paralelamente en tablas ua
+                            var procedureGuardar = be.procedure.caso_guardar;
+                            let resultado = `id enc ${idEnc}: `;
+                            let param_guardar={operativo: OPERATIVO,id_caso:idEnc, datos_caso:respuestasUAPrincipal}
+                            let errMessage: string|null;
+                            try{
+                                await be.inTransaction(null, async function(client){
+                                    resultado+= await procedureGuardar.coreFunction(context, param_guardar, client);    
+                                })
+                            }catch(err){
+                                errMessage = resultado + "dm_forpkraiz_descargar. "+ err ;
+                                resultado = errMessage
+                                console.log(errMessage)
+                            }                
+                            await context.client.query(
+                                `update tem
+                                    set pase_tabla= $3
+                                    where operativo= $1 and enc = $2
+                                    returning 'ok'`
+                                ,
+                                [OPERATIVO, idEnc, resultado]
+                            ).fetchUniqueRow();
+                        }else{
+                            await fs.appendFile('local-recibido-sin-token.txt', JSON.stringify({now:new Date(),user:context.username,idCaso: idEnc,[pk_agregada]: respuestasUAPrincipal})+'\n\n', 'utf8');
+                        }
                     }
                 }
-  
             }
             var permiteGenerarMuestra = (await context.client.query(`
                 select permite_generar_muestra 
