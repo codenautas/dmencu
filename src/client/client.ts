@@ -1,5 +1,5 @@
 import {html} from "js-to-html";
-import {traerEstructura} from "../unlogged/redux-formulario";
+import {dispatchers, dmTraerDatosFormulario, traerEstructura} from "../unlogged/redux-formulario";
 import { CasoState,  
     IdFormulario, DatosByPassPersistibles, IdEnc, IdOperativo, IdTarea, EstadoAccion, DireccionAccion,
     CampoPkRaiz, ModoDM
@@ -199,6 +199,8 @@ var procederSincroFun = async (button:HTMLButtonElement, divAvisoSincro:HTMLDivE
         if(cambiaModoDM){
             cambiarModoDMEnLocalStorage(modoDMActual);
         }
+        const store = await dmTraerDatosFormulario({modoDemo: false});
+        store.dispatch(dispatchers.RESET_OPCIONES({}));
         mostrarInfoLocal(divAvisoSincro, 'datos recibidos', datos.num_sincro, true)
     }catch(err){
         alertPromise(err.message)

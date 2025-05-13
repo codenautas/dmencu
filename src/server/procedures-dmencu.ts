@@ -926,7 +926,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             if (persistentes) {
                 for (let idEnc in persistentes.respuestas[UA_PRINCIPAL]) {
                     let respuestasUAPrincipal = persistentes.respuestas[UA_PRINCIPAL][idEnc];
-                    //TODO ENCONTRAR EL PROBLEMA
+                    //TODO AL PARECER ESTÁ RESUELTO, LO DEJO POR LAS DUDAS
                     if(Object.keys(respuestasUAPrincipal).length>0){
                         let carga = persistentes.cargas[persistentes.informacionHdr[idEnc].tem.carga];
                         var tarea = persistentes.informacionHdr[idEnc].tarea.tarea;

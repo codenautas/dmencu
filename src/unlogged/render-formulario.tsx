@@ -2212,7 +2212,7 @@ function PantallaInicialSinCarga(_props:{}){
                                     Sincronizar dispositivo
                                     <span style={{padding:'5px'}}>
                                         <Button
-                                            color="primary"
+                                            color={modoDM=='capa'?'success':"primary"}
                                             variant="contained"
                                             onClick={()=>{
                                                 gotoSincronizar()
