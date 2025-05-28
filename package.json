@@ -1,7 +1,7 @@
 {
   "name": "dmencu",
   "description": "DM Encu - Encuestas en dispositivo móvil",
-  "version": "2.0.16",
+  "version": "2.0.17",
   "author": "Codenautas <codenautas@googlegroups.com>",
   "license": "MIT",
   "main": "dist/server/server/app-dmencu.js",
@@ -13,8 +13,8 @@
   "dependencies": {
     "@mui/material": "^5.16.7",
     "memoize-one": "~6.0.0",
-    "meta-enc": "^1.4.9",
-    "procesamiento": "^2.0.3",
+    "meta-enc": "^1.4.13",
+    "procesamiento": "^2.0.8",
     "backend-plus": "^2.5.1-betha.0",
     "qrcode": "^1.5.3",
     "react": "~17.0.2",
