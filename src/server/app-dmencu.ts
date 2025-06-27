@@ -90,7 +90,11 @@ import { estados_acciones    } from './table-estados_acciones';
 import { tareas_proximas     } from './table-tareas_proximas';
 import { historial_tem       } from './table-historial_tem';
 import { inconsistencias_cumplen_condicion       } from './table-inconsistencias_cumplen_condicion';
-import { tem_borradas       } from './table-tem_borradas';
+import { tem_borradas        } from './table-tem_borradas';
+import { barrios             } from "./table-barrios";
+import { fracciones          } from "./table-fracciones";
+import { radios              } from "./table-radios";
+import { manzanas            } from "./table-manzanas";
 
 export * from "./types-dmencu";
 import {defConfig} from "./def-config"
@@ -810,6 +814,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , dictra
             , inconsistencias_cumplen_condicion
             , tem_borradas
+            , barrios
+            , fracciones
+            , radios
+            , manzanas
         }
         be.appendToTableDefinition('consistencias',function(tableDef, context){
             tableDef.editable=tableDef.editable || context.puede?.encuestas?.procesar;
