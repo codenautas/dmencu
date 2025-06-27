@@ -572,6 +572,11 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         {menuType:'table', name:'zona'   , table:'control_campo_zona'  },
         {menuType:'table', name:'comuna' , table:'control_campo_comuna'},
         {menuType:'table', name:'área'   , table:'control_campo_area'  },
+        {menuType:'table', name:'comuna' , table:'comunas'},
+        {menuType:'table', name:'barrio' , table:'barrios'},
+        {menuType:'table', name:'fraccion', table:'fracciones'},
+        {menuType:'table', name:'radio'  , table:'radios' },
+        {menuType:'table', name:'manzana', table:'manzanas'},
     ]};
     getMenuVarios(context:Context) { 
         let submenuVarios:MenuInfoBase[] = [{menuType: 'abrir_encuesta', name: 'abrir_encuesta'}]
