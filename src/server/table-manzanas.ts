@@ -18,8 +18,8 @@ export function manzanas(context:TableContext):TableDefinition {
         primaryKey:['comuna', 'fraccion', 'radio', 'manzana'],
         foreignKeys: [
             {references:'comunas', fields:['comuna']},
-            {references:'fracciones', fields:['fraccion']},
-            {references:'radios', fields:['radio']},
+            {references:'fracciones', fields:['comuna', 'fraccion']},
+            {references:'radios', fields:['comuna', 'fraccion', 'radio']},
         ],
         constraints: [
             {constraintType: 'unique', fields: ['comuna', 'fraccion', 'radio', 'manzana']},

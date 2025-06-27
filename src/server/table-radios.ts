@@ -17,7 +17,7 @@ export function radios(context:TableContext):TableDefinition {
         primaryKey:['comuna', 'fraccion', 'radio'],
         foreignKeys: [
             {references:'comunas', fields:['comuna']},
-            {references:'fracciones', fields:['fraccion']}
+            {references:'fracciones', fields:['comuna', 'fraccion']}
         ],
         constraints: [
             {constraintType: 'unique', fields: ['comuna', 'fraccion', 'radio']},
