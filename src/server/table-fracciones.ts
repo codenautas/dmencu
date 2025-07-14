@@ -9,18 +9,18 @@ export function fracciones(context:TableContext):TableDefinition {
         elementName:'fraccion',
         editable:puedeEditar,
         fields:[
-            {name:'comuna'                  , typeName:'integer'},
-            {name:'fraccion'                , typeName:'integer'},
-            {name:'barrio'                  , typeName:'integer'},
+            {name:'comuna'                  , typeName:'text'},
+            {name:'fraccion'                , typeName:'text'},
+            {name:'barrio'                  , typeName:'text'},
             {name:'numero'                  , typeName:'text'},
         ],
         primaryKey:['comuna', 'fraccion'],
         foreignKeys: [
             {references:'comunas', fields:['comuna']},
-            {references:'barrios', fields:['barrio']}
+            {references:'barrios', fields:['comuna','barrio']}
         ],
-        constraints: [
-            {constraintType: 'unique', fields: ['comuna', 'fraccion']},
+        detailTables: [
+            {table: "radios", fields: ["comuna","fraccion"], abr: "r", label:"radioss"}
         ],
     };
 }

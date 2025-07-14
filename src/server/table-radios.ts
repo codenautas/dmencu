@@ -9,10 +9,10 @@ export function radios(context:TableContext):TableDefinition {
         elementName:'radio',
         editable:puedeEditar,
         fields:[
-            {name:'comuna'                  , typeName:'integer'},
-            {name:'fraccion'                , typeName:'integer'},
-            {name:'radio'                   , typeName:'integer'},
-            {name:'numero'                    , typeName:'text'},
+            {name:'comuna'                  , typeName:'text'},
+            {name:'fraccion'                , typeName:'text'},
+            {name:'radio'                   , typeName:'text'},
+            {name:'numero'                  , typeName:'text'},
         ],
         primaryKey:['comuna', 'fraccion', 'radio'],
         foreignKeys: [

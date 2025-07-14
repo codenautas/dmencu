@@ -9,11 +9,11 @@ export function manzanas(context:TableContext):TableDefinition {
         elementName:'manzana',
         editable:puedeEditar,
         fields:[
-            {name:'comuna'                  , typeName:'integer'},
-            {name:'fraccion'                , typeName:'integer'},
-            {name:'radio'                   , typeName:'integer'},
-            {name:'manzana'                 , typeName:'integer'},
-            {name:'numero'                  , typeName:'text'},
+            {name:'comuna'            , typeName:'text'},
+            {name:'fraccion'          , typeName:'text'},
+            {name:'radio'             , typeName:'text'},
+            {name:'manzana'           , typeName:'text'},
+            {name:'numero'            , typeName:'text'},
         ],
         primaryKey:['comuna', 'fraccion', 'radio', 'manzana'],
         foreignKeys: [

@@ -9,8 +9,8 @@ export function barrios(context:TableContext):TableDefinition {
         elementName:'barrio',
         editable:puedeEditar,
         fields:[
-            {name:'comuna'                  , typeName:'integer'},
-            {name:'barrio'                  , typeName:'integer'},
+            {name:'comuna'                  , typeName:'text'},
+            {name:'barrio'                  , typeName:'text'},
             {name:'nombre_barrio'           , typeName:'text'},
         ],
         primaryKey:['comuna', 'barrio'],
