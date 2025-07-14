@@ -11,7 +11,7 @@ export function barrios(context:TableContext):TableDefinition {
         fields:[
             {name:'comuna'                  , typeName:'text'},
             {name:'barrio'                  , typeName:'text'},
-            {name:'nombre_barrio'           , typeName:'text'},
+            {name:'nombre'                  , typeName:'text'},
         ],
         primaryKey:['comuna', 'barrio'],
         foreignKeys: [
