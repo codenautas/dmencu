@@ -19,8 +19,8 @@ export function radios(context:TableContext):TableDefinition {
             {references:'comunas', fields:['comuna']},
             {references:'fracciones', fields:['comuna', 'fraccion']}
         ],
-        constraints: [
-            {constraintType: 'unique', fields: ['comuna', 'fraccion', 'radio']},
+        detailTables: [
+            {table: "manzanas", fields: ["comuna","fraccion","radio"], abr: "m", label:"manzanas"}
         ],
     };
 }
