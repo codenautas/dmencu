@@ -9,9 +9,16 @@ export function barrios(context:TableContext):TableDefinition {
         elementName:'barrio',
         editable:puedeEditar,
         fields:[
+            {name:'comuna'                  , typeName:'integer'},
             {name:'barrio'                  , typeName:'integer'},
             {name:'nombre_barrio'           , typeName:'text'},
         ],
-        primaryKey:['barrio'],
+        primaryKey:['comuna', 'barrio'],
+        foreignKeys: [
+            {references:'comunas', fields:['comuna']},
+        ],
+        detailTables: [
+            {table: "fracciones", fields: ["comuna", "barrio"], abr: "f", label:"fracciones"}
+        ],
     };
 }

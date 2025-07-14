@@ -13,5 +13,8 @@ export function comunas(context:TableContext):TableDefinition {
             {name:'zona'                    , typeName:'text'},
         ],
         primaryKey:['comuna'],
+        detailTables: [
+            {table: "barrios", fields: ["comuna", "barrio"], abr: "b", label:"barrios"}
+        ],
     };
 }
