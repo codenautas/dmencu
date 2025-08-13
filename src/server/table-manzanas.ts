@@ -20,9 +20,6 @@ export function manzanas(context:TableContext):TableDefinition {
             {references:'comunas', fields:['comuna']},
             {references:'fracciones', fields:['comuna', 'fraccion']},
             {references:'radios', fields:['comuna', 'fraccion', 'radio']},
-        ],
-        constraints: [
-            {constraintType: 'unique', fields: ['comuna', 'fraccion', 'radio', 'manzana']},
-        ],
+        ]
     };
 }
