@@ -20,7 +20,7 @@ export function fracciones(context:TableContext):TableDefinition {
             {references:'barrios', fields:['comuna','barrio']}
         ],
         detailTables: [
-            {table: "radios", fields: ["comuna","fraccion"], abr: "r", label:"radioss"}
+            {table: "radios", fields: ["comuna","fraccion"], abr: "r", label:"radios"}
         ],
     };
 }
