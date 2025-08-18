@@ -15,7 +15,7 @@ export function comunas(context:TableContext):TableDefinition {
         ],
         primaryKey:['comuna'],
         detailTables: [
-            {table: "barrios", fields: ["comuna"], abr: "b", label:"barrios"}
+            {table: "barrios", fields: ["comuna"], abr: "b", label:"barrios"},
             {table: "fracciones", fields: ["comuna"], abr: "f", label:"fracciones"}
         ],
     };
