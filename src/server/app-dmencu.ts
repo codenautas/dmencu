@@ -572,11 +572,6 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         {menuType:'table', name:'zona'   , table:'control_campo_zona'  },
         {menuType:'table', name:'comuna' , table:'control_campo_comuna'},
         {menuType:'table', name:'área'   , table:'control_campo_area'  },
-        {menuType:'table', name:'comuna' , table:'comunas'},
-        {menuType:'table', name:'barrio' , table:'barrios'},
-        {menuType:'table', name:'fraccion', table:'fracciones'},
-        {menuType:'table', name:'radio'  , table:'radios' },
-        {menuType:'table', name:'manzana', table:'manzanas'},
     ]};
     getMenuVarios(context:Context) { 
         let submenuVarios:MenuInfoBase[] = [{menuType: 'abrir_encuesta', name: 'abrir_encuesta'}]
@@ -627,6 +622,22 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         }
         return {menuType:'menu', name:'recepcion', label:'recepción' ,menuContent:submenuRecepcion}
     }
+
+    getMenuCarto(context:Context) {
+        let submenuCarto:MenuInfoBase[] = []
+        if(context.puede?.campo?.administrar){
+            submenuCarto.push(
+                {menuType:'table', name:'comunas'    , table:'comunas'},
+                {menuType:'table', name:'barrios'    , table:'barrios'},
+                {menuType:'table', name:'fracciones' , table:'fracciones'},
+                {menuType:'table', name:'radios'     , table:'radios' },
+                {menuType:'table', name:'manzanas'   , table:'manzanas'},
+            )
+            return {menuType:'menu'  , name:'carto', label:'cartografía', menuContent:submenuCarto}
+        }
+        return null
+    }
+
     getMenu(context:Context){
         let menu:MenuInfoBase[] = [];
         if(this.config.server.policy=='web'){
@@ -729,6 +740,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             if(menuConfigurar.length){
                 menu.push({menuType:'menu', name:'configurar', menuContent:menuConfigurar});
             }
+            const menuCarto = this.getMenuCarto(context);
+            if(menuCarto){
+                menu.push(menuCarto);
+            }
         }
         return {menu};
     }
@@ -795,10 +810,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 {nombre:'control_campo_comuna', title:'control campo x zona solo cemento', camposCorte:[{name:'zona', typeName:'text'}], sinhogfin:!context.be.caches.tableContent.conReaHogar.con_rea_hogar,filtroWhere:'dominio=3' }
             )
             , control_campo_comuna: context=>control_campo(context, 
-                {nombre:'control_campo_comuna', title:'control campo x comuna solo cemento', camposCorte:[{name:'zona', typeName:'text'},{name:'nrocomuna', typeName:'integer'}], sinhogfin:!context.be.caches.tableContent.conReaHogar.con_rea_hogar,filtroWhere:'dominio=3' }
+                {nombre:'control_campo_comuna', title:'control campo x comuna solo cemento', camposCorte:[{name:'zona', typeName:'text'},{name:'nrocomuna', typeName:'text'}], sinhogfin:!context.be.caches.tableContent.conReaHogar.con_rea_hogar,filtroWhere:'dominio=3' }
             )
             , control_campo_area: context=>control_campo(context, 
-                {nombre:'control_campo_comuna', title:'control campo x area', camposCorte:[{name:'zona', typeName:'text'},{name:'nrocomuna', typeName:'integer'},{name:'area', typeName:'integer'},{name:'participacion_a', typeName:'text'},{name:'clase_a', typeName:'text'}] ,sinhogfin:!context.be.caches.tableContent.conReaHogar.con_rea_hogar}
+                {nombre:'control_campo_comuna', title:'control campo x area', camposCorte:[{name:'zona', typeName:'text'},{name:'nrocomuna', typeName:'text'},{name:'area', typeName:'integer'},{name:'participacion_a', typeName:'text'},{name:'clase_a', typeName:'text'}] ,sinhogfin:!context.be.caches.tableContent.conReaHogar.con_rea_hogar}
             )
             , control_campo_participacion: context=>control_campo(context, 
                 {nombre:'control_campo_comuna', title:'control campo x participacion', camposCorte:[{name:'participacion', typeName:'bigint'}],sinhogfin:!context.be.caches.tableContent.conReaHogar.con_rea_hogar}

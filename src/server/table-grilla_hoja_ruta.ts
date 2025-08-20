@@ -40,7 +40,7 @@ export function grilla_hoja_ruta(context:TableContext):TableDefinition {
             {name:'barrio'               , typeName:'text'    , editable: false  },
             {name:'codpos'               , typeName:'integer' , editable: false  },
            // {name:'dominio'              , typeName:'integer' , editable: false  },
-            {name:'nrocomuna'            , typeName:'integer' , editable: false  },
+            {name:'nrocomuna'            , typeName:'text'    , editable: false  },
             {name:'nrofraccion'          , typeName:'integer' , editable: false  },
             {name:'nroradio'             , typeName:'integer' , editable: false  },
             {name:'nromanzana'           , typeName:'integer' , editable: false  },

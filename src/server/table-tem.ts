@@ -112,7 +112,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {name:'estrato_ing'          , typeName:'integer' , editable: false  },
             {name:'id_marco'             , typeName:'bigint'  , editable: false  },
             {name:'obs'                  , typeName:'text'    , editable: false  },
-            {name:'nrocomuna'            , typeName:'integer' , editable: false  },
+            {name:'nrocomuna'            , typeName:'text'    , editable: false  },
             {name:'nrofraccion'          , typeName:'integer' , editable: false  },
             {name:'nroradio'             , typeName:'integer' , editable: false  },
             {name:'nromanzana'           , typeName:'integer' , editable: false  },

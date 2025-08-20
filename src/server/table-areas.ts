@@ -15,7 +15,7 @@ select
     --sum(case when cluster <>4 then null when confirmada is true then 1 else 0 end) as confirmadas,
     --sum(case when cluster <>4 then null when confirmada is null then 1 else 0 end) as pend_conf,
     string_agg(distinct clase,', ' order by clase desc) as clases,
-    string_agg(distinct nrocomuna::text,'-' order by nrocomuna::text)::text as comuna
+    string_agg(distinct nrocomuna,'-' order by nrocomuna)::text as comuna
     , string_agg(distinct cluster::text,', ' order by cluster::text desc) as clusters
     ${be.caches.tableContent.no_rea_groups.map(x=>
         `, sum(CASE WHEN gru_no_rea=${be.db.quoteLiteral(x.grupo)} THEN 1 ELSE NULL END) as ${be.db.quoteIdent(x.grupo.replace(/ /g,'_'))}`
