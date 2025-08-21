@@ -12,7 +12,7 @@ export function radios(context:TableContext):TableDefinition {
             {name:'comuna'                  , typeName:'text'},
             {name:'fraccion'                , typeName:'text'},
             {name:'radio'                   , typeName:'text'},
-            {name:'nombre'                  , typeName:'text'},
+            {name:'nombre'                  , typeName:'text', isName:true},
         ],
         primaryKey:['comuna', 'fraccion', 'radio'],
         foreignKeys: [

@@ -10,7 +10,7 @@ export function comunas(context:TableContext):TableDefinition {
         editable:puedeEditar,
         fields:[
             {name:'comuna'                  , typeName:'text'},
-            {name:'nombre'                  , typeName:'text'},
+            {name:'nombre'                  , typeName:'text', isName:true},
             {name:'zona'                    , typeName:'text'},
         ],
         primaryKey:['comuna'],

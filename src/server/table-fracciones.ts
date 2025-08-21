@@ -11,7 +11,7 @@ export function fracciones(context:TableContext):TableDefinition {
         fields:[
             {name:'comuna'                  , typeName:'text'},
             {name:'fraccion'                , typeName:'text'},
-            {name:'nombre'                  , typeName:'text'},
+            {name:'nombre'                  , typeName:'text', isName:true},
             {name:'barrio'                  , typeName:'text'},
         ],
         primaryKey:['comuna', 'fraccion'],

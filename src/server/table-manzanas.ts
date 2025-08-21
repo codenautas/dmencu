@@ -13,7 +13,7 @@ export function manzanas(context:TableContext):TableDefinition {
             {name:'fraccion'          , typeName:'text'},
             {name:'radio'             , typeName:'text'},
             {name:'manzana'           , typeName:'text'},
-            {name:'nombre'            , typeName:'text'},
+            {name:'nombre'            , typeName:'text', isName:true},
         ],
         primaryKey:['comuna', 'fraccion', 'radio', 'manzana'],
         foreignKeys: [
