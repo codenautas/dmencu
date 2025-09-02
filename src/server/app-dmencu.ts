@@ -696,6 +696,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 let submenuMuestra:MenuInfoBase[] = [
                     {menuType:'table', name:'tem', label: 'TEM'},
                     {menuType:'proc',  name:'muestra_generar', label:'generar muestra'},
+                    {menuType:'table', name:'semanas'},
                 ]
                 menuConfigurar.push(
                     {menuType:'menu', name:'muestra', label:'muestra', menuContent:submenuMuestra}

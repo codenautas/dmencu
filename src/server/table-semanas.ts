@@ -1,32 +1,30 @@
-"use strict";
-
+"use_strict";
 import {TableDefinition, TableContext} from "./types-dmencu";
 
-export function semanas(context:TableContext):TableDefinition {
-    var admin = context.user.rol==='admin';
+export function semanas(context:TableContext):TableDefinition{
     return {
         name:'semanas',
-        elementName:'semana',
-        editable:admin,
+        title:'Semanas',
+        editable: context.user.rol==='admin' || context.user.rol==='coor_campo',
         fields:[
-            {name:'semana'          , typeName:'integer'   },
-            {name:'encuestas'       , typeName:'integer'   , isName:true     },
+            {name:'operativo', typeName:'text', nullable:false},
+            {name:'semana', typeName:'integer', nullable:false},
+            {name:'semana_referencia_desde', typeName:'date'},
+            {name:'semana_referencia_hasta', typeName:'date'},
+            {name:'30dias_referencia_desde', typeName:'date'},
+            {name:'30dias_referencia_hasta', typeName:'date'},
+            {name:'mes_referencia', typeName:'date'},
+            {name:'carga_enc_desde', typeName:'date'},
+            {name:'carga_enc_hasta', typeName:'date'},
+            {name:'carga_recu_desde', typeName:'date'},
+            {name:'carga_recu_hasta', typeName:'date'},
         ],
-        primaryKey:['semana'],
-        detailTables:[
-            {table:'tem'          , fields:['semana'], abr:'E', label:'TEM'},
+        primaryKey:['operativo', 'semana'],
+        foreignKeys:[
+            {references: 'operativos' , fields:["operativo"]},
         ],
-        sql:{
-            from:`(
-                select semana, 
-                        count(*) as encuestas 
-                    from tem
-                    where semana is not null
-                    group by semana
-                    order by semana
-            )`,
-            isTable:false
-        }
+        constraints:[
+            {consName:'El día de sem_mes_referencia debe ser 1', constraintType:'check', expr:'comun.es_dia_1(mes_referencia)'}
+        ],
     };
 }
-

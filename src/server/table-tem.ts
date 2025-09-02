@@ -169,6 +169,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
                 ],
                 alias:'taract'
             },
+            {references:'semanas', fields:["operativo", "semana"]}
         //    {references:'usuarios', fields:[{source:'carga_persona', target:'idper'}], displayFields:['apellido','nombre']},
         ],        
         softForeignKeys:[
