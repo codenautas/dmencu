@@ -9,6 +9,7 @@ export function no_rea(context:TableContext):TableDefinition {
         elementName:'no_rea',
         editable:puedeEditar,
         fields:[
+            {name:'operativo'               , typeName:'text', nullable:false},
             {name:'no_rea'                  , typeName:'text'},
             {name:'descripcion'             , typeName:'text'},
             {name:'grupo'                   , typeName:'text'},
@@ -18,7 +19,8 @@ export function no_rea(context:TableContext):TableDefinition {
             {name:'pasa_a_recuperacion'     , typeName:'boolean', nullable:false, defaultDbValue:'false'},
             {name:'pasa_a_supervision'      , typeName:'boolean', nullable:false, defaultDbValue:'false'},
         ],
-        primaryKey:['no_rea'],
+        primaryKey:['operativo', 'no_rea'],
+        foreignKeys:[{references:'operativos', fields:['operativo']}],
     };
 }
 
