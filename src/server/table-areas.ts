@@ -20,7 +20,7 @@ select
     ${be.caches.tableContent.no_rea_groups.map(x=>
         `, sum(CASE WHEN gru_no_rea=${be.db.quoteLiteral(x.grupo)} THEN 1 ELSE NULL END) as ${be.db.quoteIdent(x.grupo.replace(/ /g,'_'))}`
     ).join('')}
-from ( select operativo, enc, cluster, nrocomuna, clase, 
+from ( select t.operativo, enc, cluster, nrocomuna, clase, 
             json_encuesta, t.resumen_estado,  
             t.rea, t.norea, area, dominio, zona,
             json_backup, grupo as gru_no_rea
