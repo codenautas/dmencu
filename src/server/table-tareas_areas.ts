@@ -17,7 +17,7 @@ export function tareas_areas(context:TableContext, opts?:OptsAsignados):TableDef
         {name:'operativo'               , typeName:'text'   ,isPk:1},
         {name:'tarea'                   , typeName:'text'   ,isPk:2},
         {name:'area'                    , typeName:'integer',isPk:3},
-        {name:'recepcionista'           , typeName:'text', references: 'personal'},
+        {name:'recepcionista'           , typeName:'text', references: 'recepcionistas', title:'recep'},
         {name:'asignado'                , typeName:'text', references: 'personal', title:opts.name},
         {name:'cargado'                 , typeName:'boolean', editable: false, inTable: false},
         {name:'verificado_recepcion'    , typeName:'text'                      },
@@ -38,7 +38,7 @@ export function tareas_areas(context:TableContext, opts?:OptsAsignados):TableDef
             {references:'tareas', fields:['operativo','tarea']},
             {references:'areas',  fields:['operativo','area'], displayAllFields:true, displayAfterFieldName:'cargado'},
             {references:'usuarios', fields:[{source:'recepcionista', target:'idper'}], alias:'recepcionista', displayFields:['nombre','apellido']},
-            {references:'usuarios', fields:[{source:'asignado'     , target:'idper'}], alias:'asignado', displayFields:['nombre','apellido']},
+            {references:'usuarios', fields:[{source:'asignado'     , target:'idper'}], alias:'asignado', displayFields:['nombre','apellido','dispositivo']},
         ],
         detailTables:[
             {table:`tareas_tem`, fields:['operativo', 'tarea', 'area'], abr:'T', refreshParent:true, refreshFromParent:true},
@@ -58,7 +58,7 @@ export function tareas_areas(context:TableContext, opts?:OptsAsignados):TableDef
 }
 
 export function t_encu_areas(context:TableContext){
-    var tableDef = tareas_areas(context, {tarea:'encu', name:'encuestador'}) 
+    var tableDef = tareas_areas(context, {tarea:'encu', name:'encu'}) 
     tableDef.hiddenColumns?.push('areas__encuestador');
     tableDef.sql!.isTable = false;
     tableDef.detailTables=[
@@ -68,7 +68,7 @@ export function t_encu_areas(context:TableContext){
 }
 
 export function t_ingr_areas(context:TableContext){
-    var tableDef = tareas_areas(context, {tarea:'ingr', name:'ingresador'}) 
+    var tableDef = tareas_areas(context, {tarea:'ingr', name:'ingr'}) 
     tableDef.hiddenColumns?.push('areas__encuestador');
     tableDef.sql!.isTable = false;
     tableDef.detailTables=[
@@ -78,7 +78,7 @@ export function t_ingr_areas(context:TableContext){
 }
 
 export function t_recu_areas(context:TableContext){
-    var tableDef = tareas_areas(context, {tarea:'ingr', name:'ingresador'}) 
+    var tableDef = tareas_areas(context, {tarea:'recu', name:'recu'}) 
     tableDef.hiddenColumns?.push('areas__encuestador');
     tableDef.sql!.isTable = false;
     tableDef.detailTables=[
@@ -88,7 +88,7 @@ export function t_recu_areas(context:TableContext){
 }
 
 export function t_supe_areas(context:TableContext){
-    var tableDef = tareas_areas(context, {tarea:'supe', name:'supervisor'}) 
+    var tableDef = tareas_areas(context, {tarea:'supe', name:'supe'}) 
     tableDef.hiddenColumns?.push('areas__encuestador');
     tableDef.sql!.isTable = false;
     tableDef.detailTables=[

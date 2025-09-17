@@ -61,7 +61,7 @@ export function areas(context:TableContext):TableDefinition {
             {name: 'area'                   , typeName: 'integer', nullable: false, editable: false},
             {name:'clusters'                , typeName:'text'    , visible: false , inTable:false },
             {name:'recepcionista'           , typeName:'text', references:'recepcionistas'},
-            {name:'encuestador'             , typeName:'text'                    },
+            {name:'encuestador'             , typeName:'text', references:'personal'      },
             //{name:'recuperador'             , typeName:'text'                    },
             //{name:'supervisor'              , typeName:'text'                    },
             {name:'observaciones_hdr'       , typeName:'text'                      },
@@ -80,7 +80,10 @@ export function areas(context:TableContext):TableDefinition {
         primaryKey:["operativo",'area'],
         foreignKeys:[
             {references:'operativos', fields:['operativo']},
-            {references:'usuarios', fields:[{source:'recepcionista', target:'idper'}], alias:'per_recep', displayFields:[]},
+            //{references:'usuarios', fields:[{source:'recepcionista', target:'idper'}], alias:'per_recep', displayFields:[]},
+            {references:'usuarios', fields:[{source:'recepcionista', target:'idper'}], alias:'recepcionista', displayFields:['nombre','apellido']},
+            {references:'usuarios', fields:[{source:'encuestador'     , target:'idper'}], alias:'encuestador', displayFields:['nombre','apellido', 'dispositivo']},
+
         ],
         //softForeignKeys:[
         //    {references:'encuestadores', fields:[{source:'encuestador', target:'persona'}], alias:'per_encu'},
