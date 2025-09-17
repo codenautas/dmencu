@@ -17,7 +17,16 @@ CREATE OR REPLACE FUNCTION comun.informado("P_valor" text)
 $BODY$SELECT $1 !~ '^\s*$' AND $1 IS NOT NULL$BODY$
   LANGUAGE sql IMMUTABLE;
 
-
+CREATE OR REPLACE FUNCTION comun.es_dia_1(
+	p_fecha date)
+    RETURNS boolean
+    LANGUAGE 'sql'
+    COST 100
+    IMMUTABLE PARALLEL UNSAFE
+AS $BODY$
+  
+SELECT coalesce(extract(DAY from $1::timestamp),1) is not distinct from 1; --la tabla por ahora no tiene la restriccion q no sea null este campo
+$BODY$;
 
 --NSNC
 CREATE OR REPLACE FUNCTION comun.nsnc("P_valor" anyelement)

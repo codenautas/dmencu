@@ -696,6 +696,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 let submenuMuestra:MenuInfoBase[] = [
                     {menuType:'table', name:'tem', label: 'TEM'},
                     {menuType:'proc',  name:'muestra_generar', label:'generar muestra'},
+                    {menuType:'table', name:'semanas'},
                 ]
                 menuConfigurar.push(
                     {menuType:'menu', name:'muestra', label:'muestra', menuContent:submenuMuestra}
@@ -915,19 +916,6 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 editable: false,
                 defaultDbValue: 'false'
             });
-        })
-        be.appendToTableDefinition('usuarios',function(tableDef, context){
-            let claveNuevaField = tableDef.fields.find((field)=>field.name == 'clave_nueva')!;
-            var adminOCoord = 'admin'===context?.user.rol||context?.puede?.campo?.administrar;
-            claveNuevaField.allow = {select:adminOCoord, update:true, insert:false};
-            tableDef.fields.push(
-                {name:'muestra_encuestas_prod'  , typeName:'boolean',  editable:true, defaultDbValue:'true'},
-                {name:'muestra_encuestas_capa'  , typeName:'boolean',  editable:true}
-            )
-            tableDef.constraints = tableDef.constraints ||[];
-            tableDef.constraints.push(
-                {consName:'muestra encuestas not false', constraintType:'check', expr:'muestra_encuestas_prod is not false and muestra_encuestas_capa is not false'}
-            )
         })
         be.appendToTableDefinition('variables',function(tableDef, context){
             var esAdmin= context?.user.rol==='admin';
