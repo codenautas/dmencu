@@ -23,7 +23,7 @@ export function usuarios(context:TableContext):TableDefinition{
             {name:'telefono'         , typeName:'text'    , title:'teléfono'},
             {name:'interno'          , typeName:'text'                      },
             {name:'cuit'             , typeName:'text'                      },
-            {name:'recepcionista'    , typeName:'text'                      },
+            {name:'recepcionista'    , typeName:'text'    , references: 'recepcionistas' },
             {name:'mail'             , typeName:'text'                      },
             {name:'mail_alternativo' , typeName:'text'                      },
             {name:'rol2'             , typeName:'text'    , editable: admin , visible:false},
@@ -35,6 +35,7 @@ export function usuarios(context:TableContext):TableDefinition{
         constraints:[
             {constraintType:'unique', fields:['idper']},
             {constraintType:'unique', fields:['idper','rol']},
+            {constraintType:'unique', fields:['dispositivo']},
             {consName:'muestra encuestas not false', constraintType:'check', expr:'muestra_encuestas_prod is not false and muestra_encuestas_capa is not false'}
         ],
         foreignKeys:[
