@@ -45,6 +45,7 @@ export function usuarios(context:TableContext):TableDefinition{
         sql:{
             where:admin || context.forDump?'true':// "usuarios.usuario = "+q(context.user.usuario)
             `usuarios.rol in (select rol_subordinado from roles_subordinados where rol = ${q(rol)})`
-        }
+        },
+        hiddenColumns: ['recepcionista__dispositivo'],
     };
 }
