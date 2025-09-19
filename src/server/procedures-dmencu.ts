@@ -251,7 +251,7 @@ var simularGuardadoDeEncuestaDesdeAppEscritorio = async (context: ProcedureConte
 var getHdrQuery =  function getHdrQuery(quotedCondViv:string, context:ProcedureContext, unidadAnalisisPrincipal:IdUnidadAnalisis, permiteGenerarMuestra:boolean){
     return `
     with ${context.be.db.quoteIdent(unidadAnalisisPrincipal)} as 
-        (select t.enc, t.json_encuesta as respuestas, t.resumen_estado as "resumenEstado", 
+        (select t.operativo, t.enc, t.json_encuesta as respuestas, t.resumen_estado as "resumenEstado", 
             jsonb_build_object(
                 'dominio'       , dominio       ,
                 'nomcalle'      , nomcalle      ,
@@ -279,7 +279,7 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string, context:ProcedureC
             from tem t left join tareas_tem tt on (t.operativo = tt.operativo and t.enc = tt.enc and t.tarea_actual = tt.tarea)
                        left join tareas ta on t.tarea_actual = ta.tarea
             where t.habilitada and ${quotedCondViv}
-            group by t.enc, t.json_encuesta, t.resumen_estado, dominio, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area, tt.tarea, fecha_asignacion, asignado, main_form
+            group by t.operativo, t.enc, t.json_encuesta, t.resumen_estado, dominio, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area, tt.tarea, fecha_asignacion, asignado, main_form
         )
         select jsonb_build_object(
                 ${context.be.db.quoteLiteral(unidadAnalisisPrincipal)}, ${jsono(
@@ -290,7 +290,7 @@ var getHdrQuery =  function getHdrQuery(quotedCondViv:string, context:ProcedureC
             ) as respuestas,
             ${json(`
                 select a.area as carga, observaciones_hdr as observaciones, min(fecha_asignacion) as fecha, ta.recepcionista
-                    from ${context.be.db.quoteIdent(unidadAnalisisPrincipal)} aux inner join areas a using (area) inner join tareas_areas ta on (a.area = ta.area and aux.tarea->>'tarea' = ta.tarea)
+                    from ${context.be.db.quoteIdent(unidadAnalisisPrincipal)} aux inner join areas a using (operativo, area) inner join tareas_areas ta on (a.area = ta.area and aux.tarea->>'tarea' = ta.tarea)
                     group by a.area, observaciones_hdr, ta.recepcionista 
                 ${permiteGenerarMuestra?`
                     union -- este union permite visualizar areas asignadas sin encuestas generadas
