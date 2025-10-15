@@ -24,7 +24,7 @@ myOwn.autoSetupFunctions.push(async ()=>{
         parameters:[
             {name:'operativo' , typeName:'text', defaultValue:OPERATIVO_DEFAULT, references:'operativos'},
             {name:'tarea'     , typeName:'text', defaultValue:TAREA_DEFAULT, references: 'tareas'},
-            {name:'enc'       , typeName:'integer', defaultValue:130031}
+            {name:'enc'       , typeName:'text', defaultValue:'130031'}
         ],
         autoproced:true,
         mainAction:async (params)=>{
@@ -62,7 +62,7 @@ myOwn.autoSetupFunctions.push(async ()=>{
         mainAction:async (_params)=>{
             // antes: abrirDirecto
             var {operativo, tarea} = {operativo: OPERATIVO_DEFAULT, tarea: TAREA_DEFAULT};
-            let enc = parseInt(await my.ajax.get_random_free_case({operativo})); 
+            let enc = await my.ajax.get_random_free_case({operativo}); 
             await myOwn.wScreens.abrir_encuesta.mainAction({operativo, enc, tarea});
         }
     };
@@ -388,7 +388,7 @@ const abrirEncuestaEnPestanniaDedicada = (url:string)=>{
     window.open(url, ABRIR_TAB);
 }
 
-var crearBotonVerAbrirEncuesta = (operativo:IdOperativo,tarea:IdTarea,encuesta:number, label:string)=>{
+var crearBotonVerAbrirEncuesta = (operativo:IdOperativo,tarea:IdTarea,encuesta:string, label:string)=>{
     var up = {
         operativo:operativo,
         tarea:tarea,
