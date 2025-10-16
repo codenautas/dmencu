@@ -379,7 +379,7 @@ export type Estructura = {
     defaultInformacionHdr: DatosHdrUaPpal
 }
 
-export type IdEnc = 130031|130032;
+export type IdEnc = '130031'|'130032';
 export type InformacionHdr={[enc in IdEnc]: DatosHdrUaPpal}
 
 export type CasoState={

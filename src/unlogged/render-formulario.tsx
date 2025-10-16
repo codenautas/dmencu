@@ -1844,7 +1844,7 @@ setDesplegarLineaResumenUAPrincipal((props:{
     const {numVivienda, respuestas, formPrincipal, tarea} = props;
     const id='viv-'+numVivienda;
     const estructura = getEstructura();
-    const forPk:ForPk={formulario:formPrincipal, [estructura.pkAgregadaUaPpal]:Number(numVivienda) as IdEnc} as ForPk; //no quitar el casteo porque viene como texto y necesito que sea número
+    const forPk:ForPk={formulario:formPrincipal, [estructura.pkAgregadaUaPpal]:numVivienda as IdEnc} as ForPk; //no quitar el casteo porque viene como texto y necesito que sea número
     var tem = getDatosByPass().informacionHdr[numVivienda].tem;
     const dispatch = useDispatch();
     useEffect(()=>{
@@ -1888,7 +1888,7 @@ setDesplegarLineaResumenUAPrincipal((props:{
             <Button id={id} onClick={()=> 
                 dispatch(dispatchers.CAMBIAR_FORMULARIO({forPk, apilarVuelta:false}))
             }>
-                {numVivienda.toString()}
+                {numVivienda}
             </Button>
         </TableCell>
     </TableRow>

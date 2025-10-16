@@ -70,7 +70,7 @@ myOwn.autoSetupFunctions.push(async ()=>{
         parameters:[
             {name:'operativo' , typeName:'text', defaultValue:OPERATIVO_DEFAULT, references:'operativos'},
             {name:'tarea'     , typeName:'text'},
-            {name:'enc'       , typeName:'integer'}
+            {name:'enc'       , typeName:'text'}
         ],
         autoproced:true,
         mainAction:async (params)=>{
@@ -410,7 +410,7 @@ var crearBotonesVerAbrirTareas = async (depot:myOwn.Depot, fieldName:string, lab
         let ver = crearBotonVerAbrirEncuesta(
             depot.row.operativo as IdOperativo,
             tarea.tarea as IdTarea, 
-            Number(depot.row.enc),
+            depot.row.enc,
             buttonLabel
         );
         ver.style='margin:0px 2px;';
@@ -502,7 +502,7 @@ var crearBotonAccion = (depot:myOwn.Depot, action:EstadoAccion)=>{
                     var up = {
                         operativo:params.operativo,
                         tarea:params.tarea,
-                        enc: Number(params.enc)
+                        enc: params.enc
                     }
                     abrirEncuestaEnPestanniaDedicada(location.origin+location.pathname+my.menuSeparator+`w=${action.nombre_wscreen}&up=${JSON.stringify(up)}&autoproced=true`)
                 }
