@@ -930,8 +930,18 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     if(Object.keys(respuestasUAPrincipal).length>0){
                         let carga = persistentes.cargas[persistentes.informacionHdr[idEnc].tem.carga];
                         var tarea = persistentes.informacionHdr[idEnc].tarea.tarea;
+                        const cargaTareasAreas = (await context.client.query(
+                                `select recepcionista
+                                    from tareas_areas
+                                    where operativo= $1 and tarea = $2 and area = $3 --pk verificada
+                                `,
+                                [OPERATIVO, tarea, carga.carga]
+                            ).fetchUniqueValue()).value;
+                        if(!cargaTareasAreas && !carga.recepcionista){
+                            throw Error(`no se definió un recepcionista para el operativo ${OPERATIVO}, tarea ${tarea}, área ${carga.carga}, por favor comuniquesé con GABINETE para que carguen un recepcionista`)
+                        }
                         if(Number(idEnc)<0){
-                            idEnc = await persistirEncuestaAutogeneradaEnDM(context, OPERATIVO, carga.carga, idEnc, token, respuestasUAPrincipal, carga.recepcionista, context.user.idper, modo_dm, cambia_modo_dm);
+                            idEnc = await persistirEncuestaAutogeneradaEnDM(context, OPERATIVO, carga.carga, idEnc, token, respuestasUAPrincipal, carga.recepcionista || cargaTareasAreas, context.user.idper, modo_dm, cambia_modo_dm);
                         }
                         var puedoGuardarEnTEM=true;
                         var {params,setters} = getSettersAndParametersForReaNoReaResumenEstado({
