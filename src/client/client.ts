@@ -735,6 +735,17 @@ myOwn.wScreens.proc.result.mostrar_encuestas_a_blanquear=function(result, divRes
     }
 }
 
+myOwn.wScreens.proc.result.download_sql = function(result, divResult) {
+    const url = window.URL.createObjectURL(new Blob([result], { type: 'text/sql' }));
+
+    divResult.innerHTML = '';
+
+    const link = html.a('Descargar archivo SQL').create()
+    link.href = url;
+    link.download = 'migrar_operativo.sql';
+    divResult.appendChild(link);
+}
+
 const previsualizarEncuesta = (
     resultTem:any, 
     divResult:HTMLDivElement, 
