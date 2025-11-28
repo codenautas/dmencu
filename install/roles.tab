@@ -1,14 +1,14 @@
-rol|superuser|nombre
-admin|true|Administrador
-auxiliar|false|Auxiliar de campo
-coor_campo|false|Coordinador de Campo
-coor_proc|false|Coordinador de Procesamiento
-direccion|false|Dirección
-dis_conceptual|false|Diseño Conceptual
-encuestador|false|Encuestador
-ingresador|false|Ingresador
-procesamiento|false|Procesamiento
-recepcionista|false|Recepcionista
-recuperador|false|Recuperador
-subcoor_campo|false|Subcoordinador de Campo
-supervisor|false|Supervisor
+rol           |superuser|nombre
+admin         |true     |Administrador
+auxiliar      |false    |Auxiliar de campo
+coor_campo    |false    |Coordinador de Campo
+direccion     |false    |Dirección
+encuestador   |false    |Encuestador
+dis_conceptual|false    |Diseño Conceptual
+recepcionista |false    |Recepcionista
+procesamiento |false    |Procesamiento
+recuperador   |false    |Recuperador
+supervisor    |false    |Supervisor
+ingresador    |false    |Ingresador
+subcoor_campo |false    |Subcoordinador de Campo
+coor_proc     |false    |Coordinador de Procesamiento
