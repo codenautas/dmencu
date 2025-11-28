@@ -2197,4 +2197,23 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             return sql;
         }
     },
+        {
+        action:'encuesta_capa_a_prod_pasar',
+        parameters:[
+            {name:'operativo'   , typeName:'text', references:'operativos'   },
+            {name:'enc'         , typeName:'text'},
+        ],
+        roles:['admin'],
+        coreFunction:async function(context:ProcedureContext, parameters: CoreFunctionParameters){
+            (await context.client.query(
+                `update tem
+                    set enc_autogenerado_dm = enc_autogenerado_dm_capa, enc_autogenerado_dm_capa = null
+                    where operativo = $1 and enc = $2 and enc_autogenerado_dm_capa is not null
+                    returning *`,
+                [parameters.operativo, parameters.enc]
+            ).fetchUniqueRow()).row;
+
+            return `se movió la encuesta ${parameters.enc} a producción`;
+        }
+    }
 ];
