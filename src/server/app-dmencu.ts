@@ -697,6 +697,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     {menuType:'table', name:'tem', label: 'TEM'},
                     {menuType:'proc',  name:'muestra_generar', label:'generar muestra'},
                     {menuType:'table', name:'semanas'},
+                    {menuType:'table', name:'no_rea'        , label:'no rea'},
                 ]
                 menuConfigurar.push(
                     {menuType:'menu', name:'muestra', label:'muestra', menuContent:submenuMuestra}

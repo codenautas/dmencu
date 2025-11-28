@@ -413,7 +413,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
             var be = context.be;
             var result = await context.client.query(
                 `select casilleros_jerarquizados($1) as formularios, 
-                    ${jsono(`select unidad_analisis, padre, pk_agregada, '{}'::jsonb as hijas from unidad_analisis where operativo = $2`, 'unidad_analisis')} as unidades_analisis
+                    ${jsono(`select unidad_analisis, padre, pk_agregada, '{}'::jsonb as hijas from unidad_analisis where operativo = $2 order by orden`, 'unidad_analisis')} as unidades_analisis
                 `,
                 [parameters.operativo, parameters.operativo]
             ).fetchUniqueRow();

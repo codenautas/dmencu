@@ -367,6 +367,7 @@ export type Estructura = {
 		  variable:  string
 		  valor:     string
 		  grupo0:    string
+          orden?:    number
 	}[]
     noReasSup: { 
         no_rea_sup: string  
@@ -375,6 +376,7 @@ export type Estructura = {
         variable_sup:  string
         valor_sup:     string
         grupo0_sup:    string
+        orden?:        number
   }[]
     defaultInformacionHdr: DatosHdrUaPpal
 }
