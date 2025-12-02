@@ -95,6 +95,7 @@ import { barrios             } from "./table-barrios";
 import { fracciones          } from "./table-fracciones";
 import { radios              } from "./table-radios";
 import { manzanas            } from "./table-manzanas";
+import { area_enc_proximas   } from "./table-area_enc_proximas";
 
 export * from "./types-dmencu";
 import {defConfig} from "./def-config"
@@ -697,6 +698,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     {menuType:'table', name:'tem', label: 'TEM'},
                     {menuType:'proc',  name:'muestra_generar', label:'generar muestra'},
                     {menuType:'table', name:'semanas'},
+                    {menuType:'table', name:'area_enc_proximas'},
                 ]
                 menuConfigurar.push(
                     {menuType:'menu', name:'muestra', label:'muestra', menuContent:submenuMuestra}
@@ -839,6 +841,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             , fracciones
             , radios
             , manzanas
+            , area_enc_proximas
         }
         be.appendToTableDefinition('consistencias',function(tableDef, context){
             tableDef.editable=tableDef.editable || context.puede?.encuestas?.procesar;

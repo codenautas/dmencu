@@ -58,6 +58,7 @@ install:
       - desverificar_tarea_trg.sql
       - inicial_update_varcal_por_encuesta.sql
       - diccionario_func.sql
+      - obtener_siguiente_contador_area.sql
 login:
   infoFieldList: [usuario, rol, idper, muestra_encuestas_prod, muestra_encuestas_capa]
   table: usuarios

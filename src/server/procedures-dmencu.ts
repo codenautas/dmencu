@@ -33,26 +33,27 @@ const OPERACION_PREPARAR_CARGA = 'cargar';
 const OPERACION_PREPARAR_DESCARGA = 'descargar';
 const DEFAULT_DOMINIO = 3;
 
-export type generarIdEncFun = (area:number,index:number)=>string
+export type generarIdEncFun = (area:number,index:number)=>IdEnc
 
 var generarIdEncFun: generarIdEncFun;  
-
-var maxAGenerar = 50
-
-var maxAEncPorArea = 100
+var maxAEncPorArea = 999
 
 export const setGenerarIdEncFun = (fun:generarIdEncFun)=>
     generarIdEncFun = fun;
 
-export const setMaxAgenerar = (max:number)=>
+export const setMaxEncPorArea = (max:number)=>
     maxAEncPorArea = max;
 
-export const setMaxEncPorArea = (max:number)=>
-    maxAGenerar = max;
+setGenerarIdEncFun((area:number,numEnc:number)=>area.toString() + numEnc.toString().padStart(maxAEncPorArea.toString().length, '0') as unknown as IdEnc);
 
-setGenerarIdEncFun((area:number,index:number)=>area.toString() + (index+10).toString());
+setMaxEncPorArea(999);
 
-setMaxAgenerar(100);
+async function generarNuevoIdEnc(context:ProcedureContext,operativo: IdOperativo, area: number, maxAEncPorArea:number) {
+    const siguienteNumeroEncuesta = (await context.client.query(`
+        SELECT obtener_siguiente_contador_area($1,$2,$3) AS next_counter;
+    `, [operativo, area, maxAEncPorArea]).fetchUniqueValue()).value;
+    return generarIdEncFun(area, siguienteNumeroEncuesta);
+}
 
 export const getOperativoActual = async (context:ProcedureContext)=>{
     var be = context.be;
@@ -84,72 +85,64 @@ async function persistirEncuestaAutogeneradaEnDM(context: ProcedureContext, OPER
             from operativos 
             where operativo = $1
     `, [OPERATIVO]).fetchUniqueValue()).value;
-    if (permite_generar_muestra) {
-        let i = (await context.client.query(
-            `select count(*) as total
-                from tem
-                where operativo= $1 and area = $2`,
-            [OPERATIVO, area]
-        ).fetchUniqueValue()).value;
-        console.log(i);
-        const defaultTarea = await getDefaultTarea(context, OPERATIVO);
-        let enc = generarIdEncFun(area, i);
+    if (permite_generar_muestra){
         const autogeneradoField = modo_dm == 'produc'?'enc_autogenerado_dm':'enc_autogenerado_dm_capa';
-        const resultInsertTem = await context.client.query(`
-            INSERT into tem (
-                operativo,
-                enc,
-                area,
-                dominio,
-                habilitada,
-                ${context.be.db.quoteIdent(autogeneradoField)},
-                token_autogenerado_dm,
-                tarea_actual,
-                json_backup,
-                json_encuesta, 
-                fecha_backup
-            ) 
-                values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, current_timestamp)
-                on conflict (${context.be.db.quoteIdent(autogeneradoField)}, token_autogenerado_dm) do nothing
+        const resultUpdate = await context.client.query(`
+            UPDATE tem 
+                set (json_backup, json_encuesta, fecha_backup) = 
+                    ($4, $5, current_timestamp)
+                where (operativo = $1 and ${context.be.db.quoteIdent(autogeneradoField)} = $2 and token_autogenerado_dm = $3)
                 returning *
-        `,[
-            OPERATIVO,
-            enc,
-            area,
-            DEFAULT_DOMINIO,
-            true,
-            encAutogeneradoDm,
-            token,
-            defaultTarea.tarea,
-            respuestasRaiz,
-            respuestasRaiz,
-        ]).fetchOneRowIfExists();
-        if(resultInsertTem.rowCount == 0){
-            idEnc = (await context.client.query(`
-                UPDATE tem 
-                    set (json_backup, json_encuesta, fecha_backup) = 
-                        ($4, $5, current_timestamp)
-                    where (operativo = $1 and ${context.be.db.quoteIdent(autogeneradoField)} = $2 and token_autogenerado_dm = $3)
+        `,[OPERATIVO, encAutogeneradoDm, token, respuestasRaiz, respuestasRaiz]).fetchOneRowIfExists();
+        // hago insert porque no existe en tem
+        const defaultTarea = await getDefaultTarea(context, OPERATIVO);
+        if(resultUpdate.rowCount == 0){
+            idEnc = await generarNuevoIdEnc(context, OPERATIVO, area, maxAEncPorArea)
+            await context.client.query(`
+                INSERT into tem (
+                    operativo,
+                    enc,
+                    area,
+                    dominio,
+                    habilitada,
+                    ${context.be.db.quoteIdent(autogeneradoField)},
+                    token_autogenerado_dm,
+                    tarea_actual,
+                    json_backup,
+                    json_encuesta, 
+                    fecha_backup
+                ) 
+                    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, current_timestamp)
                     returning *
-            `,[OPERATIVO, encAutogeneradoDm, token, respuestasRaiz, respuestasRaiz]).fetchUniqueRow()).row.enc;
+            `,[
+                OPERATIVO,
+                idEnc,
+                area,
+                DEFAULT_DOMINIO,
+                true,
+                encAutogeneradoDm,
+                token,
+                defaultTarea.tarea,
+                respuestasRaiz,
+                respuestasRaiz,
+            ]).fetchUniqueRow();
+        }else{
+            idEnc = resultUpdate.row.enc
         }
         await generarTareasTemFaltantes(context, OPERATIVO);
-        if (resultInsertTem.rowCount == 1) {
-            idEnc = resultInsertTem.row.enc;
-            await context.client.query(`
-                update tareas_tem
-                    set recepcionista = $4, asignado = $5
-                    where operativo= $1 and enc = $2 and tarea = $3
-                returning *
-            `,[OPERATIVO, resultInsertTem.row.enc, defaultTarea.tarea, recepcionista, asignado]).fetchUniqueRow();
-            await context.client.query(`
-                update tareas_tem
-                    set cargado_dm = $4, estado = $5, operacion = $6
-                    where operativo= $1 and enc = $2 and tarea = $3
-                returning *
-            `,[OPERATIVO, resultInsertTem.row.enc, defaultTarea.tarea, token, ESTADO_POSTERIOR_CARGA, cambia_modo_dm?null:OPERACION_PREPARAR_CARGA]
-            ).fetchUniqueRow();
-        }
+        await context.client.query(`
+            update tareas_tem
+                set recepcionista = $4, asignado = $5
+                where operativo= $1 and enc = $2 and tarea = $3
+            returning *
+        `,[OPERATIVO, idEnc, defaultTarea.tarea, recepcionista, asignado]).fetchUniqueRow();
+        await context.client.query(`
+            update tareas_tem
+                set cargado_dm = $4, estado = $5, operacion = $6
+                where operativo= $1 and enc = $2 and tarea = $3
+            returning *
+        `,[OPERATIVO, idEnc, defaultTarea.tarea, token, ESTADO_POSTERIOR_CARGA, cambia_modo_dm?null:OPERACION_PREPARAR_CARGA]
+        ).fetchUniqueRow();
     }
     return idEnc
 }
@@ -369,12 +362,10 @@ function compilarExpresiones(casillero:CasilleroDeAca){
     for(var casilleroInterno of casillero.childs) compilarExpresiones(casilleroInterno);
 }
 
-const generarEncuestaTem = async (context: ProcedureContext, operativo: IdOperativo, i: number, area: number, dominio: number, tarea_actual:IdTarea) => {
-    let enc = generarIdEncFun(area, i);
+const generarEncuestaTem = async (context: ProcedureContext, operativo: IdOperativo, idEnc: IdEnc, area: number, dominio: number, tarea_actual:IdTarea) => {
     await context.client.query(`
-        INSERT into tem (operativo, enc, area, dominio, habilitada, tarea_actual) values ($1, $2, $3, $4, $5, $6)
-            on conflict (operativo, enc) do nothing`,
-    [operativo, enc, area, dominio, true, tarea_actual]).execute();
+        INSERT into tem (operativo, enc, area, dominio, habilitada, tarea_actual) values ($1, $2, $3, $4, $5, $6)`,
+    [operativo, idEnc, area, dominio, true, tarea_actual]).execute();
 }
 
 const generarTareasTemFaltantes = async (context: ProcedureContext, operativo: IdOperativo) => {
@@ -1154,8 +1145,15 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     where operativo = $1
             `,[params.operativo]).fetchUniqueValue()).value;
             if(permiteGenerarMuestra){
-                for(let i = 0; i < Math.min(params.cant_encuestas,maxAGenerar); i++){
-                    await generarEncuestaTem(context, params.operativo, i, params.area, params.dominio, params.tarea_actual);
+                let totalActual = (await context.client.query(
+                    `select count(*) as total
+                        from tem
+                        where operativo= $1 and area = $2`,
+                    [params.operativo, params.area]
+                ).fetchUniqueValue()).value;
+                for(let i = 1; i < params.cant_encuestas - totalActual ; i++){
+                    const enc = await generarNuevoIdEnc(context, params.operativo, params.area, maxAEncPorArea)
+                    await generarEncuestaTem(context, params.operativo, enc, params.area, params.dominio, params.tarea_actual);
                 }
                 await generarTareasTemFaltantes(context, params.operativo);
                 return 'ok';
@@ -1181,14 +1179,9 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     where operativo = $1
             `,[params.operativo]).fetchUniqueValue()).value;
             if(permiteGenerarMuestra){
-                let total = (await context.client.query(
-                    `select count(*) as total
-                        from tem
-                        where operativo= $1 and area = $2`,
-                    [params.operativo, params.area]
-                ).fetchUniqueValue()).value;
-                for(let i = total; i < Math.min(total + params.cant_encuestas,maxAEncPorArea); i++){
-                    await generarEncuestaTem(context, params.operativo, i, params.area, params.dominio, params.tarea_actual);
+                for(let i = 1; i <= params.cant_encuestas; i++){
+                    const enc = await generarNuevoIdEnc(context, params.operativo, params.area, maxAEncPorArea)
+                    await generarEncuestaTem(context, params.operativo, enc, params.area, params.dominio, params.tarea_actual);
                 }
                 await generarTareasTemFaltantes(context, params.operativo);
                 return 'ok';
@@ -2142,6 +2135,13 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             const {client} =context;
             const modoDmDefecto = (await (client.query(`select modo_dm_defecto from parametros where unico_registro`,[]).fetchUniqueValue())).value;
             return modoDmDefecto;
+        }
+    },{
+        action:'modo_app_get',
+        parameters:[],
+        coreFunction:async function(context: ProcedureContext, _parameters: CoreFunctionParameters){
+            const {be} =context;
+            return be.config.server.policy == 'web'?'RELEVAMIENTO':'GABINETE'; 
         }
     },
 ];
