@@ -8,7 +8,7 @@ import { IdUnidadAnalisis, UnidadAnalisis, EstadoAccion, IdEnc, IdTarea, Respues
 
 import {OperativoGenerator } from "procesamiento";
 
-import {json, jsono} from "pg-promise-strict";
+import {json, jsono, ResultRows} from "pg-promise-strict";
 
 import {changing, date, coalesce } from 'best-globals';
 import {promises as  fs} from "fs";
@@ -2144,4 +2144,76 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             return be.config.server.policy == 'web'?'RELEVAMIENTO':'GABINETE'; 
         }
     },
+        {
+        action: 'operativo_migrar',
+        parameters:[
+            {name:'operativo_origen', typeName:'text', references:'operativos'},
+            {name:'operativo_destino', typeName:'text'},
+            {name:'schema_name', typeName:'text', label: 'nombre de schema'},
+        ],
+        resultOk: 'download_sql',
+        proceedLabel: 'migrar',
+        roles:['admin'],
+        coreFunction:async function(context:ProcedureContext, params: { operativo_origen: string, operativo_destino: string, schema_name: string }){
+            const tables = await Promise.all(['operativos', 'tareas', 'unidad_analisis', 'casilleros'].map(async tableName => ({
+                name: tableName,
+                result: await context.client.query(`select * from ${context.be.db.quoteIdent(tableName)} where operativo = $1`, [params.operativo_origen]).fetchAll()
+            })));
+
+            tables.forEach((_, i) => tables[i].result.rows.forEach(row => row.operativo = params.operativo_destino));
+
+            const buildInserts = (query: { name: string, result: ResultRows }) => query.result.rows.map(row => 
+                'insert into ' + context.be.db.quoteIdent(params.schema_name) + '.' + context.be.db.quoteIdent(query.name) +
+                ' (' + query.result.fields.map((f: { name: string }) => context.be.db.quoteIdent(f.name)).join(', ') + ')' +
+                ' values (' + query.result.fields.map((f: { name: string }) => context.be.db.quoteNullable(row[f.name])).join(', ') + ');'
+            ).join('\n');
+
+            const insertAreas = `
+                insert into areas (operativo, area)
+                    select ${context.be.db.quoteNullable(params.operativo_destino)} as operativo, area
+                    from areas where operativo = ${context.be.db.quoteNullable(params.operativo_origen)};
+            `
+
+            const insertTareasAreas = `
+                insert into tareas_areas (operativo,tarea, area)
+                    select ${context.be.db.quoteNullable(params.operativo_destino)} as operativo, tarea, area
+                    from tareas_areas
+                    where operativo = ${context.be.db.quoteNullable(params.operativo_origen)};
+            `;
+
+            const insertTem = `
+                insert into tem (operativo, area, enc, dominio, habilitada)
+                    select ${context.be.db.quoteNullable(params.operativo_destino)} as operativo, area, (area || enc::text) enc, case when encs.enc < 106 then 3 else 5 end as dominio, true as habilitada
+                    from areas join (SELECT generate_series(100, 110) enc) encs
+                    on operativo = ${context.be.db.quoteNullable(params.operativo_origen)};
+            `;
+
+            const sql = `set search_path = "${params.schema_name}";` + `\n\n`
+            + tables.map(query => buildInserts(query)).join('\n\n')
+            + '\n\n' + insertAreas
+            + '\n\n' + insertTareasAreas
+            + '\n\n' + insertTem;
+
+            return sql;
+        }
+    },
+        {
+        action:'encuesta_capa_a_prod_pasar',
+        parameters:[
+            {name:'operativo'   , typeName:'text', references:'operativos'   },
+            {name:'enc'         , typeName:'text'},
+        ],
+        roles:['admin'],
+        coreFunction:async function(context:ProcedureContext, parameters: CoreFunctionParameters){
+            (await context.client.query(
+                `update tem
+                    set enc_autogenerado_dm = enc_autogenerado_dm_capa, enc_autogenerado_dm_capa = null
+                    where operativo = $1 and enc = $2 and enc_autogenerado_dm_capa is not null
+                    returning *`,
+                [parameters.operativo, parameters.enc]
+            ).fetchUniqueRow()).row;
+
+            return `se movió la encuesta ${parameters.enc} a producción`;
+        }
+    }
 ];

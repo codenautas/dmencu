@@ -584,6 +584,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             submenuVarios.push({menuType:'proc', name:'encuesta_blanquear_previsualizar', label:'blanquear encuesta'});
             submenuVarios.push({menuType:'proc', name:'encuesta_borrar_previsualizar', label:'quitar encuesta de la muestra'});
             submenuVarios.push({menuType:'proc', name:'encuestas_capacitacion_borrar', label:'quitar encuestas de capa de la muestra'});
+            submenuVarios.push({menuType:'proc', name:'operativo_migrar', label:'migrar operativo'});
+            submenuVarios.push({menuType:'proc', name:'encuesta_capa_a_prod_pasar', label:'pasar encuestas de capa a prod'});
         }
         if(context.puede?.encuestas?.procesar){
             submenuVarios.push({menuType:'proc', name:'intercambiar_encuestas'});
