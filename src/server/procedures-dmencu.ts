@@ -2139,6 +2139,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
     },{
         action:'modo_app_get',
         parameters:[],
+        unlogged:true,
         coreFunction:async function(context: ProcedureContext, _parameters: CoreFunctionParameters){
             const {be} =context;
             return be.config.server.policy == 'web'?'RELEVAMIENTO':'GABINETE'; 
