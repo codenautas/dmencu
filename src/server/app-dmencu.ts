@@ -406,6 +406,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-formulario.js', path: 'dmencu' },
             { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'abrir-formulario.js', path: 'dmencu' },
             { type: 'css', module: 'dmencu', modPath: '../../client/client/css', file: 'menu.css', path: 'css' },
+            { type: 'css', module: 'dmencu', modPath: '../../client/client/css', file: 'styles.css', path: 'css' },
             { type: 'css', module: 'dmencu', modPath: '../../unlogged/unlogged/css', file: 'formulario-react.css', path: 'css' },
             { type: 'css', module: 'dmencu', modPath: '../../unlogged/unlogged/css', file: 'bootstrap.min.css', path: 'css' },
             { type: 'ttf', module: 'dmencu', modPath: '../../unlogged/unlogged/css', file: 'Roboto-Regular.ttf', path: 'css' },
