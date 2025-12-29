@@ -1133,7 +1133,8 @@ var botonFormularioConResumen = (
                         html.svg({focusable:false, viewbox:"0 0 24 24", "aria-hidden":"true"},[
                             html.path({d:materialIoIconsSvgPath.DeleteForever})
                         ]), 
-                    onClick:()=>accion_borrar_formulario({forPk, forPkPadre})})
+                    onClick:()=>{if (window.confirm('Se eliminará: '+ JSON.stringify(forPk, null, 2))){accion_borrar_formulario({forPk, forPkPadre})}}
+                })
             :null) 
         ]),
         (defBoton.num !== false && !defBoton.esAgregar && !defBoton.esConfirmar?
