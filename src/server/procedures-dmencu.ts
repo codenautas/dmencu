@@ -801,19 +801,13 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'tarea'             , typeName:'text', references:"tareas"},
         ],
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
-            var be=context.be;
-            var {operativo,pk_raiz_value, tarea} = parameters;
-            var main_form = (await context.client.query(
-                `select main_form
-                    from tareas
-                    where operativo= $1 and tarea=$2`
-                ,
-                [operativo, tarea]
-            ).fetchUniqueValue()).value;
-            var {unidad_analisis} = (await getUAPrincipal(context.client, parameters.operativo));
-            var condviv= ` t.operativo= $1 and t.enc =$2`;
-            var usuarioPuedeProcesarEncuestas = context.puede?.encuestas?.procesar || false;
-            var soloLectura = (await context.client.query(`
+            const be=context.be;
+            const {operativo,pk_raiz_value, tarea} = parameters;
+            const main_form = (await context.client.query(`select main_form from tareas where operativo= $1 and tarea=$2`, [operativo, tarea]).fetchUniqueValue()).value;
+            const {unidad_analisis} = (await getUAPrincipal(context.client, parameters.operativo));
+            const condviv= ` t.operativo= $1 and t.enc =$2`;
+            const usuarioPuedeProcesarEncuestas = context.puede?.encuestas?.procesar || false;
+            const soloLectura = (await context.client.query(`
                 select count(*)
                     from tareas_tem join tem using(operativo, enc) join estados using (operativo, estado) --pk estado y tem verificada
                     where operativo= $1 and enc = $2 and (
@@ -822,16 +816,9 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         tarea = tarea_actual and tarea_actual = 'proc' and $3 or 
                         tarea = tarea_actual and tarea_actual = 'proc' and estado = 'V'
             )`, [operativo, pk_raiz_value, !usuarioPuedeProcesarEncuestas]).fetchUniqueValue()).value > 0;
-            var permiteGenerarMuestra = (await context.client.query(`
-                select permite_generar_muestra 
-                    from operativos 
-                    where operativo = $1
-            `,[operativo]).fetchUniqueValue()).value;
-            var {row} = await context.client.query(getHdrQuery(condviv, context, unidad_analisis, permiteGenerarMuestra),[operativo,pk_raiz_value]).fetchUniqueRow();
-            row.informacionHdr[pk_raiz_value].tarea={
-                tarea,
-                main_form
-            } ;
+            const permiteGenerarMuestra = (await context.client.query(`select permite_generar_muestra from operativos where operativo = $1`,[operativo]).fetchUniqueValue()).value;
+            const {row} = await context.client.query(getHdrQuery(condviv, context, unidad_analisis, permiteGenerarMuestra),[operativo,pk_raiz_value]).fetchUniqueRow();
+            row.informacionHdr[pk_raiz_value].tarea={tarea, main_form};
             return {
                 ...row,
                 operativo,
