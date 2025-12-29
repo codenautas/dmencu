@@ -400,7 +400,7 @@ export const ProceduresDmEncu : ProcedureDef[] = [
             {name:'operativo'            ,typeName:'text', references:'operativos'},
         ],
         resultOk:'desplegarFormulario',
-        coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters<{operativo:string}>){
             var be = context.be;
             var result = await context.client.query(
                 `select casilleros_jerarquizados($1) as formularios, 
@@ -514,7 +514,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'mes'  , typeName:'integer', references:'mes'  },
             {name:'lote' , typeName:'integer', references:'lotes'},
         ],
-        coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters<{annio:number, mes:number, lote:number}>){
             var be=context.be;
             const OPERATIVO = await getOperativoActual(context);
             let resultUA = await context.client.query(
@@ -563,7 +563,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name: 'nombre', typeName: 'text'},
         ],
         files:{count:1},
-        coreFunction:function(context:ProcedureContext, parameters:CoreFunctionParameters, files){
+        coreFunction:function(context:ProcedureContext, parameters:CoreFunctionParameters<{id_adjunto?:number, nombre?:string}>, files){
             let be=context.be;
             let client=context.client;
             context.informProgress({message:be.messages.fileUploaded});
@@ -705,7 +705,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         ],
         resultOk: 'goToEnc',
         definedIn: 'dmencu',
-        coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters<{operativo: string, id_caso: string}>){
             var {unidad_analisis, pk_agregada} = (await getUAPrincipal(context.client, parameters.operativo));
             var client=context.client;
              var struct_dmencu = createStructure(context, unidad_analisis);
@@ -728,7 +728,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         ],
         resultOk: 'goToEnc',
         // bitacora:{always:true},
-        coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters<{operativo: string, id_caso: string}>){
             var be = context.be;
             try{
                 var result = await be.procedure['caso_traer'].coreFunction(context, parameters);
@@ -744,7 +744,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         action:'pasar_json2ua',
         parameters:[
         ],
-        coreFunction:async function(context:ProcedureContext, _parameters:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, _parameters:CoreFunctionParameters<{}>){
             /* GENERALIZAR: */
             var be=context.be;
             /* FIN-GENERALIZAR: */
@@ -800,7 +800,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'pk_raiz_value'           , typeName:'text'},
             {name:'tarea'             , typeName:'text', references:"tareas"},
         ],
-        coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
+        coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters<{operativo: string, pk_raiz_value: string, tarea: string}>){
             const be=context.be;
             const {operativo,pk_raiz_value, tarea} = parameters;
             const main_form = (await context.client.query(`select main_form from tareas where operativo= $1 and tarea=$2`, [operativo, tarea]).fetchUniqueValue()).value;
@@ -835,7 +835,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'operativo'         , typeName:'text'},
             {name:'persistentes'      , typeName:'jsonb'},
         ],
-        coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
+        coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters<{operativo: string, persistentes: AnyObject}>){
             var be=context.be;
             var {operativo, persistentes} = parameters;
             const UA_PRINCIPAL = (await getUAPrincipal(context.client, operativo)).unidad_analisis;
@@ -878,7 +878,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'modo_dm'            , typeName:'text'},
             {name:'cambia_modo_dm'     , typeName:'boolean'},
         ],
-        coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
+        coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters<{persistentes: AnyObject, modo_dm: string, cambia_modo_dm: boolean}>){
             const OPERATIVO = await getOperativoActual(context);
             var be=context.be;
             var {persistentes, modo_dm, cambia_modo_dm} = parameters;
@@ -1007,7 +1007,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'modo_dm'     , typeName:'text' },
         ],
         unlogged:true,
-        coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
+        coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters<{token: string|null, tem: AnyObject, modo_dm: string}>){
             var {be, client} =context;
             const OPERATIVO = await getOperativoActual(context);
             var num_sincro:number=0;
@@ -1054,7 +1054,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'operativo'     ,references:'operativos',  typeName:'text'},
             {name:'caso'       ,typeName:'text'},
         ],
-        coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters){
+        coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters<{operativo: string, caso: string}>){
             var {be, client} =context;
             let param_proc={
                 operativo: parameters.operativo,
@@ -1084,7 +1084,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'localStorageItemKey'    , typeName:'text'},
         ],
         unlogged:true,
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{localStorageItemKey: string, localStorageItem: AnyObject}>){
             var {localStorageItemKey, localStorageItem} = params;
             try{
                 console.log(localStorageItem);
@@ -1100,14 +1100,14 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         action: 'operativo_get',
         parameters:[],
         unlogged:true,
-        coreFunction:async function(context:ProcedureContext, _parameters:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, _parameters:CoreFunctionParameters<{}>){
             return getOperativoActual(context)
         }
     },
     {
         action: 'get_random_free_case',
         parameters:[{name:'operativo'    , typeName:'text'}],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string}>){
             const minsToExpire = 30;
             const minsSinceBloqued = `date_part('min', age(current_timestamp, fecha_bloqueo))`;
             const enc = await context.client.query(`select enc from tem where operativo=$1 and (libre or ${minsSinceBloqued} > ${minsToExpire}) limit 1;`,[params.operativo]).fetchUniqueValue();
@@ -1124,7 +1124,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'cant_encuestas'     , typeName:'integer'},
             {name:'tarea_actual'       , typeName:'text', references:'tareas'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, area: number, dominio: number, cant_encuestas: number, tarea_actual: string}>){
             const be =  context.be;
             var permiteGenerarMuestra = (await context.client.query(`
                 select permite_generar_muestra 
@@ -1158,7 +1158,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'cant_encuestas'     , typeName:'integer'},
             {name:'tarea_actual'       , typeName:'text', references:'tareas'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, area: number, dominio: number, cant_encuestas: number, tarea_actual: string}>){
             const be =  context.be;
             var permiteGenerarMuestra = (await context.client.query(`
                 select permite_generar_muestra 
@@ -1185,7 +1185,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         ],
         roles:['coor_proc','coor_campo','admin'],
         resultOk:'mostrar_encuesta_a_blanquear_contenido',
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, enc: string}>){
             return await buscarEncuestaEnTem(context,params);
         }
     },
@@ -1196,7 +1196,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'enc'             , typeName:'text'},
         ],
         roles:['coor_proc','subcoor_campo','coor_campo','admin'],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, enc: string}>){
             var be = context.be;
             var {unidad_analisis, pk_agregada} = (await getUAPrincipal(context.client, params.operativo));
             await context.client.query(
@@ -1256,7 +1256,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         ],
         roles:['coor_proc','subcoor_campo','coor_campo','admin'],
         resultOk:'mostrar_encuesta_a_borrar',
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, enc: string}>){
             return await buscarEncuestaEnTem(context,params);
         }
     },
@@ -1267,7 +1267,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'enc'             , typeName:'text'},
         ],
         roles:['coor_proc','subcoor_campo','coor_campo','admin'],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, enc: string}>){
             var be = context.be;
             var permite_generar_muestra = (await context.client.query(`
                 select permite_generar_muestra 
@@ -1344,7 +1344,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'operativo'       , typeName:'text', references:"operativos"}
         ],
         roles:['admin'],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string}>){
             var be = context.be;
             var permite_generar_muestra = (await context.client.query(`
                 select permite_generar_muestra 
@@ -1375,7 +1375,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'condicion'       , typeName:'text'},
             {name:'accion'          , typeName:'jsonb'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, tarea: string, enc: string, condicion: string, accion: EstadoAccion}>){
             var be =  context.be;
             var accion = params.accion as EstadoAccion;
             var cumple:boolean = (await context.client.query(
@@ -1474,7 +1474,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'tarea'           , typeName:'text'},
             {name:'enc'             , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, tarea: string, enc: string}>){
             await context.client.query(`
                 UPDATE tareas_tem
                     set operacion = $4
@@ -1492,7 +1492,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'tarea'           , typeName:'text'},
             {name:'enc'             , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, tarea: string, enc: string}>){
             await context.client.query(`
                 UPDATE tareas_tem
                     set asignado = null
@@ -1510,7 +1510,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'tarea'           , typeName:'text'},
             {name:'enc'             , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, tarea: string, enc: string}>){
             await context.client.query(`
                 UPDATE tareas_tem
                     set operacion = null
@@ -1528,7 +1528,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'tarea'           , typeName:'text'},
             {name:'enc'             , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, tarea: string, enc: string}>){
             await context.client.query(`
                 UPDATE tareas_tem
                     set operacion = $4
@@ -1546,7 +1546,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'tarea'           , typeName:'text'},
             {name:'enc'             , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, tarea: string, enc: string}>){
             await context.client.query(`
                 UPDATE tareas_tem
                     set operacion = 'cargar'
@@ -1564,7 +1564,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'tarea'           , typeName:'text'},
             {name:'enc'             , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, tarea: string, enc: string}>){
             var be = context.be;
             await be.procedure.consistir_encuesta.coreFunction(context, {operativo:params.operativo, id_caso:params.enc})
             return 'ok';
@@ -1577,7 +1577,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'tarea'           , typeName:'text'},
             {name:'enc'             , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, tarea: string, enc: string}>){
             var cantidad:number = (await context.client.query(`
                 select count(*) as cumple
                     from inconsistencias i 
@@ -1608,7 +1608,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'tarea'           , typeName:'text'},
             {name:'enc'             , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, tarea: string, enc: string}>){
             var be = context.be;
             await be.procedure.inconsistencias_encuesta_controlar.coreFunction(context,params);
             await context.client.query(`
@@ -1628,7 +1628,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'tarea'           , typeName:'text'},
             {name:'enc'             , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, tarea: string, enc: string}>){
             await context.client.query(`
                 UPDATE tareas_tem
                     set verificado = null
@@ -1646,7 +1646,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'tarea'           , typeName:'text'},
             {name:'enc'             , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, tarea: string, enc: string}>){
             await context.client.query(`
                 UPDATE tareas_tem
                     set verificado = '1', asignado = $4
@@ -1664,7 +1664,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'tarea'           , typeName:'text'},
             {name:'enc'             , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, tarea: string, enc: string}>){
             await context.client.query(`
                 UPDATE tareas_tem
                     set verificado = null
@@ -1682,7 +1682,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'enc'             , typeName:'text'},
             {name:'tarea'           , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, enc: string, tarea: string}>){
             await context.client.query(`
                 UPDATE tem
                     set tarea_actual = $3, supervision_dirigida = $4
@@ -1700,7 +1700,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'enc'             , typeName:'text'},
             {name:'tarea'           , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, enc: string, tarea: string}>){
             await context.client.query(`
                 UPDATE tem
                     set tarea_actual = $3, supervision_dirigida = $4
@@ -1718,7 +1718,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'enc'             , typeName:'text'},
             {name:'tarea'           , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, enc: string, tarea: string}>){
             await context.client.query(`
                 UPDATE tem
                     set tarea_actual = $3, supervision_dirigida = null
@@ -1736,7 +1736,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'enc'             , typeName:'text'},
             {name:'tarea'           , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, enc: string, tarea: string}>){
             await context.client.query(`
                 UPDATE tareas_tem
                     set estado = 'CC'
@@ -1761,7 +1761,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'enc'             , typeName:'text'},
             {name:'tarea'           , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, enc: string, tarea: string}>){
             await context.client.query(`
                 UPDATE tareas_tem
                     set estado = 'A'
@@ -1793,7 +1793,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'enc'             , typeName:'text'},
             {name:'tarea'           , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, enc: string, tarea: string}>){
             var be = context.be;
             await be.procedure.encuesta_verificar.coreFunction(context,params);
             await context.client.query(`
@@ -1820,7 +1820,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'enc'             , typeName:'text'},
             {name:'tarea'           , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, enc: string, tarea: string}>){
             var be = context.be;
             await context.client.query(`
                 UPDATE tareas_tem
@@ -1840,7 +1840,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'enc'             , typeName:'text'},
             {name:'tarea'           , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, enc: string, tarea: string}>){
             var be = context.be;
             var {operativo, enc, tarea} = params;
             await be.procedure.encuesta_verificar.coreFunction(context,params);
@@ -1861,7 +1861,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'enc'             , typeName:'text'},
             {name:'tarea'           , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, enc: string, tarea: string}>){
             var be = context.be;
             var {operativo, enc, tarea} = params;
             await context.client.query(`
@@ -1883,7 +1883,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'tarea_actual'    , typeName:'text'},
             {name:'tarea_nueva'     , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, enc: string, tarea_actual: string, tarea_nueva: string}>){
             var {operativo, enc, tarea_actual, tarea_nueva} = params;
             await context.client.query(`
                 update tem 
@@ -1915,7 +1915,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'operativo'       , typeName:'text'},
             {name:'enc'             , typeName:'text'},
         ],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, enc: string}>){
             await context.client.query(`
                 UPDATE tem
                     set habilitada = not habilitada
@@ -1929,7 +1929,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
     {
         action: ACCION_PASAR_PROIE,
         parameters:[],
-        coreFunction:async function(context:ProcedureContext, _params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, _params:CoreFunctionParameters<{}>){
             let parametros = (await context.client.query(`
                 select * from parametros where unico_registro`,
             []).fetchUniqueRow()).row;
@@ -1976,7 +1976,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         ],
         roles:['coor_proc','procesamiento','admin'],
         progress:true,
-        coreFunction:async function(context:ProcedureContext, params: CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params: CoreFunctionParameters<{operativo: string, enc: string, tarea_actual: string, tarea_nueva: string}>){
             /**
              * Para controlar:
              * - que las hogares, personas, etc estén intercambiadas 
@@ -2048,7 +2048,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         ],
         roles:['coor_proc','coor_campo','admin'],
         resultOk:'mostrar_encuestas_a_blanquear',
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, encuestador: string}>){
             var result = await context.client.query(`
                 select *
                     from tareas_tem
@@ -2070,7 +2070,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'token'         , typeName:'text'},
         ],
         roles:['coor_proc','coor_campo','admin'],
-        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, params:CoreFunctionParameters<{operativo: string, token: string}>){
             var be = context.be;
             let tareasTemResult = await context.client.query(`
                 UPDATE tareas_tem
@@ -2118,7 +2118,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         parameters:[
         ],
         unlogged:true,
-        coreFunction:async function(context: ProcedureContext, _parameters: CoreFunctionParameters){
+        coreFunction:async function(context: ProcedureContext, _parameters: CoreFunctionParameters<{}>){
             const {client} =context;
             const modoDmDefecto = (await (client.query(`select modo_dm_defecto from parametros where unico_registro`,[]).fetchUniqueValue())).value;
             return modoDmDefecto;
@@ -2127,7 +2127,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         action:'modo_app_get',
         parameters:[],
         unlogged:true,
-        coreFunction:async function(context: ProcedureContext, _parameters: CoreFunctionParameters){
+        coreFunction:async function(context: ProcedureContext, _parameters: CoreFunctionParameters<{}>) {
             const {be} =context;
             return be.config.server.policy == 'web'?'RELEVAMIENTO':'GABINETE'; 
         }
@@ -2192,7 +2192,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             {name:'enc'         , typeName:'text'},
         ],
         roles:['admin'],
-        coreFunction:async function(context:ProcedureContext, parameters: CoreFunctionParameters){
+        coreFunction:async function(context:ProcedureContext, parameters: CoreFunctionParameters<{operativo: string, enc: string}>){
             (await context.client.query(
                 `update tem
                     set enc_autogenerado_dm = enc_autogenerado_dm_capa, enc_autogenerado_dm_capa = null
