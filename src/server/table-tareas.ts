@@ -21,6 +21,7 @@ export function tareas(context:TableContext, opts?:any):TableDefinition {
             {name:'registra_estado_en_tem'  , typeName:'boolean'},
             {name:'es_inicial'              , typeName:'boolean'},
             {name:'es_final'                , typeName:'boolean'},
+            {name:'puede_borrar_ua'         , typeName:'boolean'},
         ],
         primaryKey:['operativo','tarea'],
         foreignKeys:[
