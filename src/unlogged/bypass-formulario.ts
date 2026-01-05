@@ -501,10 +501,13 @@ export function accion_abrir_formulario({forPk}: {forPk:ForPk}, _datosByPass:Dat
 
 export function accion_borrar_formulario({forPk, forPkPadre}: {forPk:ForPk, forPkPadre:ForPk}){
     var {respuestas, unidadAnalisis, respuestasAumentadas, respuestasRaiz, forPkRaiz} = respuestasForPk(forPk, true, true);
-    var unidad_analisis:IdUnidadAnalisis|undefined = estructura.formularios[forPk.formulario].casilleros.unidad_analisis
-    var uaDef:UnidadAnalisis = estructura.unidades_analisis[unidad_analisis];
-    var index = forPk[uaDef.pk_agregada];
-    respuestasAumentadas[unidad_analisis].pop();
+   
+    // en lugar del último se elimina por indice (nro de la persona)
+    // TODO: Ver anotaciones ticket #75
+    let resp = respuestasAumentadas[unidadAnalisis.unidad_analisis] as Respuestas[];
+    resp.splice(forPk[unidadAnalisis.pk_agregada]!-1,1)
+    // respuestasAumentadas[unidad_analisis].pop();
+
     variablesCalculadas(respuestasRaiz, forPkPadre);
     datosByPass.dirty = datosByPass.dirty || true;
     respuestasRaiz.$dirty = respuestasRaiz.$dirty || true;

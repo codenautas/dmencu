@@ -1251,8 +1251,8 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                             num, 
                             actual: calcularActualBF(configSorteoFormulario, num, numActual, idFormularioDestino, respuestasAumentadas),
                             previo: numActual == null, 
-                            permiteBorrar: likeAr(conjunto).array().length == Number(i) + 1 && 
-                                checkFormsVacios(formHnos, feedbackAll, forPk) &&
+                            permiteBorrar: //likeAr(conjunto).array().length == Number(i) + 1 && 
+                                //checkFormsVacios(formHnos, feedbackAll, forPk) &&
                                 calcularPermiteBorrarBF(configSorteoFormulario,idFormularioDestino),
                             disabled: calcularDisabledBF(configSorteoFormulario, habilitacionBotonFormulario, num, idFormularioDestino, respuestasAumentadas)
                         }
