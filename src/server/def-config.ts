@@ -3,6 +3,11 @@ server:
   port: 3068
   base-url: /dmencu
   session-store: memory
+  skins:
+    "":
+      local-path: client/
+    modern:
+      local-path: node_modules/backend-skins/dist/
 db:
   user: dmencu_admin
   motor: postgresql
@@ -100,4 +105,5 @@ client-setup:
   grid-row-retain-moved-or-deleted: true
   deviceWidthForMobile: device-width
   user-scalable: no
+  skin: modern
 `
