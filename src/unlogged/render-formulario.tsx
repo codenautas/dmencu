@@ -1245,15 +1245,19 @@ function BotonFormularioDespliegue(props:{casillero:BotonFormulario, formulario:
                         if(numActual == null && feedback.resumen == "vacio" && estadoDelBoton =='valida'){
                             numActual = num;
                         }
+                        const datosByPass = getDatosByPass()
+                        const esUltimaUA = likeAr(conjunto).array().length == Number(i) + 1 && 
+                                checkFormsVacios(formHnos, feedbackAll, forPk)
+                        const permiteBorrar = 
+                            calcularPermiteBorrarBF(configSorteoFormulario, idFormularioDestino) &&
+                            (esUltimaUA || (datosByPass.tareaPermiteBorrarUA && datosByPass.rolPuedeBorrarUA))
                         return {
                             forPk, 
                             resumen:null, 
                             num, 
                             actual: calcularActualBF(configSorteoFormulario, num, numActual, idFormularioDestino, respuestasAumentadas),
                             previo: numActual == null, 
-                            permiteBorrar: //likeAr(conjunto).array().length == Number(i) + 1 && 
-                                //checkFormsVacios(formHnos, feedbackAll, forPk) &&
-                                calcularPermiteBorrarBF(configSorteoFormulario,idFormularioDestino),
+                            permiteBorrar,
                             disabled: calcularDisabledBF(configSorteoFormulario, habilitacionBotonFormulario, num, idFormularioDestino, respuestasAumentadas)
                         }
                     }).array();

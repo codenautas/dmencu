@@ -803,7 +803,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters<{operativo: string, pk_raiz_value: string, tarea: string}>){
             const be=context.be;
             const {operativo,pk_raiz_value, tarea} = parameters;
-            const {puede_borrar_ua, main_form} = (await context.client.query(`select puede_borrar_ua, main_form from tareas where operativo= $1 and tarea=$2`, [operativo, tarea]).fetchUniqueValue()).value;
+            const {permite_borrar_ua, main_form} = (await context.client.query(`select permite_borrar_ua, main_form from tareas where operativo= $1 and tarea=$2`, [operativo, tarea]).fetchUniqueRow()).row;
             const {unidad_analisis} = (await getUAPrincipal(context.client, parameters.operativo));
             const condviv= ` t.operativo= $1 and t.enc =$2`;
             const usuarioPuedeProcesarEncuestas = context.puede?.encuestas?.procesar || false;
@@ -826,7 +826,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 idper:context.user.idper,
                 cargas:likeAr.createIndex(row.cargas.map(carga=>({...carga, fecha:carga.fecha?date.iso(carga.fecha).toDmy():null})), 'carga'),
                 timestampEstructura:be.caches.timestampEstructura,
-                puede_borrar_ua,
+                tareaPermiteBorrarUA: permite_borrar_ua || false,
+                rolPuedeBorrarUA: context.puede?.encuestas.borrar_ua || false,
                 policy: be.config.server.policy,
                 
             };

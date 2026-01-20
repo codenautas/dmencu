@@ -10,7 +10,8 @@ export type Puede = {
     encuestas:{
         relevar:boolean,
         justificar: boolean,
-        procesar: boolean
+        procesar: boolean,
+        borrar_ua: boolean
     },
     casilleros_texto:{
         editar:boolean
