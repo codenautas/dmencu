@@ -175,9 +175,8 @@ const mostrarInfoModo = async(mainLayout:HTMLElement) => {
     const modoDmDefecto = await my.ajax.modo_dm_defecto_obtener({});
     let modoDM: ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY) || modoDmDefecto;
     my.setLocalVar(MODO_DM_LOCALSTORAGE_KEY, modoDM);
-    var divAvisoModo:HTMLDivElement=html.div([
-        html.div(`modo actual: ${modoDM}.`)
-    ]).create();
+    //@ts-ignore seteo un atributo
+    var divAvisoModo:HTMLDivElement=html.div({class:"info-modo", "modo-dm": modoDM},`modo actual: ${modoDM}`).create()    
     mainLayout.appendChild(divAvisoModo)
     return modoDM;
 }
@@ -212,8 +211,9 @@ var procederSincroFun = async (button:HTMLButtonElement, divAvisoSincro:HTMLDivE
 }
 myOwn.wScreens.sincronizar_dm=async function(){
     var mainLayout = document.getElementById('main_layout')!;
-    await mostrarInfoModo(mainLayout);
+    const modoDM = await mostrarInfoModo(mainLayout);
     var procederButton = html.button({class:'download-dm-button-cont'},'proceder ⇒').create();
+    procederButton.setAttribute("modo-dm", modoDM);
     var divAvisoSincro:HTMLDivElement=html.div().create();
     mostrarInfoLocal(mainLayout as HTMLDivElement, 'información a transmitir', null, false)
     mainLayout.appendChild(procederButton);

@@ -131,6 +131,39 @@ const registrarCronJobPasarAProie = async (be:AppBackend) => {
     });
 }
 
+const getManifestImageIcons = (APP_NAME: string, sufijo: string)=> [
+    {
+        "src": `../img/${APP_NAME}-logo-dm-32${sufijo}.png`,
+        "sizes": "32x32",
+        "type": "image/png"
+    },
+    {
+        "src": `../img/${APP_NAME}-logo-dm-48${sufijo}.png`,
+        "sizes": "48x48",
+        "type": "image/png"
+    },
+    {
+        "src": `../img/${APP_NAME}-logo-dm-64${sufijo}.png`,
+        "sizes": "64x64",
+        "type": "image/png"
+    },
+    {
+        "src": `../img/${APP_NAME}-logo-dm-72${sufijo}.png`,
+        "sizes": "72x72",
+        "type": "image/png"
+    },
+    {
+        "src": `../img/${APP_NAME}-logo-dm-192${sufijo}.png`,
+        "sizes": "192x192",
+        "type": "image/png"
+    },
+    {
+        "src": `../img/${APP_NAME}-logo-dm-512${sufijo}.png`,
+        "sizes": "512x512",
+        "type": "image/png"
+    }
+];
+
 export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamiento.AppProcesamientoType>>(Base:T){
   return class AppDmEncu extends Base{
     constructor(...args:any[]){ 
@@ -142,6 +175,17 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         this.caches.timestampEstructura = new Date().getTime();
         this.caches.tableContent.conReaHogar = {};
     }
+    getSufijoFrombaseUrl = (baseUrl:string) =>
+    baseUrl.includes('test') || baseUrl.includes('/pr')?'_test':
+        baseUrl.includes('capa')?'_capa':'';
+
+    getAppName = async() => {
+        var be = this;
+        return ((await be.inTransaction(null, (client:pg.Client)=>
+            client.query("select operativo from parametros where unico_registro").fetchUniqueValue()
+        )).value as string);
+    }
+
     override async canChangePass(reqOrContext, userToChangePass){
         var be = this;
         var result = await be.inDbClient(null, async (client)=>{
@@ -211,7 +255,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         });
         var createServiceWorker = async function(){
             var sw = await fs.readFile('node_modules/service-worker-admin/dist/service-worker-wo-manifest.js', 'utf8');
-            var manifest = be.createResourcesForCacheJson();
+            var manifest = await be.createResourcesForCacheJson();
             var swManifest = sw
                 .replace("'/*version*/'", JSON.stringify(manifest.version))
                 .replace("'/*appName*/'", JSON.stringify(manifest.appName))
@@ -228,48 +272,14 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             }
         });
         mainApp.get(baseUrl+`/carga-dm/web-manifest.webmanifest`, async function(req, res, next){
-            const APP_NAME = (await be.inTransaction(null, (client:pg.Client)=>
-                client.query("select operativo from parametros where unico_registro").fetchUniqueValue()
-            )).value;
-            var sufijo = baseUrl.includes('test') || baseUrl.includes('/pr')?'_test':
-                baseUrl.includes('capa')?'_capa':'';
+            const APP_NAME = await be.getAppName();
+            const sufijo = be.getSufijoFrombaseUrl(baseUrl);
             try{
                 const content = {
                   "name": `${APP_NAME}${sufijo} Progressive Web App`,
                   "short_name": `${APP_NAME}${sufijo} PWA`,
                   "description": `Progressive Web App for ${APP_NAME}${sufijo}.`,
-                  "icons": [
-                    {
-                      "src": `../img/${APP_NAME}-logo-dm-32${sufijo}.png`,
-                      "sizes": "32x32",
-                      "type": "image/png"
-                    },
-                    {
-                      "src": `../img/${APP_NAME}-logo-dm-48${sufijo}.png`,
-                      "sizes": "48x48",
-                      "type": "image/png"
-                    },
-                    {
-                      "src": `../img/${APP_NAME}-logo-dm-64${sufijo}.png`,
-                      "sizes": "64x64",
-                      "type": "image/png"
-                    },
-                    {
-                      "src": `../img/${APP_NAME}-logo-dm-72${sufijo}.png`,
-                      "sizes": "72x72",
-                      "type": "image/png"
-                    },
-                    {
-                      "src": `../img/${APP_NAME}-logo-dm-192${sufijo}.png`,
-                      "sizes": "192x192",
-                      "type": "image/png"
-                    },
-                    {
-                      "src": `../img/${APP_NAME}-logo-dm-512${sufijo}.png`,
-                      "sizes": "512x512",
-                      "type": "image/png"
-                    }
-                  ],
+                  "icons": getManifestImageIcons(APP_NAME, sufijo),
                   ...be.getColorsJson(sufijo as SufijosAmbiente)
                 }
                 miniTools.serveText(JSON.stringify(content), 'application/json')(req,res);
@@ -379,13 +389,13 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             menuedResources = menuedResources.concat(opts.extraFiles);
         }
         let externalResources:ClientModuleDefinition[] = [
-            { type: 'js', module: 'react', modPath: 'umd', fileDevelopment:'react.development.js', file:'react.production.min.js' },
-            { type: 'js', module: 'react-dom', modPath: 'umd', fileDevelopment:'react-dom.development.js', file:'react-dom.production.min.js' },
+            { type: 'js', module: 'react', modPath: 'umd', file:'react.production.min.js' },
+            { type: 'js', module: 'react-dom', modPath: 'umd', file:'react-dom.production.min.js' },
             //{ type: 'js', module: '@material-ui/core', modPath: 'umd', fileDevelopment:'material-ui.development.js', file:'material-ui.production.min.js' },
-            { type: 'js', module: '@mui/material', modPath: '../umd', fileDevelopment:'material-ui.development.js', file:'material-ui.production.min.js' },
+            { type: 'js', module: '@mui/material', modPath: '../umd', file:'material-ui.production.min.js' },
 
-            { type: 'js', module: 'redux', modPath:'../dist', fileDevelopment:'redux.js', file:'redux.min.js' },
-            { type: 'js', module: 'react-redux', modPath:'../dist', fileDevelopment:'react-redux.js', file:'react-redux.min.js' },
+            { type: 'js', module: 'redux', modPath:'../dist', file:'redux.min.js' },
+            { type: 'js', module: 'react-redux', modPath:'../dist', file:'react-redux.min.js' },
             { type: 'js', module: 'memoize-one',  file:'memoize-one.js' },
             //{ type: 'js', module: 'qrcode', modPath: '../build', file: 'qrcode.js'},
             ...super.clientIncludes(req, opts).filter(m=>m.file!='formularios.css')
@@ -468,8 +478,11 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             idper: req.user?.idper
         }
     }
-    createResourcesForCacheJson(){
+    async createResourcesForCacheJson(){
         var be = this;
+        const APP_NAME = await be.getAppName()
+        const sufijo = be.getSufijoFrombaseUrl(be.config.server['base-url']);
+
         var jsonResult = {
             version: APP_DM_VERSION,
             appName: 'dmencu',
@@ -553,20 +566,30 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 "css/menu.css",
                 "rel-enc/my-things2.css",
                 "css/formulario-react.css",
-                "css/Roboto-Regular.ttf"
+                "css/Roboto-Regular.ttf",
+                "lib/xlsx.full.min.js",
+                "carga-dm/web-manifest.webmanifest",
             ],
-            fallback: [
-                {"path":"login", "fallback":"offline"},
-                {"path":"logout", "fallback":"offline"},
-                {"path":"login#i=sincronizar", "fallback":"offline"},
-                {"path":"menu#i=sincronizar", "fallback":"offline"},
-                {"path":"login#i=cambiar_modo_dm", "fallback":"offline"},
-                {"path":"menu#i=cambiar_modo_dm", "fallback":"offline"}
-            ]
+            defaultFallback:"offline"
         };
+        jsonResult.cache = jsonResult.cache.concat(getManifestImageIcons(APP_NAME, sufijo).map((elem)=>`menu/${elem.src}`));
+
+        var skin = be.config['client-setup'].skin;
+        if(skin && be.activeSkinFiles){
+            var skinUrl = skin + '/';
+            jsonResult.cache.push(`${skin}/img/background-test.png`);
+            // Convertimos el Set a Array y mapeamos las rutas
+            var skinResources = Array.from(be.activeSkinFiles).map(function(pathRelativo) {
+                // Si es un .styl, lo pedimos como .css porque el Service Worker 
+                // debe cachear el recurso final que el navegador solicita.
+                return skinUrl + pathRelativo.replace(/\.styl$/, '.css');
+            });
+
+            jsonResult.cache = jsonResult.cache.concat(skinResources);
+        }
         return jsonResult
     }
-    getMenuControles(context:Context) { return [
+    getMenuControles(_context:Context) { return [
         {menuType:'proc', name:'encuestas_procesamiento_pasar', label: 'pasar encuestas a procesamiento'},
         {menuType:'table', name:'resumen', table:'control_resumen', selectedByDefault:true},
         {menuType:'table', name:'dominio', table:'control_campo_dominio'},

@@ -1,10 +1,12 @@
-@font-face {
-  font-family: 'FormFont';
-  src: local('Roboto-Regular'), local('Roboto'), url('Roboto-Regular.ttf') format('truetype');
-}
-
 colorFondoEncabezadoBloque = #888
 colorFondoIdBloque = #DDD
+
+fuente-sistema = Roboto, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif
+
+body
+  font-family fuente-sistema
+  -webkit-font-smoothing antialiased // Mejora el renderizado en Chrome/Edge
+  -moz-osx-font-smoothing grayscale
 
 .x-body
   .casillero, .encabezado, .contenido
@@ -25,7 +27,6 @@ anchoNormal(ancho)
     width ancho
 
 .formulario, .hoja-de-ruta
-  font-family 'FormFont'
   max-width 768px
   margin-top 75px //ajustado para /CAMPO
   .btn
@@ -597,14 +598,21 @@ app-cache-version, #app-dm-version
   font-size 80%
 
 .download-dm-button
-  font-size 120%
-  font-weight bold
+  font-size 110%
+
 .download-dm-button-cont
-  font-size 120%
-  background-color #48F
+  font-size 110%
+  background-color #1976d2
   border-radius 5px
   color white
-  font-weight bold
+
+.download-dm-button-cont[modo-dm=capa], .info-modo[modo-dm=capa]
+  background-color #198754
+  color white
+  width fit-content
+
+.info-modo
+  padding 2px 10px 4px
 
 .tab-counter  
   display inline-block

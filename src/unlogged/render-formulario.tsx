@@ -2064,8 +2064,8 @@ setHojaDeRutaDespliegue((_props:{})=>{
         <>
             <AppBar position="fixed" color={modoDM=='capa'?'success':'primary'}>
                 <Toolbar>
-                    <Typography variant="h6">
-                        Hoja de ruta
+                    <Typography>
+                        HOJA DE RUTA
                     </Typography>
                     {
                     //<IconButton style={{marginTop:'3px'}}
@@ -2091,18 +2091,20 @@ setHojaDeRutaDespliegue((_props:{})=>{
                 </Toolbar>
             </AppBar>
             <div className="hoja-de-ruta">
-                {modo.demo?<div>
-                    <Typography>Modo demo </Typography>
-                    <Button variant="outlined" color="secondary"
-                        onClick={()=>dispatch(dispatchers.REINICIAR_DEMO({}))}
-                    >
-                        reiniciar
-                    </Button>
-                </div>:null}
-                <div className="nombre-version">
-                    <div>Instituto de Estadística y Censos de la Ciudad Autónoma de Buenos Aires - IDECBA</div>
-                    <div>{my.getLocalVar('app-version')} sincro {num_sincro} - versión {appVersion}</div>
-                </div>
+                <Paper style={{marginBottom: '10px', padding: '10px'}}>
+                    {modo.demo?<div>
+                        <Typography>Modo demo </Typography>
+                        <Button variant="outlined" color="secondary"
+                            onClick={()=>dispatch(dispatchers.REINICIAR_DEMO({}))}
+                        >
+                            reiniciar
+                        </Button>
+                    </div>:null}
+                    <div className="nombre-version">
+                        <div>Instituto de Estadística y Censos de la Ciudad Autónoma de Buenos Aires - IDECBA</div>
+                        <div>{my.getLocalVar('app-version')} sincro {num_sincro} - versión {appVersion}</div>
+                    </div>
+                </Paper>
                 {likeAr(cargas).map((carga, idCarga, _, posicion)=>
                     <DesplegarCarga key={idCarga} carga={carga} idCarga={idCarga} posicion={posicion} informacionHdr={informacionHdr} feedbackRowValidator={feedbackRowValidator} respuestas={respuestas}/>
                 ).array()}
