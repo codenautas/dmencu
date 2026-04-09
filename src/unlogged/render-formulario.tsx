@@ -7,7 +7,8 @@ import {
     focusToId,
     scrollToTop,
     scrollToBottom,
-    materialIoIconsSvgPath
+    materialIoIconsSvgPath,
+    useOnlineStatus
 } from "./render-general";
 import {Bloque, BotonFormulario, 
     CasilleroBase, CasoState, ConjuntoPreguntas, Consistencia, 
@@ -2052,13 +2053,7 @@ setHojaDeRutaDespliegue((_props:{})=>{
     var {modo} = useSelector((state:CasoState)=>({modo:state.modo}));
     var feedbackRowValidator = getFeedbackRowValidator()
     const dispatch = useDispatch();
-    const updateOnlineStatus = function(){
-        setOnline(window.navigator.onLine);
-    }
-    const appVersion = getCacheVersion();
-    const [online, setOnline] = useState(window.navigator.onLine);
-    window.addEventListener('online',  updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
+    const online = useOnlineStatus();
     const modoDM:ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY);
     return (
         <>
@@ -2190,12 +2185,8 @@ export function AppDmEncu(){
 }
 
 function PantallaInicialSinCarga(_props:{}){
-    const updateOnlineStatus = function(){
-        setOnline(window.navigator.onLine);
-    }
-    const [online, setOnline] = useState(window.navigator.onLine);
-    window.addEventListener('online',  updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
+    const online = useOnlineStatus();
+
     const paragraphStyles={fontSize:"1.2rem", fontWeight:600, padding: "5px 10px"};
     const modoDM:ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY);
     return (

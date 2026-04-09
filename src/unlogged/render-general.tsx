@@ -200,6 +200,22 @@ const theme = createTheme({
   },
 });
 
+export function useOnlineStatus() {
+    const [online, setOnline] = useState(window.navigator.onLine);
+
+    useEffect(() => {
+        const handler = () => setOnline(window.navigator.onLine);
+        window.addEventListener('online',  handler);
+        window.addEventListener('offline', handler);
+        return () => {
+            window.removeEventListener('online',  handler);
+            window.removeEventListener('offline', handler);
+        };
+    }, []);
+
+    return online;
+}
+
 export function RenderPrincipal<T,T2 extends Action>(props:{store:Store<T,T2>, dispatchers:IDispatchers, mensajeRetorno:string, children:React.ReactNode}){
     return <React.StrictMode>
         <Provider store={props.store}>
