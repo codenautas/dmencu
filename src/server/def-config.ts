@@ -1,8 +1,8 @@
-export const defConfig=`
+export const defConfig = `
 server:
   port: 3068
   base-url: /dmencu
-  session-store: memory
+  session-store: memory-saved
   skins:
     "":
       local-path: client/

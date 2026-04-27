@@ -599,14 +599,23 @@ app-cache-version, #app-dm-version
 
 .download-dm-button
   font-size 110%
+  transition all 0.3s ease
 
 .download-dm-button-cont
   font-size 110%
   background-color #1976d2
   border-radius 5px
   color white
+  transition all 0.3s ease
 
-.download-dm-button-cont[modo-dm=capa], .info-modo[modo-dm=capa]
+.download-dm-button-cont,
+.download-dm-button
+  &[disabled]
+    background-color #888
+    color #5f6368
+    opacity 0.6
+
+.download-dm-button-cont[modo-dm=capa], .download-dm-button[modo-dm=capa], .info-modo[modo-dm=capa]
   background-color #198754
   color white
   width fit-content
