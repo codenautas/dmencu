@@ -2152,14 +2152,16 @@ setHojaDeRutaDespliegue((_props: {}) => {
                     }
                     {online ?
                         <>
-                            <IconButton
+                            <Button
                                 color="inherit"
+                                variant="outlined"
+                                style={{ margin: '0 8px' }}
                                 onClick={() => {
                                     gotoSincronizar()
                                 }}
                             >
                                 <ICON.SyncAlt />
-                            </IconButton>
+                            </Button>
                         </>
                         : null}
                     <Typography><span style={{ marginLeft: '5px' }}>{modoDM == 'capa' ? ' MODO CAPACITACIÓN' : ''}</span></Typography>
