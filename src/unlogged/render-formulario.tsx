@@ -1397,7 +1397,7 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
                 } else {
                     dispatchByPass(accion_abrir_formulario, { forPk: nuevaForPk });
                     // Si abro uno existente, también reseteo el listo para forzar que vuelvan a apretarlo si cambian algo
-                    dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: BF_varname, respuesta: null as unknown as Valor });
+                    //dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: BF_varname, respuesta: null as unknown as Valor });
                 }
             } else {
                 dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: BF_varname, respuesta: 1 as Valor });
