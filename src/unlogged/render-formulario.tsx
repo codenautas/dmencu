@@ -1324,8 +1324,12 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
                     if ("puede agregar //TODO VER ESTO" && (conjunto instanceof Array || conjunto == null)) {
                         let nuevoValorPk = (conjunto == null ? 0 : conjunto.length) + 1;
                         let forPk = { ...props.forPk, formulario: idFormularioDestino, [nuevoCampoPk]: nuevoValorPk };
-                        let debeAgregarOlisto = numActual == null && (cantidadEsperada == null || cantidadEsperada != (conjunto != null && conjunto.length))
-                            && (estadoDelBoton == 'valida' || esVarActual);
+                        let listoPresionado = respuestasAumentadas['$B.F:' + armoNomSalto as IdVariable] != null;
+                        let debeAgregarOlisto = numActual == null &&
+                            (casillero.expresion_habilitar ?
+                                (cantidadEsperada == null || cantidadEsperada != (conjunto != null && conjunto.length))
+                                : !listoPresionado
+                            ) && (estadoDelBoton == 'valida' || esVarActual);
                         listaDeBotonesAbrir.push({
                             forPk,
                             num: nuevoValorPk,
