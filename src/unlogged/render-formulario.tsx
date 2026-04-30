@@ -98,6 +98,15 @@ function breakeableText(text: string | null, diccionario?: { [clave: string]: Re
     */
 }
 
+export function getBFVarNames(salto: string | null) {
+    const armoNomSalto = salto?.substring(0, 2) == 'F:' ? salto.slice(2) : salto;
+    return {
+        listo: '$B.F:' + armoNomSalto as IdVariable,
+        agregar: '$B.F:' + armoNomSalto + '_agregar' as IdVariable,
+        idFormulario: 'F:' + armoNomSalto as IdFormulario
+    };
+}
+
 const VER_DOMINIO = false; // el encuestador no necesita ver el dominio en cada encuesta porque el dominio depende del área y se deduce del primer dígito del número de encuesta
 // no poner VER_DOMINIO en true, cambiar por una variable que se fije si el DM está en modo prueba o en modo "diseño conceptual"
 
@@ -1116,12 +1125,9 @@ var botonFormularioConResumen = (
                     if (defBoton.esConfirmar) {
                         if (defBoton.num != null) {
                             if (casillero.salto) {
-                                var armoNomSalto = casillero.salto.substring(0, 2) == 'F:' ? casillero.salto.slice(2) : casillero.salto;
-                                var BF_varname = '$B.F:' + armoNomSalto as IdVariable
-                                dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: BF_varname, respuesta: defBoton.num as Valor });
-
-                                var BF_varname_agregar = '$B.F:' + armoNomSalto + '_agregar' as IdVariable;
-                                dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: BF_varname_agregar, respuesta: 1 as Valor });
+                                const { listo, agregar } = getBFVarNames(casillero.salto);
+                                dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: listo, respuesta: defBoton.num as Valor });
+                                dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: agregar, respuesta: 1 as Valor });
                             }
                             if (casillero.expresion_habilitar) {
                                 dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: casillero.expresion_habilitar as IdVariable, respuesta: defBoton.num as Valor });
@@ -1154,13 +1160,11 @@ var botonFormularioConResumen = (
                         ]),
                     onClick: () => {
                         accion_borrar_formulario({ forPk, forPkPadre });
-                        var armoNomSalto = casillero.salto!.substring(0, 2) == 'F:' ? casillero.salto!.slice(2) : casillero.salto!;
-                        var BF_varname_agregar = '$B.F:' + armoNomSalto + '_agregar' as IdVariable;
-                        var BF_varname_listo = '$B.F:' + armoNomSalto as IdVariable;
+                        const { listo, agregar } = getBFVarNames(casillero.salto);
                         if (defBoton.num === 1) {
-                            dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: BF_varname_agregar, respuesta: null as unknown as Valor });
+                            dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: agregar, respuesta: null as unknown as Valor });
                         }
-                        dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: BF_varname_listo, respuesta: null as unknown as Valor });
+                        dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: listo, respuesta: null as unknown as Valor });
                         if (casillero.expresion_habilitar) {
                             dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: casillero.expresion_habilitar as IdVariable, respuesta: null as unknown as Valor });
                         }
@@ -1180,11 +1184,9 @@ var botonFormularioConResumen = (
                         ]),
                     ],
                     onClick: () => {
-                        var armoNomSalto = casillero.salto!.substring(0, 2) == 'F:' ? casillero.salto!.slice(2) : casillero.salto!;
-                        var BF_varname_agregar = '$B.F:' + armoNomSalto + '_agregar' as IdVariable;
-                        var BF_varname_listo = '$B.F:' + armoNomSalto as IdVariable;
-                        dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: BF_varname_agregar, respuesta: null as unknown as Valor });
-                        dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: BF_varname_listo, respuesta: null as unknown as Valor });
+                        const { listo, agregar } = getBFVarNames(casillero.salto);
+                        dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: agregar, respuesta: null as unknown as Valor });
+                        dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: listo, respuesta: null as unknown as Valor });
                         if (casillero.expresion_habilitar) {
                             dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: casillero.expresion_habilitar as IdVariable, respuesta: null as unknown as Valor });
                         }
@@ -1236,10 +1238,7 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
     var { casillero, forPk } = props;
     var habilitador = casillero.expresion_habilitar_js ? getFuncionHabilitar(casillero.expresion_habilitar_js) : () => true;
     var { opciones } = useSelectorVivienda(forPk);
-    //var idFormularioDestino = 'F:'+casillero.salto! as IdFormulario;   //original
-    var armoNomSalto = casillero.salto?.substring(0, 2) == 'F:' ? casillero.salto.slice(2) : casillero.salto;
-    //console.log('BotonFormularioDespliegue armoNomSalto ' +armoNomSalto);
-    var idFormularioDestino = 'F:' + armoNomSalto! as IdFormulario;
+    var { listo: BF_listo, agregar: BF_agregar, idFormulario: idFormularioDestino } = getBFVarNames(casillero.salto);
     var estructura = getEstructura();
     var { formularioAAbrir } = useSelector((_state: CasoState) => ({
         formularioAAbrir: estructura.formularios[idFormularioDestino].casilleros,
@@ -1264,10 +1263,9 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
     var multipleFormularios = formularioAAbrir.unidad_analisis != props.formulario.unidad_analisis;
     var nuevoCampoPk = defOperativo.defUA[formularioAAbrir.unidad_analisis].pk;
     // var var_name='$B.'+casillero.salto; //original
-    var var_name = '$B.F:' + armoNomSalto;
-    var idSeccion = `seccion-boton-formulario-${var_name}`;
+    var idSeccion = `seccion-boton-formulario-${BF_listo}`;
     var idButton = `special-button-${idSeccion}`;
-    var var_name_registro = multipleFormularios ? (var_name + '_agregar' as IdVariable) : (var_name as IdVariable);
+    var var_name_registro = multipleFormularios ? BF_agregar : BF_listo;
     registrarElemento<HTMLDivElement>({
         id: idSeccion,
         variable: var_name_registro,
@@ -1279,25 +1277,25 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
             }
         ) => {
             try {
-                var estado_listo = feedbackRow.feedback['$B.F:' + armoNomSalto as IdVariable]?.estado || 'valida';
-                var estado_agregar = multipleFormularios ? (feedbackRow.feedback['$B.F:' + armoNomSalto + '_agregar' as IdVariable]?.estado || 'valida') : 'valida';
+                var estado_listo = feedbackRow.feedback[BF_listo]?.estado || 'valida';
+                var estado_agregar = multipleFormularios ? (feedbackRow.feedback[BF_agregar]?.estado || 'valida') : 'valida';
                 var estado_general = estado_agregar !== 'valida' ? estado_agregar : estado_listo;
                 setAttrDistinto(div, 'nuestro-validator', estado_general);
                 setAttrDistinto(div, 'tiene-valor', estado_general === 'valida' ? 'valido' : 'NO');
 
                 var listaDeBotonesAbrir: DefinicionFormularioAbrir[] = [];
                 // var esVarActual = feedbackRow.actual == '$B.F:'+casillero.salto;  //original
-                var esVarActual = !!feedbackRow.actual?.startsWith('$B.F:' + armoNomSalto);
+                var esVarActual = !!feedbackRow.actual?.startsWith(BF_listo);
                 // console.log('BotonFormularioDespliegue esVarActual ' +esVarActual  );
                 if (multipleFormularios && casillero.salto != null) {
                     //  let defFormulario:InfoFormulario = estructura.formularios['F:'+casillero.salto as IdFormulario];      //original
-                    let defFormulario: InfoFormulario = estructura.formularios['F:' + armoNomSalto as IdFormulario];
+                    let defFormulario: InfoFormulario = estructura.formularios[idFormularioDestino];
                     let defUA = estructura.unidades_analisis[defFormulario.casilleros.unidad_analisis!];
                     let conjunto = respuestasAumentadas[defFormulario.casilleros.unidad_analisis!];
                     let cantidadEsperada = respuestasAumentadas[casillero.expresion_habilitar as IdVariable];
                     var numActual: number | null = null;
                     //  var estadoDelBoton = feedbackRow.feedback['$B.F:'+casillero.salto as IdVariable].estado   //original
-                    var estadoDelBoton = feedbackRow.feedback['$B.F:' + armoNomSalto as IdVariable].estado
+                    var estadoDelBoton = feedbackRow.feedback[BF_listo].estado
                     // console.log('BotonFormularioDespliegue estadoDelBoton ' +estadoDelBoton  );
                     var configSorteoFormulario = estructura.configSorteo ? estructura.configSorteo[getMainFormForVivienda(forPk[estructura.pkAgregadaUaPpal])] : null
                     var habilitacionBotonFormulario = estructura.habilitacionBotonFormulario;
@@ -1324,7 +1322,7 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
                     if ("puede agregar //TODO VER ESTO" && (conjunto instanceof Array || conjunto == null)) {
                         let nuevoValorPk = (conjunto == null ? 0 : conjunto.length) + 1;
                         let forPk = { ...props.forPk, formulario: idFormularioDestino, [nuevoCampoPk]: nuevoValorPk };
-                        let listoPresionado = respuestasAumentadas['$B.F:' + armoNomSalto as IdVariable] != null;
+                        let listoPresionado = respuestasAumentadas[BF_listo] != null;
                         let debeAgregarOlisto = numActual == null &&
                             (casillero.expresion_habilitar ?
                                 (cantidadEsperada == null || cantidadEsperada != (conjunto != null && conjunto.length))
@@ -1386,33 +1384,32 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
                 dispatch(dispatchers.VOLVER_HDR({}));
         } else {
             var nuevaForPk = { ...forPk, formulario: idFormularioDestino };
-            var BF_varname = '$B.F:' + armoNomSalto as IdVariable;
+            var { listo: BF_listo, agregar: BF_agregar } = getBFVarNames(casillero.salto);
             if (multipleFormularios) {
                 // @ts-ignore forPk y sus componentes
                 nuevaForPk[nuevoCampoPk] = defBoton.num
                 if (defBoton.esAgregar) {
                     dispatchByPass(accion_agregar_formulario, { forPk: nuevaForPk });
-                    var BF_varname_agregar = '$B.F:' + armoNomSalto + '_agregar' as IdVariable;
-                    dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: BF_varname_agregar, respuesta: 1 as Valor });
-                    dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: BF_varname, respuesta: null as unknown as Valor });
+                    dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: BF_agregar, respuesta: 1 as Valor });
+                    dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: BF_listo, respuesta: null as unknown as Valor });
                     if (casillero.expresion_habilitar) {
                         dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: casillero.expresion_habilitar as IdVariable, respuesta: null as unknown as Valor });
                     }
                 } else {
                     dispatchByPass(accion_abrir_formulario, { forPk: nuevaForPk });
                     // Si abro uno existente, también reseteo el listo para forzar que vuelvan a apretarlo si cambian algo
-                    //dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: BF_varname, respuesta: null as unknown as Valor });
+                    //dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: BF_listo, respuesta: null as unknown as Valor });
                 }
             } else {
-                dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: BF_varname, respuesta: 1 as Valor });
+                dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: BF_listo, respuesta: 1 as Valor });
             }
             dispatch(dispatchers.CAMBIAR_FORMULARIO({ forPk: nuevaForPk, apilarVuelta: true }));
         }
         if (confirmarForzarIr) { setConfirmarForzarIr(false) }
     };
     return <DesplegarCasillero casillero={casillero}>
-        {multipleFormularios && <span id={'var-' + var_name + '_agregar'} style={{ position: 'absolute', marginTop: '-60px' }}></span>}
-        <span id={'var-' + var_name} style={{ position: 'absolute', marginTop: '-60px' }}></span>
+        {multipleFormularios && <span id={'var-' + BF_agregar} style={{ position: 'absolute', marginTop: '-60px' }}></span>}
+        <span id={'var-' + BF_listo} style={{ position: 'absolute', marginTop: '-60px' }}></span>
         <div id={idSeccion}>
         </div>
         <Button className="special-button" id={idButton}
