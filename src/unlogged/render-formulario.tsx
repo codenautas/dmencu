@@ -535,22 +535,28 @@ function EncabezadoDespliegue(props: {
                 {casillero.especial?.gps ?
                     <span>
                         <Button color="primary" variant="outlined" style={{ marginLeft: '10px' }} onClick={(_event) => {
-                            const { respuestas } = respuestasForPk(forPk);
-                            const agregarInfoGPS = (respuestaGPS: Valor, info: string) => {
-                                let aux = JSON.parse(respuestaGPS?.toString() || JSON.stringify([]));
+                            const varName = casillero.var_name!;
+                            const agregarInfoGPS = (info: string) => {
+                                const { respuestas: rActuales } = respuestasForPk(forPk);
+                                const valorActual = rActuales[varName];
+                                let aux = JSON.parse(valorActual?.toString() || "[]");
                                 aux.unshift(info);
-                                respuestaGPS = JSON.stringify(aux);
-                                return dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: casillero.var_name, respuesta: respuestaGPS });
+                                return dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: varName, respuesta: JSON.stringify(aux) });
                             }
-                            let { siguienteVariable } = agregarInfoGPS(respuestas[casillero.var_name!], `${datetime.now().toYmdHms()} - esperando punto gps`);
+                            let { siguienteVariable } = agregarInfoGPS(`${datetime.now().toYmdHms()} - esperando punto gps`) || {};
                             if (siguienteVariable) {
                                 enfocarElementoDeVariable(siguienteVariable);
                             }
                             navigator.geolocation.getCurrentPosition(position => {
-                                agregarInfoGPS(respuestas[casillero.var_name!], JSON.stringify(position));
+                                const { latitude, longitude, altitude, accuracy, altitudeAccuracy, heading, speed } = position.coords;
+                                const dataToSave = {
+                                    coords: { latitude, longitude, altitude, accuracy, altitudeAccuracy, heading, speed },
+                                    timestamp: position.timestamp
+                                };
+                                agregarInfoGPS(JSON.stringify(dataToSave));
                             }, e => {
-                                agregarInfoGPS(respuestas[casillero.var_name!], e.message);
-                            });
+                                agregarInfoGPS(e.message);
+                            }, { enableHighAccuracy: true, timeout: 10000 });
                         }
                         }><ICON.Location /></Button>
                     </span>
