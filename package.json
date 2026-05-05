@@ -12,7 +12,6 @@
   ],
   "dependencies": {
     "@mui/material": "^5.16.7",
-    "memoize-one": "~6.0.0",
     "meta-enc": "^1.4.16",
     "procesamiento": "^2.0.10",
     "backend-plus": "^2.6.1",

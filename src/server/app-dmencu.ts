@@ -1,15 +1,15 @@
 "use strict";
 
 import * as procesamiento from "procesamiento";
-import {emergeAppProcesamiento, emergeAppConsistencias, emergeAppVarCal, emergeAppDatosExt, emergeAppOperativos, AppBackend, ClientModuleDefinition, OptsClientPage} from "procesamiento";
-import {ACCION_PASAR_PROIE, getOperativoActual, ProceduresDmEncu} from "./procedures-dmencu";
+import { emergeAppProcesamiento, emergeAppConsistencias, emergeAppVarCal, emergeAppDatosExt, emergeAppOperativos, AppBackend, ClientModuleDefinition, OptsClientPage } from "procesamiento";
+import { ACCION_PASAR_PROIE, getOperativoActual, ProceduresDmEncu } from "./procedures-dmencu";
 
 import * as pg from "pg-promise-strict";
-import {json} from "pg-promise-strict";
+import { json } from "pg-promise-strict";
 import * as miniTools from "mini-tools";
 import {
-    Client, Context, CoreFunctionParameters, 
-    MenuInfoBase, 
+    Client, Context, CoreFunctionParameters,
+    MenuInfoBase,
     Request, Response,
     SufijosAmbiente,
 } from "./types-dmencu";
@@ -21,117 +21,119 @@ import { NextFunction } from "express-serve-static-core";
 import * as likeAr from "like-ar";
 import * as express from "express";
 
-import {promises as fs } from "fs";
+import { promises as fs } from "fs";
 
-import { roles               } from "./table-roles";
-import { personal            } from "./table-personal";
-import { recepcionistas      } from "./table-recepcionistas";
+import { roles } from "./table-roles";
+import { personal } from "./table-personal";
+import { recepcionistas } from "./table-recepcionistas";
 import { encuestadores_asignados, ingresadores_asignados } from "./table-encuestadores";
 import { recuperadores_asignados } from "./table-encuestadores";
-import { supervisores_asignados  } from "./table-encuestadores";
-import { mis_supervisores_asignados  } from "./table-encuestadores";
-import { mis_encuestadores   } from "./table-mis_encuestadores";
-import { recuperadores       } from "./table-recuperadores";
-import { supervisores        } from "./table-supervisores";
-import { personal_rol        } from "./table-personal_rol";
-import { permisos            } from "./table-permisos";
-import { roles_permisos      } from "./table-roles_permisos";
-import { modos_dm            } from "./table-modos_dm";
-import { parametros          } from "./table-parametros";
-import { roles_subordinados  } from "./table-roles_subordinados";
+import { supervisores_asignados } from "./table-encuestadores";
+import { mis_supervisores_asignados } from "./table-encuestadores";
+import { mis_encuestadores } from "./table-mis_encuestadores";
+import { recuperadores } from "./table-recuperadores";
+import { supervisores } from "./table-supervisores";
+import { personal_rol } from "./table-personal_rol";
+import { permisos } from "./table-permisos";
+import { roles_permisos } from "./table-roles_permisos";
+import { modos_dm } from "./table-modos_dm";
+import { parametros } from "./table-parametros";
+import { roles_subordinados } from "./table-roles_subordinados";
 
-import {no_rea               } from "./table-no_rea";
-import {no_rea_sup           } from "./table-no_rea_sup";
-import {tem                  } from "./table-tem";
-import {semanas              } from "./table-semanas";
-import { usuarios            } from './table-usuarios';
-import { operaciones         } from './table-operaciones';
-import { comunas             } from './table-comunas';
-import { areas               } from './table-areas';
-import { sincronizaciones    } from './table-sincronizaciones';
-import { tareas              } from './table-tareas';
-import { tareas_tem, 
-         tareas_tem_asignacion_encu, 
-         tareas_tem_asignacion_recu, 
-         tareas_tem_asignacion_supe,
-         tareas_tem_asignacion_ingr     } from './table-tareas_tem';
-import { tareas_areas        } from './table-tareas_areas';
+import { no_rea } from "./table-no_rea";
+import { no_rea_sup } from "./table-no_rea_sup";
+import { tem } from "./table-tem";
+import { semanas } from "./table-semanas";
+import { usuarios } from './table-usuarios';
+import { operaciones } from './table-operaciones';
+import { comunas } from './table-comunas';
+import { areas } from './table-areas';
+import { sincronizaciones } from './table-sincronizaciones';
+import { tareas } from './table-tareas';
+import {
+    tareas_tem,
+    tareas_tem_asignacion_encu,
+    tareas_tem_asignacion_recu,
+    tareas_tem_asignacion_supe,
+    tareas_tem_asignacion_ingr
+} from './table-tareas_tem';
+import { tareas_areas } from './table-tareas_areas';
 import { areas_asignacion_general } from './table-areas_asignacion_general';
-import { grilla_hoja_ruta    } from './table-grilla_hoja_ruta';
-import { t_encu_areas        } from './table-tareas_areas';
-import { t_recu_areas        } from './table-tareas_areas';
-import { t_supe_areas        } from './table-tareas_areas';
-import { t_ingr_areas        } from './table-tareas_areas';
-import { mis_tareas          } from './table-mis_tareas';
-import { tem_asignacion      } from './table-tem_asignacion';
-import { tareas_tem_recepcion} from './table-tareas_tem_recepcion';
-import { tareas_tem_ingreso} from './table-tareas_tem_ingreso';
-import { tareas_tem_fin_campo} from './table-tareas_tem_fin_campo';
-import { tareas_tem_procesamiento} from './table-tareas_tem_procesamiento';
-import { tareas_tem_analisis_campo} from './table-tareas_tem_analisis_campo';
-import { mis_tareas_areas    } from './table-mis_tareas_areas';
-import { control_campo       } from './table-control_campo';
-import { control_resumen     } from './table-control_resumen';
-import { control_dias_carga  } from './table-control_dias_carga';
-import { viviendas           } from './table-viviendas';
-import { visitas             } from './table-visitas';
-import { hogares             } from './table-hogares';
-import { personas            } from './table-personas';
-import { visitas_sup         } from './table-visitas_sup';
-import { hogares_sup         } from './table-hogares_sup';
-import { personas_sup        } from './table-personas_sup';
-import { diccionario         } from './table-diccionario';
-import { dictra              } from './table-dictra';
-import { dicvar              } from './table-dicvar';
+import { grilla_hoja_ruta } from './table-grilla_hoja_ruta';
+import { t_encu_areas } from './table-tareas_areas';
+import { t_recu_areas } from './table-tareas_areas';
+import { t_supe_areas } from './table-tareas_areas';
+import { t_ingr_areas } from './table-tareas_areas';
+import { mis_tareas } from './table-mis_tareas';
+import { tem_asignacion } from './table-tem_asignacion';
+import { tareas_tem_recepcion } from './table-tareas_tem_recepcion';
+import { tareas_tem_ingreso } from './table-tareas_tem_ingreso';
+import { tareas_tem_fin_campo } from './table-tareas_tem_fin_campo';
+import { tareas_tem_procesamiento } from './table-tareas_tem_procesamiento';
+import { tareas_tem_analisis_campo } from './table-tareas_tem_analisis_campo';
+import { mis_tareas_areas } from './table-mis_tareas_areas';
+import { control_campo } from './table-control_campo';
+import { control_resumen } from './table-control_resumen';
+import { control_dias_carga } from './table-control_dias_carga';
+import { viviendas } from './table-viviendas';
+import { visitas } from './table-visitas';
+import { hogares } from './table-hogares';
+import { personas } from './table-personas';
+import { visitas_sup } from './table-visitas_sup';
+import { hogares_sup } from './table-hogares_sup';
+import { personas_sup } from './table-personas_sup';
+import { diccionario } from './table-diccionario';
+import { dictra } from './table-dictra';
+import { dicvar } from './table-dicvar';
 
-import { estados             } from './table-estados';
-import { acciones            } from './table-acciones';
-import { estados_acciones    } from './table-estados_acciones';
-import { tareas_proximas     } from './table-tareas_proximas';
-import { historial_tem       } from './table-historial_tem';
-import { inconsistencias_cumplen_condicion       } from './table-inconsistencias_cumplen_condicion';
-import { tem_borradas        } from './table-tem_borradas';
-import { barrios             } from "./table-barrios";
-import { fracciones          } from "./table-fracciones";
-import { radios              } from "./table-radios";
-import { manzanas            } from "./table-manzanas";
-import { area_enc_proximas   } from "./table-area_enc_proximas";
+import { estados } from './table-estados';
+import { acciones } from './table-acciones';
+import { estados_acciones } from './table-estados_acciones';
+import { tareas_proximas } from './table-tareas_proximas';
+import { historial_tem } from './table-historial_tem';
+import { inconsistencias_cumplen_condicion } from './table-inconsistencias_cumplen_condicion';
+import { tem_borradas } from './table-tem_borradas';
+import { barrios } from "./table-barrios";
+import { fracciones } from "./table-fracciones";
+import { radios } from "./table-radios";
+import { manzanas } from "./table-manzanas";
+import { area_enc_proximas } from "./table-area_enc_proximas";
 
 export * from "./types-dmencu";
-import {defConfig} from "./def-config"
+import { defConfig } from "./def-config"
 import { ProcedureDef } from "backend-plus";
 import { table } from "console";
 
-const APP_DM_VERSION="#22-12-15";
+const APP_DM_VERSION = "#22-12-15";
 
-const registrarCronJobPasarAProie = async (be:AppBackend) => {
+const registrarCronJobPasarAProie = async (be: AppBackend) => {
     let procedures = await be.getProcedures()
-    var procPasar = procedures.find((proc:ProcedureDef)=>proc.action == ACCION_PASAR_PROIE)
+    var procPasar = procedures.find((proc: ProcedureDef) => proc.action == ACCION_PASAR_PROIE)
     var context = be.getContextForDump();
-    const interval = setInterval(async ()=>{
-        try{
+    const interval = setInterval(async () => {
+        try {
             console.log('inicia cron posaje a proie')
-            var result = await be.inTransaction(null, async (client)=>{
-                context.client=client;
-                return await procPasar.coreFunction(context,[]);
+            var result = await be.inTransaction(null, async (client) => {
+                context.client = client;
+                return await procPasar.coreFunction(context, []);
             })
             console.log("result proc pasaje a proie: ", result)
-        }catch(err){
+        } catch (err) {
             console.log(`error pasaje a proie. ${err.message}`);
-        }finally{
+        } finally {
             console.log('termina cron proie')
         }
-    },1000*60*60)
+    }, 1000 * 60 * 60)
     be.shutdownCallbackListAdd({
-        message:'apaga cron pasar a proie',
-        fun:async function(){
+        message: 'apaga cron pasar a proie',
+        fun: async function () {
             clearInterval(interval);
             return Promise.resolve();
         }
     });
 }
 
-const getManifestImageIcons = (APP_NAME: string, sufijo: string)=> [
+const getManifestImageIcons = (APP_NAME: string, sufijo: string) => [
     {
         "src": `../img/${APP_NAME}-logo-dm-32${sufijo}.png`,
         "sizes": "32x32",
@@ -164,182 +166,182 @@ const getManifestImageIcons = (APP_NAME: string, sufijo: string)=> [
     }
 ];
 
-export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamiento.AppProcesamientoType>>(Base:T){
-  return class AppDmEncu extends Base{
-    constructor(...args:any[]){ 
-        super(args); 
-        this.caches.tableContent = this.caches.tableContent || {};
-        this.caches.tableContent.no_rea=[]
-        this.caches.tableContent.no_rea_groups=[]
-        this.caches.metaEncIncluirCasillerosSaltoREL = false;
-        this.caches.timestampEstructura = new Date().getTime();
-        this.caches.tableContent.conReaHogar = {};
-    }
-    getSufijoFrombaseUrl = (baseUrl:string) =>
-    baseUrl.includes('test') || baseUrl.includes('/pr')?'_test':
-        baseUrl.includes('capa')?'_capa':'';
+export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamiento.AppProcesamientoType>>(Base: T) {
+    return class AppDmEncu extends Base {
+        constructor(...args: any[]) {
+            super(args);
+            this.caches.tableContent = this.caches.tableContent || {};
+            this.caches.tableContent.no_rea = []
+            this.caches.tableContent.no_rea_groups = []
+            this.caches.metaEncIncluirCasillerosSaltoREL = false;
+            this.caches.timestampEstructura = new Date().getTime();
+            this.caches.tableContent.conReaHogar = {};
+        }
+        getSufijoFrombaseUrl = (baseUrl: string) =>
+            baseUrl.includes('test') || baseUrl.includes('/pr') ? '_test' :
+                baseUrl.includes('capa') ? '_capa' : '';
 
-    getAppName = async() => {
-        var be = this;
-        return ((await be.inTransaction(null, (client:pg.Client)=>
-            client.query("select operativo from parametros where unico_registro").fetchUniqueValue()
-        )).value as string);
-    }
+        getAppName = async () => {
+            var be = this;
+            return ((await be.inTransaction(null, (client: pg.Client) =>
+                client.query("select operativo from parametros where unico_registro").fetchUniqueValue()
+            )).value as string);
+        }
 
-    override async canChangePass(reqOrContext, userToChangePass){
-        var be = this;
-        var result = await be.inDbClient(null, async (client)=>{
-            var q = be.db.quoteLiteral;
-            var rol = reqOrContext.user.rol;
-            return (await client.query(`
+        override async canChangePass(reqOrContext, userToChangePass) {
+            var be = this;
+            var result = await be.inDbClient(null, async (client) => {
+                var q = be.db.quoteLiteral;
+                var rol = reqOrContext.user.rol;
+                return (await client.query(`
                 select * 
                   from usuarios 
                   where rol in (select rol_subordinado from roles_subordinados where rol = ${q(rol)})`).fetchAll()).rows;
-        })
-        var puede = !!result.find((user)=>user.usuario == userToChangePass);
-        var isAdmin = be.isAdmin(reqOrContext);
-        return isAdmin || puede
-        
-    }
-    override async getProcedures(){
-        var be = this;
-        var procedimientoAReemplazar=["caso_guardar","caso_traer"];
-        var parentProc = await super.getProcedures();
-        parentProc = parentProc.filter((procedure:any) => !procedimientoAReemplazar.includes(procedure.action));
-        parentProc = parentProc.map(procDef=>{
-            if(procDef.action == 'table_record_save' || procDef.action == 'table_record_delete'){
-                var coreFunctionInterno = procDef.coreFunction;
-                procDef.coreFunction = async function(context:Context, parameters:CoreFunctionParameters){
-                    var result = await coreFunctionInterno(context, parameters)
-                    if(parameters.table == 'casilleros'){
-                        be.caches.timestampEstructura = new Date().getTime();
-                        console.log('se tocó la estructura', be.caches.timestampEstructura)
+            })
+            var puede = !!result.find((user) => user.usuario == userToChangePass);
+            var isAdmin = be.isAdmin(reqOrContext);
+            return isAdmin || puede
+
+        }
+        override async getProcedures() {
+            var be = this;
+            var procedimientoAReemplazar = ["caso_guardar", "caso_traer"];
+            var parentProc = await super.getProcedures();
+            parentProc = parentProc.filter((procedure: any) => !procedimientoAReemplazar.includes(procedure.action));
+            parentProc = parentProc.map(procDef => {
+                if (procDef.action == 'table_record_save' || procDef.action == 'table_record_delete') {
+                    var coreFunctionInterno = procDef.coreFunction;
+                    procDef.coreFunction = async function (context: Context, parameters: CoreFunctionParameters) {
+                        var result = await coreFunctionInterno(context, parameters)
+                        if (parameters.table == 'casilleros') {
+                            be.caches.timestampEstructura = new Date().getTime();
+                            console.log('se tocó la estructura', be.caches.timestampEstructura)
+                        }
+                        return result;
                     }
-                    return result;
                 }
-            }
-            return procDef;
-        })
-        return parentProc.concat(ProceduresDmEncu);
-    }
-    override async checkDatabaseStructure(_client:Client){
-    }
-    override addSchrödingerServices(mainApp:procesamiento.Express, baseUrl:string){
-        let be=this;
-        super.addSchrödingerServices(mainApp, baseUrl);
-        //permito levantar mis imagenes en aplicaciones dependientes
-        be.app.use('/img', express.static('node_modules/dmencu/dist/unlogged/unlogged/img'))
-        mainApp.use(function(req:Request,_res:Response, next:NextFunction){
-            if(req.session && !req.session.install){
-                req.session.install=Math.random().toString().replace('.','');
-            }
-            next();
-        })
-        mainApp.get(baseUrl+'/salvar',async function(req,res,_next){
-            // @ts-ignore sé que voy a recibir useragent por los middlewares de Backend-plus
-            var {useragent} = req;
-            var htmlMain=be.mainPage({useragent}, false, {skipMenu:true, offlineFile:true}).toHtmlDoc();
-            miniTools.serveText(htmlMain,'html')(req,res);
-        });
-        mainApp.get(baseUrl+'/campo',async function(req,res,_next){
-            // @ts-ignore sé que voy a recibir useragent por los middlewares de Backend-plus
-            var {useragent, user} = req;
-            if(user){
-                /** @type {{type:'js', src:string}[]} */
-                var webManifestPath = 'carga-dm/web-manifest.webmanifest';
-                var htmlMain=be.mainPage({useragent, user}, false, {skipMenu:true, webManifestPath, offlineFile:true}).toHtmlDoc();
-               miniTools.serveText(htmlMain,'html')(req,res);
-            }else{
-                res.redirect(401, baseUrl+'/login#w=path&path=/campo')
-            }
-        });
-        var createServiceWorker = async function(){
-            var sw = await fs.readFile('node_modules/service-worker-admin/dist/service-worker-wo-manifest.js', 'utf8');
-            var manifest = await be.createResourcesForCacheJson();
-            var swManifest = sw
-                .replace("'/*version*/'", JSON.stringify(manifest.version))
-                .replace("'/*appName*/'", JSON.stringify(manifest.appName))
-                .replace(/\[\s*\/\*urlsToCache\*\/\s*\]/, JSON.stringify(manifest.cache))
-                .replace(/\[\s*\/\*fallbacks\*\/\s*\]/, JSON.stringify(manifest.fallback || []))
-                .replace("'/*defaultFallback*/'", JSON.stringify(manifest.defaultFallback));
+                return procDef;
+            })
+            return parentProc.concat(ProceduresDmEncu);
+        }
+        override async checkDatabaseStructure(_client: Client) {
+        }
+        override addSchrödingerServices(mainApp: procesamiento.Express, baseUrl: string) {
+            let be = this;
+            super.addSchrödingerServices(mainApp, baseUrl);
+            //permito levantar mis imagenes en aplicaciones dependientes
+            be.app.use('/img', express.static('node_modules/dmencu/dist/unlogged/unlogged/img'))
+            mainApp.use(function (req: Request, _res: Response, next: NextFunction) {
+                if (req.session && !req.session.install) {
+                    req.session.install = Math.random().toString().replace('.', '');
+                }
+                next();
+            })
+            mainApp.get(baseUrl + '/salvar', async function (req, res, _next) {
+                // @ts-ignore sé que voy a recibir useragent por los middlewares de Backend-plus
+                var { useragent } = req;
+                var htmlMain = be.mainPage({ useragent }, false, { skipMenu: true, offlineFile: true }).toHtmlDoc();
+                miniTools.serveText(htmlMain, 'html')(req, res);
+            });
+            mainApp.get(baseUrl + '/campo', async function (req, res, _next) {
+                // @ts-ignore sé que voy a recibir useragent por los middlewares de Backend-plus
+                var { useragent, user } = req;
+                if (user) {
+                    /** @type {{type:'js', src:string}[]} */
+                    var webManifestPath = 'carga-dm/web-manifest.webmanifest';
+                    var htmlMain = be.mainPage({ useragent, user }, false, { skipMenu: true, webManifestPath, offlineFile: true }).toHtmlDoc();
+                    miniTools.serveText(htmlMain, 'html')(req, res);
+                } else {
+                    res.redirect(401, baseUrl + '/login#w=path&path=/campo')
+                }
+            });
+            var createServiceWorker = async function () {
+                var sw = await fs.readFile('node_modules/service-worker-admin/dist/service-worker-wo-manifest.js', 'utf8');
+                var manifest = await be.createResourcesForCacheJson();
+                var swManifest = sw
+                    .replace("'/*version*/'", JSON.stringify(manifest.version))
+                    .replace("'/*appName*/'", JSON.stringify(manifest.appName))
+                    .replace(/\[\s*\/\*urlsToCache\*\/\s*\]/, JSON.stringify(manifest.cache))
+                    .replace(/\[\s*\/\*fallbacks\*\/\s*\]/, JSON.stringify(manifest.fallback || []))
+                    .replace("'/*defaultFallback*/'", JSON.stringify(manifest.defaultFallback));
                 //.replace("/#CACHE$/", "/(a\\d+m\\d+p\\d+t\\d+_estructura.js)|(a\\d+m\\d+p\\d+t\\d+_hdr.json)/");
-            return swManifest
-        }
-        mainApp.get(baseUrl+`/sw-manifest.js`, async function(req, res, next){
-            try{
-                miniTools.serveText(await createServiceWorker(),'application/javascript')(req,res);
-            }catch(err){
-                miniTools.serveErr(req,res,next)(unexpected(err));
+                return swManifest
             }
-        });
-        mainApp.get(baseUrl+`/carga-dm/web-manifest.webmanifest`, async function(req, res, next){
-            const APP_NAME = await be.getAppName();
-            const sufijo = be.getSufijoFrombaseUrl(baseUrl);
-            try{
-                const content = {
-                  "name": `${APP_NAME}${sufijo} Progressive Web App`,
-                  "short_name": `${APP_NAME}${sufijo} PWA`,
-                  "description": `Progressive Web App for ${APP_NAME}${sufijo}.`,
-                  "icons": getManifestImageIcons(APP_NAME, sufijo),
-                  ...be.getColorsJson(sufijo as SufijosAmbiente)
+            mainApp.get(baseUrl + `/sw-manifest.js`, async function (req, res, next) {
+                try {
+                    miniTools.serveText(await createServiceWorker(), 'application/javascript')(req, res);
+                } catch (err) {
+                    miniTools.serveErr(req, res, next)(unexpected(err));
                 }
-                miniTools.serveText(JSON.stringify(content), 'application/json')(req,res);
-            }catch(err){
-                miniTools.serveErr(req, res, next)(unexpected(err));
-            }
-        });
-    }
-    getColorsJson(_sufijo: SufijosAmbiente){
-        return {
-            "start_url": "../campo",
-            "display": "standalone",
-            "theme_color": "#3F51B5",
-            "background_color": "#6d60ed"
-        }
-    }
-    override addLoggedServices(){
-        var be = this;
-        super.addLoggedServices();
-        be.app.get('/manifest.manifest', async function(req:Request, res:Response, _next:NextFunction){
-            miniTools.serveFile('src/client/manifest.manifest',{})(req,res);
-        });
-        this.app.get('/file', async function(req:Request,res:Response){
-            let result = await be.inTransaction(req, 
-                (client:pg.Client)=>
-                client.query("select ruta from adjuntos where id_adjunto = $1",[req.query.id_adjunto])
-                .fetchUniqueValue()
-            );
-            var path = result.value;
-            miniTools.serveFile(path,{})(req,res);
-        });
-        this.app.get('/imagenes', async function(req:Request,res:Response){
-            miniTools.serveFile('local-images/'+req.query.pdf,{})(req,res);
-        });
-        this.app.get('/download/all',async function(req:Request, res:Response, next:()=>void){
-            if(req.user==null || req.user.rol!='admin'){
-                console.log('no está autorizado a bajarse todo',req.user)
-                return next();
-            }
-            let zip = new yazl.ZipFile();
-            zip.outputStream.pipe(res);
-            let base = 'local-attachments'
-            let files = await fs.readdir(base);
-            await Promise.all(files.map(async function(fileName:string){
-                var path = base+'/'+fileName;
-                var stat = await fs.stat(path);
-                if(stat.isFile()){
-                    zip.addFile(path,fileName);
+            });
+            mainApp.get(baseUrl + `/carga-dm/web-manifest.webmanifest`, async function (req, res, next) {
+                const APP_NAME = await be.getAppName();
+                const sufijo = be.getSufijoFrombaseUrl(baseUrl);
+                try {
+                    const content = {
+                        "name": `${APP_NAME}${sufijo} Progressive Web App`,
+                        "short_name": `${APP_NAME}${sufijo} PWA`,
+                        "description": `Progressive Web App for ${APP_NAME}${sufijo}.`,
+                        "icons": getManifestImageIcons(APP_NAME, sufijo),
+                        ...be.getColorsJson(sufijo as SufijosAmbiente)
+                    }
+                    miniTools.serveText(JSON.stringify(content), 'application/json')(req, res);
+                } catch (err) {
+                    miniTools.serveErr(req, res, next)(unexpected(err));
                 }
-            }));
-            zip.end();
-        })
-    }
-    override async postConfig(){
-        await super.postConfig();
-        var be=this;
-        be.caches.metaEncIncluirCasillerosSaltoREL = false;
-        await be.inTransaction(null, async function(client:pg.Client){
-            var qPermisos=`
+            });
+        }
+        getColorsJson(_sufijo: SufijosAmbiente) {
+            return {
+                "start_url": "../campo",
+                "display": "standalone",
+                "theme_color": "#3F51B5",
+                "background_color": "#6d60ed"
+            }
+        }
+        override addLoggedServices() {
+            var be = this;
+            super.addLoggedServices();
+            be.app.get('/manifest.manifest', async function (req: Request, res: Response, _next: NextFunction) {
+                miniTools.serveFile('src/client/manifest.manifest', {})(req, res);
+            });
+            this.app.get('/file', async function (req: Request, res: Response) {
+                let result = await be.inTransaction(req,
+                    (client: pg.Client) =>
+                        client.query("select ruta from adjuntos where id_adjunto = $1", [req.query.id_adjunto])
+                            .fetchUniqueValue()
+                );
+                var path = result.value;
+                miniTools.serveFile(path, {})(req, res);
+            });
+            this.app.get('/imagenes', async function (req: Request, res: Response) {
+                miniTools.serveFile('local-images/' + req.query.pdf, {})(req, res);
+            });
+            this.app.get('/download/all', async function (req: Request, res: Response, next: () => void) {
+                if (req.user == null || req.user.rol != 'admin') {
+                    console.log('no está autorizado a bajarse todo', req.user)
+                    return next();
+                }
+                let zip = new yazl.ZipFile();
+                zip.outputStream.pipe(res);
+                let base = 'local-attachments'
+                let files = await fs.readdir(base);
+                await Promise.all(files.map(async function (fileName: string) {
+                    var path = base + '/' + fileName;
+                    var stat = await fs.stat(path);
+                    if (stat.isFile()) {
+                        zip.addFile(path, fileName);
+                    }
+                }));
+                zip.end();
+            })
+        }
+        override async postConfig() {
+            await super.postConfig();
+            var be = this;
+            be.caches.metaEncIncluirCasillerosSaltoREL = false;
+            await be.inTransaction(null, async function (client: pg.Client) {
+                var qPermisos = `
             SELECT jsonb_object_agg(r.rol,jsonb_build_object('superuser',r.superuser,'puede',(
                   SELECT jsonb_object_agg(rp.permiso,(
                         SELECT jsonb_object_agg(rpa.accion,rpa.habilitado)
@@ -351,10 +353,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
               )))
               FROM roles r
             `;
-            var results = [
-                await client.query(qPermisos.replace('#condHabilitado#','')).fetchUniqueValue(),
-                await client.query(qPermisos.replace('#condHabilitado#',` and rp.${pg.quoteIdent('habilitado')}`)).fetchUniqueValue(),
-                await client.query(`
+                var results = [
+                    await client.query(qPermisos.replace('#condHabilitado#', '')).fetchUniqueValue(),
+                    await client.query(qPermisos.replace('#condHabilitado#', ` and rp.${pg.quoteIdent('habilitado')}`)).fetchUniqueValue(),
+                    await client.query(`
                     SELECT jsonb_object_agg(permiso,(
                         SELECT jsonb_object_agg(accion,true)
                           FROM permisos pa
@@ -362,550 +364,560 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                       ))
                       FROM permisos p
                 `).fetchUniqueValue()
-            ];
-            be.caches.permisosRol=results[0].value;
-            be.caches.permisosRolSoloTrue=results[1].value;
-            be.caches.permisosSuperuser=results[2].value;
-            be.caches.permisosParaNadie=likeAr(be.caches.permisosSuperuser).map(p=>likeAr(p).map(_=>false).plain()).plain()
-            //console.dir(be.caches.permisosRolSoloTrue,{depth:9});
-            //console.dir(be.caches.permisosSuperuser,{depth:9});
-            //console.dir(be.caches.permisosParaNadie,{depth:9});
-        });
-        await this.refreshCaches();
-        await registrarCronJobPasarAProie(be);
-    }
-    override configStaticConfig(){
-        super.configStaticConfig();
-        this.setStaticConfig(defConfig);
-    }
-    override clientIncludes(req:Request, opts:OptsClientPage):ClientModuleDefinition[] {
-        var be = this;
-        var unlogged = opts && opts.offlineFile;
-        var menuedResources:ClientModuleDefinition[]= unlogged?[
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'unlogged.js', path: 'dmencu' },
-        ]:[
-            { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'client.js', path: 'dmencu' },
-        ];
-        if(opts && opts.extraFiles){
-            menuedResources = menuedResources.concat(opts.extraFiles);
+                ];
+                be.caches.permisosRol = results[0].value;
+                be.caches.permisosRolSoloTrue = results[1].value;
+                be.caches.permisosSuperuser = results[2].value;
+                be.caches.permisosParaNadie = likeAr(be.caches.permisosSuperuser).map(p => likeAr(p).map(_ => false).plain()).plain()
+                //console.dir(be.caches.permisosRolSoloTrue,{depth:9});
+                //console.dir(be.caches.permisosSuperuser,{depth:9});
+                //console.dir(be.caches.permisosParaNadie,{depth:9});
+            });
+            await this.refreshCaches();
+            await registrarCronJobPasarAProie(be);
         }
-        let externalResources:ClientModuleDefinition[] = [
-            { type: 'js', module: 'react', modPath: 'umd', file:'react.production.min.js' },
-            { type: 'js', module: 'react-dom', modPath: 'umd', file:'react-dom.production.min.js' },
-            //{ type: 'js', module: '@material-ui/core', modPath: 'umd', fileDevelopment:'material-ui.development.js', file:'material-ui.production.min.js' },
-            { type: 'js', module: '@mui/material', modPath: '../umd', file:'material-ui.production.min.js' },
+        override configStaticConfig() {
+            super.configStaticConfig();
+            this.setStaticConfig(defConfig);
+        }
+        override clientIncludes(req: Request, opts: OptsClientPage): ClientModuleDefinition[] {
+            var be = this;
+            var unlogged = opts && opts.offlineFile;
+            var menuedResources: ClientModuleDefinition[] = unlogged ? [
+                { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'unlogged.js', path: 'dmencu' },
+            ] : [
+                { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'client.js', path: 'dmencu' },
+            ];
+            if (opts && opts.extraFiles) {
+                menuedResources = menuedResources.concat(opts.extraFiles);
+            }
+            let externalResources: ClientModuleDefinition[] = [
+                { type: 'js', module: 'react', modPath: 'umd', file: 'react.production.min.js' },
+                { type: 'js', module: 'react-dom', modPath: 'umd', file: 'react-dom.production.min.js' },
+                //{ type: 'js', module: '@material-ui/core', modPath: 'umd', fileDevelopment:'material-ui.development.js', file:'material-ui.production.min.js' },
+                { type: 'js', module: '@mui/material', modPath: '../umd', file: 'material-ui.production.min.js' },
 
-            { type: 'js', module: 'redux', modPath:'../dist', file:'redux.min.js' },
-            { type: 'js', module: 'react-redux', modPath:'../dist', file:'react-redux.min.js' },
-            { type: 'js', module: 'memoize-one',  file:'memoize-one.js' },
-            //{ type: 'js', module: 'qrcode', modPath: '../build', file: 'qrcode.js'},
-            ...super.clientIncludes(req, opts).filter(m=>m.file!='formularios.css')
-            .filter(m=>!unlogged || true
-                && m.file!='var-cal.js'
-                && m.file!='var-cal.js'     
-            ),
-            { type: 'js', module: 'service-worker-admin',  file:'service-worker-admin.js' },
-            { type: 'js', module: 'redux-typed-reducer', modPath:'../dist', file:'redux-typed-reducer.js' }
-        ];
-        var resources:ClientModuleDefinition[] = [
-            ...externalResources,
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'adapt.js', path: 'dmencu' },
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'tipos.js', path: 'dmencu' },
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'bypass-formulario.js', path: 'dmencu' },
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'redux-formulario.js', path: 'dmencu' },
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-general.js', path: 'dmencu' },
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-formulario.js', path: 'dmencu' },
-            { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'abrir-formulario.js', path: 'dmencu' },
-            { type: 'css', module: 'dmencu', modPath: '../../unlogged/unlogged/css', file: 'formulario-react.css', path: 'css' },
-            { type: 'css', module: 'dmencu', modPath: '../../unlogged/unlogged/css', file: 'bootstrap.min.css', path: 'css' },
-            { type: 'ttf', module: 'dmencu', modPath: '../../unlogged/unlogged/css', file: 'Roboto-Regular.ttf', path: 'css' },
-            ... menuedResources,
-            { type: 'css', module: 'dmencu', modPath: '../../client/client/css', file: 'menu.css', path: 'css' },
-        ]
-        return resources
-        // .map(m=>({...m, file:m.fileDevelopment||m.file}));
-    }
-    async refreshCaches(){
-        this.caches.tableContent = this.caches.tableContent || {};
-        await this.inDbClient(null, async (client)=>{
-            this.caches.tableContent.no_rea = (await client.query(`select * from no_rea order by no_rea`).fetchAll()).rows;
-            console.log('caches',this.caches.tableContent.no_rea)
-            this.caches.tableContent.no_rea_groups = (await client.query(`
+                { type: 'js', module: 'redux', modPath: '../dist', file: 'redux.min.js' },
+                { type: 'js', module: 'react-redux', modPath: '../dist', file: 'react-redux.min.js' },
+                //{ type: 'js', module: 'qrcode', modPath: '../build', file: 'qrcode.js'},
+                ...super.clientIncludes(req, opts).filter(m => m.file != 'formularios.css')
+                    .filter(m => !unlogged || true
+                        && m.file != 'var-cal.js'
+                        && m.file != 'var-cal.js'
+                    ),
+                { type: 'js', module: 'service-worker-admin', file: 'service-worker-admin.js' },
+                { type: 'js', module: 'redux-typed-reducer', modPath: '../dist', file: 'redux-typed-reducer.js' }
+            ];
+            var resources: ClientModuleDefinition[] = [
+                ...externalResources,
+                { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'adapt.js', path: 'dmencu' },
+                { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'tipos.js', path: 'dmencu' },
+                { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'bypass-formulario.js', path: 'dmencu' },
+                { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'redux-formulario.js', path: 'dmencu' },
+                { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-general.js', path: 'dmencu' },
+                { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-formulario.js', path: 'dmencu' },
+                { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'abrir-formulario.js', path: 'dmencu' },
+                { type: 'css', module: 'dmencu', modPath: '../../unlogged/unlogged/css', file: 'formulario-react.css', path: 'css' },
+                { type: 'css', module: 'dmencu', modPath: '../../unlogged/unlogged/css', file: 'bootstrap.min.css', path: 'css' },
+                { type: 'ttf', module: 'dmencu', modPath: '../../unlogged/unlogged/css', file: 'Roboto-Regular.ttf', path: 'css' },
+                ...menuedResources,
+                { type: 'css', module: 'dmencu', modPath: '../../client/client/css', file: 'menu.css', path: 'css' },
+            ]
+            return resources
+            // .map(m=>({...m, file:m.fileDevelopment||m.file}));
+        }
+        async refreshCaches() {
+            this.caches.tableContent = this.caches.tableContent || {};
+            await this.inDbClient(null, async (client) => {
+                this.caches.tableContent.no_rea = (await client.query(`select * from no_rea order by no_rea`).fetchAll()).rows;
+                console.log('caches', this.caches.tableContent.no_rea)
+                this.caches.tableContent.no_rea_groups = (await client.query(`
                 select grupo, jsonb_agg(to_json(r.*)) as codigos from no_rea r group by grupo order by 1
             `).fetchAll()).rows;
-            this.caches.tableContent.no_rea_groups0 = (await client.query(`
+                this.caches.tableContent.no_rea_groups0 = (await client.query(`
                 select grupo0 as grupo, jsonb_agg(to_json(r.*)) as codigos from no_rea r group by grupo0 order by 1
             `).fetchAll()).rows;
-            this.caches.tableContent.no_rea_sup = (await client.query(`select * from no_rea_sup order by no_rea_sup`).fetchAll()).rows;
-            console.log('caches',this.caches.tableContent.no_rea_sup)
-            this.caches.tableContent.no_rea_sup_groups = (await client.query(`
+                this.caches.tableContent.no_rea_sup = (await client.query(`select * from no_rea_sup order by no_rea_sup`).fetchAll()).rows;
+                console.log('caches', this.caches.tableContent.no_rea_sup)
+                this.caches.tableContent.no_rea_sup_groups = (await client.query(`
             select grupo_sup, jsonb_agg(to_json(r.*)) as codigos from no_rea_sup r group by grupo_sup order by 1
             `).fetchAll()).rows;
-            this.caches.tableContent.no_rea_sup_groups0 = (await client.query(`
+                this.caches.tableContent.no_rea_sup_groups0 = (await client.query(`
             select grupo0_sup as grupo, jsonb_agg(to_json(r.*)) as codigos from no_rea_sup r group by grupo0_sup order by 1
         `).fetchAll()).rows;
-           this.caches.tableContent.conReaHogar = (await client.query(`
+                this.caches.tableContent.conReaHogar = (await client.query(`
             select con_rea_hogar,operativo, config_sorteo from operativos join parametros using (operativo) where unico_registro
              `).fetchUniqueRow()).row;
-            //console.log('caches ',this.caches.tableContent.conReaHogar )
-        })
-        console.log('caches ok');
-    }
-    //sqlNoreaCase(campoNecesario:string){
-    //    var be=this;
-    //    return `CASE ${be.caches.tableContent.no_rea.map(x=>
-    //        ` WHEN norea  = ${be.db.quoteLiteral(x.no_rea)}::integer THEN ${be.db.quoteLiteral(x[campoNecesario])}`
-    //    ).join('')} WHEN TRUE THEN NULL END`
-    //}    
-    override getContext(req:Request):Context{
-        var be = this;
-        var fatherContext = super.getContext(req);
-        if(fatherContext.user){
-            if(req.user?.rol !=null && be.caches.permisosRol[req.user.rol]?.superuser){
-                return {superuser:true, puede: be.caches.permisosSuperuser, ...fatherContext}
-            }else{
-                return {puede: be.caches.permisosRol[req.user.rol]?.puede, ...fatherContext}
+                //console.log('caches ',this.caches.tableContent.conReaHogar )
+            })
+            console.log('caches ok');
+        }
+        //sqlNoreaCase(campoNecesario:string){
+        //    var be=this;
+        //    return `CASE ${be.caches.tableContent.no_rea.map(x=>
+        //        ` WHEN norea  = ${be.db.quoteLiteral(x.no_rea)}::integer THEN ${be.db.quoteLiteral(x[campoNecesario])}`
+        //    ).join('')} WHEN TRUE THEN NULL END`
+        //}    
+        override getContext(req: Request): Context {
+            var be = this;
+            var fatherContext = super.getContext(req);
+            if (fatherContext.user) {
+                if (req.user?.rol != null && be.caches.permisosRol[req.user.rol]?.superuser) {
+                    return { superuser: true, puede: be.caches.permisosSuperuser, ...fatherContext }
+                } else {
+                    return { puede: be.caches.permisosRol[req.user.rol]?.puede, ...fatherContext }
+                }
+            }
+            return { puede: be.caches.permisosParaNadie, ...fatherContext };
+        }
+        override getContextForDump(): Context {
+            var fatherContext = super.getContextForDump();
+            return { superuser: true, puede: this.caches.permisosSuperuser, ...fatherContext };
+        }
+        override async getClientSetupForSendToFrontEnd(req: Request) {
+            return {
+                ...(await super.getClientSetupForSendToFrontEnd(req)),
+                idper: req.user?.idper
             }
         }
-        return {puede:be.caches.permisosParaNadie, ...fatherContext};
-    }
-    override getContextForDump():Context{
-        var fatherContext = super.getContextForDump();
-        return {superuser:true, puede: this.caches.permisosSuperuser, ...fatherContext};
-    }
-    override async getClientSetupForSendToFrontEnd(req:Request){
-        return {
-            ...(await super.getClientSetupForSendToFrontEnd(req)),
-            idper: req.user?.idper
-        }
-    }
-    async createResourcesForCacheJson(){
-        var be = this;
-        const APP_NAME = await be.getAppName()
-        const sufijo = be.getSufijoFrombaseUrl(be.config.server['base-url']);
+        async createResourcesForCacheJson() {
+            var be = this;
+            const APP_NAME = await be.getAppName()
+            const sufijo = be.getSufijoFrombaseUrl(be.config.server['base-url']);
 
-        var jsonResult = {
-            version: APP_DM_VERSION,
-            appName: 'dmencu',
-            cache: [
-                "campo",
-                "offline",
-                "lib/react.production.min.js",
-                "lib/react-dom.production.min.js",
-                "lib/material-ui.production.min.js",
-                "lib/redux.min.js",
-                "lib/react-redux.min.js",
-                "lib/memoize-one.js",
-                //"lib/qrcode.js",
-                "lib/require-bro.js",
-                "lib/cast-error.js",
-                "lib/like-ar.js",
-                "lib/best-globals.js",
-                "lib/json4all.js",
-                "lib/js-to-html.js",
-                "lib/redux-typed-reducer.js",
-                "dmencu/adapt.js",
-                "dmencu/unlogged.js",
-                "lib/js-yaml.js",
-                "lib/xlsx.core.min.js",
-                "lib/lazy-some.js",
-                "lib/sql-tools.js",
-                "dialog-promise/dialog-promise.js",
-                "moment/min/moment.js",
-                "pikaday/pikaday.js",
-                "lib/polyfills-bro.js",
-                "lib/big.js",
-                "lib/type-store.js",
-                "lib/typed-controls.js",
-                "lib/ajax-best-promise.js",
-                "my-ajax.js",
-                "my-start.js",
-                "lib/my-localdb.js",
-                "lib/my-websqldb.js",
-                "lib/my-localdb.js.map",
-                "lib/my-websqldb.js.map",
-                "lib/my-things.js",
-                "lib/my-tables.js",
-                "lib/my-inform-net-status.js",
-                "lib/my-menu.js",
-                "lib/my-skin.js",
-                "lib/cliente-en-castellano.js",
-                "lib/service-worker-admin.js",
-                "lib/redux-typed-reducer.js",
-                "client_modules/operativos.js",
-                "client_modules/varcal.js",
-                "client_modules/form-structure.js",
-                "client_modules/meta-enc.js",
-                "client_modules/datos-ext.js",
-                "client_modules/consistencias.js",
-                "client_modules/procesamiento.js",
-                "dmencu/tipos.js",
-                "dmencu/bypass-formulario.js",
-                "dmencu/redux-formulario.js",
-                "dmencu/render-general.js",
-                "dmencu/render-formulario.js",
-                "dmencu/abrir-formulario.js",
-                "client_modules/row-validator.js",
-                "client/menu.js",
-                "img/logo.png",
-                //"img/logo-dm.png",
-                "img/logo-128.png",
-                "img/main-loading.gif",
-                "img/borrar-valor.png",
-                "img/fondo-salteado-error.png",
-                "img/fondo-salteado.png",
-                "img/background-test.png",
-                //"client-setup",
-                "css/bootstrap.min.css",
-                "css/formulario-react.css",
-                "pikaday/pikaday.css",
-                "dialog-promise/dialog-promise.css",
-                "rel-enc/estados.css",
-                "css/my-tables.css",
-                "css/my-menu.css",
-                "css/my-things.css",
-                "css/menu.css",
-                "rel-enc/my-things2.css",
-                "css/formulario-react.css",
-                "css/Roboto-Regular.ttf",
-                "lib/xlsx.full.min.js",
-                "carga-dm/web-manifest.webmanifest",
-            ],
-            defaultFallback:"offline"
+            var jsonResult = {
+                version: APP_DM_VERSION,
+                appName: 'dmencu',
+                cache: [
+                    "campo",
+                    "offline",
+                    "lib/react.production.min.js",
+                    "lib/react-dom.production.min.js",
+                    "lib/material-ui.production.min.js",
+                    "lib/redux.min.js",
+                    "lib/react-redux.min.js",
+                    //"lib/qrcode.js",
+                    "lib/require-bro.js",
+                    "lib/cast-error.js",
+                    "lib/like-ar.js",
+                    "lib/best-globals.js",
+                    "lib/json4all.js",
+                    "lib/js-to-html.js",
+                    "lib/redux-typed-reducer.js",
+                    "dmencu/adapt.js",
+                    "dmencu/unlogged.js",
+                    "lib/js-yaml.js",
+                    "lib/xlsx.core.min.js",
+                    "lib/lazy-some.js",
+                    "lib/sql-tools.js",
+                    "dialog-promise/dialog-promise.js",
+                    "moment/min/moment.js",
+                    "pikaday/pikaday.js",
+                    "lib/polyfills-bro.js",
+                    "lib/big.js",
+                    "lib/type-store.js",
+                    "lib/typed-controls.js",
+                    "lib/ajax-best-promise.js",
+                    "my-ajax.js",
+                    "my-start.js",
+                    "lib/my-localdb.js",
+                    "lib/my-websqldb.js",
+                    "lib/my-localdb.js.map",
+                    "lib/my-websqldb.js.map",
+                    "lib/my-things.js",
+                    "lib/my-tables.js",
+                    "lib/my-inform-net-status.js",
+                    "lib/my-menu.js",
+                    "lib/my-skin.js",
+                    "lib/cliente-en-castellano.js",
+                    "lib/service-worker-admin.js",
+                    "lib/redux-typed-reducer.js",
+                    "client_modules/operativos.js",
+                    "client_modules/varcal.js",
+                    "client_modules/form-structure.js",
+                    "client_modules/meta-enc.js",
+                    "client_modules/datos-ext.js",
+                    "client_modules/consistencias.js",
+                    "client_modules/procesamiento.js",
+                    "dmencu/tipos.js",
+                    "dmencu/bypass-formulario.js",
+                    "dmencu/redux-formulario.js",
+                    "dmencu/render-general.js",
+                    "dmencu/render-formulario.js",
+                    "dmencu/abrir-formulario.js",
+                    "client_modules/row-validator.js",
+                    "client/menu.js",
+                    "img/logo.png",
+                    //"img/logo-dm.png",
+                    "img/logo-128.png",
+                    "img/main-loading.gif",
+                    "img/borrar-valor.png",
+                    "img/fondo-salteado-error.png",
+                    "img/fondo-salteado.png",
+                    "img/background-test.png",
+                    //"client-setup",
+                    "css/bootstrap.min.css",
+                    "css/formulario-react.css",
+                    "pikaday/pikaday.css",
+                    "dialog-promise/dialog-promise.css",
+                    "rel-enc/estados.css",
+                    "css/my-tables.css",
+                    "css/my-menu.css",
+                    "css/my-things.css",
+                    "css/menu.css",
+                    "rel-enc/my-things2.css",
+                    "css/formulario-react.css",
+                    "css/Roboto-Regular.ttf",
+                    "lib/xlsx.full.min.js",
+                    "carga-dm/web-manifest.webmanifest",
+                ],
+                defaultFallback: "offline"
+            };
+            jsonResult.cache = jsonResult.cache.concat(getManifestImageIcons(APP_NAME, sufijo).map((elem) => `menu/${elem.src}`));
+
+            var skin = be.config['client-setup'].skin;
+            if (skin && be.activeSkinFiles) {
+                var skinUrl = skin + '/';
+                jsonResult.cache.push(`${skin}/img/background-test.png`);
+                // Convertimos el Set a Array y mapeamos las rutas
+                var skinResources = Array.from(be.activeSkinFiles).map(function (pathRelativo) {
+                    // Si es un .styl, lo pedimos como .css porque el Service Worker 
+                    // debe cachear el recurso final que el navegador solicita.
+                    return skinUrl + pathRelativo.replace(/\.styl$/, '.css');
+                });
+
+                jsonResult.cache = jsonResult.cache.concat(skinResources);
+            }
+            return jsonResult
+        }
+        getMenuControles(_context: Context) {
+            return [
+                { menuType: 'proc', name: 'encuestas_procesamiento_pasar', label: 'pasar encuestas a procesamiento' },
+                { menuType: 'table', name: 'resumen', table: 'control_resumen', selectedByDefault: true },
+                { menuType: 'table', name: 'dominio', table: 'control_campo_dominio' },
+                { menuType: 'table', name: 'zona', table: 'control_campo_zona' },
+                { menuType: 'table', name: 'comuna', table: 'control_campo_comuna' },
+                { menuType: 'table', name: 'área', table: 'control_campo_area' },
+            ]
         };
-        jsonResult.cache = jsonResult.cache.concat(getManifestImageIcons(APP_NAME, sufijo).map((elem)=>`menu/${elem.src}`));
-
-        var skin = be.config['client-setup'].skin;
-        if(skin && be.activeSkinFiles){
-            var skinUrl = skin + '/';
-            jsonResult.cache.push(`${skin}/img/background-test.png`);
-            // Convertimos el Set a Array y mapeamos las rutas
-            var skinResources = Array.from(be.activeSkinFiles).map(function(pathRelativo) {
-                // Si es un .styl, lo pedimos como .css porque el Service Worker 
-                // debe cachear el recurso final que el navegador solicita.
-                return skinUrl + pathRelativo.replace(/\.styl$/, '.css');
-            });
-
-            jsonResult.cache = jsonResult.cache.concat(skinResources);
+        getMenuVarios(context: Context) {
+            let submenuVarios: MenuInfoBase[] = [{ menuType: 'abrir_encuesta', name: 'abrir_encuesta' }]
+            if (context.puede?.campo?.editar) {
+                submenuVarios.push({ menuType: 'table', name: 'hoja_ruta', table: 'grilla_hoja_ruta', label: 'hoja de ruta' })
+            }
+            if (context.puede?.campo?.administrar) {
+                submenuVarios.push({ menuType: 'proc', name: 'encuestador_dms_mostrar', label: 'forzar descarga encuestas DM' });
+                submenuVarios.push({ menuType: 'proc', name: 'encuesta_blanquear_previsualizar', label: 'blanquear encuesta' });
+                submenuVarios.push({ menuType: 'proc', name: 'encuesta_borrar_previsualizar', label: 'quitar encuesta de la muestra' });
+                submenuVarios.push({ menuType: 'proc', name: 'encuestas_capacitacion_borrar', label: 'quitar encuestas de capa de la muestra' });
+                submenuVarios.push({ menuType: 'proc', name: 'operativo_migrar', label: 'migrar operativo' });
+                submenuVarios.push({ menuType: 'proc', name: 'encuesta_capa_a_prod_pasar', label: 'pasar encuestas de capa a prod' });
+            }
+            if (context.puede?.encuestas?.procesar) {
+                submenuVarios.push({ menuType: 'proc', name: 'intercambiar_encuestas' });
+            }
+            return { menuType: 'menu', name: 'varios', menuContent: submenuVarios }
         }
-        return jsonResult
-    }
-    getMenuControles(_context:Context) { return [
-        {menuType:'proc', name:'encuestas_procesamiento_pasar', label: 'pasar encuestas a procesamiento'},
-        {menuType:'table', name:'resumen', table:'control_resumen', selectedByDefault:true},
-        {menuType:'table', name:'dominio', table:'control_campo_dominio'},
-        {menuType:'table', name:'zona'   , table:'control_campo_zona'  },
-        {menuType:'table', name:'comuna' , table:'control_campo_comuna'},
-        {menuType:'table', name:'área'   , table:'control_campo_area'  },
-    ]};
-    getMenuVarios(context:Context) { 
-        let submenuVarios:MenuInfoBase[] = [{menuType: 'abrir_encuesta', name: 'abrir_encuesta'}]
-        if(context.puede?.campo?.editar){
-            submenuVarios.push({menuType: 'table', name: 'hoja_ruta', table: 'grilla_hoja_ruta', label: 'hoja de ruta'})
-        }
-        if(context.puede?.campo?.administrar){
-            submenuVarios.push({menuType:'proc', name:'encuestador_dms_mostrar', label:'forzar descarga encuestas DM'});
-            submenuVarios.push({menuType:'proc', name:'encuesta_blanquear_previsualizar', label:'blanquear encuesta'});
-            submenuVarios.push({menuType:'proc', name:'encuesta_borrar_previsualizar', label:'quitar encuesta de la muestra'});
-            submenuVarios.push({menuType:'proc', name:'encuestas_capacitacion_borrar', label:'quitar encuestas de capa de la muestra'});
-            submenuVarios.push({menuType:'proc', name:'operativo_migrar', label:'migrar operativo'});
-            submenuVarios.push({menuType:'proc', name:'encuesta_capa_a_prod_pasar', label:'pasar encuestas de capa a prod'});
-        }
-        if(context.puede?.encuestas?.procesar){
-            submenuVarios.push({menuType:'proc', name:'intercambiar_encuestas'});
-        } 
-        return {menuType: 'menu', name: 'varios', menuContent: submenuVarios}
-    }
-    getMenuAsignacion(context:Context) { 
-        let filtroRecepcionista = context.user.rol=='recepcionista' ? {recepcionista: context.user.idper} : {};
-        let submenuAsignacion:MenuInfoBase[] = [];
-        if (context.puede?.campo?.administrar) {
-            submenuAsignacion.push({ menuType: 'table', name: 'general', table: 'areas_asignacion_general' });
-        }
-        submenuAsignacion.push(
-            { menuType: 'table', name: 'encuestador', table: 't_encu_areas', ff: { tarea: 'encu', ...filtroRecepcionista } },
-            { menuType: 'table', name: 'ingresador',  table: 't_ingr_areas', ff: { tarea: 'ingr', ...filtroRecepcionista } },
-            { menuType: 'table', name: 'recuperador', table: 'tareas_tem_asignacion_recu', ff: { tarea_actual: 'recu', tarea: 'recu', ...filtroRecepcionista } },
-        );
-        if(context.puede?.campo?.administrar){
+        getMenuAsignacion(context: Context) {
+            let filtroRecepcionista = context.user.rol == 'recepcionista' ? { recepcionista: context.user.idper } : {};
+            let submenuAsignacion: MenuInfoBase[] = [];
+            if (context.puede?.campo?.administrar) {
+                submenuAsignacion.push({ menuType: 'table', name: 'general', table: 'areas_asignacion_general' });
+            }
             submenuAsignacion.push(
-                { menuType: 'table', name: 'supervisor' , table: 'tareas_tem_asignacion_supe', ff: { tarea_actual: 'supe', tarea: 'supe', ...filtroRecepcionista } },
+                { menuType: 'table', name: 'encuestador', table: 't_encu_areas', ff: { tarea: 'encu', ...filtroRecepcionista } },
+                { menuType: 'table', name: 'ingresador', table: 't_ingr_areas', ff: { tarea: 'ingr', ...filtroRecepcionista } },
+                { menuType: 'table', name: 'recuperador', table: 'tareas_tem_asignacion_recu', ff: { tarea_actual: 'recu', tarea: 'recu', ...filtroRecepcionista } },
             );
-        };
-        return {menuType:'menu', name:'asignacion', label:'asignación' ,menuContent: submenuAsignacion}
-    }
-    getMenuRecepcion(context:Context) { 
-        let submenuRecepcion:MenuInfoBase[] = []
-        submenuRecepcion.push(
-            {menuType:'table', name:'encuestador', table:'encuestadores_asignados'},
-            {menuType:'table', name:'recuperador', table:'recuperadores_asignados'},
-            {menuType:'table', name:'ingresador', table:'ingresadores_asignados'},
-        );
-        if(context.puede?.campo?.administrar){
+            if (context.puede?.campo?.administrar) {
+                submenuAsignacion.push(
+                    { menuType: 'table', name: 'supervisor', table: 'tareas_tem_asignacion_supe', ff: { tarea_actual: 'supe', tarea: 'supe', ...filtroRecepcionista } },
+                );
+            };
+            return { menuType: 'menu', name: 'asignacion', label: 'asignación', menuContent: submenuAsignacion }
+        }
+        getMenuRecepcion(context: Context) {
+            let submenuRecepcion: MenuInfoBase[] = []
             submenuRecepcion.push(
-                {menuType:'table', name:'supervisor' , table:'supervisores_asignados' },
-                {menuType:'table', name: 'mis_supervisores' , table: 'mis_supervisores_asignados'}
+                { menuType: 'table', name: 'encuestador', table: 'encuestadores_asignados' },
+                { menuType: 'table', name: 'recuperador', table: 'recuperadores_asignados' },
+                { menuType: 'table', name: 'ingresador', table: 'ingresadores_asignados' },
             );
+            if (context.puede?.campo?.administrar) {
+                submenuRecepcion.push(
+                    { menuType: 'table', name: 'supervisor', table: 'supervisores_asignados' },
+                    { menuType: 'table', name: 'mis_supervisores', table: 'mis_supervisores_asignados' }
+                );
+            }
+            return { menuType: 'menu', name: 'recepcion', label: 'recepción', menuContent: submenuRecepcion }
         }
-        return {menuType:'menu', name:'recepcion', label:'recepción' ,menuContent:submenuRecepcion}
-    }
 
-    getMenuCarto(context:Context) {
-        let submenuCarto:MenuInfoBase[] = []
-        if(context.puede?.campo?.administrar){
-            submenuCarto.push(
-                {menuType:'table', name:'comunas'    , table:'comunas'},
-                {menuType:'table', name:'barrios'    , table:'barrios'},
-                {menuType:'table', name:'fracciones' , table:'fracciones'},
-                {menuType:'table', name:'radios'     , table:'radios' },
-                {menuType:'table', name:'manzanas'   , table:'manzanas'},
-            )
-            return {menuType:'menu'  , name:'carto', label:'cartografía', menuContent:submenuCarto}
+        getMenuCarto(context: Context) {
+            let submenuCarto: MenuInfoBase[] = []
+            if (context.puede?.campo?.administrar) {
+                submenuCarto.push(
+                    { menuType: 'table', name: 'comunas', table: 'comunas' },
+                    { menuType: 'table', name: 'barrios', table: 'barrios' },
+                    { menuType: 'table', name: 'fracciones', table: 'fracciones' },
+                    { menuType: 'table', name: 'radios', table: 'radios' },
+                    { menuType: 'table', name: 'manzanas', table: 'manzanas' },
+                )
+                return { menuType: 'menu', name: 'carto', label: 'cartografía', menuContent: submenuCarto }
+            }
+            return null
         }
-        return null
-    }
 
-    getMenu(context:Context){
-        let menu:MenuInfoBase[] = [];
-        if(this.config.server.policy=='web'){
-            if(context.puede?.encuestas.relevar){
-                if(this.config['client-setup'].ambiente=='demo' || this.config['client-setup'].ambiente=='test' || this.config['client-setup'].ambiente=='capa'){
-                    menu.push({menuType:'demo', name:'demo', selectedByDefault:true})
-                }else{
-                    menu.push({menuType:'path', name:'relevamiento', path:'/campo'})
-                }
-                menu.push(
-                    {menuType:'sincronizar_dm', name:'sincronizar'},
-                    {menuType:'cambiar_modo_dm', name:'cambiar_modo'},
-                );
-            }
-        }else{
-            if(context.puede?.campo?.editar){
-                menu.push(
-                    this.getMenuAsignacion(context),
-                    this.getMenuRecepcion(context)
-                );
-                if(context.puede?.campo?.administrar){
-                    menu.push({menuType:'table', name:'tareas_tem_fin_campo', label:'espera fin de campo'})
-                    menu.push({menuType:'table', name:'tareas_tem_analisis_campo', label:'análisis de campo'})
-                }
-                menu.push(
-                    {menuType:'menu', name:'supervision', label:'supervisión' ,menuContent:[
-                        {menuType:'table', name:'supervisar' , table:'tareas_tem_ingreso', ff:{tarea:'supe', asignado:context.user.idper } }
-                    ]}
-                )
-            }
-            if(context.puede?.campo?.editar||context.puede?.campo?.administrar||context.puede?.encuestas?.procesar){
-                menu.push(this.getMenuVarios(context));
-            }
-            if(context.puede?.campo?.administrar||context.puede?.encuestas?.procesar){
-                menu.push(
-                    {menuType:'menu', name:'control', menuContent:  this.getMenuControles(context) } )  ;
-                 /*{menuType:'table', name:'participacion'        , table:'control_campo_participacion'  },*/
-
-            }
-            if(context.puede?.encuestas?.procesar){
-                menu.push(
-                    {menuType:'menu', name:'procesar', menuContent:[
-                        {menuType:'table', name:'variables'    },
-                        {menuType:'table', name:'variables_cuestionario'     , table:'casilleros', td: {editable:false, allow:{update:false, import: false, delete:false, insert:false}}, fc:[{column:'var_name', operator:'!=\u2205', value:null}]},
-                        {menuType:'table', name:'consistencias'},
-                        {menuType:'table', name:'consistencias_cuestionario' , table:'casilleros', ff:{tipoc:'CONS'}},
-                        {menuType:'table', name:'inconsistencias'},
-                        {menuType:'table', name:'tabla_datos'  },
-                        {menuType:'table', name:'diccionario'  , label:'diccionarios' },
-                        {menuType:'table', name:'tareas_tem_procesamiento', label:'encuestas'},
-                    ]},
-                );
-            }
-            var menuConfigurar:MenuInfoBase[] = [];
-            if(context.puede?.campo?.administrar||context.puede?.encuestas?.procesar){
-                let submenuMuestra:MenuInfoBase[] = [
-                    {menuType:'table', name:'tem', label: 'TEM'},
-                    {menuType:'proc',  name:'muestra_generar', label:'generar muestra'},
-                    {menuType:'table', name:'semanas'},
-                    {menuType:'table', name:'area_enc_proximas'},
-                ]
-                menuConfigurar.push(
-                    {menuType:'menu', name:'muestra', label:'muestra', menuContent:submenuMuestra}
-                );
-            }
-            if(context.puede?.casilleros_texto?.editar){
-                menuConfigurar.push(
-                    {menuType:'menu', name:'metadatos', menuContent:[
-                        {menuType:'table', name:'operativos'},
-                        {menuType:'table', name:'formularios'   , table:'casilleros_principales'},
-                        {menuType:'table', name:'plano'         , table:'casilleros'},
-                        {menuType:'table', name:'variables'     , table:'casilleros', fc:[{column:'var_name', operator:'!=\u2205', value:null}]},
-                        {menuType:'table', name:'tipoc'         , label:'tipos de celdas'},
-                        {menuType:'table', name:'tipoc_tipoc'   , label:'inclusiones de celdas'},
-                    ]},
-                );
-            }
-            if(context.superuser){
-                menuConfigurar.push(
-                    {menuType:'menu', name:'estados_acciones_tareas', label:'estados/acciones/tareas', menuContent:[
-                        {menuType:'table', name:'tareas'},
-                        {menuType:'table', name:'estados'},
-                        {menuType:'table', name:'acciones'},
-                        {menuType:'table', name:'estados_acciones'},
-                        {menuType:'table', name:'tareas_proximas'},
-                    ]},
-                    {menuType:'table', name:'momentos_consistencia'},
-                    {menuType:'table', name:'parametros'},
-                    {menuType:'table', name:'modos_dm'},
-                )
-            }
-            if(context.puede?.campo?.administrar || context.puede?.encuestas?.procesar){
-                menuConfigurar.push(
-                    {menuType:'menu', name:'usuarios', menuContent:[
-                        {menuType:'table', name:'usuarios', selectedByDefault:true},
-                        {menuType:'table', name:'roles'},
-                        {menuType:'table', name:'permisos'},
-                        {menuType:'table', name:'roles_permisos'},
-                    ]},
-                )
-            }
-            if(menuConfigurar.length){
-                menu.push({menuType:'menu', name:'configurar', menuContent:menuConfigurar});
-            }
-            const menuCarto = this.getMenuCarto(context);
-            if(menuCarto){
-                menu.push(menuCarto);
-            }
-        }
-        return {menu};
-    }
-    override prepareGetTables(){
-        var be=this;
-        super.prepareGetTables();
-        this.getTableDefinition={
-            ...this.getTableDefinition
-            , roles
-            , usuarios
-            , personal
-            , recepcionistas
-            , encuestadores_asignados
-            , ingresadores_asignados
-            , recuperadores_asignados
-            , supervisores_asignados
-            , mis_supervisores_asignados
-            , mis_encuestadores
-            , recuperadores
-            , supervisores
-            , personal_rol
-            , permisos
-            , roles_permisos
-            , roles_subordinados
-            , no_rea
-            , no_rea_sup
-            , semanas
-            , estados
-            , acciones
-            , estados_acciones
-            , tareas_proximas
-            , tem
-            , historial_tem
-            , modos_dm
-            , parametros
-            , operaciones
-            , comunas
-            , areas
-            , sincronizaciones
-            , tareas
-            , tareas_tem
-            , tareas_tem_asignacion_encu
-            , tareas_tem_asignacion_recu
-            , tareas_tem_asignacion_supe
-            , tareas_tem_asignacion_ingr
-            , tareas_areas
-            , areas_asignacion_general
-            , grilla_hoja_ruta
-            , t_encu_areas
-            , t_recu_areas
-            , t_supe_areas
-            , t_ingr_areas
-            , mis_tareas
-            , tem_asignacion
-            , tareas_tem_recepcion
-            , tareas_tem_ingreso
-            , tareas_tem_fin_campo
-            , tareas_tem_procesamiento
-            , tareas_tem_analisis_campo
-            , mis_tareas_areas
-            , control_campo
-            , control_resumen
-            , control_campo_zona: context=>control_campo(context, 
-                {nombre:'control_campo_comuna', title:'control campo x zona solo cemento', camposCorte:[{name:'zona', typeName:'text'}], sinhogfin:!context.be.caches.tableContent.conReaHogar.con_rea_hogar,filtroWhere:'dominio=3' }
-            )
-            , control_campo_comuna: context=>control_campo(context, 
-                {nombre:'control_campo_comuna', title:'control campo x comuna solo cemento', camposCorte:[{name:'zona', typeName:'text'},{name:'nrocomuna', typeName:'text'}], sinhogfin:!context.be.caches.tableContent.conReaHogar.con_rea_hogar,filtroWhere:'dominio=3' }
-            )
-            , control_campo_area: context=>control_campo(context, 
-                {nombre:'control_campo_comuna', title:'control campo x area', camposCorte:[{name:'zona', typeName:'text'},{name:'nrocomuna', typeName:'text'},{name:'area', typeName:'integer'},{name:'participacion_a', typeName:'text'},{name:'clase_a', typeName:'text'}] ,sinhogfin:!context.be.caches.tableContent.conReaHogar.con_rea_hogar}
-            )
-            , control_campo_participacion: context=>control_campo(context, 
-                {nombre:'control_campo_comuna', title:'control campo x participacion', camposCorte:[{name:'participacion', typeName:'bigint'}],sinhogfin:!context.be.caches.tableContent.conReaHogar.con_rea_hogar}
-            )
-            , control_campo_dominio: context=>control_campo(context, 
-                {nombre:'control_campo_comuna', title:'control campo x dominio', camposCorte:[{name:'dominio', typeName:'integer'}],sinhogfin:!context.be.caches.tableContent.conReaHogar.con_rea_hogar}
-            )
-            , control_dias_carga
-            , viviendas
-            , visitas
-            , hogares
-            , personas
-            , visitas_sup
-            , hogares_sup
-            , personas_sup
-            , diccionario
-            , dicvar
-            , dictra
-            , inconsistencias_cumplen_condicion
-            , tem_borradas
-            , barrios
-            , fracciones
-            , radios
-            , manzanas
-            , area_enc_proximas
-        }
-        be.appendToTableDefinition('consistencias',function(tableDef, context){
-            tableDef.editable=tableDef.editable || context.puede?.encuestas?.procesar;
-            tableDef.fields.forEach(function(field){
-                if(field.name=='error_compilacion'){
-                    if(field.visible){
-                        console.error('************ QUITAR ESTO error_compilacion ya es visible');
+        getMenu(context: Context) {
+            let menu: MenuInfoBase[] = [];
+            if (this.config.server.policy == 'web') {
+                if (context.puede?.encuestas.relevar) {
+                    if (this.config['client-setup'].ambiente == 'demo' || this.config['client-setup'].ambiente == 'test' || this.config['client-setup'].ambiente == 'capa') {
+                        menu.push({ menuType: 'demo', name: 'demo', selectedByDefault: true })
+                    } else {
+                        menu.push({ menuType: 'path', name: 'relevamiento', path: '/campo' })
                     }
-                    field.visible=true;
+                    menu.push(
+                        { menuType: 'sincronizar_dm', name: 'sincronizar' },
+                        { menuType: 'cambiar_modo_dm', name: 'cambiar_modo' },
+                    );
                 }
+            } else {
+                if (context.puede?.campo?.editar) {
+                    menu.push(
+                        this.getMenuAsignacion(context),
+                        this.getMenuRecepcion(context)
+                    );
+                    if (context.puede?.campo?.administrar) {
+                        menu.push({ menuType: 'table', name: 'tareas_tem_fin_campo', label: 'espera fin de campo' })
+                        menu.push({ menuType: 'table', name: 'tareas_tem_analisis_campo', label: 'análisis de campo' })
+                    }
+                    menu.push(
+                        {
+                            menuType: 'menu', name: 'supervision', label: 'supervisión', menuContent: [
+                                { menuType: 'table', name: 'supervisar', table: 'tareas_tem_ingreso', ff: { tarea: 'supe', asignado: context.user.idper } }
+                            ]
+                        }
+                    )
+                }
+                if (context.puede?.campo?.editar || context.puede?.campo?.administrar || context.puede?.encuestas?.procesar) {
+                    menu.push(this.getMenuVarios(context));
+                }
+                if (context.puede?.campo?.administrar || context.puede?.encuestas?.procesar) {
+                    menu.push(
+                        { menuType: 'menu', name: 'control', menuContent: this.getMenuControles(context) });
+                    /*{menuType:'table', name:'participacion'        , table:'control_campo_participacion'  },*/
+
+                }
+                if (context.puede?.encuestas?.procesar) {
+                    menu.push(
+                        {
+                            menuType: 'menu', name: 'procesar', menuContent: [
+                                { menuType: 'table', name: 'variables' },
+                                { menuType: 'table', name: 'variables_cuestionario', table: 'casilleros', td: { editable: false, allow: { update: false, import: false, delete: false, insert: false } }, fc: [{ column: 'var_name', operator: '!=\u2205', value: null }] },
+                                { menuType: 'table', name: 'consistencias' },
+                                { menuType: 'table', name: 'consistencias_cuestionario', table: 'casilleros', ff: { tipoc: 'CONS' } },
+                                { menuType: 'table', name: 'inconsistencias' },
+                                { menuType: 'table', name: 'tabla_datos' },
+                                { menuType: 'table', name: 'diccionario', label: 'diccionarios' },
+                                { menuType: 'table', name: 'tareas_tem_procesamiento', label: 'encuestas' },
+                            ]
+                        },
+                    );
+                }
+                var menuConfigurar: MenuInfoBase[] = [];
+                if (context.puede?.campo?.administrar || context.puede?.encuestas?.procesar) {
+                    let submenuMuestra: MenuInfoBase[] = [
+                        { menuType: 'table', name: 'tem', label: 'TEM' },
+                        { menuType: 'proc', name: 'muestra_generar', label: 'generar muestra' },
+                        { menuType: 'table', name: 'semanas' },
+                        { menuType: 'table', name: 'area_enc_proximas' },
+                    ]
+                    menuConfigurar.push(
+                        { menuType: 'menu', name: 'muestra', label: 'muestra', menuContent: submenuMuestra }
+                    );
+                }
+                if (context.puede?.casilleros_texto?.editar) {
+                    menuConfigurar.push(
+                        {
+                            menuType: 'menu', name: 'metadatos', menuContent: [
+                                { menuType: 'table', name: 'operativos' },
+                                { menuType: 'table', name: 'formularios', table: 'casilleros_principales' },
+                                { menuType: 'table', name: 'plano', table: 'casilleros' },
+                                { menuType: 'table', name: 'variables', table: 'casilleros', fc: [{ column: 'var_name', operator: '!=\u2205', value: null }] },
+                                { menuType: 'table', name: 'tipoc', label: 'tipos de celdas' },
+                                { menuType: 'table', name: 'tipoc_tipoc', label: 'inclusiones de celdas' },
+                            ]
+                        },
+                    );
+                }
+                if (context.superuser) {
+                    menuConfigurar.push(
+                        {
+                            menuType: 'menu', name: 'estados_acciones_tareas', label: 'estados/acciones/tareas', menuContent: [
+                                { menuType: 'table', name: 'tareas' },
+                                { menuType: 'table', name: 'estados' },
+                                { menuType: 'table', name: 'acciones' },
+                                { menuType: 'table', name: 'estados_acciones' },
+                                { menuType: 'table', name: 'tareas_proximas' },
+                            ]
+                        },
+                        { menuType: 'table', name: 'momentos_consistencia' },
+                        { menuType: 'table', name: 'parametros' },
+                        { menuType: 'table', name: 'modos_dm' },
+                    )
+                }
+                if (context.puede?.campo?.administrar || context.puede?.encuestas?.procesar) {
+                    menuConfigurar.push(
+                        {
+                            menuType: 'menu', name: 'usuarios', menuContent: [
+                                { menuType: 'table', name: 'usuarios', selectedByDefault: true },
+                                { menuType: 'table', name: 'roles' },
+                                { menuType: 'table', name: 'permisos' },
+                                { menuType: 'table', name: 'roles_permisos' },
+                            ]
+                        },
+                    )
+                }
+                if (menuConfigurar.length) {
+                    menu.push({ menuType: 'menu', name: 'configurar', menuContent: menuConfigurar });
+                }
+                const menuCarto = this.getMenuCarto(context);
+                if (menuCarto) {
+                    menu.push(menuCarto);
+                }
+            }
+            return { menu };
+        }
+        override prepareGetTables() {
+            var be = this;
+            super.prepareGetTables();
+            this.getTableDefinition = {
+                ...this.getTableDefinition
+                , roles
+                , usuarios
+                , personal
+                , recepcionistas
+                , encuestadores_asignados
+                , ingresadores_asignados
+                , recuperadores_asignados
+                , supervisores_asignados
+                , mis_supervisores_asignados
+                , mis_encuestadores
+                , recuperadores
+                , supervisores
+                , personal_rol
+                , permisos
+                , roles_permisos
+                , roles_subordinados
+                , no_rea
+                , no_rea_sup
+                , semanas
+                , estados
+                , acciones
+                , estados_acciones
+                , tareas_proximas
+                , tem
+                , historial_tem
+                , modos_dm
+                , parametros
+                , operaciones
+                , comunas
+                , areas
+                , sincronizaciones
+                , tareas
+                , tareas_tem
+                , tareas_tem_asignacion_encu
+                , tareas_tem_asignacion_recu
+                , tareas_tem_asignacion_supe
+                , tareas_tem_asignacion_ingr
+                , tareas_areas
+                , areas_asignacion_general
+                , grilla_hoja_ruta
+                , t_encu_areas
+                , t_recu_areas
+                , t_supe_areas
+                , t_ingr_areas
+                , mis_tareas
+                , tem_asignacion
+                , tareas_tem_recepcion
+                , tareas_tem_ingreso
+                , tareas_tem_fin_campo
+                , tareas_tem_procesamiento
+                , tareas_tem_analisis_campo
+                , mis_tareas_areas
+                , control_campo
+                , control_resumen
+                , control_campo_zona: context => control_campo(context,
+                    { nombre: 'control_campo_comuna', title: 'control campo x zona solo cemento', camposCorte: [{ name: 'zona', typeName: 'text' }], sinhogfin: !context.be.caches.tableContent.conReaHogar.con_rea_hogar, filtroWhere: 'dominio=3' }
+                )
+                , control_campo_comuna: context => control_campo(context,
+                    { nombre: 'control_campo_comuna', title: 'control campo x comuna solo cemento', camposCorte: [{ name: 'zona', typeName: 'text' }, { name: 'nrocomuna', typeName: 'text' }], sinhogfin: !context.be.caches.tableContent.conReaHogar.con_rea_hogar, filtroWhere: 'dominio=3' }
+                )
+                , control_campo_area: context => control_campo(context,
+                    { nombre: 'control_campo_comuna', title: 'control campo x area', camposCorte: [{ name: 'zona', typeName: 'text' }, { name: 'nrocomuna', typeName: 'text' }, { name: 'area', typeName: 'integer' }, { name: 'participacion_a', typeName: 'text' }, { name: 'clase_a', typeName: 'text' }], sinhogfin: !context.be.caches.tableContent.conReaHogar.con_rea_hogar }
+                )
+                , control_campo_participacion: context => control_campo(context,
+                    { nombre: 'control_campo_comuna', title: 'control campo x participacion', camposCorte: [{ name: 'participacion', typeName: 'bigint' }], sinhogfin: !context.be.caches.tableContent.conReaHogar.con_rea_hogar }
+                )
+                , control_campo_dominio: context => control_campo(context,
+                    { nombre: 'control_campo_comuna', title: 'control campo x dominio', camposCorte: [{ name: 'dominio', typeName: 'integer' }], sinhogfin: !context.be.caches.tableContent.conReaHogar.con_rea_hogar }
+                )
+                , control_dias_carga
+                , viviendas
+                , visitas
+                , hogares
+                , personas
+                , visitas_sup
+                , hogares_sup
+                , personas_sup
+                , diccionario
+                , dicvar
+                , dictra
+                , inconsistencias_cumplen_condicion
+                , tem_borradas
+                , barrios
+                , fracciones
+                , radios
+                , manzanas
+                , area_enc_proximas
+            }
+            be.appendToTableDefinition('consistencias', function (tableDef, context) {
+                tableDef.editable = tableDef.editable || context.puede?.encuestas?.procesar;
+                tableDef.fields.forEach(function (field) {
+                    if (field.name == 'error_compilacion') {
+                        if (field.visible) {
+                            console.error('************ QUITAR ESTO error_compilacion ya es visible');
+                        }
+                        field.visible = true;
+                    }
+                })
             })
-        })
-        be.appendToTableDefinition('inconsistencias',function(tableDef, context){
-            tableDef.sql={...tableDef.sql, isTable:true};
-            tableDef.fields.splice(2,0,
-                {name:'vivienda'    , typeName:'text'     , editable: false},
-                {name:'hogar'       , typeName:'bigint'   , editable: false},
-                {name:'persona'     , typeName:'bigint'   , editable: false},
-                {name:'visita'      , typeName:'bigint'   , editable: false},
-            );
-            tableDef.editable=tableDef.editable || context.puede?.encuestas.justificar;
-            tableDef.fields.forEach(function(field){
-                if(field.name=='pk_integrada'){
-                    field.visible=false;
-                }
-                if(field.name=='justificacion'){
-                    field.editable=context?.forDump || context?.puede?.encuestas.justificar;
-                }
-            })
-            tableDef.fields=tableDef.fields.concat(['tarea_actual','tarea_anterior'].map(fn=>{
-                return {name: fn   , typeName: 'text'  , editable: false, inTable: false}
-            }))
-            //sacar campos de vitales! 
-            const regExpFieldsVita= new RegExp('^(comp|infe|cod_causa|domi)$');
-            tableDef.fields = tableDef.fields.filter(f=>!(regExpFieldsVita.test(f.name)))
-                
-            var q_inconsist= tableDef.sql!.from
-            tableDef.sql!.from=`
+            be.appendToTableDefinition('inconsistencias', function (tableDef, context) {
+                tableDef.sql = { ...tableDef.sql, isTable: true };
+                tableDef.fields.splice(2, 0,
+                    { name: 'vivienda', typeName: 'text', editable: false },
+                    { name: 'hogar', typeName: 'bigint', editable: false },
+                    { name: 'persona', typeName: 'bigint', editable: false },
+                    { name: 'visita', typeName: 'bigint', editable: false },
+                );
+                tableDef.editable = tableDef.editable || context.puede?.encuestas.justificar;
+                tableDef.fields.forEach(function (field) {
+                    if (field.name == 'pk_integrada') {
+                        field.visible = false;
+                    }
+                    if (field.name == 'justificacion') {
+                        field.editable = context?.forDump || context?.puede?.encuestas.justificar;
+                    }
+                })
+                tableDef.fields = tableDef.fields.concat(['tarea_actual', 'tarea_anterior'].map(fn => {
+                    return { name: fn, typeName: 'text', editable: false, inTable: false }
+                }))
+                //sacar campos de vitales! 
+                const regExpFieldsVita = new RegExp('^(comp|infe|cod_causa|domi)$');
+                tableDef.fields = tableDef.fields.filter(f => !(regExpFieldsVita.test(f.name)))
+
+                var q_inconsist = tableDef.sql!.from
+                tableDef.sql!.from = `
                 (select i.*, t.tarea_actual, tarea_anterior
                   from ${q_inconsist} i 
                   join tem t on i.vivienda=t.enc and i.operativo=t.operativo 
@@ -919,55 +931,55 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     ) as ta on true
                 )   
             `
-        })
-        be.appendToTableDefinition('operativos',function(tableDef, context){
-            tableDef.fields.splice(2,0,{
-                name:'config_sorteo', 
-                typeName:'jsonb',
-                editable: false
-            },{
-                name:'habilitacion_boton_formulario', 
-                typeName:'jsonb',
-                editable: false
-            },{
-                name:'disform_cerrado', 
-                typeName:'boolean', 
-                defaultValue: false, 
-                editable: context?.forDump||['admin','dis_conceptual'].includes(context.user.rol)
-            },{
-                name:'con_rea_hogar', 
-                typeName:'boolean', 
-                editable: false,
-                defaultDbValue: 'true'
-            },{
-                name:'permite_generar_muestra', 
-                typeName:'boolean', 
-                editable: false,
-                defaultDbValue: 'false'
-            });
-        })
-        be.appendToTableDefinition('variables',function(tableDef, context){
-            var esAdmin= context?.user.rol==='admin';
-            tableDef.editable=tableDef.editable || context?.puede?.encuestas?.procesar;
-            tableDef.allow={delete: esAdmin};            
-        })
-        be.appendToTableDefinition('momentos_consistencia',function(tableDef, _context){
-            tableDef.fields.push(
-                {name:'condicion', typeName:'text' ,  nullable: false, defaultDbValue:'true'},
-            )
-        })
+            })
+            be.appendToTableDefinition('operativos', function (tableDef, context) {
+                tableDef.fields.splice(2, 0, {
+                    name: 'config_sorteo',
+                    typeName: 'jsonb',
+                    editable: false
+                }, {
+                    name: 'habilitacion_boton_formulario',
+                    typeName: 'jsonb',
+                    editable: false
+                }, {
+                    name: 'disform_cerrado',
+                    typeName: 'boolean',
+                    defaultValue: false,
+                    editable: context?.forDump || ['admin', 'dis_conceptual'].includes(context.user.rol)
+                }, {
+                    name: 'con_rea_hogar',
+                    typeName: 'boolean',
+                    editable: false,
+                    defaultDbValue: 'true'
+                }, {
+                    name: 'permite_generar_muestra',
+                    typeName: 'boolean',
+                    editable: false,
+                    defaultDbValue: 'false'
+                });
+            })
+            be.appendToTableDefinition('variables', function (tableDef, context) {
+                var esAdmin = context?.user.rol === 'admin';
+                tableDef.editable = tableDef.editable || context?.puede?.encuestas?.procesar;
+                tableDef.allow = { delete: esAdmin };
+            })
+            be.appendToTableDefinition('momentos_consistencia', function (tableDef, _context) {
+                tableDef.fields.push(
+                    { name: 'condicion', typeName: 'text', nullable: false, defaultDbValue: 'true' },
+                )
+            })
 
-        be.appendToTableDefinition('parametros',function(tableDef){
-            tableDef.fields.push(
-                {name:'modo_dm_defecto'  , typeName:'text'  , editable: true, nullable: false, defaultDbValue:"'capa'"},
-            );
-            tableDef.foreignKeys = tableDef.foreignKeys || [];
-            tableDef.foreignKeys.push(
-                {references:'modos_dm', fields:[{source:'modo_dm_defecto', target:'modo_dm'}]}
-            );
-        })
+            be.appendToTableDefinition('parametros', function (tableDef) {
+                tableDef.fields.push(
+                    { name: 'modo_dm_defecto', typeName: 'text', editable: true, nullable: false, defaultDbValue: "'capa'" },
+                );
+                tableDef.foreignKeys = tableDef.foreignKeys || [];
+                tableDef.foreignKeys.push(
+                    { references: 'modos_dm', fields: [{ source: 'modo_dm_defecto', target: 'modo_dm' }] }
+                );
+            })
+        }
     }
-  }
 }
 
 export var AppDmEncu = emergeAppDmEncu(emergeAppProcesamiento(emergeAppConsistencias(emergeAppVarCal(emergeAppDatosExt(emergeAppOperativos(AppBackend))))));
