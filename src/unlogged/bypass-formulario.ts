@@ -165,7 +165,9 @@ type DirectFunction<T, Result> = (respuestasAumentadas: Respuestas, feedbackForm
 
 type RegistroElemento<T extends ElementosRegistrables> = {
     id: string,
-    fun: DirectFunction<T, any>
+    fun: DirectFunction<T, any>,
+    variable?: IdVariable,
+    forPk?: ForPk,
 } & ({
     prop: keyof T
     fun: DirectFunction<T, T[keyof T]> // Lo que retorna la fun(ción) se usa para la prop(erty) del elemento
@@ -503,8 +505,8 @@ export function accion_borrar_formulario({ forPk, forPkPadre }: { forPk: ForPk, 
     var { respuestas, unidadAnalisis, respuestasAumentadas, respuestasRaiz, forPkRaiz } = respuestasForPk(forPk, true, true);
     var unidad_analisis: IdUnidadAnalisis | undefined = estructura.formularios[forPk.formulario].casilleros.unidad_analisis
     var uaDef: UnidadAnalisis = estructura.unidades_analisis[unidad_analisis];
-    var index = forPk[uaDef.pk_agregada];
-    respuestasAumentadas[unidad_analisis].pop();
+    var index = forPk[uaDef.pk_agregada] as number;
+    (respuestasAumentadas[unidad_analisis] as Respuestas[]).pop();
     variablesCalculadas(respuestasRaiz, forPkPadre);
     datosByPass.dirty = datosByPass.dirty || true;
     respuestasRaiz.$dirty = respuestasRaiz.$dirty || true;
@@ -720,7 +722,7 @@ export const getFuncionValorar = getFuncionCompilada(funcionesValorar);
 
 
 var rowValidator = getRowValidator<IdVariable, Valor, IdFin>({ getFuncionHabilitar, getFuncionValorar })
-export var buscarNoReaEnRespuestas = (unidadesARecorrerPrm: IdUnidadAnalisis[], unidadAnalisis: UnidadAnalisis, respuestas: Respuestas, noReasTarea: {}[], nombNoRea: string)
+export var buscarNoReaEnRespuestas = (unidadesARecorrerPrm: IdUnidadAnalisis[], unidadAnalisis: UnidadAnalisis, respuestas: Respuestas, noReasTarea: any[], nombNoRea: string)
     : { nrcodigo: string | null, esvalor: boolean } => {
     var nrcodigo: string | null = null;
     var esvalor = false;
@@ -857,8 +859,8 @@ export function verificarSorteo(opts: {
     var { configuracionSorteo, variableActual, respuestas, forPk, respuestasRaiz } = opts;
     var idEnc = forPk[estructura.pkAgregadaUaPpal];
     var { respuestasAumentadas, respuestasRaiz } = respuestasForPk(forPk, true);
-    var expr_incompletitud_fun = getFuncionHabilitar(configuracionSorteo.expr_incompletitud_js[respuestasAumentadas.vdominio].expr);
-    var filtro_fun = getFuncionHabilitar(configuracionSorteo.filtro_js[respuestasAumentadas.vdominio].expr);
+    var expr_incompletitud_fun = getFuncionHabilitar(configuracionSorteo.expr_incompletitud_js[respuestasAumentadas.vdominio as unknown as number].expr);
+    var filtro_fun = getFuncionHabilitar(configuracionSorteo.filtro_js[respuestasAumentadas.vdominio as unknown as number].expr);
     var unidadAnalisis = configuracionSorteo.unidad_analisis;
 
     if (configuracionSorteo.parametros.includes(variableActual)) {
@@ -869,7 +871,7 @@ export function verificarSorteo(opts: {
                 //@ts-ignore pkAgregadaPadre existe e indica la posicion del padre
                 var padre = respuestasAumentadas[uaPadre][Number(respuestasAumentadas[pkAgregadaPadre]) - 1];
                 if (variableActual != configuracionSorteo.cantidad_total) {
-                    padre[configuracionSorteo.cantidad_total] = padre[unidadAnalisis].length; //si agrega desde boton agregar
+                    padre[configuracionSorteo.cantidad_total] = likeAr(padre[unidadAnalisis] || []).array().length; //si agrega desde boton agregar
                 }
                 resetearSorteo({ respuestas: padre });
                 respuestas = padre;
@@ -879,7 +881,7 @@ export function verificarSorteo(opts: {
                 //@ts-ignore pkAgregadaPadre existe e indica la posicion del padre
                 var padre = respuestasRaiz;
                 if (variableActual != configuracionSorteo.cantidad_total) {
-                    padre[configuracionSorteo.cantidad_total] = padre[unidadAnalisis].length; //si agrega desde boton agregar
+                    padre[configuracionSorteo.cantidad_total] = likeAr(padre[unidadAnalisis] || []).array().length; //si agrega desde boton agregar
                 }
                 resetearSorteo({ respuestas: padre });
                 respuestas = padre;

@@ -249,8 +249,6 @@ var sp3 = 'sp3' as IdVariable;
 var sp4 = 'sp4' as IdVariable;
 var sp5 = 'sp5' as IdVariable;
 
-var diccionario = {}
-
 /*
 // const takeElementOrDefault<K, T extends [K in], D>()
 function isIn<V, T>(k:keyof T, object:T): object[k] is V{
@@ -332,7 +330,6 @@ function OpcionDespliegue(props: { casillero: Opcion, valorOpcion: number, varia
                 if (botonStyle) botonStyle.color = 'green';
                 await sleep(DELAY_SCROLL_3);
                 if (botonStyle) botonStyle.color = '';
-                //@ts-ignore algunos casilleros tienen especial y otros no
                 (casillero.especial?.noScroll == true) ? null : enfocarElementoDeVariable(casillero.especial?.scrollTo ?? siguienteVariable);
             }
         }
@@ -429,7 +426,6 @@ function registradorDeVariable(pregunta: Pregunta | OpcionMultiple | ConjuntoPre
 function OpcionMultipleDespliegue(props: { opcionM: OpcionMultiple, forPk: ForPk }) {
     const { opcionM } = props;
     var id = `opcionM-${opcionM.id_casillero}`;
-    //@ts-ignore altunos casilleros no tienen especial, no importa, es solo para poner los metadatos
     var styles: React.CSSProperties = opcionM.especial?.flexDirection ? { flexDirection: opcionM.especial.flexDirection } : { flexWrap: 'wrap' };
     registrarElemento({
         id,
@@ -471,15 +467,11 @@ const getLosMetadatos = (casillero: CasilleroEncabezable): React.JSX.Element =>
         {casillero.tipovar && casillero.tipovar != 'opciones' && casillero.tipovar != 'si_no' ?
             <span el-metadato="tipovar">{casillero.tipovar}</span>
             : null}
-        {   //@ts-ignore una opción múltiple nunca lo a a ser, no tiene el campo, no importa
-            casillero.optativo ? <span el-metadato="optativa">optativa</span> : null
-        }
+        {casillero.var_name && casillero.optativo ? <span el-metadato="optativa">optativa</span> : null}
         {casillero.calculada ? <span el-metadato="calculada">calculada</span> : null}
         {casillero.despliegueOculta ? <span el-metadato="oculta">oculta</span> : null}
         {casillero.expresion_habilitar ? <span el-metadato="expresion_habilitar">habilita: {casillero.expresion_habilitar}</span> : null}
-        {   //@ts-ignore altunos casilleros no tienen especial, no importa, es solo para poner los metadatos
-            casillero.especial?.autoing ? <span el-metadato="expresion_autoing">autoing: {casillero.especial?.autoing}</span> : null
-        }
+        {casillero.especial?.autoing ? <span el-metadato="expresion_autoing">autoing: {casillero.especial?.autoing}</span> : null}
     </div>
 
 function EncabezadoDespliegue(props: {
@@ -495,7 +487,6 @@ function EncabezadoDespliegue(props: {
         dispatchByPass(accion_registrar_respuesta, { respuesta: null, variable: casillero.var_name as IdVariable, forPk: forPk })
     };
     var ver_id = casillero.ver_id ?? casillero.casillero;
-    // @ts-ignore no está en todos los casilleros pero acá para el despliegue de metadatos no importa
     var calculada = casillero.calculada;
     var id = `id-div-${casillero.var_name || casillero.casillero}`;
     var idAcciones = "acciones-" + id;
@@ -515,7 +506,7 @@ function EncabezadoDespliegue(props: {
             <div className="id">
                 {ver_id}
             </div>
-            {(casillero.tipovar == "si_no" || casillero.tipovar == "opciones") ? <Campo disabled={false} pregunta={casillero} forPk={forPk} mini={true} hidden={!conCampoOpciones && 'quitar'} /> : null}
+            {(casillero.tipovar == "si_no" || casillero.tipovar == "opciones") ? <Campo disabled={false} pregunta={casillero as unknown as PreguntaSimple} forPk={forPk} mini={true} hidden={!conCampoOpciones && 'quitar'} /> : null}
             <div className="acciones-pregunta" id={idAcciones} accion-visible="0">
                 {casillero.var_name ? <div><Button
                     id={"borrar-pregunta-" + casillero.var_name}
@@ -546,7 +537,7 @@ function EncabezadoDespliegue(props: {
                         <Button color="primary" variant="outlined" style={{ marginLeft: '10px' }} onClick={(_event) => {
                             const { respuestas } = respuestasForPk(forPk);
                             const agregarInfoGPS = (respuestaGPS: Valor, info: string) => {
-                                let aux = JSON.parse(respuestaGPS || JSON.stringify([]));
+                                let aux = JSON.parse(respuestaGPS?.toString() || JSON.stringify([]));
                                 aux.unshift(info);
                                 respuestaGPS = JSON.stringify(aux);
                                 return dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: casillero.var_name, respuesta: respuestaGPS });
@@ -560,7 +551,8 @@ function EncabezadoDespliegue(props: {
                             }, e => {
                                 agregarInfoGPS(respuestas[casillero.var_name!], e.message);
                             });
-                        }}><ICON.Location /></Button>
+                        }
+                        }><ICON.Location /></Button>
                     </span>
                     : null}
             </div>
@@ -628,7 +620,6 @@ function Campo(props: { disabled: boolean, pregunta: PreguntaSimple | PreguntaCo
     var { pregunta, disabled, mini } = props;
     var { saltoAutomatico, conCampoOpciones } = useSelector((state: CasoState) => state.opciones);
     const longitud = mini ? pregunta.casilleros.reduce((acum, o) => Math.max(o.casillero.toString().length, acum), 0) :
-        // @ts-ignore mini es para los otros
         pregunta.longitud;
     // var [valor, setValor] = useState(props.valor);
     var [editando, setEditando] = useState(false);
@@ -639,9 +630,8 @@ function Campo(props: { disabled: boolean, pregunta: PreguntaSimple | PreguntaCo
         maxLength: longitud,
     };
     const onChange = (nuevoValor: Valor | typeof NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO) => {
-        var { siguienteVariable } = dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: pregunta.var_name, respuesta: nuevoValor });
+        var { siguienteVariable } = dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: pregunta.var_name as IdVariable, respuesta: nuevoValor });
         if (siguienteVariable && debeSaltar) {
-            //@ts-ignore algunos casilleros tienen especial y otros no
             (pregunta.especial?.noScroll == true) ? null : enfocarElementoDeVariable(pregunta.especial?.scrollTo ?? siguienteVariable);
         }
     };
@@ -654,8 +644,7 @@ function Campo(props: { disabled: boolean, pregunta: PreguntaSimple | PreguntaCo
         />}
         <div className="input-campo">
             <TextField
-                id={`var-${pregunta.var_name}`}
-                //@ts-ignore algunos casilleros tienen especial y otros no
+                id={`var-${pregunta.var_name || ''}`}
                 disabled={disabled || pregunta.especial?.gps}
                 className="variable"
                 //var-length={pregunta.longitud} 
@@ -799,7 +788,7 @@ function PreguntaDespliegue(props: {
             {getLosMetadatos(pregunta)}
             <Campo
                 disabled={pregunta.calculada ? true : false}
-                pregunta={pregunta}
+                pregunta={pregunta as unknown as PreguntaSimple}
                 forPk={props.forPk}
                 mini={true}
             />
@@ -905,9 +894,9 @@ function PMatrizDespliegue(props: {
                                 registrarElemento({
                                     id,
                                     direct: true,
-                                    fun: registradorDeVariable(pregunta)
+                                    fun: registradorDeVariable(pregunta as unknown as Pregunta)
                                 })
-                                return <td key={id} id={id}><PreguntaDespliegue forPk={props.forPk} pregunta={pregunta} despliegueEncabezado="superior" paraPMatriz={true} /></td>
+                                return <td key={id} id={id}><PreguntaDespliegue forPk={props.forPk} pregunta={pregunta as unknown as Pregunta} despliegueEncabezado="superior" paraPMatriz={true} /></td>
                             })}
                         </tr>
 
@@ -1190,7 +1179,7 @@ var botonFormularioConResumen = (
         ]),
         (defBoton.num !== false && !defBoton.esAgregar && !defBoton.esConfirmar ?
             (casillero.especial?.camposResumen ?? [/*defBoton.num.toString()*/]).map(
-                (campo: string) => html.td(respuestasAumentadas[formularioAAbrir.unidad_analisis][defBoton.num - 1][campo as IdVariable])
+                (campo: string) => html.td((respuestasAumentadas[formularioAAbrir.unidad_analisis][defBoton.num - 1][campo as IdVariable] ?? '').toString())
             )
             : null)
         // html.div({class:'inline-dialog', $attrs:{"inline-dialog-open": confirmarForzarIr == defBoton.num?'visible':'hidden'}},[                ])
@@ -1313,7 +1302,7 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
                             disabled: calcularDisabledBF(configSorteoFormulario, habilitacionBotonFormulario, num, idFormularioDestino, respuestasAumentadas)
                         }
                     }).array();
-                    if ("puede agregar //TODO VER ESTO" && (conjunto instanceof Array || conjunto == null)) {
+                    if (true /*"puede agregar //TODO VER ESTO"*/ && (conjunto instanceof Array || conjunto == null)) {
                         let nuevoValorPk = (conjunto == null ? 0 : conjunto.length) + 1;
                         let forPk = { ...props.forPk, formulario: idFormularioDestino, [nuevoCampoPk]: nuevoValorPk };
                         let listoPresionado = respuestasAumentadas[BF_listo] != null;
@@ -1356,11 +1345,11 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
                         html.tr([
                             casillero.aclaracion ? html.th() : null,
                             html.th(casillero.nombre),
-                            nombresCamposResumen.map((nombreCampo) => html.th(nombreCampo)),
+                            ...nombresCamposResumen.map((nombreCampo) => html.th(nombreCampo)),
                         ])
                     ]),
                     html.tbody([
-                        todosLosBotones
+                        ...todosLosBotones
                     ])
                 ]).create());
             } catch (err) {
@@ -1380,8 +1369,7 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
             var nuevaForPk = { ...forPk, formulario: idFormularioDestino };
             var { listo: BF_listo, agregar: BF_agregar } = getBFVarNames(casillero.salto);
             if (multipleFormularios) {
-                // @ts-ignore forPk y sus componentes
-                nuevaForPk[nuevoCampoPk] = defBoton.num
+                (nuevaForPk as any)[nuevoCampoPk] = defBoton.num
                 if (defBoton.esAgregar) {
                     dispatchByPass(accion_agregar_formulario, { forPk: nuevaForPk });
                     dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: BF_agregar, respuesta: 1 as Valor });
@@ -2435,9 +2423,9 @@ setCalcularVariables((respuestasRaiz: RespuestasRaiz, forPk: ForPk) => {
             }
         }
     }
-    var uasIterar: {
+    var uasIterar: Partial<{
         [key in IdUnidadAnalisis]: ConfigPadre
-    };
+    }>;
     var configEncu: ConfigPadre = {
         uaPersonas: 'personas',
         varSexoPersona: 'sexo' as IdVariable,
@@ -2457,8 +2445,9 @@ setCalcularVariables((respuestasRaiz: RespuestasRaiz, forPk: ForPk) => {
             ["hogares_sup" as IdUnidadAnalisis]: configSupe
         }
         likeAr(uasIterar).forEach((configPadre, uaPadre) => {
-            autoCargarPersonas(configPadre, uaPadre, estructura)
-
+            if (configPadre) {
+                autoCargarPersonas(configPadre, uaPadre as IdUnidadAnalisis, estructura)
+            }
         })
     } else {
         var configPadres: ConfigPadre[] = [configEncu, configSupe];
@@ -2468,10 +2457,10 @@ setCalcularVariables((respuestasRaiz: RespuestasRaiz, forPk: ForPk) => {
     }
     respuestasRaiz.vdominio = getDatosByPass().informacionHdr[forPk[estructura.pkAgregadaUaPpal]].tem.dominio;
     //TODO: MEJORAR EN ALGUN MOMENTO EL BOTON LISTO
-    let totalH = respuestasRaiz['total_h' as IdVariable];
-    respuestasRaiz['$B.F:S1' as IdVariable] = (respuestasRaiz['hogares'] || []).length == totalH ? 'ok' : null;
-    let totalHsup = respuestasRaiz['total_h_sup' as IdVariable];
-    respuestasRaiz['$B.F:S1_SUP' as IdVariable] = (respuestasRaiz['hogares_sup' as IdUnidadAnalisis] || []).length == totalHsup ? 'ok' : null;
+    //let totalH = respuestasRaiz['total_h' as IdVariable];
+    //respuestasRaiz['$B.F:S1' as IdVariable] = (respuestasRaiz['hogares'] || []).length == totalH ? 'ok' : null;
+    //let totalHsup = respuestasRaiz['total_h_sup' as IdVariable];
+    //respuestasRaiz['$B.F:S1_SUP' as IdVariable] = (respuestasRaiz['hogares_sup' as IdUnidadAnalisis] || []).length == totalHsup ? 'ok' : null;
 })
 
 window.addEventListener('load', function () {

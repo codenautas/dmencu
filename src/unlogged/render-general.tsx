@@ -87,7 +87,7 @@ export const scrollToBottom = () => {
 };
 
 
-export function ScrollTop(props: any) {
+export function ScrollTop(props: { children: React.ReactElement }) {
     const { children } = props;
     //const classes = useStylesScrollTop();
     // Note that you normally won't need to set the window ref as useScrollTrigger
@@ -147,7 +147,7 @@ export class RenderAndCaptureError extends React.Component<
     { dispatchers: IDispatchers, mensajeRetorno: string },
     { hasError: boolean, error: Error | {}, info?: any }
 > {
-    constructor(props: any) {
+    constructor(props: { dispatchers: IDispatchers, mensajeRetorno: string }) {
         super(props);
         this.state = { hasError: false, error: {} };
     }
