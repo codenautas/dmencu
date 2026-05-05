@@ -4,9 +4,7 @@ import {
     RenderPrincipal,
     adaptarTipoVarCasillero,
     ICON,
-    focusToId,
     scrollToTop,
-    scrollToBottom,
     materialIoIconsSvgPath,
     useOnlineStatus
 } from "./render-general";
@@ -19,14 +17,11 @@ import {
     Opcion, OpcionMultiple, PlainForPk,
     Pregunta, PreguntaConOpciones, PreguntaSimple,
     Respuestas, RespuestaLasUA, RespuestasRaiz, Valor, TEM, IdCarga, Carga, IdFin, IdUnidadAnalisis,
-    ModoAlmacenamiento,
     toPlainForPk,
     IdCasillero,
     PreguntaConSiNo,
-    Texto, Estructura, InformacionHdr, DatosHdrUaPpal, ConfiguracionSorteoFormulario, ResumenEstado, DatosByPassPersistibles, IdOperativo, IdEnc, Libre, UnidadAnalisis,
+    Texto, Estructura, InformacionHdr, ConfiguracionSorteoFormulario, ResumenEstado, IdOperativo, IdEnc, Libre,
     iterator, empty, ConfiguracionHabilitarBotonFormulario,
-    CampoPkRaiz,
-    ValuePkRaiz,
     PMatriz,
     ModoDM
 } from "./tipos";
@@ -48,21 +43,20 @@ import {
 import {
     dmTraerDatosFormulario, dispatchers,
     gotoSincronizar,
-    getCacheVersion,
     gotoConsistir,
 } from "./redux-formulario";
-import { useState, useEffect, useLayoutEffect } from "react";
+import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { strict as likeAr, beingArray } from "like-ar";
+import { strict as likeAr } from "like-ar";
 import { sleep, coalesce, datetime } from "best-globals";
 import { unexpected } from "cast-error";
 
 import {
-    AppBar, ButtonGroup, CircularProgress, Checkbox,
+    AppBar, ButtonGroup, Checkbox,
     Dialog, DialogActions, DialogContent, DialogContentText,
-    DialogTitle, Divider, Fab, IconButton,
+    DialogTitle, Divider, Fab,
     Menu, MenuItem, Paper, Popover,
-    Table, TableBody, TableCell, TableHead, TableRow, Toolbar, CssBaselineProps
+    Table, TableBody, TableCell, TableHead, TableRow, Toolbar
 } from "@mui/material";
 import { EstadoVariable, FormStructureState } from "row-validator";
 
@@ -446,7 +440,7 @@ function OpcionMultipleDespliegue(props: { opcionM: OpcionMultiple, forPk: ForPk
         setWindowWidth(window.innerWidth);
     }
 
-    const [windowWidth, setWindowWidth] = useState();
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
     window.addEventListener('resize', updateWindowWidth);
     return <DesplegarCasillero
         id={id}
@@ -1217,7 +1211,7 @@ var buscarHnosFormulario = (idFormularioDestino: IdFormulario) => {
     var estructura = getEstructura();
     var ua = estructura.formularios[idFormularioDestino].casilleros.unidad_analisis;
     return likeAr(estructura.formularios)
-        .filter((infoFormulario: InfoFormulario, idForm: IdFormulario) =>
+        .filter((infoFormulario: InfoFormulario, _idForm: IdFormulario) =>
             infoFormulario.casilleros.unidad_analisis == ua
         ).map((_infoFormulario: InfoFormulario, idForm: IdFormulario) =>
             idForm
