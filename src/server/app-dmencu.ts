@@ -2,7 +2,7 @@
 
 import * as procesamiento from "procesamiento";
 import { emergeAppProcesamiento, emergeAppConsistencias, emergeAppVarCal, emergeAppDatosExt, emergeAppOperativos, AppBackend, ClientModuleDefinition, OptsClientPage } from "procesamiento";
-import { ACCION_PASAR_PROIE, getOperativoActual, ProceduresDmEncu } from "./procedures-dmencu";
+import { ACCION_PASAR_PROIE, getOperativoActual, pasarEncuestasAProie, ProceduresDmEncu } from "./procedures-dmencu";
 
 import * as pg from "pg-promise-strict";
 import { json } from "pg-promise-strict";
@@ -104,26 +104,31 @@ import { defConfig } from "./def-config"
 import { ProcedureDef } from "backend-plus";
 import { table } from "console";
 
+import { datetime } from "best-globals";
+
+
 const APP_DM_VERSION = "#22-12-15";
 
 const registrarCronJobPasarAProie = async (be: AppBackend) => {
-    let procedures = await be.getProcedures()
-    var procPasar = procedures.find((proc: ProcedureDef) => proc.action == ACCION_PASAR_PROIE)
-    var context = be.getContextForDump();
-    const interval = setInterval(async () => {
+    const ejecutarPasaje = async () => {
+        const log = (msg: string, data: any = '') =>
+            console.log(`${datetime.now().toYmdHms()} [CRON:PROIE] ${msg}`, data);
         try {
-            console.log('inicia cron posaje a proie')
+            log('🚀 inicia cron pasaje a proie');
+
             var result = await be.inTransaction(null, async (client) => {
-                context.client = client;
-                return await procPasar.coreFunction(context, []);
-            })
-            console.log("result proc pasaje a proie: ", result)
+                return await pasarEncuestasAProie(client);
+            });
+
+            log('✅ result proc pasaje a proie:', result);
         } catch (err) {
-            console.log(`error pasaje a proie. ${err.message}`);
+            log(`❌ error pasaje a proie: ${err.message}`);
         } finally {
-            console.log('termina cron proie')
+            log('🏁 termina cron proie');
         }
-    }, 1000 * 60 * 60)
+    };
+    await ejecutarPasaje();
+    const interval = setInterval(ejecutarPasaje, 1000 * 60 * 60)
     be.shutdownCallbackListAdd({
         message: 'apaga cron pasar a proie',
         fun: async function () {
