@@ -724,7 +724,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 }, Promise.resolve()).then(function () {
                     return "ok";
                 }).catch(function (err: Error) {
-                    console.error("caso_guardar ENTRA EN EL CATCH: ", unexpected(err))
+                    console.error("caso_guardar ENTRA EN EL CATCH: ", expected(err))
                     throw err
                 })
             } else {
@@ -808,7 +808,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         resultado += await procedureGuardar.coreFunction(context, row);
                     })
                 } catch (err) {
-                    var error = unexpected(err);
+                    var error = expected(err);
                     let errMessage = resultado + "json2ua error. " + error.message;
                     resultado = errMessage
                     console.error(errMessage, error)
@@ -819,7 +819,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     try {
                         discrepances.showAndThrow(verQueGrabo, row)
                     } catch (err) {
-                        console.error(verQueGrabo, row, unexpected(err))
+                        console.error(verQueGrabo, row, expected(err))
                     }
                 }
                 return resultado;
@@ -904,7 +904,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         resultado += await procedureGuardar.coreFunction(context, param_guardar);
                     })
                 } catch (err) {
-                    var error = unexpected(err);
+                    var error = expected(err);
                     errMessage = resultado + "dm_forpkraiz_descargar. " + error.message;
                     resultado = errMessage
                     console.error(errMessage, error)
@@ -1006,7 +1006,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                                     resultado += await procedureGuardar.coreFunction(context, param_guardar);
                                 })
                             } catch (err) {
-                                var error = unexpected(err);
+                                var error = expected(err);
                                 errMessage = resultado + "dm_forpkraiz_descargar. " + error.message;
                                 resultado = errMessage
                                 console.error(errMessage, error)
@@ -1144,7 +1144,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 await fs.appendFile('local-rescate.txt', JSON.stringify({ now: new Date(), user: context.username, itemKey: localStorageItemKey, itemData: localStorageItem }) + '\n\n', 'utf8');
                 return 'ok';
             } catch (err) {
-                console.error('ERROR', unexpected(err));
+                console.error('ERROR', expected(err));
                 throw err;
             }
         }

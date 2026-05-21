@@ -13,7 +13,7 @@ import {
 } from "./tipos";
 
 import * as likeAr from "like-ar";
-import { unexpected } from "cast-error";
+import { expected } from "cast-error";
 
 import {
     getDatosByPass,
@@ -95,7 +95,7 @@ async function enviarBackup() {
             backupsALimpiar.tem = likeAr(backupsALimpiar.tem).filter(caso => caso.idBackup > backups.idActual).plain();
             my.setLocalVar(BACKUPS, backupsALimpiar);
         } catch (err) {
-            console.error('no se pudo hacer backup', unexpected(err));
+            console.error('no se pudo hacer backup', expected(err));
         }
     }
 }

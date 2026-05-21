@@ -1,5 +1,5 @@
 import { html } from "js-to-html";
-import { unexpected } from "cast-error";
+import { expected, unexpected } from "cast-error";
 import { dispatchers, dmTraerDatosFormulario, traerEstructura } from "../unlogged/redux-formulario";
 import {
     CasoState,
@@ -628,7 +628,7 @@ function
                     }
                     setTimeout(restaurarBoton, 2500);
                 }, function (err) {
-                    var error = unexpected(err);
+                    var error = expected(err);
                     boton.textContent = 'error';
                     boton.style.backgroundColor = '#FF8';
                     console.error('Error en acción de grilla:', error);
