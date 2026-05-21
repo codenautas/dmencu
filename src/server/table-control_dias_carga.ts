@@ -2,7 +2,7 @@
 
 import {TableDefinition, TableContext, FieldDefinition, OtherTableDefs} from "./types-dmencu";
  
-export function control_dias_carga(context:TableContext):TableDefinition {
+export function control_dias_carga(_context:TableContext):TableDefinition {
     //var be=context.be;
     var puedeEditar = false;
     //se puede mejorar la forma de recuperar los nombres de los días desde dias_arreglo obtenida desde el sql

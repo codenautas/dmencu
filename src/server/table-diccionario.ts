@@ -1,21 +1,21 @@
 "use strict";
 
-import {TableDefinition, TableContext} from "./types-dmencu";
+import { TableDefinition, TableContext } from "./types-dmencu";
 
-export function diccionario(context:TableContext):TableDefinition {
-    var permitidoeditar = context.forDump||context.puede?.encuestas.procesar;
+export function diccionario(context: TableContext): TableDefinition {
+    var permitidoeditar = context.forDump || (context.puede?.encuestas?.procesar || false);
     return {
         name: 'diccionario',
         elementName: 'diccionario',
         editable: permitidoeditar,
         fields: [
-            { name: "diccionario"     , typeName: "text"    , nullable:false  },
-            { name: "completo"        , typeName: "boolean"                   },
+            { name: "diccionario", typeName: "text", nullable: false },
+            { name: "completo", typeName: "boolean" },
         ],
         primaryKey: ['diccionario'],
-        detailTables:[
-            {table:'dicvar', fields:['diccionario'], abr:'V', title:'Dicc. Variables' },
-            {table:'dictra', fields:['diccionario'], abr:'T', title:'Dicc. Traducción'}
+        detailTables: [
+            { table: 'dicvar', fields: ['diccionario'], abr: 'V' },
+            { table: 'dictra', fields: ['diccionario'], abr: 'T' }
         ]
     };
 }

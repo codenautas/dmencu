@@ -5,9 +5,10 @@ import {TableDefinition, TableContext} from "./types-dmencu";
 import { cuentasSql, cuentasFields } from "./table-areas";  
 
 export type OptsAsignados = {
-    tarea: 'encu'|'recu'|'supe'|'ingr'|null
-    name: string
-    verComoRecepcionista: boolean
+    tarea?: 'encu'|'recu'|'supe'|'ingr'|null
+    name?: string
+    verComoRecepcionista?: boolean
+    mis?: boolean
 }
 
 export function asignados(context:TableContext, opts?:OptsAsignados){
@@ -23,8 +24,8 @@ export function asignados(context:TableContext, opts?:OptsAsignados){
     //si no chequeo !dump rompe el dump
     var esRecepcionista = context.user.rol == 'recepcionista' || (context.user.usuario!='!dump'?opts.verComoRecepcionista:false);
     var tableDef: TableDefinition = {
-        name: opts.name,
-        elementName: opts.name,
+        name: opts.name || 'relevador',
+        elementName: opts.name || 'relevador',
         editable: false,
         fields: [
             {name:'tarea'                , typeName:'text'     ,},

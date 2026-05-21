@@ -12,7 +12,6 @@ import {
     IdTarea,
 } from "./tipos";
 import { createReducer, createDispatchers, ActionsFrom } from "redux-typed-reducer";
-import { ModoAlmacenamiento } from "./tipos"
 import * as likeAr from "like-ar";
 import * as bestGlobals from "best-globals";
 import * as JSON4all from "json4all";
@@ -73,7 +72,7 @@ var reducers = {
                 }
             }
         },
-    ESTADO_CARGA: (payload: { idCarga: IdCarga, estado_carga: EstadoCarga }) =>
+    ESTADO_CARGA: (_payload: { idCarga: IdCarga, estado_carga: EstadoCarga }) =>
         function (state: CasoState) {
             return state
             //DESACTIVADO
@@ -240,7 +239,7 @@ function rellenarVariablesYOpciones(idFormulario: IdFormulario, estructura: Estr
                 tipovar: 'opciones',
                 casilleros: [{ tipoc: 'O', casillero: 1, nombre: 'si' }] as Opcion[], // se usa para que no sea libre y el rowValidator la vea
             } as Variable;
-            casillero.primera_variable = newVarNameAgregar as string;
+            casillero.primera_variable = newVarNameAgregar;
         }
         var newVarName = '$B.F:' + saltoNombre as IdVariable;
         casillero.var_names_BF.push(newVarName)
@@ -248,7 +247,7 @@ function rellenarVariablesYOpciones(idFormulario: IdFormulario, estructura: Estr
             tipovar: 'opciones',
             casilleros: [{ tipoc: 'O', casillero: 1, nombre: 'si' }] as Opcion[], // se usa para que no sea libre y el rowValidator la vea
         } as Variable;
-        casillero.primera_variable = casillero.primera_variable || newVarName as string;
+        casillero.primera_variable = casillero.primera_variable || newVarName;
 
     }
     if (casillero.casilleros) {

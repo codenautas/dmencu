@@ -2,7 +2,7 @@
 
 import * as procesamiento from "procesamiento";
 import { emergeAppProcesamiento, emergeAppConsistencias, emergeAppVarCal, emergeAppDatosExt, emergeAppOperativos, AppBackend, ClientModuleDefinition, OptsClientPage } from "procesamiento";
-import { ACCION_PASAR_PROIE, getOperativoActual, pasarEncuestasAProie, ProceduresDmEncu } from "./procedures-dmencu";
+import { pasarEncuestasAProie, ProceduresDmEncu } from "./procedures-dmencu";
 
 import * as pg from "pg-promise-strict";
 import { json } from "pg-promise-strict";
@@ -14,7 +14,7 @@ import {
     SufijosAmbiente,
 } from "./types-dmencu";
 
-import { unexpected } from "cast-error";
+import { expected, unexpected } from "cast-error";
 
 import * as yazl from "yazl";
 import { NextFunction } from "express-serve-static-core";
@@ -105,6 +105,7 @@ import { ProcedureDef } from "backend-plus";
 import { table } from "console";
 
 import { datetime } from "best-globals";
+import { ProcedureContext } from "backend-plus";
 
 
 const APP_DM_VERSION = "#22-12-15";
@@ -122,7 +123,8 @@ const registrarCronJobPasarAProie = async (be: AppBackend) => {
 
             log('✅ result proc pasaje a proie:', result);
         } catch (err) {
-            log(`❌ error pasaje a proie: ${err.message}`);
+            var error = unexpected(err);
+            log(`❌ error pasaje a proie: ${error.message}`);
         } finally {
             log('🏁 termina cron proie');
         }
@@ -193,7 +195,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             )).value as string);
         }
 
-        override async canChangePass(reqOrContext, userToChangePass) {
+        override async canChangePass(reqOrContext?: any, userToChangePass: string | null): Promise<boolean> {
             var be = this;
             var result = await be.inDbClient(null, async (client) => {
                 var q = be.db.quoteLiteral;
@@ -216,7 +218,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             parentProc = parentProc.map(procDef => {
                 if (procDef.action == 'table_record_save' || procDef.action == 'table_record_delete') {
                     var coreFunctionInterno = procDef.coreFunction;
-                    procDef.coreFunction = async function (context: Context, parameters: CoreFunctionParameters) {
+                    procDef.coreFunction = async function (context: ProcedureContext, parameters: CoreFunctionParameters<any>) {
                         var result = await coreFunctionInterno(context, parameters)
                         if (parameters.table == 'casilleros') {
                             be.caches.timestampEstructura = new Date().getTime();
@@ -241,14 +243,14 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     req.session.install = Math.random().toString().replace('.', '');
                 }
                 next();
-            })
-            mainApp.get(baseUrl + '/salvar', async function (req, res, _next) {
+            });
+            mainApp.get(baseUrl + '/salvar', function (req, res, _next) {
                 // @ts-ignore sé que voy a recibir useragent por los middlewares de Backend-plus
                 var { useragent } = req;
                 var htmlMain = be.mainPage({ useragent }, false, { skipMenu: true, offlineFile: true }).toHtmlDoc();
                 miniTools.serveText(htmlMain, 'html')(req, res);
             });
-            mainApp.get(baseUrl + '/campo', async function (req, res, _next) {
+            mainApp.get(baseUrl + '/campo', function (req, res, _next) {
                 // @ts-ignore sé que voy a recibir useragent por los middlewares de Backend-plus
                 var { useragent, user } = req;
                 if (user) {
@@ -672,10 +674,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             return null
         }
 
-        getMenu(context: Context) {
+        override getMenu(context: Context) {
             let menu: MenuInfoBase[] = [];
             if (this.config.server.policy == 'web') {
-                if (context.puede?.encuestas.relevar) {
+                if (context.puede?.encuestas?.relevar) {
                     if (this.config['client-setup'].ambiente == 'demo' || this.config['client-setup'].ambiente == 'test' || this.config['client-setup'].ambiente == 'capa') {
                         menu.push({ menuType: 'demo', name: 'demo', selectedByDefault: true })
                     } else {

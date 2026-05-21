@@ -4,6 +4,7 @@ import { desplegarFormularioActual, dmPantallaInicialSinCarga } from './render-f
 import { cargarEstructura, cargarHojaDeRuta, GLOVAR_ESTRUCTURA, GLOVAR_DATOSBYPASS } from './abrir-formulario';
 import { MODO_DM_LOCALSTORAGE_KEY } from './bypass-formulario';
 import { ModoDM } from './tipos';
+import { expected } from "cast-error";
 const ServiceWorkerAdmin = require("service-worker-admin");
 
 function siExisteId(id: string, hacer: (arg0: HTMLElement) => void){
@@ -88,9 +89,10 @@ window.addEventListener('load', async function(){
                     var version = await swa.getSW('version');
                     myOwn.setLocalVar('app-cache-version', version);
                     //@ts-ignore existe 
-                    cargarEstructura(my.getLocalVar(GLOVAR_ESTRUCTURA));
+                    var estructura = my.getLocalVar(GLOVAR_ESTRUCTURA);
+                    cargarEstructura(estructura);
                     cargarHojaDeRuta({ ...datosByPass, modoAlmacenamiento: 'local' });
-                    desplegarFormularioActual({modoDemo: false});
+                    desplegarFormularioActual({modoDemo: false, operativo: estructura.operativo});
                     my.menuName = URL_DM;
                 }
             }else{
@@ -105,7 +107,7 @@ window.addEventListener('load', async function(){
                     dmPantallaInicialSinCarga();
                 }
             }
-            var refrescarStatus=async function(showScreen, newVersionAvaiable, installing){
+            var refrescarStatus=async function(showScreen: string, newVersionAvaiable: string, _installing: any){
                 var buscandoActualizacion = location.href.endsWith('#inst=1');
                 document.getElementById('nueva-version-instalada')!.style.display=newVersionAvaiable=='yes'?'':'none';
                 document.getElementById('volver-de-instalacion')!.style.display=newVersionAvaiable=='yes'?'none':'';
@@ -119,17 +121,18 @@ window.addEventListener('load', async function(){
             };
             var swa = new ServiceWorkerAdmin();
             swa.installOrActivate({
-                onEachFile: async (url, error)=>{
+                onEachFile: async (url: string, _error: Error | null)=>{
                     console.log('file: ',url);
                     document.getElementById('archivos')!.append(
                         html.div(url).create()
                     )
                 },
-                onInfoMessage: (m)=>console.log('message: ', m),
-                onError: async (err, context)=>{
-                    console.log('error: '+(context?` en (${context})`:''), err);
-                    console.log(context, err, 'error-console')
-                    console.log('error al descargar cache', err.message)
+                onInfoMessage: (m: string)=>console.log('message: ', m),
+                onError: async (err: Error, context: string)=>{
+                    var error = expected(err);
+                    console.log('error: '+(context?` en (${context})`:''), error);
+                    console.log(context, error, 'error-console')
+                    console.log('error al descargar cache', error.message)
                     if(context!='initializing service-worker'){
                         var layout = await awaitForCacheLayout;
                         var cacheStatusElement = document.getElementById('cache-status');
@@ -140,7 +143,7 @@ window.addEventListener('load', async function(){
                         cacheStatusElement.classList.remove('warning')
                         cacheStatusElement.classList.remove('all-ok')
                         cacheStatusElement.classList.add('danger')
-                        cacheStatusElement.textContent='error al descargar la aplicación. ' + err.message;
+                        cacheStatusElement.textContent='error al descargar la aplicación. ' + error.message;
                     }
                 },
                 onReadyToStart:startApp,

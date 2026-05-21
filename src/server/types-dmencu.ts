@@ -3,21 +3,24 @@
 import * as bePlus from "backend-plus";
 
 export * from 'procesamiento'; //expose Procesamiento types
-export {emergeAppMetaEnc, emergeAppRelEnc} from 'meta-enc'; //expose types only in meta-enc stack
+export { emergeAppMetaEnc, emergeAppRelEnc } from 'meta-enc'; //expose types only in meta-enc stack
 export * from './table-tem';
 
 export type Puede = {
-    encuestas:{
-        relevar:boolean,
-        justificar: boolean,
-        procesar: boolean
+    encuestas?: {
+        relevar?: boolean,
+        justificar?: boolean,
+        procesar?: boolean
     },
-    casilleros_texto:{
-        editar:boolean
+    casilleros_texto?: {
+        editar?: boolean
     }
-    campo:{
-        editar:boolean
-        administrar:boolean
+    campo?: {
+        editar?: boolean
+        administrar?: boolean
+    }
+    configurar?: {
+        editar?: boolean
     }
 }
 
@@ -25,13 +28,27 @@ export type Permisos = {
     puede?: Puede
     superuser?: boolean
 }
+export type PermisosRol = Record<string, Permisos>
 
-declare module "backend-plus"{
-    export interface ProcedureDef{
-        definedIn?:string
+export type TableDefinition = bePlus.TableDefinition & {
+    muestraAbrirEnTodasLasTareas?: boolean;
+}
+
+export type TableContext = bePlus.TableContext & {
+    puede?: Puede
+}
+
+declare module "backend-plus" {
+    export interface ProcedureDef {
+        definedIn?: string
     }
 
-    export interface Caches{
+    export interface FieldDefinition {
+        isPk?: number;
+        originalName?: string;
+    }
+
+    export interface Caches {
         tableContent: Record<string, any>
         metaEncIncluirCasillerosSaltoREL: boolean
         timestampEstructura: number
@@ -39,23 +56,22 @@ declare module "backend-plus"{
         permisosRolSoloTrue: Permisos
         permisosSuperuser: Puede
         permisosParaNadie: Puede
-
     }
 
-    export interface Context{
+    export interface Context {
         puede?: Puede
         superuser?: true
     }
 
     export interface OptsClientPage {
-        offlineFile: boolean 
+        offlineFile: boolean
     }
 
     export interface ClientSetup {
-        idper: string|undefined
+        idper: string | undefined
     }
 }
 
 export type MenuInfoBase = bePlus.MenuInfoBase;
 
-export type SufijosAmbiente = '_test'|'_capa'|''
+export type SufijosAmbiente = '_test' | '_capa' | ''

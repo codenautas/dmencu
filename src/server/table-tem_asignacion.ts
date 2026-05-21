@@ -41,7 +41,7 @@ export function tem_asignacion(context:TableContext):TableDefinition {
     tableDef.sql!.isTable = false;
     tableDef.sql!.from =  `(select t.* ${extraSelect} from (${tableDef.sql!.from}) t ${extraFrom})`,
     tableDef.sql!.otherTableDefs = otherTableDefs;
-    tableDef.detailTables = tableDef.detailTables.filter((detailTable)=>['tareas_tem'].includes(detailTable.table));
+    tableDef.detailTables = (tableDef.detailTables||[]).filter((detailTable)=>['tareas_tem'].includes(detailTable.table!));
     return tableDef
 }
 

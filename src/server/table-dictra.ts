@@ -1,21 +1,21 @@
 "use strict";
 
-import {TableDefinition, TableContext} from "./types-dmencu";
+import { TableDefinition, TableContext } from "./types-dmencu";
 
-export function dictra(context:TableContext):TableDefinition {
-    var permitidoeditar = context.forDump ||context.puede?.encuestas.procesar;;
+export function dictra(context: TableContext): TableDefinition {
+    var permitidoeditar = context.forDump || (context.puede?.encuestas?.procesar || false);
     return {
         name: 'dictra',
         elementName: 'dictra',
         editable: permitidoeditar,
         fields: [
-            { name: "diccionario"   , typeName: "text"     , nullable:false, references: 'diccionario'  },
-            { name: "origen"        , typeName: "text"     , nullable:false  },
-            { name: "destino"       , typeName: "integer"                    },
-        ], 
+            { name: "diccionario", typeName: "text", nullable: false, references: 'diccionario' },
+            { name: "origen", typeName: "text", nullable: false },
+            { name: "destino", typeName: "integer" },
+        ],
         primaryKey: ['diccionario', 'origen'],
-        foreignKeys:[
-            {references:'diccionario'    , fields: ['diccionario'],displayFields:[]},
+        foreignKeys: [
+            { references: 'diccionario', fields: ['diccionario'], displayFields: [] },
         ],
         /*
         constraints:[

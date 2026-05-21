@@ -203,7 +203,7 @@ export type BotonFormulario = CasilleroBase & {
     casillero: IdBotonFormulario
     var_name?: null
     tipovar?: null
-    primera_variable?: null
+    primera_variable?: IdVariable | null
     var_names_BF?: IdVariable[]
     longitud?: string
     unidad_analisis?: IdUnidadAnalisis

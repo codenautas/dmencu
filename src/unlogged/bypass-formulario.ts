@@ -3,6 +3,7 @@ import { strict as likeAr, beingArray } from "like-ar";
 import { getRowValidator, FormStructureState, OpcionesRowValidator, Feedback } from "row-validator";
 
 import { date, compareForOrder, coalesce } from "best-globals";
+import { expected } from "cast-error";
 
 import {
     Estructura,
@@ -700,7 +701,7 @@ export function getFuncionCompilada<T>(conjuntoDeFunciones: { [key: string]: (va
                     try {
                         var result = internalFun(valores, helpersCasilleros);
                     } catch (err) {
-                        console.log('ERROR EJECUCCION EXPRESION EXTERNA ', nombreFuncionComoExpresionJs)
+                        console.log('ERROR EJECUCCION EXPRESION EXTERNA ', nombreFuncionComoExpresionJs, expected(err))
                         console.log(cuerpo);
                         console.log(valores);
                         throw err;
@@ -708,7 +709,7 @@ export function getFuncionCompilada<T>(conjuntoDeFunciones: { [key: string]: (va
                     return result;
                 }
             } catch (err) {
-                console.log('ERROR COMPILACION EXPRESION EXTERNA ', nombreFuncionComoExpresionJs)
+                console.log('ERROR COMPILACION EXPRESION EXTERNA ', nombreFuncionComoExpresionJs, expected(err))
                 console.log(cuerpo);
                 throw err;
             }
@@ -1030,8 +1031,8 @@ export function calcularFeedbackUnidadAnalisis(
                     }
                 }
             } while (huboAutoingresos && maxPasosAutoingresadas-- > 0);
-            varAutoIngresadas.forEach(varname => {
-                // feedbackRowValidator[plainForPk].estados[varname as IdVariable] = 'actual';
+            varAutoIngresadas.forEach(_varname => {
+                // feedbackRowValidator[plainForPk].estados[_varname as IdVariable] = 'actual';
             })
             var BF_varname = '$B.' + formulario as IdVariable
             var formPrincipalForVivienda = getMainFormForVivienda(forPk[estructura.pkAgregadaUaPpal]);

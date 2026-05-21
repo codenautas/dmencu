@@ -8,7 +8,7 @@ import { definicionComunFincAnacProc } from "./table-tareas_tem_fin_campo";
 
 export function tareas_tem_procesamiento(context:TableContext):TableDefinition {
     let tableDef = tareas_tem_recepcion(context);
-    tableDef.editable=context.puede?.encuestas.procesar;
+    tableDef.editable = context.puede?.encuestas?.procesar || false;
     tableDef.name = `tareas_tem_procesamiento`;
     tableDef.filterColumns=[
         {column:'visible_en_procesamiento', operator:'=', value:true}

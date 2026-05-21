@@ -1,4 +1,5 @@
 import { html } from "js-to-html";
+import { unexpected } from "cast-error";
 import { dispatchers, dmTraerDatosFormulario, traerEstructura } from "../unlogged/redux-formulario";
 import {
     CasoState,
@@ -55,16 +56,6 @@ myOwn.autoSetupFunctions.push(async () => {
             cargarHojaDeRuta({ ...carga, modoAlmacenamiento: 'session' });
             // @ts-ignore
             desplegarFormularioActual({ operativo, modoDemo: false, forPkRaiz });
-        }
-    };
-    myOwn.wScreens.obtener_telefono = {
-        parameters: [],
-        autoproced: true,
-        mainAction: async (_params) => {
-            // antes: abrirDirecto
-            var { operativo, tarea } = { operativo: OPERATIVO_DEFAULT, tarea: TAREA_DEFAULT };
-            let enc = parseInt(await my.ajax.get_random_free_case({ operativo }));
-            await myOwn.wScreens.abrir_encuesta.mainAction({ operativo, enc, tarea });
         }
     };
     myOwn.wScreens.consistir_encuesta = {
@@ -203,7 +194,7 @@ var procederSincroFun = async (button: HTMLButtonElement, divAvisoSincro: HTMLDi
         store.dispatch(dispatchers.RESET_OPCIONES({}));
         mostrarInfoLocal(divAvisoSincro, 'datos recibidos', datos.num_sincro, true)
     } catch (err) {
-        alertPromise(err.message)
+        alertPromise(unexpected(err).message)
         throw err
     } finally {
         button.disabled = false;
@@ -259,7 +250,7 @@ myOwn.wScreens.cambiar_modo_dm = async function () {
                         html.div(`MODO ${my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY)} ACTIVADO`).create()
                     )
                 } catch (err) {
-                    alertPromise(err.message);
+                    alertPromise(unexpected(err).message);
                 } finally {
                     procederButton.disabled = false;
                 };
@@ -508,7 +499,7 @@ var crearBotonAccion = (depot: myOwn.Depot, action: EstadoAccion) => {
                     abrirEncuestaEnPestanniaDedicada(location.origin + location.pathname + my.menuSeparator + `w=${action.nombre_wscreen}&up=${JSON.stringify(up)}&autoproced=true`)
                 }
             } catch (err) {
-                alertPromise(err.message)
+                alertPromise(unexpected(err).message)
                 throw err
             } finally {
                 //retraso la habilitación porque a veces tarda en redibujarse la botonera y puede traer problemas si dan doble click 
@@ -548,7 +539,7 @@ var crearSwitch = (opts: { round?: boolean, disabled?: boolean, checked?: boolea
             checkbox.disabled = true;
             await opts.onClickFun()
         } catch (err) {
-            alertPromise(err.message)
+            alertPromise(unexpected(err).message)
             throw err
         } finally {
             checkbox.disabled = false;
@@ -637,9 +628,11 @@ function
                     }
                     setTimeout(restaurarBoton, 2500);
                 }, function (err) {
+                    var error = unexpected(err);
                     boton.textContent = 'error';
                     boton.style.backgroundColor = '#FF8';
-                    alertPromise(err.message);
+                    console.error('Error en acción de grilla:', error);
+                    alertPromise(error.message);
                 })
             }
             //if ((depot.row.consistido==null  && depot.row.rea!=null) || depot.row.modificado!=null && depot.row.consistido!=null && depot.row.modificado >depot.row.consistido){
@@ -716,7 +709,7 @@ myOwn.wScreens.proc.result.mostrar_encuestas_a_blanquear = function (result, div
                                     )
                                 })
                             } catch (err) {
-                                alertPromise(err.message);
+                                alertPromise(unexpected(err).message);
                             } finally {
                                 button.disabled = false;
                             };
@@ -766,7 +759,7 @@ const previsualizarEncuesta = (
         try {
             my.agregar_json(encuestaDiv, casoTem.json_encuesta);
         } catch (err) {
-            divResult.appendChild(html.p({ id: 'mensaje-error-json-encuesta' }, `no se pudo al previsualizar la encuesta ${casoTem.enc} correctamente. ${err.message}`).create());
+            divResult.appendChild(html.p({ id: 'mensaje-error-json-encuesta' }, `no se pudo al previsualizar la encuesta ${casoTem.enc} correctamente. ${unexpected(err).message}`).create());
         }
         var button = html.button({
             class: `boton-blanquear-encuesta-accion`
@@ -801,7 +794,7 @@ const previsualizarEncuesta = (
                         divResult.innerHTML = resultBlanqueo;
 
                     } catch (err) {
-                        alertPromise(err.message);
+                        alertPromise(unexpected(err).message);
                     } finally {
                         button.disabled = false;
                         waitGif.style.display = 'none';

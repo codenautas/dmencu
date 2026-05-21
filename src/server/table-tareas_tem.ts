@@ -1,7 +1,6 @@
 "use strict";
 
-import {TableDefinition, TableContext} from "./types-dmencu";
-import { FieldDefinition } from "rel-enc";
+import {TableDefinition, TableContext, FieldDefinition} from "./types-dmencu";
 import {OperativoGenerator } from "procesamiento";
 import * as sqlTools from 'sql-tools';
 

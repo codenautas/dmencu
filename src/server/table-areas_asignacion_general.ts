@@ -15,7 +15,7 @@ export function areas_asignacion_general(context:TableContext):TableDefinition {
         { tarea: 'recu', muestraDispositivo: true },
         { tarea: 'supe', muestraDispositivo: true },
     ]
-    var tareasFields = [
+    var rolesFields = [
         { name: 'recepcionista', prefijo: 'r', editable: true, references: 'recepcionistas', muestraDispositivo:false },
         { name: 'asignado'     , prefijo: ''     , editable: true, references: 'personal'      , muestraDispositivo:true },
     ];
@@ -25,13 +25,18 @@ export function areas_asignacion_general(context:TableContext):TableDefinition {
     var otherTableDefs:OtherTableDefs = {}
 
     tareas.forEach(t=>{
-        tareasFields.forEach(f=>{
+        rolesFields.forEach(f=>{
             const name = `${f.prefijo}_${t.tarea}`;
             extraFields.push({ name, typeName: 'text', table: `areas_${t.tarea}`, nameForUpsert: f.name, editable: f.editable, references: f.references });
             extraSelect += `, areas_${t.tarea}.${f.name} as ${f.prefijo}_${t.tarea}`;
-            //datos de los asignados
-            extraFields.push({ name: `${name}_nombre`   , typeName: 'text', table: `areas_${t.tarea}`, nameForUpsert: f.name, editable: false, title:'nombre'  });
-            extraFields.push({ name: `${name}_apellido` , typeName: 'text', table: `areas_${t.tarea}`, nameForUpsert: f.name, editable: false, title:'apellido'});
+
+            if(f.name=='asignado'){
+                extraFields.push({ name: `${name}_usuario`, typeName: 'text', table: `areas_${t.tarea}`, nameForUpsert: f.name, editable: false, title: 'usuario' });   
+                extraSelect += `, (select usuario as ${name}_usuario    from usuarios u join tareas_areas ta on (ta.${context.be.db.quoteIdent(f.name)} = u.idper and ta.tarea = ${context.be.db.quoteLiteral(t.tarea)} and ta.area = a.area))`;    
+            }
+
+            extraFields.push({ name: `${name}_nombre`    , typeName: 'text', table: `areas_${t.tarea}`, nameForUpsert: f.name, editable: false, title:'nombre'  });
+            extraFields.push({ name: `${name}_apellido`  , typeName: 'text', table: `areas_${t.tarea}`, nameForUpsert: f.name, editable: false, title:'apellido'});
             extraSelect += `, (select nombre as ${name}_nombre      from usuarios u join tareas_areas ta on (ta.${context.be.db.quoteIdent(f.name)} = u.idper and ta.tarea = ${context.be.db.quoteLiteral(t.tarea)} and ta.area = a.area))`;
             extraSelect += `, (select apellido as ${name}_apellido  from usuarios u join tareas_areas ta on (ta.${context.be.db.quoteIdent(f.name)} = u.idper and ta.tarea = ${context.be.db.quoteLiteral(t.tarea)} and ta.area = a.area))`;
             if(f.muestraDispositivo && t.muestraDispositivo ){
@@ -73,7 +78,7 @@ export function areas_asignacion_general(context:TableContext):TableDefinition {
     tableDef.detailTables = [
         {table:'tem_asignacion' , fields:['operativo','area'], abr:'A', refreshParent:true, refreshFromParent:true, label:'asignables'},
     ];
-    tableDef = {...tableDef, tareasFields};
+    tableDef = {...tableDef, tareasFields: rolesFields};
     return tableDef
 }
 

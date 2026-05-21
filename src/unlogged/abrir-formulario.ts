@@ -13,6 +13,7 @@ import {
 } from "./tipos";
 
 import * as likeAr from "like-ar";
+import { unexpected } from "cast-error";
 
 import {
     getDatosByPass,
@@ -52,7 +53,7 @@ export function recuperarDatosByPass() {
     return
 }
 
-export function cargarHojaDeRuta(nuevoPaquete: { respuestas: Respuestas, modoAlmacenamiento: ModoAlmacenamiento, dirty?: boolean }) {
+export function cargarHojaDeRuta(nuevoPaquete: DatosByPassPersistibles & { dirty?: boolean }) {
     var modoActual = my.getSessionVar(GLOVAR_MODOBYPASS);
     if (modoActual && nuevoPaquete.modoAlmacenamiento != modoActual) {
         throw new Error('No se pueden mezclar modos de apertura de encuestas, directo y por hoja de ruta para MD (' + modoActual + ', ' + nuevoPaquete.modoAlmacenamiento + ')');
@@ -94,7 +95,7 @@ async function enviarBackup() {
             backupsALimpiar.tem = likeAr(backupsALimpiar.tem).filter(caso => caso.idBackup > backups.idActual).plain();
             my.setLocalVar(BACKUPS, backupsALimpiar);
         } catch (err) {
-            console.log('no se pudo hacer backup', err);
+            console.error('no se pudo hacer backup', unexpected(err));
         }
     }
 }

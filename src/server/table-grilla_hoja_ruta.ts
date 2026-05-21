@@ -2,7 +2,7 @@
 
 import {TableDefinition, TableContext, FieldDefinition, OtherTableDefs} from "./types-dmencu";
 
-export function grilla_hoja_ruta(context:TableContext):TableDefinition {
+export function grilla_hoja_ruta(_context:TableContext):TableDefinition {
     //var be=context.be;
     var puedeEditar = true;
     return {   

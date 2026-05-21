@@ -81,9 +81,9 @@ import { html, HtmlTag } from "js-to-html";
 
 const DELAY_SCROLL_3 = 50;
 
-function breakeableText(text: string | null): string | undefined;
+function breakeableText(text: string | null): string | null;
 function breakeableText(text: string | null, diccionario?: { [clave: string]: React.ReactNode }) {
-    if (typeof text != "string") return undefined;
+    if (typeof text != "string") return null;
     text = text.replace(/\//g, "/\u2063").replace(/\/\u2063(\w)\b/g, '/$1');
     text = text.replace(/___*/g, (todo) => `[${todo}]`).replace(/\@\w+\@/g, (todo) => `[${todo}]`);
     if (!diccionario || true) return text;
@@ -565,7 +565,7 @@ function EncabezadoDespliegue(props: {
             {casillero.aclaracion ?
                 <div className="aclaracion">
                     {casillero.salto && casillero.tipoc == 'FILTRO' ?
-                        <SaltoDespliegue casillero={casillero} prefijo={breakeableText(casillero.aclaracion)} />
+                        <SaltoDespliegue casillero={casillero} prefijo={breakeableText(casillero.aclaracion)!} />
                         :
                         breakeableText(casillero.aclaracion)
                     }
@@ -609,7 +609,7 @@ function DesplegarConfirmarBorrarRespuesta(props: { forPk: ForPk, variableBorrar
     </Popover>;
 }
 
-function calcularNuestraLongitud(longitud: string | null) {
+function calcularNuestraLongitud(longitud: string | number | null | undefined) {
     return longitud;
 }
 
@@ -1351,7 +1351,7 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
                         html.tr([
                             casillero.aclaracion ? html.th() : null,
                             html.th(casillero.nombre),
-                            ...nombresCamposResumen.map((nombreCampo) => html.th(nombreCampo)),
+                            ...nombresCamposResumen.map((nombreCampo) => html.th(nombreCampo as string)),
                         ])
                     ]),
                     html.tbody([

@@ -4,6 +4,7 @@ import { Provider, useDispatch } from "react-redux";
 import * as likeAr from "like-ar";
 
 import { gotoSincronizar } from "./redux-formulario"
+import { expected } from "cast-error";
 
 import {
     Button, CssBaseline, SvgIcon, ThemeProvider, Typography, Zoom, useScrollTrigger, createTheme
@@ -167,7 +168,7 @@ export class RenderAndCaptureError extends React.Component<
                     }}
                 >ir a la pantalla de sincronización</Button>
                 <Typography>Error detectado:</Typography>
-                <Typography>{this.state.error instanceof Error ? this.state.error.message : 'unknown error'}</Typography>
+                <Typography>{expected(this.state.error).message}</Typography>
                 <Typography>{JSON.stringify(this.state.info)}</Typography>
             </>;
         }

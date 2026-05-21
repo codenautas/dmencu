@@ -44,8 +44,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
         },
         editable: puedeEditarCampo||puedeEditarProc,
         hiddenColumns:[
-            'seleccionado_ant','cita','notas', 'cluster',
-            'codviviendaparticular', 'casa', 'obsdatosdomicilio', 'obsconjunto', 'reserva', 'rotacion_etoi', 'rotacion_eah'
+            'seleccionado_ant','cita','notas', 'cluster', 'codviviendaparticular', 'casa', 'obsdatosdomicilio', 'obsconjunto', 'reserva', 'rotacion_etoi', 'rotacion_eah'
             , 'trimestre'   , 'procedencia', 'sel_etoi_villa'   , 'marco'      , 'semana' , 'periodicidad' 
             , 'cargado_dm', 'estados__permite_editar_encuesta'
         ],
@@ -187,7 +186,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
     };
     if (opts.recepcion) {
         def.fields=def.fields.filter(f=>!columnasSoloTem.includes(f.name) )
-        def.hiddenColumns=[...def.hiddenColumns, ...columnasAreasParaLaTem.map(x=>`areas__${x}`)]
+        def.hiddenColumns=[...(def.hiddenColumns||[]), ...columnasAreasParaLaTem.map(x=>`areas__${x}`)]
         def.foreignKeys=def.foreignKeys?.map(function (f) {if (f.references=='areas'){f.displayFields=columnasAreasParaLaTem}; return f}) 
     } else {
         def.detailTables?.unshift({table: "tareas_tem", abr: "T", fields: ['operativo', 'enc'], label:'tareas'})
