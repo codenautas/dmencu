@@ -1070,7 +1070,7 @@ type DefinicionFormularioAbrir =
     { forPk: ForPk, num: number, actual: boolean, previo: false, esConfirmar: true } |
     { forPk: ForPk, num: number, actual: boolean, previo: false, permiteBorrar: boolean } |
     { forPk: ForPk, num: false, actual: boolean, previo: true, unico: true })
-    & { esConfirmar?: true, esAgregar?: true, permiteBorrar?: boolean, disabled?: boolean | undefined };
+    & { esConfirmar?: true, esAgregar?: true, permiteBorrar?: boolean, permiteBorrarGabinete?: boolean, disabled?: boolean | undefined };
 
 
 var botonFormularioConResumen = (
@@ -1080,7 +1080,8 @@ var botonFormularioConResumen = (
     casillero: { despliegueOculta?: boolean | null, expresion_habilitar_js?: string, aclaracion: string | null, expresion_habilitar?: string, nombre?: string, salto: string | null, especial?: any },
     forPkPadre: ForPk,
     idButton: string,
-    formularioAAbrir: Formulario
+    formularioAAbrir: Formulario,
+    pedirConfirmacionBorrado?: (defBoton: DefinicionFormularioAbrir, forPkPadre: ForPk) => void
 ) => {
     var forPk: ForPk = defBoton.forPk;
     var sufijoIdElemento = toPlainForPk(forPk) + (defBoton.esConfirmar ? '-listo' : '');
@@ -1138,7 +1139,7 @@ var botonFormularioConResumen = (
                     ])
                 ]
             }),
-            (defBoton.permiteBorrar ?
+            (defBoton.permiteBorrar || defBoton.permiteBorrarGabinete ?
                 Button2({
                     className: "boton-borrar-ua-vacia",
                     color: "default",
@@ -1148,14 +1149,18 @@ var botonFormularioConResumen = (
                             html.path({ d: materialIoIconsSvgPath.DeleteForever, style: styleToCss({ fill: 'currentColor' }) })
                         ]),
                     onClick: () => {
-                        accion_borrar_formulario({ forPk, forPkPadre });
-                        const { listo, agregar } = getBFVarNames(casillero.salto);
-                        if (defBoton.num === 1) {
-                            dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: agregar, respuesta: null as unknown as Valor });
-                        }
-                        dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: listo, respuesta: null as unknown as Valor });
-                        if (casillero.expresion_habilitar) {
-                            dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: casillero.expresion_habilitar as IdVariable, respuesta: null as unknown as Valor });
+                        if (defBoton.permiteBorrar) {
+                            accion_borrar_formulario({ forPk, forPkPadre });
+                            const { listo, agregar } = getBFVarNames(casillero.salto);
+                            if (defBoton.num === 1) {
+                                dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: agregar, respuesta: null as unknown as Valor });
+                            }
+                            dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: listo, respuesta: null as unknown as Valor });
+                            if (casillero.expresion_habilitar) {
+                                dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: casillero.expresion_habilitar as IdVariable, respuesta: null as unknown as Valor });
+                            }
+                        } else if (defBoton.permiteBorrarGabinete && pedirConfirmacionBorrado) {
+                            pedirConfirmacionBorrado(defBoton, forPkPadre);
                         }
                     }
                 })
@@ -1249,6 +1254,13 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
     */
     const dispatch = useDispatch();
     var [confirmarForzarIr, setConfirmarForzarIr] = useState<DefinicionFormularioAbrir | false | null>(null);
+    var [confirmacionBorrado, setConfirmacionBorrado] = useState<{defBoton: DefinicionFormularioAbrir, forPkPadre: ForPk, datos: any} | null>(null);
+    var permiteBorrarGabinete = getDatosByPass().permiteBorrarElementosUA ?? false;
+    var pedirConfirmacionBorrado = (defBoton: DefinicionFormularioAbrir, forPkPadre: ForPk) => {
+        const {respuestas} = respuestasForPk(forPkPadre)
+        var datosHijos = respuestas[formularioAAbrir.unidad_analisis][(defBoton.num || 1) - 1];
+        setConfirmacionBorrado({ defBoton, forPkPadre, datos: datosHijos });
+    };
     var multipleFormularios = formularioAAbrir.unidad_analisis != props.formulario.unidad_analisis;
     var nuevoCampoPk = defOperativo.defUA[formularioAAbrir.unidad_analisis].pk;
     // var var_name='$B.'+casillero.salto; //original
@@ -1305,6 +1317,7 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
                             permiteBorrar: likeAr(conjunto).array().length == Number(i) + 1 &&
                                 checkFormsVacios(formHnos, feedbackAll, forPk) &&
                                 calcularPermiteBorrarBF(configSorteoFormulario, idFormularioDestino),
+                            permiteBorrarGabinete,
                             disabled: calcularDisabledBF(configSorteoFormulario, habilitacionBotonFormulario, num, idFormularioDestino, respuestasAumentadas)
                         }
                     }).array();
@@ -1340,7 +1353,7 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
                 }
                 var todosLosBotones = listaDeBotonesAbrir.map(defBoton =>
                     botonFormularioConResumen(defBoton, feedbackAll[toPlainForPk(defBoton.forPk)] ?? { resumen: 'vacio' }, respuestasAumentadas,
-                        casillero, props.forPk, idButton, formularioAAbrir
+                        casillero, props.forPk, idButton, formularioAAbrir, pedirConfirmacionBorrado
                     )
                 )
                 let nombresCamposResumen = likeAr((casillero.especial?.camposResumen || [])).array().map(c => c);
@@ -1418,6 +1431,36 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
             <Button color="secondary" onClick={() => confirmarForzarIr && ir(confirmarForzarIr)}>forzar</Button>
             <Button color="primary" variant="contained" onClick={() => setConfirmarForzarIr(null)}>Entendido</Button>
         </Dialog>
+        {confirmacionBorrado && (
+            <Dialog open={true} onClose={() => setConfirmacionBorrado(null)}>
+                <DialogTitle>Advertencia: Se perderán datos</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Está por borrar un formulario que no cumple las condiciones habituales de borrado. Los datos a continuación y todos sus registros asociados se perderán por completo. ¿Desea continuar?
+                    </DialogContentText>
+                    <pre style={{maxWidth: '100%', overflowX: 'auto', background: '#f5f5f5', padding: '10px', marginTop: '10px'}}>
+                        {JSON.stringify(confirmacionBorrado.datos, null, 2)}
+                    </pre>
+                </DialogContent>
+                <DialogActions>
+                    <Button color="primary" variant="outlined" onClick={() => setConfirmacionBorrado(null)}>Cancelar</Button>
+                    <Button color="secondary" variant="contained" onClick={() => {
+                        const {defBoton, forPkPadre} = confirmacionBorrado;
+                        const forPk = defBoton.forPk;
+                        accion_borrar_formulario({ forPk, forPkPadre });
+                        const { listo, agregar } = getBFVarNames(casillero.salto);
+                        if (defBoton.num === 1) {
+                            dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: agregar, respuesta: null as unknown as Valor });
+                        }
+                        dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: listo, respuesta: null as unknown as Valor });
+                        if (casillero.expresion_habilitar) {
+                            dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: casillero.expresion_habilitar as IdVariable, respuesta: null as unknown as Valor });
+                        }
+                        setConfirmacionBorrado(null);
+                    }}>Borrar de todas formas</Button>
+                </DialogActions>
+            </Dialog>
+        )}
     </DesplegarCasillero>
 }
 

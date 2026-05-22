@@ -503,11 +503,12 @@ export function accion_abrir_formulario({ forPk }: { forPk: ForPk }, _datosByPas
 }
 
 export function accion_borrar_formulario({ forPk, forPkPadre }: { forPk: ForPk, forPkPadre: ForPk }) {
-    var { respuestas, unidadAnalisis, respuestasAumentadas, respuestasRaiz, forPkRaiz } = respuestasForPk(forPk, true, true);
+    var { respuestasRaiz, forPkRaiz } = respuestasForPk(forPk, true, true);
     var unidad_analisis: IdUnidadAnalisis | undefined = estructura.formularios[forPk.formulario].casilleros.unidad_analisis
     var uaDef: UnidadAnalisis = estructura.unidades_analisis[unidad_analisis];
     var index = forPk[uaDef.pk_agregada] as number;
-    (respuestasAumentadas[unidad_analisis] as Respuestas[]).pop();
+    var { respuestas: respuestasPadre } = respuestasForPk(forPkPadre, true, true);
+    (respuestasPadre[unidad_analisis] as Respuestas[]).splice(index - 1, 1);
     variablesCalculadas(respuestasRaiz, forPkPadre);
     datosByPass.dirty = datosByPass.dirty || true;
     respuestasRaiz.$dirty = respuestasRaiz.$dirty || true;
