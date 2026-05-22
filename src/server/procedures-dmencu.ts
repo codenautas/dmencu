@@ -20,6 +20,7 @@ import { getDiasAPasarQuery } from "./table-tareas_tem";
 import { error } from "console";
 import { Context } from "vm";
 import { expected, unexpected } from "cast-error";
+import { getModoByPolicy } from "./app-dmencu";
 
 var path = require('path');
 var sqlTools = require('sql-tools');
@@ -843,7 +844,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters<{operativo: IdOperativo, pk_raiz_value: string, tarea: string}>){
             const be=context.be;
             const {operativo,pk_raiz_value, tarea} = parameters;
-            const {permite_borrar_ua, main_form} = (await context.client.query(`
+            const {permite_borrar_ua: tareaPermiteBorrarUA, main_form} = (await context.client.query(`
                 select permite_borrar_ua, main_form 
                     from tareas 
                     where operativo= $1 and tarea=$2
@@ -877,9 +878,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 idper: context.user.idper,
                 cargas: likeAr.createIndex(row.cargas.map((carga: any) => ({ ...carga, fecha: carga.fecha ? date.iso(carga.fecha).toDmy() : null })), 'carga'),
                 timestampEstructura: be.caches.timestampEstructura,
-                tareaPermiteBorrarUA: permite_borrar_ua || false,
-                rolPuedeBorrarUA: context.puede?.encuestas.borrar_ua || false,
-                policy: be.config.server.policy,
+                permiteBorrarElementosUA: !!(tareaPermiteBorrarUA && getModoByPolicy(be) === 'GABINETE' && context.puede?.encuestas?.borrar_ua)
             };
         }
     },
@@ -2155,7 +2154,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         unlogged: true,
         coreFunction: async function (context: ProcedureContext, _parameters: CoreFunctionParameters<{}>) {
             const { be } = context;
-            return be.config.server.policy == 'web' ? 'RELEVAMIENTO' : 'GABINETE';
+            return getModoByPolicy(be);
         }
     },
     {

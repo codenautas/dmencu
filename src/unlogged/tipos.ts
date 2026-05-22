@@ -437,6 +437,7 @@ export type DatosByPassPersistibles = {
     token?: string
     num_sincro?: number
     timestampEstructura?: number
+    permiteBorrarElementosUA?: boolean
 }
 
 type ConfiguracionSorteoTabla = {

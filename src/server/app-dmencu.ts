@@ -110,6 +110,10 @@ import { ProcedureContext } from "backend-plus";
 
 const APP_DM_VERSION = "#22-12-15";
 
+export function getModoByPolicy(be: AppBackend) {
+    return be.config.server.policy == 'web' ? 'RELEVAMIENTO' : 'GABINETE';
+}
+
 const registrarCronJobPasarAProie = async (be: AppBackend) => {
     const ejecutarPasaje = async () => {
         const log = (msg: string, data: any = '') =>
@@ -676,7 +680,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
 
         override getMenu(context: Context) {
             let menu: MenuInfoBase[] = [];
-            if (this.config.server.policy == 'web') {
+            if (getModoByPolicy(context.be) === 'RELEVAMIENTO') {
                 if (context.puede?.encuestas?.relevar) {
                     if (this.config['client-setup'].ambiente == 'demo' || this.config['client-setup'].ambiente == 'test' || this.config['client-setup'].ambiente == 'capa') {
                         menu.push({ menuType: 'demo', name: 'demo', selectedByDefault: true })
