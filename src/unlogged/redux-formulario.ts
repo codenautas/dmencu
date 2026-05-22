@@ -369,7 +369,7 @@ export async function traerEstructura(params: { operativo: string }) {
     return estructura;
 }
 
-export async function dmTraerDatosFormulario(opts: { operativo: IdOperativo, modoDemo: boolean, forPkRaiz?: ForPkRaiz }) {
+export async function dmTraerDatosFormulario(opts: { operativo?: IdOperativo, modoDemo: boolean, forPkRaiz?: ForPkRaiz }) {
     var getCasoState = (): CasoState => myOwn.getLocalVar(LOCAL_STORAGE_STATE_NAME);
     var setCasoState = (casoState: CasoState) => myOwn.setLocalVar(LOCAL_STORAGE_STATE_NAME, casoState);
 

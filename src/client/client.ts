@@ -109,7 +109,7 @@ myOwn.autoSetupFunctions.push(async () => {
 var linkNode = document.querySelectorAll('[href="css/bootstrap.min.css"]');
 linkNode[0]?.parentNode?.removeChild(linkNode[0]);
 
-function consistir_filtro(tarea, rea_tem, rea) {
+function consistir_filtro(tarea: string, rea_tem: number | null, rea: number | null): number | null {
     return tarea ? rea_tem : rea;
 };
 
@@ -370,6 +370,7 @@ var crearBotonCerrarEncuesta = (label: string) => {
         })
     ]).create();
     svg.setAttribute("viewBox", "0 0 26 26");
+    //@ts-ignore svg puede ser hijo de un boton
     let ver = html.button({ id: 'boton-cerrar-encuesta' }, [svg, label]).create();
     ver.onclick = () => close();
     return ver
@@ -393,7 +394,8 @@ var crearBotonVerAbrirEncuesta = (operativo: IdOperativo, tarea: IdTarea, encues
 
 var crearBotonesVerAbrirTareas = async (depot: myOwn.Depot, fieldName: string, label: 'abrir' | 'ver') => {
     tareas = tareas ? tareas : (await myOwn.ajax.table_data({ table: `tareas`, fixedFields: [] }));
-    var misTareas = tareas.filter((tarea) =>
+    var misTareas = tareas.filter((tarea:any) =>
+        //@ts-ignore def existe en manager y muestraAbrirEnTodasLasTareas tambien (en esa grilla)
         !!tarea.main_form && tarea.operativo == depot.row.operativo && (depot.manager.def.muestraAbrirEnTodasLasTareas ? true : depot.row.tarea == tarea.tarea)
     );
     depot.rowControls[fieldName].innerHTML = '';
@@ -646,6 +648,7 @@ function
 myOwn.clientSides.consistir = botonClientSideEnGrilla({
     nombreBoton: 'consistir',
     llamada: function (depot: myOwn.Depot) {
+        //@ts-ignore def existe en manager
         var myReaFieldName = depot.manager.def.tableName == "tem" ? 'rea' : 'ult_rea';
         var filtroRea = consistir_filtro(depot.row.tarea, depot.row[myReaFieldName], depot.row.rea)
         return filtroRea ? myOwn.ajax.consistir_encuesta({
@@ -661,7 +664,7 @@ myOwn.wScreens.proc.result.mostrar_encuestas_a_blanquear = function (result, div
         var nroCarga = 0;
         var encuestasDiv: null | HTMLDivElement = null;
         divResult.appendChild(html.h2('operativo: ' + result.operativo).create());
-        result.rows.forEach((encuesta) => {
+        result.rows.forEach((encuesta:any) => {
             if (currentToken != encuesta.cargado_dm) {
                 nroCarga++;
                 currentToken = encuesta.cargado_dm;
