@@ -1444,7 +1444,7 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
                 <DialogTitle>Advertencia: Se perderán datos</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Está por borrar un formulario que no cumple las condiciones habituales de borrado. Los datos a continuación y todos sus registros asociados se perderán por completo. ¿Desea continuar?
+                        Está por borrar un formulario. Los datos del mismo y todos sus registros asociados se perderán. ¿Desea continuar?
                     </DialogContentText>
                     
                     <div style={{ marginTop: '20px', marginBottom: '20px' }}>
