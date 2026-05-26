@@ -1255,11 +1255,15 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
     const dispatch = useDispatch();
     var [confirmarForzarIr, setConfirmarForzarIr] = useState<DefinicionFormularioAbrir | false | null>(null);
     var [confirmacionBorrado, setConfirmacionBorrado] = useState<{defBoton: DefinicionFormularioAbrir, forPkPadre: ForPk, datos: any} | null>(null);
+    var [fraseBorrado, setFraseBorrado] = useState('');
+    var [errorFraseBorrado, setErrorFraseBorrado] = useState(false);
     var permiteBorrarGabinete = getDatosByPass().permiteBorrarElementosUA ?? false;
     var pedirConfirmacionBorrado = (defBoton: DefinicionFormularioAbrir, forPkPadre: ForPk) => {
         const {respuestas} = respuestasForPk(forPkPadre)
         var datosHijos = respuestas[formularioAAbrir.unidad_analisis][(defBoton.num || 1) - 1];
         setConfirmacionBorrado({ defBoton, forPkPadre, datos: datosHijos });
+        setFraseBorrado('');
+        setErrorFraseBorrado(false);
     };
     var multipleFormularios = formularioAAbrir.unidad_analisis != props.formulario.unidad_analisis;
     var nuevoCampoPk = defOperativo.defUA[formularioAAbrir.unidad_analisis].pk;
@@ -1432,19 +1436,67 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
             <Button color="primary" variant="contained" onClick={() => setConfirmarForzarIr(null)}>Entendido</Button>
         </Dialog>
         {confirmacionBorrado && (
-            <Dialog open={true} onClose={() => setConfirmacionBorrado(null)}>
+            <Dialog open={true} onClose={() => { 
+                setConfirmacionBorrado(null); 
+                setFraseBorrado(''); 
+                setErrorFraseBorrado(false); 
+            }}>
                 <DialogTitle>Advertencia: Se perderán datos</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
                         Está por borrar un formulario que no cumple las condiciones habituales de borrado. Los datos a continuación y todos sus registros asociados se perderán por completo. ¿Desea continuar?
                     </DialogContentText>
-                    <pre style={{maxWidth: '100%', overflowX: 'auto', background: '#f5f5f5', padding: '10px', marginTop: '10px'}}>
+                    
+                    <div style={{ marginTop: '20px', marginBottom: '20px' }}>
+                        <DialogContentText>
+                            Para confirmar el borrado, escriba la frase <strong>"forzar borrado"</strong> a continuación:
+                        </DialogContentText>
+                        <input 
+                            id="input-forzar-borrado"
+                            type="text" 
+                            value={fraseBorrado} 
+                            onChange={e => {
+                                setFraseBorrado(e.target.value);
+                                setErrorFraseBorrado(false);
+                            }} 
+                            style={{width: '100%', padding: '8px', border: errorFraseBorrado ? '1px solid red' : '1px solid #ccc', borderRadius: '4px'}}
+                            placeholder="forzar borrado"
+                            autoComplete="off"
+                        />
+                        {errorFraseBorrado && <div style={{color: 'red', marginTop: '5px', fontSize: '0.85em'}}>La frase ingresada es incorrecta.</div>}
+                    </div>
+
+                    <Typography variant="h6" style={{ marginTop: '10px', fontWeight: 'bold' }}>Datos que se perderán:</Typography>
+                    <pre style={{maxWidth: '100%', overflowX: 'auto', background: '#f5f5f5', padding: '10px', marginTop: '10px', marginBottom: '20px'}}>
                         {JSON.stringify(confirmacionBorrado.datos, null, 2)}
                     </pre>
                 </DialogContent>
                 <DialogActions>
-                    <Button color="primary" variant="outlined" onClick={() => setConfirmacionBorrado(null)}>Cancelar</Button>
+                    <Button 
+                        color="primary" 
+                        variant="outlined" 
+                        onClick={() => { 
+                            setConfirmacionBorrado(null); 
+                            setFraseBorrado(''); 
+                            setErrorFraseBorrado(false); 
+                        }}
+                    >
+                        Cancelar
+                    </Button>
                     <Button color="secondary" variant="contained" onClick={() => {
+                        if (!confirmacionBorrado) return;
+                        
+                        if (fraseBorrado.trim().toLowerCase() !== "forzar borrado") {
+                            setErrorFraseBorrado(true);
+                            setTimeout(() => {
+                                const input = document.getElementById('input-forzar-borrado');
+                                if (input) {
+                                    input.focus();
+                                    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }
+                            }, 100);
+                            return;
+                        }
                         const {defBoton, forPkPadre} = confirmacionBorrado;
                         const forPk = defBoton.forPk;
                         accion_borrar_formulario({ forPk, forPkPadre });
@@ -1457,6 +1509,8 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
                             dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: casillero.expresion_habilitar as IdVariable, respuesta: null as unknown as Valor });
                         }
                         setConfirmacionBorrado(null);
+                        setFraseBorrado('');
+                        setErrorFraseBorrado(false);
                     }}>Borrar de todas formas</Button>
                 </DialogActions>
             </Dialog>
