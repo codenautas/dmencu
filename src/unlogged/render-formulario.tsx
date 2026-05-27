@@ -1446,7 +1446,7 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
                 <DialogTitle>Advertencia: Se perderán datos</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Está por borrar un formulario. Los datos del mismo y todos sus registros asociados se perderán. ¿Desea continuar?
+                        {`Está por borrar el formulario ${confirmacionBorrado.defBoton.forPk.formulario} (${estructura.unidades_analisis[estructura.formularios[confirmacionBorrado.defBoton.forPk.formulario].casilleros.unidad_analisis].pk_agregada}: ${confirmacionBorrado.defBoton.num}). Los datos del mismo y todos sus registros asociados se perderán. ¿Desea continuar?`}
                     </DialogContentText>
                     
                     <div style={{ marginTop: '20px', marginBottom: '20px' }}>
