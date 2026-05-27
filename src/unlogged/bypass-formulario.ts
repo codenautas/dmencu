@@ -968,17 +968,17 @@ export function verificarSorteo(opts: {
 }
 
 function barrerSubArbol(respuestasRaiz: RespuestasRaiz, nodoActual: Respuestas | Respuestas[], unidad_analisis: IdUnidadAnalisis, forPkAcumulado: ForPk) {
-    let uaDef = estructura.unidades_analisis[unidad_analisis];
-    let esArray = nodoActual instanceof Array;
-    let conjunto = esArray ? nodoActual : [nodoActual];
+    var uaDef = estructura.unidades_analisis[unidad_analisis];
+    var esArray = nodoActual instanceof Array;
+    var conjunto: Respuestas[] = esArray ? nodoActual as Respuestas[] : [nodoActual as Respuestas];
     
-    for (let i = 0; i < conjunto.length; i++) {
-        let resp = conjunto[i];
+    for (var i = 0; i < conjunto.length; i++) {
+        var resp = conjunto[i];
         if (!resp) continue;
 
-        let num = esArray ? i + 1 : (forPkAcumulado[uaDef.pk_agregada] || 1);
-        let idFormulario = Object.keys(estructura.formularios).find(key => estructura.formularios[key as IdFormulario].casilleros.unidad_analisis === unidad_analisis) as IdFormulario;
-        let miForPk = { ...forPkAcumulado, [uaDef.pk_agregada]: num, formulario: idFormulario || forPkAcumulado.formulario };
+        var num = esArray ? i + 1 : (forPkAcumulado[uaDef.pk_agregada] || 1);
+        var idFormulario = Object.keys(estructura.formularios).find(key => estructura.formularios[key as IdFormulario].casilleros.unidad_analisis === unidad_analisis) as IdFormulario;
+        var miForPk: ForPk = { ...forPkAcumulado, [uaDef.pk_agregada]: num, formulario: idFormulario || forPkAcumulado.formulario };
 
         if (especiales.calcularVariables) {
             especiales.calcularVariables(respuestasRaiz, miForPk);
@@ -987,10 +987,11 @@ function barrerSubArbol(respuestasRaiz: RespuestasRaiz, nodoActual: Respuestas |
             especiales.calcularVariablesEspecificasOperativo(respuestasRaiz, miForPk);
         }
 
-        let hijas = likeAr(estructura.unidades_analisis).filter(u => u.padre === unidad_analisis).keys();
-        for (let uaHija of hijas) {
-            if ((resp as any)[uaHija]) {
-                barrerSubArbol(respuestasRaiz, (resp as any)[uaHija], uaHija, miForPk);
+        var hijas = likeAr(estructura.unidades_analisis).filter(u => u.padre === unidad_analisis).keys();
+        for (var uaHija of hijas) {
+            var hijasResp = resp[uaHija as IdUnidadAnalisis];
+            if (hijasResp) {
+                barrerSubArbol(respuestasRaiz, hijasResp as Respuestas[], uaHija as IdUnidadAnalisis, miForPk);
             }
         }
     }

@@ -132,6 +132,108 @@ export function focusToId(id: string, opts: FocusOpts, cb?: (e: HTMLElement) => 
 
 export type IDispatchers = { RESET_OPCIONES: Function };
 
+function getBadgeStyle(estado: string): React.CSSProperties {
+    const base: React.CSSProperties = {
+        padding: '2px 6px',
+        borderRadius: '4px',
+        fontSize: '11px',
+        fontWeight: 'bold',
+        display: 'inline-block',
+        textTransform: 'uppercase'
+    };
+    if (estado === 'ok') return { ...base, backgroundColor: '#c6f6d5', color: '#22543d' };
+    if (estado === 'incompleto' || estado === 'con problemas') return { ...base, backgroundColor: '#feebc8', color: '#744210' };
+    return { ...base, backgroundColor: '#edf2f7', color: '#4a5568' };
+}
+interface RenderizadorJSONProps {
+    datos: Record<string, any>;
+    nivel?: number;
+}
+
+export const RenderizadorJSON: React.FC<RenderizadorJSONProps> = ({ datos, nivel = 0 }) => {
+
+    const clavesFiltradas = Object.keys(datos).filter(
+        clave => !clave.startsWith('$') && clave !== 'timestampEstructura'
+    );
+
+    return (
+        <div style={{ paddingLeft: nivel > 0 ? '16px' : '0px' }}>
+            {clavesFiltradas.map(clave => {
+                const valor = datos[clave];
+
+                // DETECCIÓN DE SUB-UNIDADES DE ANÁLISIS (hogares, personas, etc.)
+                if (Array.isArray(valor) && valor.length > 0 && typeof valor[0] === 'object') {
+                    return (
+                        <div
+                            key={clave}
+                            style={{
+                                margin: '12px 0',
+                                borderLeft: '4px solid #3182ce',
+                                backgroundColor: '#f7fafc',
+                                borderRadius: '0 6px 6px 0',
+                                padding: '8px 12px'
+                            }}
+                        >
+                            {/* Título de la UA */}
+                            <div style={{ fontWeight: 'bold', color: '#2b6cb0', fontSize: '13px', textTransform: 'uppercase', marginBottom: '6px' }}>
+                                Unidad de Análisis: {clave} ({valor.length})
+                            </div>
+
+                            {valor.map((registro, filaIndex) => (
+                                <div
+                                    key={filaIndex}
+                                    style={{
+                                        marginBottom: filaIndex < valor.length - 1 ? '10px' : '0',
+                                        paddingTop: filaIndex > 0 ? '6px' : '0',
+                                        borderTop: filaIndex > 0 ? '1px dashed #e2e8f0' : 'none'
+                                    }}
+                                >
+                                    <RenderizadorJSON datos={registro} nivel={nivel + 1} />
+                                </div>
+                            ))}
+                        </div>
+                    );
+                }
+
+                // Si por las dudas es un objeto directo que no es array, lo salteamos
+                if (typeof valor === 'object' && valor !== null) return null;
+
+                // VARIABLES ESTÁNDAR (Clave y valor juntos)
+                return (
+                    <div
+                        key={clave}
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'row',
+                            flexWrap: 'wrap', // Por si el valor es muy largo, que baje limpio
+                            padding: '4px 0',
+                            fontSize: '13px',
+                            alignItems: 'center',
+                            lineHeight: '1.4'
+                        }}
+                    >
+                        {/* Clave: ahora sin ancho fijo, se adapta al texto */}
+                        <div style={{ color: '#4a5568', fontWeight: 500, marginRight: '6px' }}>
+                            {clave}:
+                        </div>
+
+                        {/* Valor: pegado inmediatamente a la clave */}
+                        <div style={{ color: '#1a202c', fontWeight: 600 }}>
+                            {clave.startsWith('resumenEstado') ? (
+                                <span style={getBadgeStyle(String(valor))}>
+                                    {String(valor)}
+                                </span>
+                            ) : (
+                                String(valor ?? '')
+                            )}
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
 export function ReseterForm(props: { onTryAgain: () => void, dispatchers: IDispatchers, mensaje: string }) {
     const dispatch = useDispatch();
     return <>

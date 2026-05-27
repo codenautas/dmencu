@@ -6,7 +6,8 @@ import {
     ICON,
     scrollToTop,
     materialIoIconsSvgPath,
-    useOnlineStatus
+    useOnlineStatus,
+    RenderizadorJSON
 } from "./render-general";
 import {
     Bloque, BotonFormulario,
@@ -1144,6 +1145,7 @@ var botonFormularioConResumen = (
                     className: "boton-borrar-ua-vacia",
                     color: "default",
                     variant: "outlined",
+                    style: { marginLeft: '8px' },
                     children:
                         html.svg({ focusable: false, viewbox: "0 0 24 24", "aria-hidden": "true", style: styleToCss({ fill: "currentColor" }) }, [
                             html.path({ d: materialIoIconsSvgPath.DeleteForever, style: styleToCss({ fill: 'currentColor' }) })
@@ -1467,9 +1469,9 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
                     </div>
 
                     <Typography variant="h6" style={{ marginTop: '10px', fontWeight: 'bold' }}>Datos que se perderán:</Typography>
-                    <pre style={{maxWidth: '100%', overflowX: 'auto', background: '#f5f5f5', padding: '10px', marginTop: '10px', marginBottom: '20px'}}>
-                        {JSON.stringify(confirmacionBorrado.datos, null, 2)}
-                    </pre>
+                    <div style={{ maxWidth: '600px', margin: '0 auto', fontFamily: 'sans-serif' }}>
+                        <RenderizadorJSON datos={confirmacionBorrado.datos} />
+                    </div>
                 </DialogContent>
                 <DialogActions>
                     <Button 
