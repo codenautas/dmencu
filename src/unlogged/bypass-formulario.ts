@@ -440,7 +440,7 @@ export function accion_registrar_respuesta(payload: {
     }
     var siguienteVariable: IdVariable | IdFin | null | undefined;
     if (variable != NO_CAMBIAR__SOLO_TRAER_STATUS && (recentModified || NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO && feedbackRow.autoIngresadas?.[variable])) {
-        variablesCalculadas(respuestasRaiz, forPk);
+        recalcularTodoElArbol(respuestasRaiz, forPkRaiz);
         if (estructura.configSorteo && !datosByPass?.soloLectura) {
             verificarSorteo({
                 configuracionSorteo: estructura.configSorteo[getMainFormForVivienda(forPk[estructura.pkAgregadaUaPpal])],
@@ -487,16 +487,16 @@ export function accion_borrar_visita(payload: { forPkRaiz: ForPkRaiz, index: num
 }
 
 export function accion_agregar_formulario({ forPk }: { forPk: ForPk }, _datosByPass: DatosByPass) {
-    var { respuestas, unidadAnalisis, respuestasAumentadas, respuestasRaiz } = respuestasForPk(forPk, true, true);
-    variablesCalculadas(respuestasRaiz, forPk);
+    var { respuestas, unidadAnalisis, respuestasAumentadas, respuestasRaiz, forPkRaiz } = respuestasForPk(forPk, true, true);
+    recalcularTodoElArbol(respuestasRaiz, forPkRaiz);
     calcularFeedbackUnidadAnalisis(datosByPass.feedbackRowValidator, estructura.formularios, respuestas, unidadAnalisis.unidad_analisis, forPk, respuestasAumentadas, null, {})
     calcularVariablesBotonFormulario(forPk);
     persistirDatosByPass(datosByPass); // OJO ASYNC DESCONTROLADA
 }
 
 export function accion_abrir_formulario({ forPk }: { forPk: ForPk }, _datosByPass: DatosByPass) {
-    var { respuestas, unidadAnalisis, respuestasAumentadas, respuestasRaiz } = respuestasForPk(forPk, true, true);
-    variablesCalculadas(respuestasRaiz, forPk);
+    var { respuestas, unidadAnalisis, respuestasAumentadas, respuestasRaiz, forPkRaiz } = respuestasForPk(forPk, true, true);
+    recalcularTodoElArbol(respuestasRaiz, forPkRaiz);
     calcularFeedbackUnidadAnalisis(datosByPass.feedbackRowValidator, estructura.formularios, respuestas, unidadAnalisis.unidad_analisis, forPk, respuestasAumentadas, null, {})
     calcularVariablesBotonFormulario(forPk);
     persistirDatosByPass(datosByPass); // OJO ASYNC DESCONTROLADA
@@ -509,7 +509,7 @@ export function accion_borrar_formulario({ forPk, forPkPadre }: { forPk: ForPk, 
     var index = forPk[uaDef.pk_agregada] as number;
     var { respuestas: respuestasPadre } = respuestasForPk(forPkPadre, true, true);
     (respuestasPadre[unidad_analisis] as Respuestas[]).splice(index - 1, 1);
-    variablesCalculadas(respuestasRaiz, forPkPadre);
+    recalcularTodoElArbol(respuestasRaiz, forPkRaiz);
     datosByPass.dirty = datosByPass.dirty || true;
     respuestasRaiz.$dirty = respuestasRaiz.$dirty || true;
     refrescarMarcaDirty();
@@ -967,13 +967,40 @@ export function verificarSorteo(opts: {
     }
 }
 
-function variablesCalculadas(respuestasRaiz: RespuestasRaiz, forPk: ForPk) {
-    if (especiales.calcularVariables) {
-        especiales.calcularVariables(respuestasRaiz, forPk);
+function barrerSubArbol(respuestasRaiz: RespuestasRaiz, nodoActual: Respuestas | Respuestas[], unidad_analisis: IdUnidadAnalisis, forPkAcumulado: ForPk) {
+    let uaDef = estructura.unidades_analisis[unidad_analisis];
+    let esArray = nodoActual instanceof Array;
+    let conjunto = esArray ? nodoActual : [nodoActual];
+    
+    for (let i = 0; i < conjunto.length; i++) {
+        let resp = conjunto[i];
+        if (!resp) continue;
+
+        let num = esArray ? i + 1 : (forPkAcumulado[uaDef.pk_agregada] || 1);
+        let idFormulario = Object.keys(estructura.formularios).find(key => estructura.formularios[key as IdFormulario].casilleros.unidad_analisis === unidad_analisis) as IdFormulario;
+        let miForPk = { ...forPkAcumulado, [uaDef.pk_agregada]: num, formulario: idFormulario || forPkAcumulado.formulario };
+
+        if (especiales.calcularVariables) {
+            especiales.calcularVariables(respuestasRaiz, miForPk);
+        }
+        if (especiales.calcularVariablesEspecificasOperativo) {
+            especiales.calcularVariablesEspecificasOperativo(respuestasRaiz, miForPk);
+        }
+
+        let hijas = likeAr(estructura.unidades_analisis).filter(u => u.padre === unidad_analisis).keys();
+        for (let uaHija of hijas) {
+            if ((resp as any)[uaHija]) {
+                barrerSubArbol(respuestasRaiz, (resp as any)[uaHija], uaHija, miForPk);
+            }
+        }
     }
-    if (especiales.calcularVariablesEspecificasOperativo) {
-        especiales.calcularVariablesEspecificasOperativo(respuestasRaiz, forPk);
-    }
+}
+
+export function recalcularTodoElArbol(respuestasRaiz: RespuestasRaiz, forPkRaiz: ForPk) {
+    var uaPpal = Object.keys(estructura.unidades_analisis).find(key => !estructura.unidades_analisis[key as IdUnidadAnalisis].padre) as IdUnidadAnalisis;
+    
+    barrerSubArbol(respuestasRaiz, respuestasRaiz, uaPpal, forPkRaiz);
+    barrerSubArbol(respuestasRaiz, respuestasRaiz, uaPpal, forPkRaiz);
 }
 
 export function calcularFeedbackUnidadAnalisis(
