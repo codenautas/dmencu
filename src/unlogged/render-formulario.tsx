@@ -136,7 +136,7 @@ export type LibreDespliegueType = (props: {
 var LibreDespliegue: LibreDespliegueType
 
 export const Button = ({ variant, onClick, disabled, children, className, color, size,
-    disableElevation, disableFocusRipple, disableRipple,
+    disableElevation, disableFocusRipple, disableRipple, type,
     ...other
 }: {
     variant?: string,
@@ -146,11 +146,13 @@ export const Button = ({ variant, onClick, disabled, children, className, color,
     children: any,
     className?: string,
     size?: 'small',
+    type?: 'button' | 'submit' | 'reset',
     disableElevation?: any, disableFocusRipple?: any, disableRipple?: any,
 } & CommonAttributes) => <button
     {...other}
     className={`btn btn${variant == 'contained' ? '' : '-' + (variant == 'outlined' ? 'outline' : variant)}-${(color == 'default' || color == 'inherit' ? 'secondary' : color == 'secondary' ? 'danger' : color) || 'secondary'} ${className || ''} ${size == 'small' ? 'btn-sm' : ''}`}
     disabled={disabled}
+    type={type}
     onClick={onClick}
 >{children}</button>;
 
@@ -199,6 +201,7 @@ const TextField = (props: {
     // onKeyDown?:(event:KeyboardEvent)=>void // KeyboardEventHandler<HTMLInputElement>
     onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>
 }) => <input
+        {...props.inputProps}
         id={props.id}
         disabled={props.disabled}
         className={props.className}
@@ -635,6 +638,7 @@ function Campo(props: { disabled: boolean, pregunta: PreguntaSimple | PreguntaCo
     // }, [props.valor]);
     const inputProps = {
         maxLength: longitud,
+        enterKeyHint: "next" as const,
     };
     const onChange = (nuevoValor: Valor | typeof NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO) => {
         var { siguienteVariable } = dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: pregunta.var_name as IdVariable, respuesta: nuevoValor });
@@ -642,6 +646,20 @@ function Campo(props: { disabled: boolean, pregunta: PreguntaSimple | PreguntaCo
             (pregunta.especial?.noScroll == true) ? null : enfocarElementoDeVariable(pregunta.especial?.scrollTo ?? siguienteVariable);
         }
     };
+    const handleSubmit = ({ esBotonConfirmar }: { esBotonConfirmar: boolean }) => {
+        debeSaltar = esBotonConfirmar ? true : (saltoAutomatico || conCampoOpciones);
+        
+        var isInputFocused = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA');
+        if (isInputFocused) {
+            if (document.activeElement instanceof HTMLElement) {
+                document.activeElement.blur();
+            }
+        } else {
+            var elementoInputVariable = document.getElementById(`var-${pregunta.var_name || ''}`) as HTMLInputElement;
+            onChange(elementoInputVariable ? elementoInputVariable.value : NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO);
+        }
+    };
+
     var nuestraLongitud = calcularNuestraLongitud(pregunta.longitud || longitud)
     return <div className="campo" nuestra-longitud={nuestraLongitud} style={props.hidden == 'quitar' ? { display: 'none' } : props.hidden ? { visibility: 'hidden' } : undefined}>
         {mini ? null : <BotonBorrar
@@ -649,47 +667,51 @@ function Campo(props: { disabled: boolean, pregunta: PreguntaSimple | PreguntaCo
             variable={pregunta.var_name}
             forPk={props.forPk}
         />}
-        <div className="input-campo">
-            <TextField
-                id={`var-${pregunta.var_name || ''}`}
-                disabled={disabled || pregunta.especial?.gps}
-                className="variable"
-                //var-length={pregunta.longitud} 
-                fullWidth={true}
-                inputProps={inputProps}
-                type={pregunta.despliegueTipoInput ?? adaptarTipoVarCasillero(pregunta.tipovar)}
-                onKeyDown={(event: React.KeyboardEvent) => {
-                    var esEnter = (event.key == 'Enter' || event.keyCode == 13)
-                    debeSaltar = esEnter && (saltoAutomatico || conCampoOpciones);
-                    if (esEnter) {
-                        if (event.target instanceof HTMLElement) {
-                            event.target.blur();
-                        }
-                        event.preventDefault();
-                    }
-                }}
-                onFocus={(_event) => setEditando(true)}
-                onBlur={(event, valor) => {
-                    if (event?.relatedTarget?.getAttribute('boton-confirmar')) {
-                        debeSaltar = true;
-                    }
-                    onChange(valor);
-                    setEditando(false)
-                }}
-            />
-        </div>
-        {disabled || pregunta.especial?.gps || mini ? null :
-            <div className="boton-confirmar-campo">
-                <Button variant={editando ? "contained" : 'outlined'} size="small" color={editando ? 'primary' : 'default'}
-                    boton-confirmar={pregunta.var_name}
-                    tabIndex={-1}
-                    onClick={() => {
-                        onChange(NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO);
-                        setEditando(false)
+        <form 
+            className="form-campo-wrapper" 
+            style={{ display: 'contents' }} 
+            onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmit({ esBotonConfirmar: false });
+            }}
+        >
+            <div className="input-campo">
+                <TextField
+                    id={`var-${pregunta.var_name || ''}`}
+                    disabled={disabled || pregunta.especial?.gps}
+                    className="variable"
+                    //var-length={pregunta.longitud} 
+                    fullWidth={true}
+                    inputProps={inputProps}
+                    type={pregunta.despliegueTipoInput ?? adaptarTipoVarCasillero(pregunta.tipovar)}
+                    onFocus={(_event) => setEditando(true)}
+                    onBlur={(_event, valor) => {
+                        onChange(valor);
+                        setEditando(false);
                     }}
-                ><ICON.Check /></Button>
+                    onKeyDown={(event) => {
+                        var esEnter = (event.key == 'Enter' || event.keyCode == 13)
+                        if (esEnter) {
+                            event.preventDefault();
+                            handleSubmit({ esBotonConfirmar: false });
+                        }
+                    }}
+                />
             </div>
-        }
+            {disabled || pregunta.especial?.gps || mini ? null :
+                <div className="boton-confirmar-campo">
+                    <Button variant={editando ? "contained" : 'outlined'} size="small" color={editando ? 'primary' : 'default'}
+                        boton-confirmar={pregunta.var_name}
+                        tabIndex={-1}
+                        type="button"
+                        onClick={(e: React.MouseEvent) => {
+                            e.preventDefault();
+                            handleSubmit({ esBotonConfirmar: true });
+                        }}
+                    ><ICON.Check /></Button>
+                </div>
+            }
+        </form>
     </div>
 }
 
