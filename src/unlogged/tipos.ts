@@ -334,7 +334,7 @@ export type Carga = {
     necesarias: number
     observaciones: string
     recepcionista: string
-    puedeAutogenerar: boolean
+    puede_autogenerar: boolean
 }
 
 export type Cargas = {
