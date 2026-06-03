@@ -1,26 +1,84 @@
 doctype html
 html(lang="en")
   head
-    title Offline
+    meta(charset="utf-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    title Sin Conexión
+    style.
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        background-color: #f3f4f6;
+        color: #111827;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      .card {
+        background: #ffffff;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        max-width: 360px;
+        width: 85%;
+      }
+      .spinner {
+        border: 3px solid #e5e7eb;
+        border-top: 3px solid #2563eb;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1.25rem auto;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      h1 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0 0 0.5rem 0;
+      }
+      p {
+        font-size: 0.9rem;
+        color: #4b5563;
+        margin: 0;
+      }
     script.
-      // Función para forzar la carga limpia de la SPA desde la caché
-      function redirigirACampo() {
-        // Reemplazamos el historial para asegurarnos de apuntar limpiamente a la entrada
-        // Esto evita que arrastre hashes viejos o subrutas que rompan el inicio offline
-        var urlCampo = window.location.origin + window.location.pathname.replace(/\\/[^\\/]*$/, '') + '/campo';
-        
-        history.replaceState(null, '', urlCampo);
-        // Forzamos la recarga. El Service Worker ahora recibirá la petición limpia de '/campo'
-        // y servirá el recurso correcto desde la caché, levantando la SPA.
-        window.location.reload();
+      var segundos = 3;
+
+      function redirigir() {
+        try {
+          var currentUrl = new URL(window.location.href);
+          var pathParts = currentUrl.pathname.split('/');
+          pathParts.pop();
+          pathParts.push('campo');
+          
+          history.replaceState(null, '', currentUrl.origin + pathParts.join('/'));
+          window.location.reload();
+        } catch (e) {
+          history.replaceState(null, '', '/campo');
+          window.location.reload();
+        }
       }
 
-      // Opcional: Si querés que sea automático apenas se queden offline, 
-      // descomentá la siguiente línea:
-      window.addEventListener('load', redirigirACampo);
+      function countdown() {
+        var el = document.getElementById('segundos');
+        if (el) el.textContent = segundos;
+        if (segundos <= 0) {
+          redirigir();
+        } else {
+          segundos--;
+          setTimeout(countdown, 1000);
+        }
+      }
+
+      window.addEventListener('load', countdown);
   body
-    div#offline
-    h1 No hay conexión de internet
-    p Verifique su conexión de internet y vuelva a intentarlo
-    // Al hacer clic, ejecutamos la lógica de redirección forzada por JS
-    a(href="javascript:void(0)", onclick="redirigirACampo()") Volver a hoja de ruta
+    .card
+      .spinner
+      h1 No hay conexión a internet
+      p Volviendo a hoja de ruta en #[span#segundos 3] segundos...
