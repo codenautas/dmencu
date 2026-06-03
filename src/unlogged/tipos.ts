@@ -334,6 +334,7 @@ export type Carga = {
     necesarias: number
     observaciones: string
     recepcionista: string
+    puedeAutogenerar: boolean
 }
 
 export type Cargas = {
@@ -375,7 +376,6 @@ export type Estructura = {
     operativo: IdOperativo
     configSorteo: ConfiguracionSorteo
     habilitacionBotonFormulario: ConfiguracionHabilitarBotonFormulario
-    permiteGenerarMuestra: boolean
     conReaHogar: boolean
     noReas: {
         no_rea: string

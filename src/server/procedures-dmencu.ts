@@ -285,12 +285,17 @@ var getHdrQuery = function getHdrQuery(quotedCondViv: string, context: Procedure
     )}
             ) as respuestas,
             ${json(`
-                select a.area as carga, observaciones_hdr as observaciones, min(fecha_asignacion) as fecha, ta.recepcionista
+                select a.area as carga, observaciones_hdr as observaciones, min(fecha_asignacion) as fecha, ta.recepcionista,
+                ${permiteGenerarMuestra ? `case
+                        when ta.asignado = ${context.be.db.quoteLiteral(context.user.idper)}
+                        then true
+                        else false
+                    end`: `false`} as puede_autogenerar
                     from ${context.be.db.quoteIdent(unidadAnalisisPrincipal)} aux inner join areas a using (operativo, area) inner join tareas_areas ta on (a.area = ta.area and aux.tarea->>'tarea' = ta.tarea)
-                    group by a.area, observaciones_hdr, ta.recepcionista 
+                    group by a.area, observaciones_hdr, ta.recepcionista, puede_autogenerar
                 ${permiteGenerarMuestra ? `
                     union -- este union permite visualizar areas asignadas sin encuestas generadas
-                    select area as carga, null as observaciones, null as fecha, recepcionista
+                    select area as carga, null as observaciones, null as fecha, recepcionista, true as puede_autogenerar
                         from tareas_areas where asignado = ${context.be.db.quoteLiteral(context.user.idper)} and tarea = 'encu'` : ''}
                 `, 'fecha')} as cargas,
             ${jsono(
@@ -478,7 +483,6 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 con_rea_hogar: conReaHogar,
                 config_sorteo: configSorteo,
                 habilitacion_boton_formulario: habilitacionBotonFormulario,
-                permite_generar_muestra: permiteGenerarMuestra
             } = (await context.client.query(`
                 select config_sorteo, con_rea_hogar, habilitacion_boton_formulario, permite_generar_muestra 
                     from operativos 
@@ -535,7 +539,6 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 conReaHogar,
                 configSorteo,
                 habilitacionBotonFormulario,
-                permiteGenerarMuestra,
                 noReas: be.caches.tableContent.no_rea,
                 noReasSup: be.caches.tableContent.no_rea_sup,
                 defaultInformacionHdr,
