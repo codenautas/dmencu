@@ -1,10 +1,26 @@
 doctype html
 html(lang="en")
   head
-    title.Offline
+    title Offline
+    script.
+      // Función para forzar la carga limpia de la SPA desde la caché
+      function redirigirACampo() {
+        // Reemplazamos el historial para asegurarnos de apuntar limpiamente a la entrada
+        // Esto evita que arrastre hashes viejos o subrutas que rompan el inicio offline
+        var urlCampo = window.location.origin + window.location.pathname.replace(/\\/[^\\/]*$/, '') + '/campo';
+        
+        history.replaceState(null, '', urlCampo);
+        // Forzamos la recarga. El Service Worker ahora recibirá la petición limpia de '/campo'
+        // y servirá el recurso correcto desde la caché, levantando la SPA.
+        window.location.reload();
+      }
+
+      // Opcional: Si querés que sea automático apenas se queden offline, 
+      // descomentá la siguiente línea:
+      window.addEventListener('load', redirigirACampo);
   body
     div#offline
-    h1 no hay conexion de internet
-    p verifique su conexión de internet y vuelva a intentarlo
-    a(href="campo") volver a hoja de ruta
-    
+    h1 No hay conexión de internet
+    p Verifique su conexión de internet y vuelva a intentarlo
+    // Al hacer clic, ejecutamos la lógica de redirección forzada por JS
+    a(href="javascript:void(0)", onclick="redirigirACampo()") Volver a hoja de ruta
