@@ -74,11 +74,11 @@ import {
     accion_id_pregunta,
     accion_agregar_formulario,
     NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO,
-    NO_CAMBIAR__SOLO_TRAER_STATUS,
-    MODO_DM_LOCALSTORAGE_KEY
+    NO_CAMBIAR__SOLO_TRAER_STATUS
 } from "./bypass-formulario"
 
 import { html, HtmlTag } from "js-to-html";
+import { getFormularioConfig } from "./render-config";
 
 const DELAY_SCROLL_3 = 50;
 
@@ -1948,7 +1948,7 @@ function FormularioDespliegue(props: { forPk: ForPk }) {
     })
     // @ts-expect-error especial hay que leerlo en el parser de casilleros si esto termina quedando así
     var pantallaCompleta = formulario.especial?.pantallaCompleta;
-    const modoDM: ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY);
+    const modoDM: ModoDM = getFormularioConfig().getModoDM()!;
     return (
         <>
             <AppBar position="fixed" color={soloLectura ? 'secondary' : (modoDM == 'capa' ? 'success' : 'primary')}>
@@ -2115,7 +2115,7 @@ setDesplegarCarga((props: {
     var estructura = getEstructura();
     let cantLineasResumen = likeAr(informacionHdr).filter((informacion) => informacion.tem.carga == idCarga).array().length;
     const dispatch = useDispatch();
-    const modoDM: ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY);
+    const modoDM: ModoDM = getFormularioConfig().getModoDM()!;
     return <Paper className="carga" style={{ marginBottom: '10px', padding: '10px' }}>
         <div className="informacion-carga">
             <div className="carga">Área: {idCarga}</div>
@@ -2244,7 +2244,7 @@ setHojaDeRutaDespliegue((_props: {}) => {
     var feedbackRowValidator = getFeedbackRowValidator()
     const dispatch = useDispatch();
     const online = useOnlineStatus();
-    const modoDM: ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY);
+    const modoDM: ModoDM = getFormularioConfig().getModoDM()!;
     return (
         <>
             <AppBar position="fixed" color={modoDM == 'capa' ? 'success' : 'primary'}>
@@ -2289,7 +2289,7 @@ setHojaDeRutaDespliegue((_props: {}) => {
                     </div> : null}
                     <div className="nombre-version">
                         <div>Instituto de Estadística y Censos de la Ciudad Autónoma de Buenos Aires - IDECBA</div>
-                        <div>versión {my.getLocalVar('app-cache-version')} - sincro {num_sincro}</div>
+                        <div>versión {getFormularioConfig().getAppCacheVersion() || 'sin versión'} - sincro {num_sincro}</div>
                     </div>
                 </Paper>
                 {likeAr(cargas).map((carga, idCarga, _, posicion) =>
@@ -2380,7 +2380,7 @@ function PantallaInicialSinCarga(_props: {}) {
     const online = useOnlineStatus();
 
     const paragraphStyles = { fontSize: "1.2rem", fontWeight: 600, padding: "5px 10px" };
-    const modoDM: ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY);
+    const modoDM: ModoDM = getFormularioConfig().getModoDM()!;
     return (
         <>
             <AppBar position="fixed" color={modoDM == 'capa' ? 'success' : 'primary'}>

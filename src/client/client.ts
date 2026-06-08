@@ -1,19 +1,26 @@
 import { html } from "js-to-html";
 import { expected, unexpected } from "cast-error";
-import { dispatchers, dmTraerDatosFormulario, traerEstructura } from "../unlogged/redux-formulario";
+import { dispatchers, dmTraerDatosFormulario, adaptarEstructura } from "../unlogged/redux-formulario";
 import {
     CasoState,
     IdFormulario, DatosByPassPersistibles, IdEnc, IdOperativo, IdTarea, EstadoAccion, DireccionAccion,
     CampoPkRaiz, ModoDM
 } from "../unlogged/tipos";
 import * as likeAr from "like-ar";
-import { getEstructura, setPersistirDatosByPass, MODO_DM_LOCALSTORAGE_KEY } from "../unlogged/bypass-formulario"
+import { getEstructura, setPersistirDatosByPass } from "../unlogged/bypass-formulario"
 import { BACKUPS, cargarEstructura, cargarHojaDeRuta, GLOVAR_DATOSBYPASS, GLOVAR_ESTRUCTURA, GLOVAR_MODOBYPASS } from "../unlogged/abrir-formulario"
+import { initFormRenderer } from "../unlogged/render-init";
+import { getFormularioConfig } from "../unlogged/render-config";
+
 
 //TODO GENERALIZAR
 
 const TAREA_DEFAULT = 'encu';
 var OPERATIVO_DEFAULT: string | null = null;
+
+const traerEstructura = async (params: {operativo:IdOperativo }) =>
+    adaptarEstructura(await myOwn.ajax.operativo_estructura_completa({ operativo: params.operativo }));
+
 
 myOwn.autoSetupFunctions.push(async () => {
     var my = myOwn;
@@ -22,6 +29,7 @@ myOwn.autoSetupFunctions.push(async () => {
     } catch (err) {
         OPERATIVO_DEFAULT = null;
     }
+    initFormRenderer();
     myOwn.wScreens.abrir_encuesta = {
         parameters: [
             { name: 'operativo', typeName: 'text', defaultValue: OPERATIVO_DEFAULT, references: 'operativos' },
@@ -130,9 +138,8 @@ var persistirEnMemoria = async (persistentes: DatosByPassPersistibles) => {
 }
 
 async function sincronizarDatos(persistentes: DatosByPassPersistibles | null, cambiaModoDM: boolean) {
-    const modoDmDefecto = await my.ajax.modo_dm_defecto_obtener({});
-    let modoDM: ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY) || modoDmDefecto;
-    my.setLocalVar(MODO_DM_LOCALSTORAGE_KEY, modoDM);
+    let modoDM: ModoDM = getFormularioConfig().getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
+    getFormularioConfig().setModoDM(modoDM);
     var datos = await my.ajax.dm_sincronizar({ persistentes, modo_dm: modoDM, cambia_modo_dm: cambiaModoDM });
     var operativo = datos.operativo;
     persistirEnMemoria({ ...datos, modoAlmacenamiento: 'local' });
@@ -164,9 +171,8 @@ var mostrarInfoLocal = (divAvisoSincro: HTMLDivElement, titulo: string, nroSincr
 }
 
 const mostrarInfoModo = async (mainLayout: HTMLElement) => {
-    const modoDmDefecto = await my.ajax.modo_dm_defecto_obtener({});
-    let modoDM: ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY) || modoDmDefecto;
-    my.setLocalVar(MODO_DM_LOCALSTORAGE_KEY, modoDM);
+    let modoDM: ModoDM = getFormularioConfig().getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
+    getFormularioConfig().setModoDM(modoDM);
     //@ts-ignore seteo un atributo
     var divAvisoModo: HTMLDivElement = html.div({ class: "info-modo", "modo-dm": modoDM }, `modo actual: ${modoDM}`).create()
     mainLayout.appendChild(divAvisoModo)
@@ -175,7 +181,7 @@ const mostrarInfoModo = async (mainLayout: HTMLElement) => {
 
 function cambiarModoDMEnLocalStorage(modoActual: ModoDM) {
     modoActual = modoActual == 'produc' ? 'capa' : 'produc';
-    my.setLocalVar(MODO_DM_LOCALSTORAGE_KEY, modoActual);
+    getFormularioConfig().setModoDM(modoActual);
 }
 
 var procederSincroFun = async (button: HTMLButtonElement, divAvisoSincro: HTMLDivElement, cambiaModoDM: boolean) => {
@@ -185,8 +191,7 @@ var procederSincroFun = async (button: HTMLButtonElement, divAvisoSincro: HTMLDi
     try {
         var datosByPass: DatosByPassPersistibles = my.getLocalVar(GLOVAR_DATOSBYPASS);
         var datos = await sincronizarDatos(datosByPass, cambiaModoDM);
-        const modoDmDefecto = await my.ajax.modo_dm_defecto_obtener({});
-        let modoDMActual: ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY) || modoDmDefecto;
+        let modoDMActual: ModoDM = getFormularioConfig().getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
         if (cambiaModoDM) {
             cambiarModoDMEnLocalStorage(modoDMActual);
         }
@@ -247,7 +252,7 @@ myOwn.wScreens.cambiar_modo_dm = async function () {
                     await procederSincroFun(procederButton, divAvisoSincro, true);
                     mainLayout.innerHTML = '';
                     mainLayout.appendChild(
-                        html.div(`MODO ${my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY)} ACTIVADO`).create()
+                        html.div(`MODO ${getFormularioConfig().getModoDM()} ACTIVADO`).create()
                     )
                 } catch (err) {
                     alertPromise(unexpected(err).message);

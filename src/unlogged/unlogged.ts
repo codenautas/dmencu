@@ -2,10 +2,12 @@
 import {html}  from 'js-to-html';
 import { desplegarFormularioActual, dmPantallaInicialSinCarga } from './render-formulario';
 import { cargarEstructura, cargarHojaDeRuta, GLOVAR_ESTRUCTURA, GLOVAR_DATOSBYPASS } from './abrir-formulario';
-import { MODO_DM_LOCALSTORAGE_KEY } from './bypass-formulario';
 import { ModoDM } from './tipos';
 import { expected } from "cast-error";
 const ServiceWorkerAdmin = require("service-worker-admin");
+import { initFormRenderer } from "./render-init";
+import { getFormularioConfig } from "./render-config";
+
 
 function siExisteId(id: string, hacer: (arg0: HTMLElement) => void){
     var elemento = document.getElementById(id);
@@ -82,12 +84,13 @@ window.addEventListener('load', async function(){
             </div>
         `;
         if(location.pathname.endsWith(`/${URL_DM}`)){
+            initFormRenderer();
             var startApp:()=>Promise<void> = async ()=>{};
             var datosByPass = my.getLocalVar(GLOVAR_DATOSBYPASS);
             if(datosByPass){
                 startApp = async ()=>{
                     var version = await swa.getSW('version');
-                    myOwn.setLocalVar('app-cache-version', version);
+                    getFormularioConfig().setAppCacheVersion(version);
                     //@ts-ignore existe 
                     var estructura = my.getLocalVar(GLOVAR_ESTRUCTURA);
                     cargarEstructura(estructura);
@@ -98,8 +101,8 @@ window.addEventListener('load', async function(){
             }else{
                 startApp = async ()=>{
                     try{
-                        const modoDmDefecto = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY) || await my.ajax.modo_dm_defecto_obtener({});
-                        my.setLocalVar(MODO_DM_LOCALSTORAGE_KEY, modoDmDefecto);
+                        const modoDmDefecto: ModoDM = getFormularioConfig().getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
+                       getFormularioConfig().setModoDM(modoDmDefecto);
                     }catch(err){
                         console.log('no se pudo traer el modo por defecto')
                     }

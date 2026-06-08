@@ -10,6 +10,7 @@ import {
     IdFin,
     IdEnc,
     IdTarea,
+    Estructura,
 } from "./tipos";
 import { createReducer, createDispatchers, ActionsFrom } from "redux-typed-reducer";
 import * as likeAr from "like-ar";
@@ -344,12 +345,9 @@ var redirectIfNotLogged = function redirectIfNotLogged(err: Error) {
     }
 }
 
-export async function traerEstructura(params: { operativo: string }) {
-    var estructura = await my.ajax.operativo_estructura_completa(params);
+export function adaptarEstructura(estructuraBackend:any) {
+    var estructura: Estructura = estructuraBackend;
     var casillerosOriginales: {} = estructura.formularios;
-    //TODO: GENERALIZAR
-    //@ts-ignore
-    // casillerosOriginales['F:F2_personas']=casillerosOriginales['F:F2'].childs.find(casillero=>casillero.data.casillero=='LP');
     var mainForm: IdFormulario | undefined;
     //@ts-ignore
     var casillerosTodosFormularios: { [f in IdFormulario]: { casilleros: Formulario, estructuraRowValidator: EstructuraRowValidator } } =

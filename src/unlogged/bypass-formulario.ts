@@ -29,7 +29,7 @@ import {
     ValuePkRaiz
 } from "./tipos";
 
-export const MODO_DM_LOCALSTORAGE_KEY = 'modo_dm';
+import { getFormularioConfig } from "./render-config";
 
 var especiales = {} as {
     calcularVariables?: (respuestasRaiz: RespuestasRaiz, forPk: ForPk) => void
@@ -52,6 +52,24 @@ type DatosByPass = DatosByPassPersistibles & {
 
 var datosByPass = {} as DatosByPass
 
+interface Rect {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+}
+
+function getRect(element: HTMLElement): Rect {
+    var rect: Rect = { top: 0, left: 0, width: element.offsetWidth, height: element.offsetHeight };
+    var current: HTMLElement | null = element;
+    while (current != null) {
+        rect.top += current.offsetTop;
+        rect.left += current.offsetLeft;
+        current = current.offsetParent as HTMLElement | null;
+    }
+    return rect;
+}
+
 //@ts-ignore arranca en blanco
 var estructura: Estructura = null as Estructura;
 
@@ -70,16 +88,15 @@ export async function persistirDatosByPass(dbpp: DatosByPassPersistibles) {
 }
 
 export const crearEncuesta = (idCarga: IdCarga, callBack: (forPkRaiz: ForPkRaiz) => void) => {
-    const LAST_AUTO_VALUE_PK_RAIZ = 'proximo_valor_pk_raiz'
-    const NEXT_AUTO_VALUE_PK_RAIZ: ValuePkRaiz = my.getLocalVar(LAST_AUTO_VALUE_PK_RAIZ) || '-1'
+    const NEXT_AUTO_VALUE_PK_RAIZ = getFormularioConfig().getUltimoValorPkRaiz() || '-1';
     const estructura = getEstructura();
-    my.setLocalVar(LAST_AUTO_VALUE_PK_RAIZ, (Number(NEXT_AUTO_VALUE_PK_RAIZ) - 1).toString());
-    datosByPass.respuestas[estructura.uaPpal][NEXT_AUTO_VALUE_PK_RAIZ] = {} as RespuestasRaiz;
-    datosByPass.informacionHdr[NEXT_AUTO_VALUE_PK_RAIZ] = {
+    getFormularioConfig().setUltimoValorPkRaiz((Number(NEXT_AUTO_VALUE_PK_RAIZ) - 1).toString());
+    datosByPass.respuestas[estructura.uaPpal][NEXT_AUTO_VALUE_PK_RAIZ as unknown as IdEnc] = {} as RespuestasRaiz;
+    datosByPass.informacionHdr[NEXT_AUTO_VALUE_PK_RAIZ as unknown as IdEnc] = {
         ...estructura.defaultInformacionHdr,
         tem: { ...estructura.defaultInformacionHdr.tem }
     };
-    datosByPass.informacionHdr[NEXT_AUTO_VALUE_PK_RAIZ].tem.carga = idCarga;
+    datosByPass.informacionHdr[NEXT_AUTO_VALUE_PK_RAIZ as unknown as IdEnc].tem.carga = idCarga;
     calcularFeedbackHojaDeRuta();
     persistirDatosByPass(datosByPass).then(
         () => callBack({
@@ -296,9 +313,9 @@ export function calcularElementoEnfocado(idVariable: IdVariable | IdFin) {
     var MARGEN_SCROLL = 64;
     var altoPantalla = window.innerHeight * 0.7 - MARGEN_SCROLL;
     var elementoEntero: HTMLElement | null = null; // es el elemento que va a entar entero en pantalla, define el bottom
-    var rectElementoEntero: ReturnType<typeof myOwn.getRect> | null = null;
+    var rectElementoEntero: Rect | null = null;
     var elementoSuperior: HTMLElement | null = null; // es el elemento que va a mostrarse desde arriba aunque no entre entero, define el top
-    var rectElementoSuperior: ReturnType<typeof myOwn.getRect> | null = null;
+    var rectElementoSuperior: Rect| null = null;
     while (elemento != null) {
         if (
             (elemento.classList.contains('variable')
@@ -316,10 +333,10 @@ export function calcularElementoEnfocado(idVariable: IdVariable | IdFin) {
                 if (elementoEntero == null) elementoEntero = elemento;
                 if (rectElementoEntero == null) {
                     elementoSuperior = elementoEntero
-                    rectElementoEntero = myOwn.getRect(elementoEntero!)
+                    rectElementoEntero = getRect(elementoEntero!)
                     rectElementoSuperior = rectElementoEntero;
                 }
-                var rect = myOwn.getRect(elemento);
+                var rect = getRect(elemento);
                 if (rectElementoEntero.top + rectElementoEntero.height - rect.top < altoPantalla) {
                     elementoSuperior = elemento;
                     rectElementoSuperior = rect;
@@ -342,7 +359,7 @@ export function calcularElementoEnfocado(idVariable: IdVariable | IdFin) {
     } = {};
     if (elementoEntero != null) {
         if (rectElementoEntero == null) {
-            rectElementoEntero = myOwn.getRect(elementoEntero)
+            rectElementoEntero = getRect(elementoEntero)
         }
         result.elementoInputVariable = elementoVariableAEnfocar;
         var top = (rectElementoSuperior ?? rectElementoEntero).top - MARGEN_SCROLL;
