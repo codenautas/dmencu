@@ -1037,7 +1037,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     from operativos 
                     where operativo = $1
             `, [OPERATIVO]).fetchUniqueValue()).value;
-            var { row } = await context.client.query(getHdrQuery(condviv, context, UA_PRINCIPAL, permiteGenerarMuestra), [OPERATIVO, context.user.idper]).fetchUniqueRow();
+            var { row } = await context.client.query(getHdrQuery(condviv, context, UA_PRINCIPAL, permiteGenerarMuestra), [OPERATIVO, idper_logueado_tablet]).fetchUniqueRow();
             await context.client.query(
                 `update tareas_tem tt
                     set  estado = $4, cargado_dm=$3::text
