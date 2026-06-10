@@ -19,8 +19,9 @@ import {
     getDatosByPass,
     getEstructura,
     setDatosByPass, setEncolarBackup, setEstructura, setPersistirDatosByPass,
-    MODO_DM_LOCALSTORAGE_KEY
 } from "./bypass-formulario"
+import { getFormularioConfig } from "../unlogged/render-config";
+
 
 export const GLOVAR_DATOSBYPASS = 'datosbypass';
 export const GLOVAR_MODOBYPASS = 'modobypass';
@@ -86,9 +87,8 @@ async function enviarBackup() {
     var { token, tem } = backups;
     if (likeAr(tem).array().length) {
         try {
-            const modoDmDefecto = await my.ajax.modo_dm_defecto_obtener({});
-            let modoDM: ModoDM = my.getLocalVar(MODO_DM_LOCALSTORAGE_KEY) || modoDmDefecto;
-            my.setLocalVar(MODO_DM_LOCALSTORAGE_KEY, modoDM);
+            let modoDM: ModoDM = getFormularioConfig().getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
+            getFormularioConfig().setModoDM(modoDM);
             await my.ajax.dm_backup({ token, tem, modo_dm: modoDM });
             // tengo que levantarlo de nuevo porque acá hay una interrupción del flujo
             var backupsALimpiar: Backups = my.getLocalVar(BACKUPS);

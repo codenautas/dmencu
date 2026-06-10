@@ -14,7 +14,8 @@ export function sincronizaciones(context: TableContext): TableDefinition {
             {name:'cuando'          , typeName:'timestamp', defaultDbValue:'current_timestamp'},
             {name:'datos'           , typeName:'jsonb'},
         ],
-        primaryKey: ['sincro']
+        primaryKey: ['sincro'],
+        sortColumns: [{column:'sincro', order:-1}]
     };
 }
 

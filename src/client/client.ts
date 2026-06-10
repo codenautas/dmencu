@@ -140,7 +140,7 @@ var persistirEnMemoria = async (persistentes: DatosByPassPersistibles) => {
 async function sincronizarDatos(persistentes: DatosByPassPersistibles | null, cambiaModoDM: boolean) {
     let modoDM: ModoDM = getFormularioConfig().getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
     getFormularioConfig().setModoDM(modoDM);
-    var datos = await my.ajax.dm_sincronizar({ persistentes, modo_dm: modoDM, cambia_modo_dm: cambiaModoDM });
+    var datos = await my.ajax.dm_sincronizar({ persistentes, modo_dm: modoDM, cambia_modo_dm: cambiaModoDM, idper_logueado_tablet: getFormularioConfig().getIdperLogueado()});
     var operativo = datos.operativo;
     persistirEnMemoria({ ...datos, modoAlmacenamiento: 'local' });
     var estructura = await traerEstructura({ operativo })

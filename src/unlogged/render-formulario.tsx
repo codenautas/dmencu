@@ -2369,14 +2369,38 @@ export function AppDmEncu() {
     var { forPk, bienvenido, modo } = useSelector((state: CasoState) => ({ ...state.opciones, ...state.modo, ...state }));
     if (!bienvenido) {
         return <BienvenidaDespliegue modo={modo} />
-    } else if (forPk == null) {
-        return <HojaDeRutaDespliegue />
-    } else {
-        return <FormularioDespliegue forPk={forPk} />
     }
+
+    if(getDatosByPass().idper == getFormularioConfig().getIdperLogueado()) {
+        if (forPk == null) {
+            return <HojaDeRutaDespliegue />
+        } else {
+            return <FormularioDespliegue forPk={forPk} />
+        }
+    } else {
+        return <PantallaSincronizacionRequerida
+            titulo="Sincronización requerida"
+            mensaje={
+                <>
+                    El usuario autenticado no coincide con el usuario asociado al
+                    trabajo almacenado en la tablet.
+                    <br />
+                    Debe sincronizar antes de continuar.
+                </>
+            }
+        />
+    }
+
+    
 }
 
-function PantallaInicialSinCarga(_props: {}) {
+function PantallaSincronizacionRequerida({
+    titulo,
+    mensaje,
+}: {
+    titulo: string;
+    mensaje: React.ReactNode;
+}) {
     const online = useOnlineStatus();
 
     const paragraphStyles = { fontSize: "1.2rem", fontWeight: 600, padding: "5px 10px" };
@@ -2385,7 +2409,7 @@ function PantallaInicialSinCarga(_props: {}) {
         <>
             <AppBar position="fixed" color={modoDM == 'capa' ? 'success' : 'primary'}>
                 <Typography variant="h6" style={{ margin: 25 }}>
-                    Dispositivo sin carga - {modoDM == 'capa' ? 'MODO CAPACITACIÓN' : ''}
+                    {titulo} - {modoDM == 'capa' ? 'MODO CAPACITACIÓN' : ''}
                 </Typography>
             </AppBar>
             <main>
@@ -2393,6 +2417,9 @@ function PantallaInicialSinCarga(_props: {}) {
                     <div>
                         {online ?
                             <>
+                                <Typography component="p" style={paragraphStyles}>
+                                    {mensaje}
+                                </Typography>
                                 <Typography component="p" style={paragraphStyles}>
                                     Sincronizar dispositivo
                                     <span style={{ padding: '5px' }}>
@@ -2403,7 +2430,7 @@ function PantallaInicialSinCarga(_props: {}) {
                                                 gotoSincronizar()
                                             }}
                                         >
-                                            <ICON.SyncAlt />
+                                            <ICON.SyncAlt /> Sincronizar
                                         </Button>
                                     </span>
                                 </Typography>
@@ -2420,17 +2447,6 @@ function PantallaInicialSinCarga(_props: {}) {
     );
 }
 
-export function PantallaInicial() {
-    var { forPk, bienvenido, modo } = useSelector((state: CasoState) => ({ ...state.opciones, ...state.modo, ...state }));
-    if (!bienvenido) {
-        return <BienvenidaDespliegue modo={modo} />
-    } else if (forPk == null) {
-        return <HojaDeRutaDespliegue />
-    } else {
-        return <FormularioDespliegue forPk={forPk} />
-    }
-}
-
 export async function dmPantallaInicialSinCarga() {
     try {
         await loadCSS(BOOTSTRAP_5_1_3_SRC);
@@ -2438,7 +2454,11 @@ export async function dmPantallaInicialSinCarga() {
         throw (err)
     }
     ReactDOM.render(
-        <PantallaInicialSinCarga />,
+        <PantallaSincronizacionRequerida
+            titulo="Dispositivo sin carga"
+            mensaje={
+                <>Debe sincronizar el dispositivo para obtener una hoja de ruta.</>
+            } />,
         document.getElementById('main_layout')
     )
 }

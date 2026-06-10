@@ -40,6 +40,16 @@ export function initFormRenderer() {
         setModoDM(modo: ModoDM) {
             myOwn.setLocalVar(MODO_DM_LOCALSTORAGE_KEY, modo);
         },
+
+        getIdperLogueado() {
+            const setup = myOwn.getLocalVar('setup');
+            return setup?.idper ?? null;
+        },
+        getUsernameLogueado() {
+            const setup = myOwn.getLocalVar('setup');
+            return setup?.username ?? null;
+        },
+
         // @ts-ignore
         ambienteDemo: myOwn.config.config.ambiente == 'test' || myOwn.config.config.ambiente == 'demo',
     });

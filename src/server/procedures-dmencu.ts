@@ -934,23 +934,24 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             { name: 'persistentes', typeName: 'jsonb' },
             { name: 'modo_dm', typeName: 'text' },
             { name: 'cambia_modo_dm', typeName: 'boolean' },
+            { name: 'idper_logueado_tablet', typeName: 'text' },
         ],
-        coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters<{persistentes: AnyObject, modo_dm: string, cambia_modo_dm: boolean}>){
+        unlogged:true,
+        coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters<{persistentes: AnyObject, modo_dm: string, cambia_modo_dm: boolean, idper_logueado_tablet: string}>){
             const OPERATIVO = await getOperativoActual(context);
             var be = context.be;
-            var { persistentes, modo_dm, cambia_modo_dm } = parameters;
-            var num_sincro: number = 0;
+            var { persistentes, modo_dm, cambia_modo_dm, idper_logueado_tablet } = parameters;
+            const usernameLogueadoTablet = (await context.client.query(`select usuario from usuarios where idper = $1`, [idper_logueado_tablet]).fetchUniqueValue()).value; 
             var token: string = persistentes?.token || (await be.procedure.token_get.coreFunction(context, {
                 useragent: context.session.req.useragent,
-                username: context.username
+                username: usernameLogueadoTablet
             })).token;
-            var { value } = await context.client.query(`
+            const num_sincro = (await context.client.query(`
                 INSERT INTO sincronizaciones (token, usuario, datos)
                     VALUES ($1,$2,$3) 
                     RETURNING sincro
-                `, [token, context.username, persistentes]
-            ).fetchUniqueValue();
-            num_sincro = value;
+                `, [token, usernameLogueadoTablet, persistentes]
+            ).fetchUniqueValue()).value;
             var condviv = `
                 tt.operativo= $1 
                 and asignado = $2
@@ -967,16 +968,16 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         var tarea = persistentes.informacionHdr[idEnc].tarea.tarea;
                         const cargaTareasAreas = (await context.client.query(
                             `select recepcionista
-                                    from tareas_areas
-                                    where operativo= $1 and tarea = $2 and area = $3 --pk verificada
-                                `,
+                                from tareas_areas
+                                where operativo= $1 and tarea = $2 and area = $3 --pk verificada
+                            `,
                             [OPERATIVO, tarea, carga.carga]
                         ).fetchUniqueValue()).value;
                         if (!cargaTareasAreas && !carga.recepcionista) {
                             throw Error(`no se definió un recepcionista para el operativo ${OPERATIVO}, tarea ${tarea}, área ${carga.carga}, por favor comuniquesé con GABINETE para que carguen un recepcionista`)
                         }
                         if (Number(idEnc) < 0) {
-                            idEnc = await persistirEncuestaAutogeneradaEnDM(context, OPERATIVO, carga.carga, idEnc, token, respuestasUAPrincipal, carga.recepcionista || cargaTareasAreas, context.user.idper, modo_dm, cambia_modo_dm);
+                            idEnc = await persistirEncuestaAutogeneradaEnDM(context, OPERATIVO, carga.carga, idEnc, token, respuestasUAPrincipal, carga.recepcionista || cargaTareasAreas, persistentes.idper, modo_dm as ModoDM, cambia_modo_dm);
                         }
                         var puedoGuardarEnTEM = true;
                         var { params, setters } = getSettersAndParametersForReaNoReaResumenEstado({
@@ -988,7 +989,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                             ],
                             params: [OPERATIVO, idEnc, tarea, token]
                         })
-                        if (cambia_modo_dm) {
+                        if (cambia_modo_dm || persistentes.idper != idper_logueado_tablet) {
                             setters.push(`operacion = 'descargar'`);
                         }
                         var queryTareasTem = await context.client.query(
@@ -1026,7 +1027,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                                 [OPERATIVO, idEnc, resultado]
                             ).fetchUniqueRow();
                         } else {
-                            await fs.appendFile('local-recibido-sin-token.txt', JSON.stringify({ now: new Date(), user: context.username, idCaso: idEnc, [pk_agregada]: respuestasUAPrincipal }) + '\n\n', 'utf8');
+                            await fs.appendFile('local-recibido-sin-token.txt', JSON.stringify({ now: new Date(), idper: persistentes.idper, idCaso: idEnc, [pk_agregada]: respuestasUAPrincipal }) + '\n\n', 'utf8');
                         }
                     }
                 }
@@ -1065,7 +1066,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             { name: 'modo_dm', typeName: 'text' },
         ],
         unlogged: true,
-        coreFunction: async function (context: ProcedureContext, parameters: CoreFunctionParameters<{ token: string | null, tem: AnyObject, modo_dm: string }>) {
+        coreFunction: async function (context: ProcedureContext, parameters: CoreFunctionParameters<{ token: string | null, tem: AnyObject, modo_dm: ModoDM }>) {
             var { be, client } = context;
             const OPERATIVO = await getOperativoActual(context);
             var num_sincro: number = 0;

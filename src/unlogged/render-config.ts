@@ -12,6 +12,9 @@ export interface FormularioConfig {
 
     getModoDM(): ModoDM | null;
     setModoDM(modo: ModoDM): void;
+        
+    getIdperLogueado(): string | null;
+    getUsernameLogueado(): string | null;
 
     ambienteDemo: boolean;
 }
