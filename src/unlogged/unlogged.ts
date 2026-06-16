@@ -95,7 +95,7 @@ window.addEventListener('load', async function(){
                     var estructura = my.getLocalVar(GLOVAR_ESTRUCTURA);
                     cargarEstructura(estructura);
                     cargarHojaDeRuta({ ...datosByPass, modoAlmacenamiento: 'local' });
-                    desplegarFormularioActual({modoDemo: false, operativo: estructura.operativo});
+                    desplegarFormularioActual({operativo: estructura.operativo});
                     my.menuName = URL_DM;
                 }
             }else{

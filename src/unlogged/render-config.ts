@@ -1,22 +1,22 @@
-import { CasoState, ModoDM } from './tipos';
+import { CasoState, DatosByPassPersistibles, ModoDM } from './tipos';
 
 export interface FormularioConfig {
-    getCasoState(): CasoState | null;
+    getCasoState(): CasoState;
     setCasoState(state: CasoState): void;
 
-    getUltimoValorPkRaiz(): string | null;
+    getUltimoValorPkRaiz(): string;
     setUltimoValorPkRaiz(value: string): void;
 
-    getAppCacheVersion(): string | null;
+    getAppCacheVersion(): string;
     setAppCacheVersion(value: string): void;
 
-    getModoDM(): ModoDM | null;
+    getModoDM(): ModoDM;
     setModoDM(modo: ModoDM): void;
         
-    getIdperLogueado(): string | null;
-    getUsernameLogueado(): string | null;
+    getIdperLogueado(): string;
+    getUsernameLogueado(): string;
 
-    ambienteDemo: boolean;
+    sincronizar(persistentes: DatosByPassPersistibles, modoDM: ModoDM, cambiaModoDM: boolean, idPerLogueado: string): Promise<DatosByPassPersistibles>;
 }
 
 let formularioConfig: FormularioConfig | null = null;

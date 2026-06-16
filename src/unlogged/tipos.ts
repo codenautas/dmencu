@@ -409,9 +409,6 @@ export type CasoState = {
         modoBorrarRespuesta: IdVariable | null
         conCampoOpciones: boolean
         saltoAutomatico: boolean
-    },
-    modo: { // no se persiste
-        demo: boolean
     }
 }
 

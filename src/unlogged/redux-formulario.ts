@@ -11,6 +11,7 @@ import {
     IdEnc,
     IdTarea,
     Estructura,
+    ModoDM,
 } from "./tipos";
 import { createReducer, createDispatchers, ActionsFrom } from "redux-typed-reducer";
 import * as likeAr from "like-ar";
@@ -18,10 +19,9 @@ import * as bestGlobals from "best-globals";
 import * as JSON4all from "json4all";
 
 import { Opcion as RowValidatorOpcion } from "row-validator";
+import { getFormularioConfig } from "./render-config";
 
 var my = myOwn;
-
-const LOCAL_STORAGE_STATE_NAME = 'hdr-state';
 
 function forPkToUrl(forPk: ForPk | null, pilaForPk: ForPk[]) {
     var addrParams = myOwn.UriSearchToObject(location.hash || location.search || '');
@@ -40,6 +40,16 @@ var reducers = {
                 opciones: {
                     ...state.opciones,
                     modoDespliegue: payload.modoDespliegue
+                }
+            }
+        },
+    CAMBIAR_MODO_DM: (payload: { modoDM: ModoDM }) =>
+        function (state: CasoState) {
+            return {
+                ...state,
+                opciones: {
+                    ...state.opciones,
+                    modoDM: payload.modoDM
                 }
             }
         },
@@ -73,24 +83,6 @@ var reducers = {
                 }
             }
         },
-    ESTADO_CARGA: (_payload: { idCarga: IdCarga, estado_carga: EstadoCarga }) =>
-        function (state: CasoState) {
-            return state
-            //DESACTIVADO
-            //return {
-            //    ...state,
-            //    datos:{
-            //        ...state.datos,
-            //        cargas:{
-            //            ...state.datos.cargas,
-            //            [payload.idCarga]: {
-            //                ...state.datos.cargas[payload.idCarga],
-            //                estado_carga: payload.estado_carga
-            //            }
-            //        }
-            //    }
-            //}
-        },
     VOLVER_HDR: (_payload: {}) =>
         function (state: CasoState) {
             var forPk = null;
@@ -123,15 +115,6 @@ var reducers = {
                     ...state.opciones,
                     forPk: null
                 }
-            }
-        },
-    REINICIAR_DEMO: (_payload: {}) =>
-        function (state: CasoState) {
-            if (!state.modo.demo) return state;
-            return {
-                ...state,
-                // @ts-ignore copio los datos iniciales
-                datos: bestGlobals.deepCopy(state.modo.demo)
             }
         },
     CONFIRMAR_BORRAR_RESPUESTA: (payload: { forPk: ForPk, variable: IdVariable | null }) =>
@@ -331,20 +314,6 @@ export function gotoConsistir(operativo: IdOperativo, tarea: IdTarea, enc: IdEnc
     location.reload();
 }
 
-export function getCacheVersion() {
-    return my.getLocalVar('app-cache-version');
-}
-
-var redirectIfNotLogged = function redirectIfNotLogged(err: Error) {
-    if (err.message == my.messages.notLogged) {
-        setTimeout(() => {
-            history.replaceState(null, '', `${location.origin + location.pathname}/../login${location.hash}`);
-            location.reload();
-        }, 1500)
-
-    }
-}
-
 export function adaptarEstructura(estructuraBackend:any) {
     var estructura: Estructura = estructuraBackend;
     var casillerosOriginales: {} = estructura.formularios;
@@ -367,9 +336,9 @@ export function adaptarEstructura(estructuraBackend:any) {
     return estructura;
 }
 
-export async function dmTraerDatosFormulario(opts: { operativo?: IdOperativo, modoDemo: boolean, forPkRaiz?: ForPkRaiz }) {
-    var getCasoState = (): CasoState => myOwn.getLocalVar(LOCAL_STORAGE_STATE_NAME);
-    var setCasoState = (casoState: CasoState) => myOwn.setLocalVar(LOCAL_STORAGE_STATE_NAME, casoState);
+export async function dmTraerDatosFormulario(opts: { operativo?: IdOperativo, forPkRaiz?: ForPkRaiz }) {
+    var getCasoState = getFormularioConfig().getCasoState;
+    var setCasoState = getFormularioConfig().setCasoState;
 
     var loadState = async function loadState(): Promise<CasoState> {
         var casoState: CasoState | null = getCasoState();
@@ -382,14 +351,8 @@ export async function dmTraerDatosFormulario(opts: { operativo?: IdOperativo, mo
                 conCampoOpciones: false,
                 saltoAutomatico: true,
                 bienvenido: true,
-                modoBorrarRespuesta: null,
+                modoBorrarRespuesta: null
             } as CasoState["opciones"], // poner los valores por defecto más abajo
-            modo: {
-                //@ts-ignore es un booleano pero pongo ahí los datos de demo!
-                demo:
-                    // @ts-ignore
-                    myOwn.config.config.ambiente == 'test' || myOwn.config.config.ambiente == 'demo',
-            }
         } as CasoState;
         if (casoState) {
             initialState = {

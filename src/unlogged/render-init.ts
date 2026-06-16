@@ -1,5 +1,6 @@
+import { BACKUPS, GLOVAR_ESTRUCTURA } from "./abrir-formulario";
 import { setFormularioConfig } from "./render-config";
-import { ModoDM } from "./tipos";
+import { DatosByPassPersistibles, ModoDM } from "./tipos";
 
 
 const LOCAL_STORAGE_STATE_NAME = 'hdr-state';
@@ -42,15 +43,24 @@ export function initFormRenderer() {
         },
 
         getIdperLogueado() {
-            const setup = myOwn.getLocalVar('setup');
-            return setup?.idper ?? null;
+            return myOwn.getLocalVar('setup').idper;
         },
         getUsernameLogueado() {
-            const setup = myOwn.getLocalVar('setup');
-            return setup?.username ?? null;
+            return myOwn.getLocalVar('setup').username;
         },
-
-        // @ts-ignore
-        ambienteDemo: myOwn.config.config.ambiente == 'test' || myOwn.config.config.ambiente == 'demo',
+        async sincronizar(persistentes: DatosByPassPersistibles, modoDM: ModoDM, cambiaModoDM: boolean, idPerLogueado: string) {
+            var datosResponse = await my.ajax.dm_sincronizar({
+                persistentes, 
+                modo_dm: modoDM, 
+                cambia_modo_dm: cambiaModoDM, 
+                idper_logueado_tablet: idPerLogueado 
+            });
+            var operativo = datosResponse.operativo;
+            persistirEnMemoria({ ...datosResponse, modoAlmacenamiento: 'local' });
+            var estructura = await traerEstructura({ operativo })
+            myOwn.setLocalVar(GLOVAR_ESTRUCTURA, estructura);
+            myOwn.removeLocalVar(BACKUPS);
+            return datosResponse;
+        },
     });
 }

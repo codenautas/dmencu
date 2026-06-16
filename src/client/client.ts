@@ -18,7 +18,7 @@ import { getFormularioConfig } from "../unlogged/render-config";
 const TAREA_DEFAULT = 'encu';
 var OPERATIVO_DEFAULT: string | null = null;
 
-const traerEstructura = async (params: {operativo:IdOperativo }) =>
+export const traerEstructura = async (params: {operativo:IdOperativo }) =>
     adaptarEstructura(await myOwn.ajax.operativo_estructura_completa({ operativo: params.operativo }));
 
 
@@ -63,7 +63,7 @@ myOwn.autoSetupFunctions.push(async () => {
             }
             cargarHojaDeRuta({ ...carga, modoAlmacenamiento: 'session' });
             // @ts-ignore
-            desplegarFormularioActual({ operativo, modoDemo: false, forPkRaiz });
+            desplegarFormularioActual({ operativo, modoDM: 'produc', forPkRaiz });
         }
     };
     myOwn.wScreens.consistir_encuesta = {
@@ -195,7 +195,7 @@ var procederSincroFun = async (button: HTMLButtonElement, divAvisoSincro: HTMLDi
         if (cambiaModoDM) {
             cambiarModoDMEnLocalStorage(modoDMActual);
         }
-        const store = await dmTraerDatosFormulario({ modoDemo: false });
+        const store = await dmTraerDatosFormulario({});
         store.dispatch(dispatchers.RESET_OPCIONES({}));
         mostrarInfoLocal(divAvisoSincro, 'datos recibidos', datos.num_sincro, true)
     } catch (err) {
@@ -267,9 +267,6 @@ myOwn.wScreens.cambiar_modo_dm = async function () {
 };
 
 function inicializarState(state: CasoState) {
-    state.modo = {
-        demo: false
-    };
     // OJO state.opciones se modifica acá y en otro lado con este mismo cartel
     state.opciones = {
         bienvenido: true,
@@ -830,11 +827,6 @@ myOwn.wScreens.proc.result.mostrar_encuesta_a_borrar = function (result, divResu
         ignoraJsonEncuestaVacio: true,
         labelAction: 'borrar'
     })
-}
-
-myOwn.wScreens.demo = async function (_addrParams) {
-    // @ts-ignore desplegarFormularioActual global
-    window.desplegarFormularioActual({ modoDemo: true });
 }
 
 function arrayFlat<T>(arrays: T[][]): T[] {

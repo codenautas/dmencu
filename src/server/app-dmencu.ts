@@ -687,11 +687,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             let menu: MenuInfoBase[] = [];
             if (getModoByPolicy(context.be) === 'RELEVAMIENTO') {
                 if (context.puede?.encuestas?.relevar) {
-                    if (this.config['client-setup'].ambiente == 'demo' || this.config['client-setup'].ambiente == 'test' || this.config['client-setup'].ambiente == 'capa') {
-                        menu.push({ menuType: 'demo', name: 'demo', selectedByDefault: true })
-                    } else {
-                        menu.push({ menuType: 'path', name: 'relevamiento', path: '/campo' })
-                    }
+                    menu.push({ menuType: 'path', name: 'relevamiento', path: '/campo' })
                     menu.push(
                         { menuType: 'sincronizar_dm', name: 'sincronizar' },
                         { menuType: 'cambiar_modo_dm', name: 'cambiar_modo' },
