@@ -30,6 +30,7 @@ import {
 } from "./tipos";
 
 import { getFormularioConfig } from "./render-config";
+import { adaptarEstructura } from "./redux-formulario";
 
 var especiales = {} as {
     calcularVariables?: (respuestasRaiz: RespuestasRaiz, forPk: ForPk) => void
@@ -82,7 +83,7 @@ export function setPersistirDatosByPass(persistirDatosByPassFun: typeof persisti
 }
 
 export async function persistirDatosByPass(dbpp: DatosByPassPersistibles) {
-    await persistirDatosByPassInterno(dbpp);
+    await getFormularioConfig().persistirDatos(dbpp);
     datosByPass.dirty = false
     refrescarMarcaDirty();
 }
@@ -128,7 +129,7 @@ export var intentarBackup = (forPk: ForPk) => {
 }
 
 export function setEstructura(estructuraACargar: Estructura) {
-    estructura = estructuraACargar;
+    estructura = adaptarEstructura(estructuraACargar);
     defOperativo.UAprincipal = likeAr(estructura.unidades_analisis).find(ua => !!ua.principal)?.unidad_analisis!
     defOperativo.defFor = likeAr(estructura.formularios).map(f => ({ hermano: f.casilleros.hermano })).plain()
     defOperativo.defUA = likeAr(estructura.unidades_analisis).map((uaDef, ua) => ({
@@ -137,6 +138,14 @@ export function setEstructura(estructuraACargar: Estructura) {
         idsFor: likeAr(estructura.formularios).filter(f => f.casilleros.unidad_analisis == ua).keys()
     })).plain()
     return estructura;
+}
+
+export function setDatos(nuevoPaquete: DatosByPassPersistibles & { dirty?: boolean }) {
+    var datosByPass = {
+        ...nuevoPaquete,
+        dirty: nuevoPaquete.dirty ?? false
+    }
+    setDatosByPass(datosByPass);
 }
 
 export function setDatosByPass(dbpp: DatosByPassPersistibles & { dirty?: boolean }) {

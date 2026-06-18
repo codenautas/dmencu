@@ -7,7 +7,8 @@ import {
     scrollToTop,
     materialIoIconsSvgPath,
     useOnlineStatus,
-    RenderizadorJSON
+    RenderizadorJSON,
+    useDatosByPass
 } from "./render-general";
 import {
     Bloque, BotonFormulario,
@@ -39,7 +40,9 @@ import {
     getMainFormForVivienda,
     intentarBackup,
     respuestasForPk,
-    setCalcularVariables
+    setCalcularVariables,
+    setDatos,
+    setEstructura
 } from "./bypass-formulario"
 import {
     dmTraerDatosFormulario, dispatchers,
@@ -2101,7 +2104,6 @@ setDesplegarCarga((props: {
         [formulario in PlainForPk]: FormStructureState<IdVariable, Valor, IdFin>
     }
 }) => {
-    const [newSurvey, setNewSurvey] = useState(0);
     const { carga, idCarga, informacionHdr, respuestas } = props;
     var estructura = getEstructura();
     let cantLineasResumen = likeAr(informacionHdr).filter((informacion) => informacion.tem.carga == idCarga).array().length;
@@ -2328,31 +2330,19 @@ export function ReactPantallaSincronizacion(props: { setPantalla: (pantalla: 'hd
     var datosByPass = getDatosByPass();
     var estructura = getEstructura();
 
+    const dispatch = useDispatch();
     var handleSincronizar = async (): Promise<void> => {
         setLoading(true);
         setAviso(null);
         try {
-            /*var modoDM: ModoDM = getFormularioConfig().getModoDM() || await myOwn.ajax.modo_dm_defecto_obtener({});
-            getFormularioConfig().setModoDM(modoDM);
-            var datos = await myOwn.ajax.dm_sincronizar({
-                persistentes: datosByPass,
-                modo_dm: modoDM,
-                cambia_modo_dm: false,
-                idper_logueado_tablet: getFormularioConfig().getIdperLogueado()
-            });
-            var operativo: IdOperativo = datos.operativo;
-            
-            myOwn.setLocalVar(GLOVAR_DATOSBYPASS, { ...datos, modoAlmacenamiento: 'local' });
-            myOwn.setSessionVar(GLOVAR_MODOBYPASS, 'local');
-            
-            var estructuraNueva: Estructura = adaptarEstructura(await myOwn.ajax.operativo_estructura_completa({ operativo }));
-            myOwn.setLocalVar(GLOVAR_ESTRUCTURA, estructuraNueva);
-            myOwn.removeLocalVar(BACKUPS);
-            
-            cargarHojaDeRuta({ ...datos, modoAlmacenamiento: 'local' });
-            
+            const formularioConfig = getFormularioConfig();
+            const datos = await formularioConfig.sincronizar(datosByPass, false);
+            const formConfig = getFormularioConfig();
+            const estructura = await formConfig.leerEstructura();
+            setEstructura(estructura!);
+            setDatos(datos);
+            dispatch(dispatchers.RESET_OPCIONES({}));
             setAviso({ tipo: 'success', mensaje: `Sincronización exitosa. Sincro Nº ${datos.num_sincro}` });
-            */
         } catch (err) {
             setAviso({ tipo: 'error', mensaje: `Error de sincronización: ${unexpected(err).message}` });
         } finally {
@@ -2440,6 +2430,7 @@ export function ReactPantallaCambioModo(props: { setPantalla: (pantalla: 'hdr' |
         fetchModo();
     }, []);
 
+    const dispatch = useDispatch();
     var handleConfirmarCambio = async (): Promise<void> => {
         if (password !== '1234') {
             alert('Contraseña incorrecta.');
@@ -2449,29 +2440,14 @@ export function ReactPantallaCambioModo(props: { setPantalla: (pantalla: 'hdr' |
         setLoading(true);
         setAviso(null);
         try {
-            /*var nuevoModo: ModoDM = modoDM === 'produc' ? 'capa' : 'produc';
-            var datos = await myOwn.ajax.dm_sincronizar({
-                persistentes: datosByPass,
-                modo_dm: modoDM,
-                cambia_modo_dm: true,
-                idper_logueado_tablet: getFormularioConfig().getIdperLogueado()
-            });
-            var operativo: IdOperativo = datos.operativo;
-
+            var nuevoModo: ModoDM = modoDM === 'produc' ? 'capa' : 'produc';
+            var datos = await getFormularioConfig().sincronizar(datosByPass, true);
             getFormularioConfig().setModoDM(nuevoModo);
             setModoDM(nuevoModo);
-
-            myOwn.setLocalVar(GLOVAR_DATOSBYPASS, { ...datos, modoAlmacenamiento: 'local' });
-            myOwn.setSessionVar(GLOVAR_MODOBYPASS, 'local');
-
-            var estructuraNueva: Estructura = adaptarEstructura(await myOwn.ajax.operativo_estructura_completa({ operativo }));
-            myOwn.setLocalVar(GLOVAR_ESTRUCTURA, estructuraNueva);
-            myOwn.removeLocalVar(BACKUPS);
-
-            cargarHojaDeRuta({ ...datos, modoAlmacenamiento: 'local' });
-
+            //await setDatos({ ...datos, modoAlmacenamiento: 'local' });
+            //await cargarEstructura(getFormularioConfig().getEstructura());
+            dispatch(dispatchers.RESET_OPCIONES({}));
             setAviso({ tipo: 'success', mensaje: `MODO ${nuevoModo.toUpperCase()} ACTIVADO Y DISPOSITIVO SINCRONIZADO` });
-            */
         } catch (err) {
             setAviso({ tipo: 'error', mensaje: `Error al cambiar de modo: ${unexpected(err).message}` });
         } finally {
@@ -2573,10 +2549,7 @@ export const setHojaDeRutaDespliegue = (hojaDeRuta: HojaDeRutaDespliegueType) =>
 
 setHojaDeRutaDespliegue((props: HojaDeRutaDespliegueProps) => {
     var { cargas, num_sincro, informacionHdr, respuestas } = getDatosByPass();
-    var { modo } = useSelector((state: CasoState) => ({ modo: state.modo }));
-    var feedbackRowValidator = getFeedbackRowValidator()
-    const dispatch = useDispatch();
-    const online = useOnlineStatus();
+    var feedbackRowValidator = getFeedbackRowValidator();
     const modoDM: ModoDM = getFormularioConfig().getModoDM();
     return (
         <>
@@ -2674,8 +2647,16 @@ export function AppDmEncu() {
     if (!bienvenido) {
         return <BienvenidaDespliegue modo={modo} />
     }
-
-    if(getDatosByPass().idper == getFormularioConfig().getIdperLogueado()) {
+    const datosByPass = getDatosByPass();
+    if (!datosByPass.token) {
+        return <PantallaSincronizacionRequerida
+            titulo="Dispositivo sin carga"
+            mensaje={
+                <>Debe sincronizar el dispositivo para obtener una hoja de ruta.</>
+            }
+        />
+    }
+    if (datosByPass.idper == getFormularioConfig().getIdperLogueado()) {
         if (forPk == null) {
             if (pantallaActual === 'sincronizacion') {
                 return <ReactPantallaSincronizacion setPantalla={setPantallaActual} />
@@ -2753,26 +2734,17 @@ function PantallaSincronizacionRequerida({
     );
 }
 
-export async function dmPantallaInicialSinCarga() {
-    try {
-        await loadCSS(BOOTSTRAP_5_1_3_SRC);
-    } catch (err) {
-        throw (err)
-    }
-    ReactDOM.render(
-        <PantallaSincronizacionRequerida
-            titulo="Dispositivo sin carga"
-            mensaje={
-                <>Debe sincronizar el dispositivo para obtener una hoja de ruta.</>
-            } />,
-        document.getElementById('main_layout')
-    )
-}
-
-export async function desplegarFormularioActual(opts: {forPkRaiz?: ForPkRaiz, operativo: IdOperativo }) {
+export async function desplegarFormularioActual(opts: {forPkRaiz?: ForPkRaiz }) {
     // traer los metadatos en una "estructura"
     // traer los datos de localStorage
     // verificar el main Layout
+    const formConfig = getFormularioConfig();
+    const estructura = await formConfig.leerEstructura();
+    const datos = await formConfig.leerDatos();
+    if(estructura && datos){
+        setEstructura(estructura);
+        setDatos(datos);
+    }
     const store = await dmTraerDatosFormulario(opts)
     try {
         await loadCSS(BOOTSTRAP_5_1_3_SRC);
@@ -2787,14 +2759,6 @@ export async function desplegarFormularioActual(opts: {forPkRaiz?: ForPkRaiz, op
         document.getElementById('main_layout')
     )
 }
-
-if (typeof window !== 'undefined') {
-    // @ts-ignore para hacerlo
-    window.desplegarFormularioActual = desplegarFormularioActual;
-    // @ts-ignore para hacerlo
-    window.dmPantallaInicialSinCarga = dmPantallaInicialSinCarga;
-}
-
 
 function loadInstance() {
     if (typeof BroadcastChannel === 'undefined') {

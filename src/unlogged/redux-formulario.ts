@@ -357,7 +357,7 @@ export async function dmTraerDatosFormulario(opts: { operativo?: IdOperativo, fo
         if (casoState) {
             initialState = {
                 ...initialState,
-                opciones: casoState.opciones,
+                opciones: casoState.opciones
             }
         }
         if (opts.forPkRaiz) {

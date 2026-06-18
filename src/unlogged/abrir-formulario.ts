@@ -18,57 +18,14 @@ import { expected } from "cast-error";
 import {
     getDatosByPass,
     getEstructura,
-    setDatosByPass, setEncolarBackup, setEstructura, setPersistirDatosByPass,
+    setDatosByPass, setEncolarBackup, setEstructura,
 } from "./bypass-formulario"
 import { getFormularioConfig } from "../unlogged/render-config";
 
-
-export const GLOVAR_DATOSBYPASS = 'datosbypass';
-export const GLOVAR_MODOBYPASS = 'modobypass';
-export const GLOVAR_ESTRUCTURA = 'estructura';
 export const BACKUPS = 'backups';
 
-setPersistirDatosByPass(
-    async function persistirEnMemoria(persistentes: DatosByPassPersistibles) {
-        var { modoAlmacenamiento } = persistentes
-        if (modoAlmacenamiento == 'local') {
-            my.setLocalVar(GLOVAR_DATOSBYPASS, persistentes)
-        } else {
-            my.setSessionVar(GLOVAR_DATOSBYPASS, persistentes)
-        }
-        my.setSessionVar(GLOVAR_MODOBYPASS, modoAlmacenamiento)
-    }
-)
-
-export function recuperarDatosByPass() {
-    var recuperado: DatosByPassPersistibles;
-    var modoAlmacenamiento = my.getSessionVar(GLOVAR_MODOBYPASS) as ModoAlmacenamiento;
-    if (modoAlmacenamiento == 'local') {
-        recuperado = my.getLocalVar(GLOVAR_DATOSBYPASS)
-    } else {
-        recuperado = my.getSessionVar(GLOVAR_DATOSBYPASS)
-    }
-    if (recuperado) {
-        setDatosByPass({ ...recuperado, modoAlmacenamiento })
-    }
-    return
-}
-
-export function cargarHojaDeRuta(nuevoPaquete: DatosByPassPersistibles & { dirty?: boolean }) {
-    var modoActual = my.getSessionVar(GLOVAR_MODOBYPASS);
-    if (modoActual && nuevoPaquete.modoAlmacenamiento != modoActual) {
-        throw new Error('No se pueden mezclar modos de apertura de encuestas, directo y por hoja de ruta para MD (' + modoActual + ', ' + nuevoPaquete.modoAlmacenamiento + ')');
-    }
-    var datosByPass = {
-        ...nuevoPaquete,
-        dirty: nuevoPaquete.dirty ?? false
-    }
-    setDatosByPass(datosByPass);
-}
-
 export function cargarEstructura(estructuraACargar: Estructura) {
-    var estructura = setEstructura(estructuraACargar);
-    my.setLocalVar(GLOVAR_ESTRUCTURA, estructura);
+    setEstructura(estructuraACargar);
 }
 
 //////////////////////////////////////////////////////////////////////////

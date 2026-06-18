@@ -1,12 +1,12 @@
 "use strict";
 import {html}  from 'js-to-html';
-import { desplegarFormularioActual, dmPantallaInicialSinCarga } from './render-formulario';
-import { cargarEstructura, cargarHojaDeRuta, GLOVAR_ESTRUCTURA, GLOVAR_DATOSBYPASS } from './abrir-formulario';
-import { ModoDM } from './tipos';
+import { desplegarFormularioActual } from './render-formulario';
+import { DatosByPassPersistibles, ModoDM } from './tipos';
 import { expected } from "cast-error";
 const ServiceWorkerAdmin = require("service-worker-admin");
 import { initFormRenderer } from "./render-init";
 import { getFormularioConfig } from "./render-config";
+import { BACKUPS } from './abrir-formulario';
 
 
 function siExisteId(id: string, hacer: (arg0: HTMLElement) => void){
@@ -24,6 +24,18 @@ const URL_DM = 'campo';
 var reloadWithoutHash = ()=>{
     history.replaceState(null, '', `${location.origin+location.pathname}/../${URL_DM}`);
     location.reload()
+}
+
+async function sincronizarDatos(persistentes: DatosByPassPersistibles | null, cambiaModoDM: boolean) {
+    const formularioConfig = getFormularioConfig();
+    let modoDM: ModoDM = formularioConfig.getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
+    formularioConfig.setModoDM(modoDM);
+    var datos = await my.ajax.dm_sincronizar({ persistentes, modo_dm: modoDM, cambia_modo_dm: cambiaModoDM, idper_logueado_tablet: formularioConfig.getIdperLogueado() });
+    await formularioConfig.persistirDatos({ ...datos, modoAlmacenamiento: 'local' });
+    var estructura = await myOwn.ajax.operativo_estructura_completa({ operativo: datos.operativo });
+    await formularioConfig.persistirEstructura(estructura);
+    my.removeLocalVar(BACKUPS);
+    return datos;
 }
 
 window.addEventListener('load', async function(){
@@ -85,30 +97,19 @@ window.addEventListener('load', async function(){
         `;
         if(location.pathname.endsWith(`/${URL_DM}`)){
             initFormRenderer();
-            var startApp:()=>Promise<void> = async ()=>{};
-            var datosByPass = my.getLocalVar(GLOVAR_DATOSBYPASS);
-            if(datosByPass){
-                startApp = async ()=>{
-                    var version = await swa.getSW('version');
-                    getFormularioConfig().setAppCacheVersion(version);
-                    //@ts-ignore existe 
-                    var estructura = my.getLocalVar(GLOVAR_ESTRUCTURA);
-                    cargarEstructura(estructura);
-                    cargarHojaDeRuta({ ...datosByPass, modoAlmacenamiento: 'local' });
-                    desplegarFormularioActual({operativo: estructura.operativo});
-                    my.menuName = URL_DM;
+            const formConfig = getFormularioConfig();
+            formConfig.sincronizar = sincronizarDatos;
+            const startApp = async () => {
+                try {
+                    const modoDmDefecto: ModoDM = getFormularioConfig().getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
+                    getFormularioConfig().setModoDM(modoDmDefecto);
+                } catch (err) {
+                    console.log('no se pudo traer el modo por defecto')
                 }
-            }else{
-                startApp = async ()=>{
-                    try{
-                        const modoDmDefecto: ModoDM = getFormularioConfig().getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
-                       getFormularioConfig().setModoDM(modoDmDefecto);
-                    }catch(err){
-                        console.log('no se pudo traer el modo por defecto')
-                    }
-                    //@ts-ignore existe 
-                    dmPantallaInicialSinCarga();
-                }
+                var version = await swa.getSW('version');
+                formConfig.setAppCacheVersion(version);
+                desplegarFormularioActual({});
+                my.menuName = URL_DM;
             }
             var refrescarStatus=async function(showScreen: string, newVersionAvaiable: string, _installing: any){
                 var buscandoActualizacion = location.href.endsWith('#inst=1');

@@ -1,4 +1,4 @@
-import { CasoState, DatosByPassPersistibles, ModoDM } from './tipos';
+import { CasoState, DatosByPassPersistibles, ModoDM, Estructura } from './tipos';
 
 export interface FormularioConfig {
     getCasoState(): CasoState;
@@ -16,7 +16,20 @@ export interface FormularioConfig {
     getIdperLogueado(): string;
     getUsernameLogueado(): string;
 
-    sincronizar(persistentes: DatosByPassPersistibles, modoDM: ModoDM, cambiaModoDM: boolean, idPerLogueado: string): Promise<DatosByPassPersistibles>;
+    leerDatos(): Promise<DatosByPassPersistibles | null>;
+
+    persistirDatos(
+        datos: DatosByPassPersistibles
+    ): Promise<void>;
+
+    leerEstructura(): Promise<Estructura | null>;
+
+    persistirEstructura(
+        estructura: Estructura
+    ): Promise<void>;
+
+
+    sincronizar(persistentes: DatosByPassPersistibles | null, cambiaModoDM: boolean): Promise<DatosByPassPersistibles>;
 }
 
 let formularioConfig: FormularioConfig | null = null;
