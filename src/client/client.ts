@@ -1,6 +1,6 @@
 import { html } from "js-to-html";
 import { expected, unexpected } from "cast-error";
-import { dispatchers, dmTraerDatosFormulario } from "../unlogged/redux-formulario";
+import { dispatchers, crearStoreFormulario } from "../unlogged/redux-formulario";
 import {
     CasoState,
     IdFormulario, DatosByPassPersistibles, IdEnc, IdOperativo, IdTarea, EstadoAccion, DireccionAccion,
@@ -10,7 +10,7 @@ import {
 } from "../unlogged/tipos";
 import * as likeAr from "like-ar";
 import { BACKUPS, cargarEstructura } from "../unlogged/abrir-formulario"
-import { initFormRenderer } from "../unlogged/render-init";
+import { createLocalStorageFormRenderer, initFormRenderer } from "../unlogged/render-init";
 import { getFormularioConfig } from "../unlogged/render-config";
 import { desplegarFormularioActual } from '../unlogged/render-formulario';
 
@@ -30,9 +30,8 @@ myOwn.autoSetupFunctions.push(async () => {
     } catch (err) {
         OPERATIVO_DEFAULT = null;
     }
-    initFormRenderer();
-    const formConfig = getFormularioConfig();
-    formConfig.sincronizar = sincronizarDatos;
+    const formRenderer = createLocalStorageFormRenderer({});
+    formRenderer.config.sincronizar = sincronizarDatos;
     myOwn.wScreens.abrir_encuesta = {
         parameters: [
             { name: 'operativo', typeName: 'text', defaultValue: OPERATIVO_DEFAULT, references: 'operativos' },
@@ -43,31 +42,31 @@ myOwn.autoSetupFunctions.push(async () => {
         mainAction: async (params) => {
             // antes: abrirDirecto
             var { operativo, enc, tarea } = params;
-            formConfig.leerDatos = async function leerDatosEnBaseDeDatos(): Promise<DatosByPassPersistibles> {
+            formRenderer.config.leerDatos = async function leerDatosEnBaseDeDatos(): Promise<DatosByPassPersistibles> {
                 return await my.ajax.dm_forpkraiz_cargar({ operativo, pk_raiz_value: enc, tarea }) as DatosByPassPersistibles;
             }
-            formConfig.persistirDatos =
+            formRenderer.config.persistirDatos =
                 async function persistirDatosEnBaseDeDatos(persistentes: DatosByPassPersistibles) {
                     if (persistentes.soloLectura) {
                         throw new Error("Está intentando modificar una encuesta abierta como solo lectura, no se guardaron los cambios")
                     }
                     await my.ajax.dm_forpkraiz_descargar({ operativo, persistentes });
                 }
-            var estructura = await formConfig.leerEstructura();
-            var carga = await formConfig.leerDatos();
+            var estructura = await formRenderer.config.leerEstructura();
+            var carga = await formRenderer.config.leerDatos();
             if (!estructura || (estructura.timestamp ?? 0) < carga.timestampEstructura! || estructura.operativo != operativo || my.config.config.devel) {
                 estructura = await traerEstructura({ operativo })
-                await formConfig.persistirEstructura(estructura);
+                await formRenderer.config.persistirEstructura(estructura);
             }
             //@ts-ignore
-            var state: CasoState = {}
-            inicializarState(state);
+            //var state: CasoState = {}
+            //inicializarState(state);
             var forPkRaiz = { formulario: carga.informacionHdr[enc as IdEnc].tarea.main_form, [estructura.pkAgregadaUaPpal]: enc };
-            
+
             if (!carga.respuestas[estructura.uaPpal][forPkRaiz[estructura.pkAgregadaUaPpal as CampoPkRaiz]]) {
                 throw new Error(`No se encuentra el/la ${estructura.pkAgregadaUaPpal} ${forPkRaiz[estructura.pkAgregadaUaPpal]}`);
             }
-            desplegarFormularioActual({ operativo, modoDM: 'produc', forPkRaiz });
+            desplegarFormularioActual(formRenderer, { forPkRaiz:forPkRaiz as ForPkRaiz });
         }
     };
     myOwn.wScreens.consistir_encuesta = {
@@ -193,7 +192,7 @@ var procederSincroFun = async (button: HTMLButtonElement, divAvisoSincro: HTMLDi
         if (cambiaModoDM) {
             cambiarModoDMEnLocalStorage(modoDMActual);
         }
-        const store = await dmTraerDatosFormulario({});
+        const store = await crearStoreFormulario({});
         store.dispatch(dispatchers.RESET_OPCIONES({}));
         await mostrarInfoLocal(divAvisoSincro, 'datos recibidos', datos.num_sincro!, true)
     } catch (err) {
@@ -267,7 +266,6 @@ myOwn.wScreens.cambiar_modo_dm = async function () {
 function inicializarState(state: CasoState) {
     // OJO state.opciones se modifica acá y en otro lado con este mismo cartel
     state.opciones = {
-        bienvenido: true,
         forPk: null,
         pilaForPk: [],
         modoDespliegue: "relevamiento",

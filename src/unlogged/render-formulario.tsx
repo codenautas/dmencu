@@ -8,7 +8,6 @@ import {
     materialIoIconsSvgPath,
     useOnlineStatus,
     RenderizadorJSON,
-    useDatosByPass
 } from "./render-general";
 import {
     Bloque, BotonFormulario,
@@ -45,7 +44,7 @@ import {
     setEstructura
 } from "./bypass-formulario"
 import {
-    dmTraerDatosFormulario, dispatchers,
+    crearStoreFormulario, dispatchers,
     gotoSincronizar,
     gotoConsistir,
 } from "./redux-formulario";
@@ -81,7 +80,16 @@ import {
 } from "./bypass-formulario"
 
 import { html, HtmlTag } from "js-to-html";
-import { getFormularioConfig } from "./render-config";
+import { FormRenderer, getFormularioConfig, registrarCargarMotor } from "./render-config";
+
+// Registra la implementación de cargarMotor al cargar el módulo.
+// Esto evita la dependencia circular render-config ← bypass-formulario.
+registrarCargarMotor(async function cargarEstructuraYDatosEnMemoria() {
+    var formConfig = getFormularioConfig();
+    setEstructura((await formConfig.leerEstructura())!);
+    setDatosByPass((await formConfig.leerDatos())!);
+
+});
 
 const DELAY_SCROLL_3 = 50;
 
@@ -2580,41 +2588,6 @@ export function ListaTextos(props: { textos: string[] }) {
     </ul>;
 }
 
-export function BienvenidaDespliegue(props: { modo: CasoState["modo"] }) {
-    const dispatch = useDispatch();
-    return <Paper className="bienvenida">
-        {props.modo.demo ?
-            <>
-                <Typography>DEMO del sistema de relevamiento de DMENCU</Typography>
-                <Typography>En esta demo:</Typography>
-                <ListaTextos textos={[
-                    "Algunas viviendas aparecen relevadas (el botón está de color) sirven de ejemplo",
-                    "Lo que se carguen se guardan localmente pero no se trasmiten a la base de datos",
-                    "Se puede volver a la versión inicial (o sea borrar lo que se guardó localmente) desde la hoja de ruta boton [reiniciar demo]",
-                    "Todavía hay cosas que faltan o pueden cambiar",
-                ]} />
-            </>
-            : <>
-                <Typography>Encuesta de Seroprevalencia de COVID-19</Typography>
-            </>
-        }
-        <Button
-            variant="contained"
-            color="secondary"
-            onClick={() => { gotoSincronizar(); }}
-        >
-            <span>Sincronizar </span> <ICON.SyncAlt />
-        </Button>
-        <Button
-            variant="contained"
-            color="primary"
-            onClick={() => dispatch(dispatchers.SET_OPCION({ opcion: 'bienvenido', valor: true }))}
-        >
-            <span>Continuar </span> <ICON.Send />
-        </Button>
-    </Paper>
-}
-
 //CONTROL DE PESTAÑAS
 var allOpenedTabs: { [x: string]: number } = {};
 var infoOpenedTabs = {
@@ -2640,14 +2613,10 @@ export function OpenedTabs() {
 }
 
 export function AppDmEncu() {
-    var { forPk, bienvenido, modo } = useSelector((state: CasoState) => ({ ...state.opciones, ...state.modo, ...state }));
+    var { forPk } = useSelector((state: CasoState) => ({ ...state.opciones, ...state }));
     const [pantallaActual, setPantallaActual] = useState<'hdr' | 'sincronizacion' | 'modo'>('hdr');
-
-    if (!bienvenido) {
-        return <BienvenidaDespliegue modo={modo} />
-    }
     const datosByPass = getDatosByPass();
-    if (!datosByPass.token) {
+    if (!datosByPass || Object.keys(datosByPass).length === 0) {
         return <PantallaSincronizacionRequerida
             titulo="Dispositivo sin carga"
             mensaje={
@@ -2733,17 +2702,12 @@ function PantallaSincronizacionRequerida({
     );
 }
 
-export async function desplegarFormularioActual(opts: {forPkRaiz?: ForPkRaiz }) {
-    // traer los metadatos en una "estructura"
-    // traer los datos de localStorage
-    // verificar el main Layout
-    const formConfig = getFormularioConfig();
-    const estructura = await formConfig.leerEstructura();
-    const datos = await formConfig.leerDatos();
-    setEstructura(estructura);
-    setDatosByPass(datos);
-    
-    const store = await dmTraerDatosFormulario(opts)
+export async function desplegarFormularioActual(
+    formRenderer: FormRenderer,
+    opts: { forPkRaiz?: ForPkRaiz } = {}
+) {
+    await formRenderer.cargarMotor(opts);
+    const store = await crearStoreFormulario(opts)
     try {
         await loadCSS(BOOTSTRAP_5_1_3_SRC);
     } catch (err) {

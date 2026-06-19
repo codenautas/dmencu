@@ -4,10 +4,9 @@ import { desplegarFormularioActual } from './render-formulario';
 import { DatosByPassPersistibles, ModoDM } from './tipos';
 import { expected } from "cast-error";
 const ServiceWorkerAdmin = require("service-worker-admin");
-import { initFormRenderer } from "./render-init";
-import { getFormularioConfig } from "./render-config";
+import { createLocalStorageFormRenderer } from "./render-init";
 import { BACKUPS } from './abrir-formulario';
-
+import { getFormularioConfig } from "./render-config";
 
 function siExisteId(id: string, hacer: (arg0: HTMLElement) => void){
     var elemento = document.getElementById(id);
@@ -96,19 +95,17 @@ window.addEventListener('load', async function(){
             </div>
         `;
         if(location.pathname.endsWith(`/${URL_DM}`)){
-            initFormRenderer();
-            const formConfig = getFormularioConfig();
-            formConfig.sincronizar = sincronizarDatos;
+            const formRenderer = createLocalStorageFormRenderer({ sincronizar: sincronizarDatos });
             const startApp = async () => {
                 try {
-                    const modoDmDefecto: ModoDM = getFormularioConfig().getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
-                    getFormularioConfig().setModoDM(modoDmDefecto);
+                    var modoDmDefecto: ModoDM = formRenderer.config.getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
+                    formRenderer.config.setModoDM(modoDmDefecto);
                 } catch (err) {
                     console.log('no se pudo traer el modo por defecto')
                 }
                 var version = await swa.getSW('version');
-                formConfig.setAppCacheVersion(version);
-                desplegarFormularioActual({});
+                formRenderer.config.setAppCacheVersion(version);
+                desplegarFormularioActual(formRenderer, {});
                 my.menuName = URL_DM;
             }
             var refrescarStatus=async function(showScreen: string, newVersionAvaiable: string, _installing: any){

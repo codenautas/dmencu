@@ -336,7 +336,7 @@ export function adaptarEstructura(estructuraBackend:any) {
     return estructura;
 }
 
-export async function dmTraerDatosFormulario(opts: { operativo?: IdOperativo, forPkRaiz?: ForPkRaiz }) {
+export async function crearStoreFormulario(opts: { operativo?: IdOperativo, forPkRaiz?: ForPkRaiz }) {
     var getCasoState = getFormularioConfig().getCasoState;
     var setCasoState = getFormularioConfig().setCasoState;
 
@@ -350,7 +350,6 @@ export async function dmTraerDatosFormulario(opts: { operativo?: IdOperativo, fo
                 modoDirecto: false,
                 conCampoOpciones: false,
                 saltoAutomatico: true,
-                bienvenido: true,
                 modoBorrarRespuesta: null
             } as CasoState["opciones"], // poner los valores por defecto más abajo
         } as CasoState;
