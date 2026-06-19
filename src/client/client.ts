@@ -133,12 +133,12 @@ function htmlNumero(num: number) {
 
 async function sincronizarDatos(persistentes: DatosByPassPersistibles | null, cambiaModoDM: boolean) {
     const formularioConfig = getFormularioConfig();
-    let modoDM: ModoDM = formularioConfig.getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
-    formularioConfig.setModoDM(modoDM);
+    const modoDM: ModoDM = formularioConfig.getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
     var datos = await my.ajax.dm_sincronizar({ persistentes, modo_dm: modoDM, cambia_modo_dm: cambiaModoDM, idper_logueado_tablet: formularioConfig.getIdperLogueado()});
     var operativo = datos.operativo;
-    await formularioConfig.persistirDatos({ ...datos, modoAlmacenamiento: 'local' });
     var estructura = await traerEstructura({ operativo })
+    formularioConfig.setModoDM(modoDM);
+    await formularioConfig.persistirDatos({ ...datos, modoAlmacenamiento: 'local' });
     await formularioConfig.persistirEstructura(estructura);
     my.removeLocalVar(BACKUPS);
     return datos;

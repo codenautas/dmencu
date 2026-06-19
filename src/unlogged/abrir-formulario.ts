@@ -18,7 +18,7 @@ import { expected } from "cast-error";
 import {
     getDatosByPass,
     getEstructura,
-    setDatosByPass, setEncolarBackup, setEstructura,
+    setEncolarBackup, setEstructura,
 } from "./bypass-formulario"
 import { getFormularioConfig } from "../unlogged/render-config";
 

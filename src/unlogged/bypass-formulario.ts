@@ -140,20 +140,15 @@ export function setEstructura(estructuraACargar: Estructura) {
     return estructura;
 }
 
-export function setDatos(nuevoPaquete: DatosByPassPersistibles & { dirty?: boolean }) {
-    var datosByPass = {
-        ...nuevoPaquete,
-        dirty: nuevoPaquete.dirty ?? false
-    }
-    setDatosByPass(datosByPass);
-}
-
-export function setDatosByPass(dbpp: DatosByPassPersistibles & { dirty?: boolean }) {
+export function setDatosByPass(
+    nuevoPaquete: DatosByPassPersistibles & { dirty?: boolean }
+) {
     datosByPass = {
         dirty: false,
-        ...dbpp,
+        ...nuevoPaquete,
         feedbackRowValidator: {} as DatosByPass["feedbackRowValidator"]
-    }
+    };
+
     calcularFeedbackHojaDeRuta();
 }
 

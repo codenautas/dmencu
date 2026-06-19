@@ -41,7 +41,7 @@ import {
     intentarBackup,
     respuestasForPk,
     setCalcularVariables,
-    setDatos,
+    setDatosByPass,
     setEstructura
 } from "./bypass-formulario"
 import {
@@ -2337,10 +2337,9 @@ export function ReactPantallaSincronizacion(props: { setPantalla: (pantalla: 'hd
         try {
             const formularioConfig = getFormularioConfig();
             const datos = await formularioConfig.sincronizar(datosByPass, false);
-            const formConfig = getFormularioConfig();
-            const estructura = await formConfig.leerEstructura();
+            const estructura = await formularioConfig.leerEstructura();
             setEstructura(estructura!);
-            setDatos(datos);
+            setDatosByPass(datos);
             dispatch(dispatchers.RESET_OPCIONES({}));
             setAviso({ tipo: 'success', mensaje: `Sincronización exitosa. Sincro Nº ${datos.num_sincro}` });
         } catch (err) {
@@ -2741,10 +2740,9 @@ export async function desplegarFormularioActual(opts: {forPkRaiz?: ForPkRaiz }) 
     const formConfig = getFormularioConfig();
     const estructura = await formConfig.leerEstructura();
     const datos = await formConfig.leerDatos();
-    if(estructura && datos){
-        setEstructura(estructura);
-        setDatos(datos);
-    }
+    setEstructura(estructura);
+    setDatosByPass(datos);
+    
     const store = await dmTraerDatosFormulario(opts)
     try {
         await loadCSS(BOOTSTRAP_5_1_3_SRC);
