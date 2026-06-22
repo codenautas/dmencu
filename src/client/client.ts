@@ -10,8 +10,8 @@ import {
 } from "../unlogged/tipos";
 import * as likeAr from "like-ar";
 import { BACKUPS, cargarEstructura } from "../unlogged/abrir-formulario"
-import { createLocalStorageFormRenderer, initFormRenderer } from "../unlogged/render-init";
-import { getFormularioConfig } from "../unlogged/render-config";
+import { createLocalStorageFormRenderer } from "../unlogged/render-init";
+import { getFormRenderer } from "../unlogged/render-config";
 import { desplegarFormularioActual } from '../unlogged/render-formulario';
 
 //TODO GENERALIZAR
@@ -31,7 +31,7 @@ myOwn.autoSetupFunctions.push(async () => {
         OPERATIVO_DEFAULT = null;
     }
     const formRenderer = createLocalStorageFormRenderer({});
-    formRenderer.config.sincronizar = sincronizarDatos;
+    formRenderer.updateConfig({ sincronizar: sincronizarDatos });
     myOwn.wScreens.abrir_encuesta = {
         parameters: [
             { name: 'operativo', typeName: 'text', defaultValue: OPERATIVO_DEFAULT, references: 'operativos' },
@@ -42,21 +42,22 @@ myOwn.autoSetupFunctions.push(async () => {
         mainAction: async (params) => {
             // antes: abrirDirecto
             var { operativo, enc, tarea } = params;
-            formRenderer.config.leerDatos = async function leerDatosEnBaseDeDatos(): Promise<DatosByPassPersistibles> {
-                return await my.ajax.dm_forpkraiz_cargar({ operativo, pk_raiz_value: enc, tarea }) as DatosByPassPersistibles;
-            }
-            formRenderer.config.persistirDatos =
-                async function persistirDatosEnBaseDeDatos(persistentes: DatosByPassPersistibles) {
+            formRenderer.updateConfig({
+                leerDatos: async function leerDatosEnBaseDeDatos(): Promise<DatosByPassPersistibles> {
+                    return await my.ajax.dm_forpkraiz_cargar({ operativo, pk_raiz_value: enc, tarea }) as DatosByPassPersistibles;
+                },
+                persistirDatos: async function persistirDatosEnBaseDeDatos(persistentes: DatosByPassPersistibles) {
                     if (persistentes.soloLectura) {
                         throw new Error("Está intentando modificar una encuesta abierta como solo lectura, no se guardaron los cambios")
                     }
                     await my.ajax.dm_forpkraiz_descargar({ operativo, persistentes });
                 }
-            var estructura = await formRenderer.config.leerEstructura();
-            var carga = await formRenderer.config.leerDatos();
+            });
+            var estructura = await formRenderer.leerEstructura();
+            var carga = await formRenderer.leerDatos();
             if (!estructura || (estructura.timestamp ?? 0) < carga.timestampEstructura! || estructura.operativo != operativo || my.config.config.devel) {
                 estructura = await traerEstructura({ operativo })
-                await formRenderer.config.persistirEstructura(estructura);
+                await formRenderer.persistirEstructura(estructura);
             }
             //@ts-ignore
             //var state: CasoState = {}
@@ -131,14 +132,14 @@ function htmlNumero(num: number) {
 }
 
 async function sincronizarDatos(persistentes: DatosByPassPersistibles | null, cambiaModoDM: boolean) {
-    const formularioConfig = getFormularioConfig();
-    const modoDM: ModoDM = formularioConfig.getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
-    var datos = await my.ajax.dm_sincronizar({ persistentes, modo_dm: modoDM, cambia_modo_dm: cambiaModoDM, idper_logueado_tablet: formularioConfig.getIdperLogueado()});
+    const formRenderer = getFormRenderer();
+    const modoDM: ModoDM = formRenderer.getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
+    var datos = await my.ajax.dm_sincronizar({ persistentes, modo_dm: modoDM, cambia_modo_dm: cambiaModoDM, idper_logueado_tablet: formRenderer.getIdperLogueado()});
     var operativo = datos.operativo;
     var estructura = await traerEstructura({ operativo })
-    formularioConfig.setModoDM(modoDM);
-    await formularioConfig.persistirDatos({ ...datos, modoAlmacenamiento: 'local' });
-    await formularioConfig.persistirEstructura(estructura);
+    formRenderer.setModoDM(modoDM);
+    await formRenderer.persistirDatos({ ...datos, modoAlmacenamiento: 'local' });
+    await formRenderer.persistirEstructura(estructura);
     my.removeLocalVar(BACKUPS);
     return datos;
 }
@@ -146,15 +147,15 @@ async function sincronizarDatos(persistentes: DatosByPassPersistibles | null, ca
 
 
 var mostrarInfoLocal = async (divAvisoSincro: HTMLDivElement, titulo: string, nroSincro: number | null, mostrarLinkHdr: boolean) => {
-    const formularioConfig = getFormularioConfig();
-    let datosByPass = formularioConfig.leerDatos();
-    let estructura = formularioConfig.leerEstructura();
-    if (datosByPass) {
+    const formRenderer = getFormRenderer();
+    let datos = await formRenderer.leerDatos();
+    let estructura = await formRenderer.leerEstructura();
+    if (datos) {
         divAvisoSincro.append(html.div({ id: 'aviso-sincro' }, [
             nroSincro ? html.p(["Número de sincronización: ", html.b("" + nroSincro.toString())]) : null,
             html.h4(titulo),
-            html.p([htmlNumero(likeAr(datosByPass.cargas).array().length), ' areas: ', likeAr(datosByPass.cargas).keys().join(', ')]),
-            html.p([htmlNumero(likeAr(datosByPass.respuestas[estructura.uaPpal]).array().length), ' ' + estructura.uaPpal]),
+            html.p([htmlNumero(likeAr(datos.cargas).array().length), ' areas: ', likeAr(datos.cargas).keys().join(', ')]),
+           // html.p([htmlNumero(likeAr(datos.respuestas[estructura.uaPpal]).array().length), ' ' + estructura.uaPpal]),
             mostrarLinkHdr ? html.a({ href: './campo' }, [html.b('IR A LA HOJA DE RUTA')]) : null
         ]).create());
     } else {
@@ -166,9 +167,9 @@ var mostrarInfoLocal = async (divAvisoSincro: HTMLDivElement, titulo: string, nr
 }
 
 const mostrarInfoModo = async (mainLayout: HTMLElement) => {
-    const formularioConfig = getFormularioConfig();
-    let modoDM: ModoDM = formularioConfig.getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
-    formularioConfig.setModoDM(modoDM);
+    const formRenderer = getFormRenderer();
+    let modoDM: ModoDM = formRenderer.getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
+    formRenderer.setModoDM(modoDM);
     //@ts-ignore seteo un atributo
     var divAvisoModo: HTMLDivElement = html.div({ class: "info-modo", "modo-dm": modoDM }, `modo actual: ${modoDM}`).create()
     mainLayout.appendChild(divAvisoModo)
@@ -177,18 +178,18 @@ const mostrarInfoModo = async (mainLayout: HTMLElement) => {
 
 function cambiarModoDMEnLocalStorage(modoActual: ModoDM) {
     modoActual = modoActual == 'produc' ? 'capa' : 'produc';
-    getFormularioConfig().setModoDM(modoActual);
+    getFormRenderer().setModoDM(modoActual);
 }
 
 var procederSincroFun = async (button: HTMLButtonElement, divAvisoSincro: HTMLDivElement, cambiaModoDM: boolean) => {
     button.disabled = true;
     button.className = 'download-dm-button';
     divAvisoSincro.innerHTML = '';
-    const formularioConfig = getFormularioConfig();
+    const formRenderer = getFormRenderer();
     try {
-        var datosByPass = await formularioConfig.leerDatos();
-        var datos = await formularioConfig.sincronizar(datosByPass, cambiaModoDM);
-        let modoDMActual: ModoDM = formularioConfig.getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
+        var datosByPass = await formRenderer.leerDatos();
+        var datos = await formRenderer.sincronizar(datosByPass, cambiaModoDM);
+        let modoDMActual: ModoDM = formRenderer.getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
         if (cambiaModoDM) {
             cambiarModoDMEnLocalStorage(modoDMActual);
         }
@@ -249,7 +250,7 @@ myOwn.wScreens.cambiar_modo_dm = async function () {
                     await procederSincroFun(procederButton, divAvisoSincro, true);
                     mainLayout.innerHTML = '';
                     mainLayout.appendChild(
-                        html.div(`MODO ${getFormularioConfig().getModoDM()} ACTIVADO`).create()
+                        html.div(`MODO ${getFormRenderer().getModoDM()} ACTIVADO`).create()
                     )
                 } catch (err) {
                     alertPromise(unexpected(err).message);

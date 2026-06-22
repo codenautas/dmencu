@@ -6,7 +6,7 @@ import { expected } from "cast-error";
 const ServiceWorkerAdmin = require("service-worker-admin");
 import { createLocalStorageFormRenderer } from "./render-init";
 import { BACKUPS } from './abrir-formulario';
-import { getFormularioConfig } from "./render-config";
+import { getFormRenderer } from "./render-config";
 
 function siExisteId(id: string, hacer: (arg0: HTMLElement) => void){
     var elemento = document.getElementById(id);
@@ -26,13 +26,13 @@ var reloadWithoutHash = ()=>{
 }
 
 async function sincronizarDatos(persistentes: DatosByPassPersistibles | null, cambiaModoDM: boolean) {
-    const formularioConfig = getFormularioConfig();
-    let modoDM: ModoDM = formularioConfig.getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
-    formularioConfig.setModoDM(modoDM);
-    var datos = await my.ajax.dm_sincronizar({ persistentes, modo_dm: modoDM, cambia_modo_dm: cambiaModoDM, idper_logueado_tablet: formularioConfig.getIdperLogueado() });
-    await formularioConfig.persistirDatos({ ...datos, modoAlmacenamiento: 'local' });
+    const formRenderer = getFormRenderer();
+    let modoDM: ModoDM = formRenderer.getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
+    formRenderer.setModoDM(modoDM);
+    var datos = await my.ajax.dm_sincronizar({ persistentes, modo_dm: modoDM, cambia_modo_dm: cambiaModoDM, idper_logueado_tablet: formRenderer.getIdperLogueado() });
+    await formRenderer.persistirDatos({ ...datos, modoAlmacenamiento: 'local' });
     var estructura = await myOwn.ajax.operativo_estructura_completa({ operativo: datos.operativo });
-    await formularioConfig.persistirEstructura(estructura);
+    await formRenderer.persistirEstructura(estructura);
     my.removeLocalVar(BACKUPS);
     return datos;
 }
@@ -98,13 +98,13 @@ window.addEventListener('load', async function(){
             const formRenderer = createLocalStorageFormRenderer({ sincronizar: sincronizarDatos });
             const startApp = async () => {
                 try {
-                    var modoDmDefecto: ModoDM = formRenderer.config.getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
-                    formRenderer.config.setModoDM(modoDmDefecto);
+                    var modoDmDefecto: ModoDM = formRenderer.getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
+                    formRenderer.setModoDM(modoDmDefecto);
                 } catch (err) {
                     console.log('no se pudo traer el modo por defecto')
                 }
                 var version = await swa.getSW('version');
-                formRenderer.config.setAppCacheVersion(version);
+                formRenderer.setAppCacheVersion(version);
                 desplegarFormularioActual(formRenderer, {});
                 my.menuName = URL_DM;
             }

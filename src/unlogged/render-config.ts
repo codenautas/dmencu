@@ -40,12 +40,21 @@ export function registrarCargarMotor(fn: CargarMotorFn) {
     cargarMotorFn = fn;
 }
 
-export class FormRenderer {
-    readonly config: FormularioConfig;
+export class FormRenderer implements FormularioConfig {
+    private static instance: FormRenderer;
+    private config: FormularioConfig;
 
-    constructor(config: FormularioConfig) {
+    private constructor(config: FormularioConfig) {
         this.config = config;
-        setFormularioConfig(config);
+    }
+
+    public static initialize(config: FormularioConfig): FormRenderer {
+        FormRenderer.instance = new FormRenderer(config);
+        return FormRenderer.instance;
+    }
+
+    public updateConfig(partialConfig: Partial<FormularioConfig>): void {
+        this.config = { ...this.config, ...partialConfig };
     }
 
     async cargarMotor(opts: { forPkRaiz?: ForPkRaiz } = {}): Promise<void> {
@@ -54,12 +63,80 @@ export class FormRenderer {
         }
         return cargarMotorFn(opts);
     }
+
+    getCasoState(): CasoState {
+        return this.config.getCasoState();
+    }
+
+    setCasoState(state: CasoState): void {
+        this.config.setCasoState(state);
+    }
+
+    getUltimoValorPkRaiz(): string {
+        return this.config.getUltimoValorPkRaiz();
+    }
+
+    setUltimoValorPkRaiz(value: string): void {
+        this.config.setUltimoValorPkRaiz(value);
+    }
+
+    getAppCacheVersion(): string {
+        return this.config.getAppCacheVersion();
+    }
+
+    setAppCacheVersion(value: string): void {
+        this.config.setAppCacheVersion(value);
+    }
+
+    getModoDM(): ModoDM {
+        return this.config.getModoDM();
+    }
+
+    setModoDM(modo: ModoDM): void {
+        this.config.setModoDM(modo);
+    }
+
+    getIdperLogueado(): string {
+        return this.config.getIdperLogueado();
+    }
+
+    getUsernameLogueado(): string {
+        return this.config.getUsernameLogueado();
+    }
+
+    leerDatos(): Promise<DatosByPassPersistibles | null> {
+        return this.config.leerDatos();
+    }
+
+    persistirDatos(datos: DatosByPassPersistibles): Promise<void> {
+        return this.config.persistirDatos(datos);
+    }
+
+    leerEstructura(): Promise<Estructura | null> {
+        return this.config.leerEstructura();
+    }
+
+    persistirEstructura(estructura: Estructura): Promise<void> {
+        return this.config.persistirEstructura(estructura);
+    }
+
+    sincronizar(persistentes: DatosByPassPersistibles | null, cambiaModoDM: boolean): Promise<DatosByPassPersistibles> {
+        return this.config.sincronizar(persistentes, cambiaModoDM);
+    }
 }
 
 export function createFormRenderer(
     partialConfig: Partial<FormularioConfig>
 ): FormRenderer {
-    return new FormRenderer({ ...defaultThrowConfig, ...partialConfig });
+    return FormRenderer.initialize({ ...defaultThrowConfig, ...partialConfig });
+}
+
+export function getFormRenderer(): FormRenderer {
+    // @ts-ignore accedemos a private static desde la función exportada para mantener simplicidad o simplemente usamos una propiedad en la clase.
+    if (!FormRenderer['instance']) {
+        throw new Error('FormRenderer no inicializada');
+    }
+    return FormRenderer['instance'];
 }
 
 // Config base: todos los métodos lanzan error descriptivo.
@@ -111,18 +188,3 @@ const defaultThrowConfig: FormularioConfig = {
         throw new Error('sincronizar no implementado. Debe proveerse una implementación al llamar createFormRenderer({ sincronizar: ... })');
     },
 };
-
-let formularioConfig: FormularioConfig | null = null;
-
-export function setFormularioConfig(
-    config: FormularioConfig
-) {
-    formularioConfig = config;
-}
-
-export function getFormularioConfig(): FormularioConfig {
-    if (!formularioConfig) {
-        throw new Error('FormularioConfig no inicializada');
-    }
-    return formularioConfig;
-}

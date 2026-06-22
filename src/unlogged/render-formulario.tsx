@@ -80,15 +80,18 @@ import {
 } from "./bypass-formulario"
 
 import { html, HtmlTag } from "js-to-html";
-import { FormRenderer, getFormularioConfig, registrarCargarMotor } from "./render-config";
+import { FormRenderer, getFormRenderer, registrarCargarMotor } from "./render-config";
 
 // Registra la implementación de cargarMotor al cargar el módulo.
 // Esto evita la dependencia circular render-config ← bypass-formulario.
 registrarCargarMotor(async function cargarEstructuraYDatosEnMemoria() {
-    var formConfig = getFormularioConfig();
-    setEstructura((await formConfig.leerEstructura())!);
-    setDatosByPass((await formConfig.leerDatos())!);
-
+    var formRenderer = getFormRenderer();
+    const estructura = await formRenderer.leerEstructura();
+    const datos = await formRenderer.leerDatos();
+    if(estructura && datos){
+        setEstructura(estructura);
+        setDatosByPass(datos);
+    }
 });
 
 const DELAY_SCROLL_3 = 50;
@@ -1958,7 +1961,7 @@ function FormularioDespliegue(props: { forPk: ForPk }) {
     })
     // @ts-expect-error especial hay que leerlo en el parser de casilleros si esto termina quedando así
     var pantallaCompleta = formulario.especial?.pantallaCompleta;
-    const modoDM: ModoDM = getFormularioConfig().getModoDM();
+    const modoDM: ModoDM = getFormRenderer().getModoDM();
     return (
         <>
             <AppBarPrincipal
@@ -2116,7 +2119,7 @@ setDesplegarCarga((props: {
     var estructura = getEstructura();
     let cantLineasResumen = likeAr(informacionHdr).filter((informacion) => informacion.tem.carga == idCarga).array().length;
     const dispatch = useDispatch();
-    const modoDM: ModoDM = getFormularioConfig().getModoDM();
+    const modoDM: ModoDM = getFormRenderer().getModoDM();
     return <Paper className="carga" style={{ marginBottom: '10px', padding: '10px' }}>
         <div className="informacion-carga">
             <div className="carga">Área: {idCarga}</div>
@@ -2264,7 +2267,7 @@ export function AppBarPrincipal(props: AppBarPrincipalProps): JSX.Element {
                 {props.modoDM === 'capa' && !props.barraNavFormulario ? (
                     <Typography><span style={{ marginLeft: '5px' }}> MODO CAPACITACIÓN</span></Typography>
                 ) : null}
-                <UsuarioLogueadoInfo mostrarLogout={!!props.pantallaActual} />
+                <UsuarioLogueadoInfo mostrarLogout={!!props.pantallaActual} onLogout={handleLogout} />
                 {props.mostrarSincroLegacy && online ? (
                     <Button
                         color="inherit"
@@ -2313,8 +2316,8 @@ export function BotoneraNavegacion(props: {
 }
 
 export function UsuarioLogueadoInfo(props: { mostrarLogout?: boolean, onLogout?: () => void, navigationMenu?: React.ReactNode }): JSX.Element {
-    var username: string | null = getFormularioConfig().getUsernameLogueado();
-    var idper: string | null = getFormularioConfig().getIdperLogueado();
+    var username: string | null = getFormRenderer().getUsernameLogueado();
+    var idper: string | null = getFormRenderer().getIdperLogueado();
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {props.navigationMenu}
@@ -2343,11 +2346,9 @@ export function ReactPantallaSincronizacion(props: { setPantalla: (pantalla: 'hd
         setLoading(true);
         setAviso(null);
         try {
-            const formularioConfig = getFormularioConfig();
-            const datos = await formularioConfig.sincronizar(datosByPass, false);
-            const estructura = await formularioConfig.leerEstructura();
-            setEstructura(estructura!);
-            setDatosByPass(datos);
+            const formRenderer = getFormRenderer();
+            const datos = await formRenderer.sincronizar(datosByPass, false);
+            await formRenderer.cargarMotor();
             dispatch(dispatchers.RESET_OPCIONES({}));
             setAviso({ tipo: 'success', mensaje: `Sincronización exitosa. Sincro Nº ${datos.num_sincro}` });
         } catch (err) {
@@ -2363,7 +2364,7 @@ export function ReactPantallaSincronizacion(props: { setPantalla: (pantalla: 'hd
     return (
         <>
             <AppBarPrincipal
-                modoDM={getFormularioConfig().getModoDM()}
+                modoDM={getFormRenderer().getModoDM()}
                 titulo="SINCRONIZACIÓN"
                 pantallaActual="sincronizacion"
                 setPantalla={props.setPantalla}
@@ -2396,7 +2397,7 @@ export function ReactPantallaSincronizacion(props: { setPantalla: (pantalla: 'hd
                     <div style={{ display: 'flex', gap: '10px' }}>
                         <Button
                             variant="contained"
-                            color={getFormularioConfig().getModoDM() === 'capa' ? 'success' : 'primary'}
+                            color={getFormRenderer().getModoDM() === 'capa' ? 'success' : 'primary'}
                             disabled={loading || !online}
                             onClick={handleSincronizar}
                         >
@@ -2430,15 +2431,15 @@ export function ReactPantallaCambioModo(props: { setPantalla: (pantalla: 'hdr' |
 
     useEffect(() => {
         var fetchModo = async (): Promise<void> => {
-            var m: ModoDM = getFormularioConfig().getModoDM();
-            getFormularioConfig().setModoDM(m);
+            var m: ModoDM = getFormRenderer().getModoDM();
+            getFormRenderer().setModoDM(m);
             setModoDM(m);
         };
         fetchModo();
     }, []);
 
     const dispatch = useDispatch();
-    var handleConfirmarCambio = async (): Promise<void> => {
+    var handleConfirmarCambio = async (setModoDM: (modoDM: ModoDM) => void): Promise<void> => {
         if (password !== '1234') {
             alert('Contraseña incorrecta.');
             return;
@@ -2448,11 +2449,11 @@ export function ReactPantallaCambioModo(props: { setPantalla: (pantalla: 'hdr' |
         setAviso(null);
         try {
             var nuevoModo: ModoDM = modoDM === 'produc' ? 'capa' : 'produc';
-            var datos = await getFormularioConfig().sincronizar(datosByPass, true);
-            getFormularioConfig().setModoDM(nuevoModo);
+            const formRenderer = getFormRenderer();
+            await formRenderer.sincronizar(datosByPass, true);
+            formRenderer.setModoDM(nuevoModo);
             setModoDM(nuevoModo);
-            //await setDatos({ ...datos, modoAlmacenamiento: 'local' });
-            //await cargarEstructura(getFormularioConfig().getEstructura());
+            await formRenderer.cargarMotor();
             dispatch(dispatchers.RESET_OPCIONES({}));
             setAviso({ tipo: 'success', mensaje: `MODO ${nuevoModo.toUpperCase()} ACTIVADO Y DISPOSITIVO SINCRONIZADO` });
         } catch (err) {
@@ -2504,7 +2505,7 @@ export function ReactPantallaCambioModo(props: { setPantalla: (pantalla: 'hdr' |
                     <div style={{ display: 'flex', gap: '10px' }}>
                         <Button
                             variant="contained"
-                            color={modoDM === 'capa' ? 'primary' : 'success'}
+                            color={modoDM === 'produc' ? 'primary' : 'success'}
                             disabled={loading || !online}
                             onClick={() => setDialogOpen(true)}
                         >
@@ -2535,7 +2536,7 @@ export function ReactPantallaCambioModo(props: { setPantalla: (pantalla: 'hdr' |
                     <Button onClick={() => { setDialogOpen(false); setPassword(''); }} color="inherit">
                         Cancelar
                     </Button>
-                    <Button onClick={handleConfirmarCambio} color="primary" variant="contained">
+                    <Button onClick={() => { handleConfirmarCambio(setModoDM)}} color="primary" variant="contained">
                         Confirmar
                     </Button>
                 </DialogActions>
@@ -2557,7 +2558,7 @@ export const setHojaDeRutaDespliegue = (hojaDeRuta: HojaDeRutaDespliegueType) =>
 setHojaDeRutaDespliegue((props: HojaDeRutaDespliegueProps) => {
     var { cargas, num_sincro, informacionHdr, respuestas } = getDatosByPass();
     var feedbackRowValidator = getFeedbackRowValidator();
-    const modoDM: ModoDM = getFormularioConfig().getModoDM();
+    const modoDM: ModoDM = getFormRenderer().getModoDM();
     return (
         <>
             <AppBarPrincipal
@@ -2571,7 +2572,7 @@ setHojaDeRutaDespliegue((props: HojaDeRutaDespliegueProps) => {
                 <Paper style={{ marginBottom: '10px', padding: '10px' }}>
                     <div className="nombre-version">
                         <div>Instituto de Estadística y Censos de la Ciudad Autónoma de Buenos Aires - IDECBA</div>
-                        <div>versión {getFormularioConfig().getAppCacheVersion() || 'sin versión'} - sincro {num_sincro}</div>
+                        <div>versión {getFormRenderer().getAppCacheVersion() || 'sin versión'} - sincro {num_sincro}</div>
                     </div>
                 </Paper>
                 {likeAr(cargas).map((carga, idCarga, _, posicion) =>
@@ -2624,7 +2625,7 @@ export function AppDmEncu() {
             }
         />
     }
-    if (datosByPass.idper == getFormularioConfig().getIdperLogueado()) {
+    if (datosByPass.idper == getFormRenderer().getIdperLogueado()) {
         if (forPk == null) {
             if (pantallaActual === 'sincronizacion') {
                 return <ReactPantallaSincronizacion setPantalla={setPantallaActual} />
@@ -2660,7 +2661,7 @@ function PantallaSincronizacionRequerida({
     const online = useOnlineStatus();
 
     const paragraphStyles = { fontSize: "1.2rem", fontWeight: 600, padding: "5px 10px" };
-    const modoDM: ModoDM = getFormularioConfig().getModoDM();
+    const modoDM: ModoDM = getFormRenderer().getModoDM();
     return (
         <>
             <AppBarPrincipal
@@ -2706,7 +2707,7 @@ export async function desplegarFormularioActual(
     formRenderer: FormRenderer,
     opts: { forPkRaiz?: ForPkRaiz } = {}
 ) {
-    await formRenderer.cargarMotor(opts);
+    await formRenderer.cargarMotor();
     const store = await crearStoreFormulario(opts)
     try {
         await loadCSS(BOOTSTRAP_5_1_3_SRC);

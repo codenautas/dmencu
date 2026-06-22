@@ -29,7 +29,7 @@ import {
     ValuePkRaiz
 } from "./tipos";
 
-import { getFormularioConfig } from "./render-config";
+import { getFormRenderer } from "./render-config";
 import { adaptarEstructura } from "./redux-formulario";
 
 var especiales = {} as {
@@ -83,15 +83,15 @@ export function setPersistirDatosByPass(persistirDatosByPassFun: typeof persisti
 }
 
 export async function persistirDatosByPass(dbpp: DatosByPassPersistibles) {
-    await getFormularioConfig().persistirDatos(dbpp);
+    await getFormRenderer().persistirDatos(dbpp);
     datosByPass.dirty = false
     refrescarMarcaDirty();
 }
 
 export const crearEncuesta = (idCarga: IdCarga, callBack: (forPkRaiz: ForPkRaiz) => void) => {
-    const NEXT_AUTO_VALUE_PK_RAIZ = getFormularioConfig().getUltimoValorPkRaiz() || '-1';
+    const NEXT_AUTO_VALUE_PK_RAIZ = getFormRenderer().getUltimoValorPkRaiz() || '-1';
     const estructura = getEstructura();
-    getFormularioConfig().setUltimoValorPkRaiz((Number(NEXT_AUTO_VALUE_PK_RAIZ) - 1).toString());
+    getFormRenderer().setUltimoValorPkRaiz((Number(NEXT_AUTO_VALUE_PK_RAIZ) - 1).toString());
     datosByPass.respuestas[estructura.uaPpal][NEXT_AUTO_VALUE_PK_RAIZ as unknown as IdEnc] = {} as RespuestasRaiz;
     datosByPass.informacionHdr[NEXT_AUTO_VALUE_PK_RAIZ as unknown as IdEnc] = {
         ...estructura.defaultInformacionHdr,

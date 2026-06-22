@@ -19,7 +19,7 @@ import * as bestGlobals from "best-globals";
 import * as JSON4all from "json4all";
 
 import { Opcion as RowValidatorOpcion } from "row-validator";
-import { getFormularioConfig } from "./render-config";
+import { getFormRenderer } from "./render-config";
 
 var my = myOwn;
 
@@ -337,8 +337,8 @@ export function adaptarEstructura(estructuraBackend:any) {
 }
 
 export async function crearStoreFormulario(opts: { operativo?: IdOperativo, forPkRaiz?: ForPkRaiz }) {
-    var getCasoState = getFormularioConfig().getCasoState;
-    var setCasoState = getFormularioConfig().setCasoState;
+    var getCasoState = getFormRenderer().getCasoState.bind(getFormRenderer());
+    var setCasoState = getFormRenderer().setCasoState.bind(getFormRenderer());
 
     var loadState = async function loadState(): Promise<CasoState> {
         var casoState: CasoState | null = getCasoState();

@@ -404,7 +404,6 @@ export type CasoState = {
         forPk: ForPk | null // índice dentro de las unidades de análisis. Null = en hoja de ruta
         pilaForPk: ForPk[]
         modoDespliegue: ModoDespliegue
-        bienvenido: boolean
         modoDirecto: boolean
         modoBorrarRespuesta: IdVariable | null
         conCampoOpciones: boolean

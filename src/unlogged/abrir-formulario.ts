@@ -20,7 +20,7 @@ import {
     getEstructura,
     setEncolarBackup, setEstructura,
 } from "./bypass-formulario"
-import { getFormularioConfig } from "../unlogged/render-config";
+import { getFormRenderer } from "../unlogged/render-config";
 
 export const BACKUPS = 'backups';
 
@@ -44,8 +44,8 @@ async function enviarBackup() {
     var { token, tem } = backups;
     if (likeAr(tem).array().length) {
         try {
-            let modoDM: ModoDM = getFormularioConfig().getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
-            getFormularioConfig().setModoDM(modoDM);
+            let modoDM: ModoDM = getFormRenderer().getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
+            getFormRenderer().setModoDM(modoDM);
             await my.ajax.dm_backup({ token, tem, modo_dm: modoDM });
             // tengo que levantarlo de nuevo porque acá hay una interrupción del flujo
             var backupsALimpiar: Backups = my.getLocalVar(BACKUPS);
