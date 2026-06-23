@@ -345,6 +345,8 @@ export type EstructuraRowValidator = Structure<IdVariable, Valor, IdFin>;
 
 export type ModoDespliegue = 'metadatos' | 'relevamiento' | 'PDF'
 
+export type PantallaNavegacion = 'hdr' | 'sincronizacion' | 'modo';
+
 export type InfoFormulario = {
     casilleros: Formulario, // casilleros aplanados
     estructuraRowValidator: EstructuraRowValidator // estructura de variables para el RowValidator
@@ -408,6 +410,7 @@ export type CasoState = {
         modoBorrarRespuesta: IdVariable | null
         conCampoOpciones: boolean
         saltoAutomatico: boolean
+        pantallaActual: PantallaNavegacion
     }
 }
 

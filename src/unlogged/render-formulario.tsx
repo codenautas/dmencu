@@ -24,7 +24,8 @@ import {
     Texto, Estructura, InformacionHdr, ConfiguracionSorteoFormulario, ResumenEstado, IdOperativo, IdEnc, Libre,
     iterator, empty, ConfiguracionHabilitarBotonFormulario,
     PMatriz,
-    ModoDM
+    ModoDM,
+    PantallaNavegacion
 } from "./tipos";
 import {
     accion_abrir_formulario,
@@ -2241,7 +2242,7 @@ export const handleLogout = (): void => {
     // Completar en el futuro
 };
 
-export type PantallaNavegacion = 'hdr' | 'sincronizacion' | 'modo';
+export { PantallaNavegacion } from "./tipos";
 
 export type AppBarPrincipalProps = {
     titulo?: React.ReactNode;
@@ -2333,7 +2334,7 @@ export function UsuarioLogueadoInfo(props: { mostrarLogout?: boolean, onLogout?:
     );
 }
 
-export function ReactPantallaSincronizacion(props: { setPantalla: (pantalla: 'hdr' | 'sincronizacion' | 'modo') => void }): JSX.Element {
+export function PantallaSincronizacion(props: { setPantalla: (pantalla: 'hdr' | 'sincronizacion' | 'modo') => void }): JSX.Element {
     const [loading, setLoading] = useState<boolean>(false);
     const [aviso, setAviso] = useState<{ tipo: 'info' | 'success' | 'error', mensaje: string } | null>(null);
     const online: boolean = useOnlineStatus();
@@ -2342,6 +2343,11 @@ export function ReactPantallaSincronizacion(props: { setPantalla: (pantalla: 'hd
     var estructura = getEstructura();
 
     const dispatch = useDispatch();
+
+    useEffect(() => {
+        scrollToTop();
+    }, []);
+
     var handleSincronizar = async (): Promise<void> => {
         setLoading(true);
         setAviso(null);
@@ -2370,7 +2376,7 @@ export function ReactPantallaSincronizacion(props: { setPantalla: (pantalla: 'hd
                 setPantalla={props.setPantalla}
             />
             <div className="hoja-de-ruta">
-                <Paper style={{ padding: '20px', maxWidth: '600px', margin: 'auto', marginBottom: '10px' }}>
+                <Paper style={{ padding: '20px', margin: 'auto', marginBottom: '10px' }}>
                     <Typography variant="h5" gutterBottom>Sincronizar Dispositivo</Typography>
                     {datosByPass ? (
                         <div style={{ marginBottom: '20px' }}>
@@ -2403,7 +2409,11 @@ export function ReactPantallaSincronizacion(props: { setPantalla: (pantalla: 'hd
                         >
                             {loading ? 'Sincronizando...' : 'Sincronizar'}
                         </Button>
-                        <Button variant="outlined" onClick={() => props.setPantalla('hdr')}>
+                        <Button 
+                            variant="outlined"
+                            onClick={() => props.setPantalla('hdr')}
+                            disabled={loading}
+                        >
                             Volver
                         </Button>
                     </div>
@@ -2418,7 +2428,7 @@ export function ReactPantallaSincronizacion(props: { setPantalla: (pantalla: 'hd
     );
 }
 
-export function ReactPantallaCambioModo(props: { setPantalla: (pantalla: 'hdr' | 'sincronizacion' | 'modo') => void }): JSX.Element {
+export function PantallaCambioModo(props: { setPantalla: (pantalla: 'hdr' | 'sincronizacion' | 'modo') => void }): JSX.Element {
     const [loading, setLoading] = useState<boolean>(false);
     const [aviso, setAviso] = useState<{ tipo: 'info' | 'success' | 'error', mensaje: string } | null>(null);
     const [password, setPassword] = useState<string>('');
@@ -2436,6 +2446,7 @@ export function ReactPantallaCambioModo(props: { setPantalla: (pantalla: 'hdr' |
             setModoDM(m);
         };
         fetchModo();
+        scrollToTop();
     }, []);
 
     const dispatch = useDispatch();
@@ -2476,7 +2487,7 @@ export function ReactPantallaCambioModo(props: { setPantalla: (pantalla: 'hdr' |
                 setPantalla={props.setPantalla}
             />
             <div className="hoja-de-ruta">
-                <Paper style={{ padding: '20px', maxWidth: '600px', margin: 'auto', marginBottom: '10px' }}>
+                <Paper style={{ padding: '20px', margin: 'auto', marginBottom: '10px' }}>
                     <Typography variant="h5" gutterBottom>Cambiar Modo del Dispositivo</Typography>
                     <Typography style={{ marginBottom: '20px', fontWeight: 'bold' }}>
                         Modo actual: <span style={{ color: modoDM === 'capa' ? 'green' : 'blue', textTransform: 'uppercase' }}>{modoDM}</span>
@@ -2511,9 +2522,18 @@ export function ReactPantallaCambioModo(props: { setPantalla: (pantalla: 'hdr' |
                         >
                             Cambiar a modo {modoDM === 'produc' ? 'capa' : 'produc'}
                         </Button>
-                        <Button variant="outlined" onClick={() => props.setPantalla('hdr')}>
+                        <Button 
+                            variant="outlined"
+                            onClick={() => props.setPantalla('hdr')}
+                            disabled={loading}
+                        >
                             Volver
                         </Button>
+                        {!online && (
+                            <Typography color="secondary" style={{ marginTop: '10px' }}>
+                                Debe estar conectado a internet para cambiar de modo.
+                            </Typography>
+                        )}
                     </div>
                 </Paper>
             </div>
@@ -2614,9 +2634,12 @@ export function OpenedTabs() {
 }
 
 export function AppDmEncu() {
-    var { forPk } = useSelector((state: CasoState) => ({ ...state.opciones, ...state }));
-    const [pantallaActual, setPantallaActual] = useState<'hdr' | 'sincronizacion' | 'modo'>('hdr');
-    const datosByPass = getDatosByPass();
+    var { forPk, pantallaActual } = useSelector((state: CasoState) => state.opciones);
+    var dispatch = useDispatch();
+    var setPantalla = (pantalla: PantallaNavegacion) => {
+        dispatch(dispatchers.SET_OPCION({ opcion: 'pantallaActual', valor: pantalla }));
+    };
+    var datosByPass = getDatosByPass();
     if (!datosByPass || Object.keys(datosByPass).length === 0) {
         return <PantallaSincronizacionRequerida
             titulo="Dispositivo sin carga"
@@ -2628,11 +2651,11 @@ export function AppDmEncu() {
     if (datosByPass.idper == getFormRenderer().getIdperLogueado()) {
         if (forPk == null) {
             if (pantallaActual === 'sincronizacion') {
-                return <ReactPantallaSincronizacion setPantalla={setPantallaActual} />
+                return <PantallaSincronizacion setPantalla={setPantalla} />
             } else if (pantallaActual === 'modo') {
-                return <ReactPantallaCambioModo setPantalla={setPantallaActual} />
+                return <PantallaCambioModo setPantalla={setPantalla} />
             }
-            return <HojaDeRutaDespliegue setPantalla={setPantallaActual} />
+            return <HojaDeRutaDespliegue setPantalla={setPantalla} />
         } else {
             return <FormularioDespliegue forPk={forPk} />
         }

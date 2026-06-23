@@ -12,6 +12,7 @@ import {
     IdTarea,
     Estructura,
     ModoDM,
+    PantallaNavegacion,
 } from "./tipos";
 import { createReducer, createDispatchers, ActionsFrom } from "redux-typed-reducer";
 import * as likeAr from "like-ar";
@@ -350,7 +351,8 @@ export async function crearStoreFormulario(opts: { operativo?: IdOperativo, forP
                 modoDirecto: false,
                 conCampoOpciones: false,
                 saltoAutomatico: true,
-                modoBorrarRespuesta: null
+                modoBorrarRespuesta: null,
+                pantallaActual: 'hdr'
             } as CasoState["opciones"], // poner los valores por defecto más abajo
         } as CasoState;
         if (casoState) {

@@ -274,6 +274,7 @@ function inicializarState(state: CasoState) {
         modoBorrarRespuesta: null,
         conCampoOpciones: false,
         saltoAutomatico: true,
+        pantallaActual: 'hdr',
     };
     //@ts-ignore
     state.feedbackRowValidator = {};
