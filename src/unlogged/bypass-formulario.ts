@@ -53,6 +53,8 @@ type DatosByPass = DatosByPassPersistibles & {
 
 var datosByPass = {} as DatosByPass
 
+export const hayDatosByPassAlmacenados = () => datosByPass && Object.keys(datosByPass).length > 0
+
 interface Rect {
     top: number;
     left: number;

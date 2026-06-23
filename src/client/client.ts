@@ -13,6 +13,7 @@ import { BACKUPS, cargarEstructura } from "../unlogged/abrir-formulario"
 import { createLocalStorageFormRenderer } from "../unlogged/render-init";
 import { getFormRenderer } from "../unlogged/render-config";
 import { desplegarFormularioActual } from '../unlogged/render-formulario';
+import { hayDatosByPassAlmacenados } from "../unlogged/bypass-formulario";
 
 //TODO GENERALIZAR
 
