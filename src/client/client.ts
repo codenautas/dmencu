@@ -32,7 +32,6 @@ myOwn.autoSetupFunctions.push(async () => {
         OPERATIVO_DEFAULT = null;
     }
     const formRenderer = createLocalStorageFormRenderer({});
-    formRenderer.updateConfig({ sincronizar: sincronizarDatos });
     myOwn.wScreens.abrir_encuesta = {
         parameters: [
             { name: 'operativo', typeName: 'text', defaultValue: OPERATIVO_DEFAULT, references: 'operativos' },
@@ -132,19 +131,6 @@ function htmlNumero(num: number) {
     return html.span({ class: 'numero' }, '' + (num ?? ''))
 }
 
-async function sincronizarDatos(persistentes: DatosByPassPersistibles | null, cambiaModoDM: boolean) {
-    const formRenderer = getFormRenderer();
-    const modoDM: ModoDM = formRenderer.getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
-    var datos = await my.ajax.dm_sincronizar({ persistentes, modo_dm: modoDM, cambia_modo_dm: cambiaModoDM, idper_logueado_tablet: formRenderer.getIdperLogueado()});
-    var operativo = datos.operativo;
-    var estructura = await traerEstructura({ operativo })
-    formRenderer.setModoDM(modoDM);
-    await formRenderer.persistirDatos({ ...datos, modoAlmacenamiento: 'local' });
-    await formRenderer.persistirEstructura(estructura);
-    my.removeLocalVar(BACKUPS);
-    return datos;
-}
-
 
 
 var mostrarInfoLocal = async (divAvisoSincro: HTMLDivElement, titulo: string, nroSincro: number | null, mostrarLinkHdr: boolean) => {
@@ -167,119 +153,6 @@ var mostrarInfoLocal = async (divAvisoSincro: HTMLDivElement, titulo: string, nr
     }
 }
 
-const mostrarInfoModo = async (mainLayout: HTMLElement) => {
-    const formRenderer = getFormRenderer();
-    let modoDM: ModoDM = formRenderer.getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
-    formRenderer.setModoDM(modoDM);
-    //@ts-ignore seteo un atributo
-    var divAvisoModo: HTMLDivElement = html.div({ class: "info-modo", "modo-dm": modoDM }, `modo actual: ${modoDM}`).create()
-    mainLayout.appendChild(divAvisoModo)
-    return modoDM;
-}
-
-function cambiarModoDMEnLocalStorage(modoActual: ModoDM) {
-    modoActual = modoActual == 'produc' ? 'capa' : 'produc';
-    getFormRenderer().setModoDM(modoActual);
-}
-
-var procederSincroFun = async (button: HTMLButtonElement, divAvisoSincro: HTMLDivElement, cambiaModoDM: boolean) => {
-    button.disabled = true;
-    button.className = 'download-dm-button';
-    divAvisoSincro.innerHTML = '';
-    const formRenderer = getFormRenderer();
-    try {
-        var datosByPass = await formRenderer.leerDatos();
-        var datos = await formRenderer.sincronizar(datosByPass, cambiaModoDM);
-        let modoDMActual: ModoDM = formRenderer.getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
-        if (cambiaModoDM) {
-            cambiarModoDMEnLocalStorage(modoDMActual);
-        }
-        const store = await crearStoreFormulario({});
-        store.dispatch(dispatchers.RESET_OPCIONES({}));
-        await mostrarInfoLocal(divAvisoSincro, 'datos recibidos', datos.num_sincro!, true)
-    } catch (err) {
-        alertPromise(unexpected(err).message)
-        throw err
-    } finally {
-        button.disabled = false;
-        button.className = 'download-dm-button-cont';
-    }
-}
-myOwn.wScreens.sincronizar_dm = async function () {
-    var mainLayout = document.getElementById('main_layout')!;
-    const modoDM = await mostrarInfoModo(mainLayout);
-    var procederButton = html.button({ class: 'download-dm-button-cont' }, 'sincronizar').create();
-    procederButton.setAttribute("modo-dm", modoDM);
-    var divAvisoSincro: HTMLDivElement = html.div().create();
-    await mostrarInfoLocal(mainLayout as HTMLDivElement, 'información a transmitir', null, false)
-    mainLayout.appendChild(procederButton);
-    mainLayout.appendChild(divAvisoSincro);
-    procederButton.onclick = () => procederSincroFun(procederButton, divAvisoSincro, false)
-};
-
-myOwn.wScreens.cambiar_modo_dm = async function () {
-    var mainLayout = document.getElementById('main_layout')!;
-    const modoDM = await mostrarInfoModo(mainLayout);
-    var procederButton = html.button({ class: 'cambiar-modo-dm-button' }, `cambiar a modo ${modoDM == 'produc' ? 'capa' : 'produc'} ⇒`).create();
-    var divAvisoSincro: HTMLDivElement = html.div().create();
-    await mostrarInfoLocal(mainLayout as HTMLDivElement, `información modo "${modoDM}" a transmitir`, null, false)
-    mainLayout.appendChild(procederButton);
-    mainLayout.appendChild(divAvisoSincro);
-    procederButton.onclick = async () => {
-        var mainDiv = html.div().create()
-        mainDiv.appendChild(
-            html.div({}, [
-                html.div({}, [`Confirma cambio de modo "${modoDM}" a ${modoDM == 'produc' ? '"capa"' : '"produc"'}.`])
-            ]).create()
-        );
-        var inputCambiarModo = html.input({ class: 'input-cambiar-modo' }).create();
-        mainDiv.appendChild(html.div([
-            html.div(['Por favor ingrese la contraseña ', inputCambiarModo])
-        ]).create());
-        var cambiarModoValue = await confirmPromise(mainDiv, {
-            withCloseButton: false,
-            reject: false,
-            buttonsDef: [
-                { label: `cambiar`, value: true },
-                { label: `cancelar`, value: false }
-            ]
-        });
-        if (cambiarModoValue) {
-            if (inputCambiarModo.value == '1234') {
-                try {
-                    procederButton.disabled = true;
-                    await procederSincroFun(procederButton, divAvisoSincro, true);
-                    mainLayout.innerHTML = '';
-                    mainLayout.appendChild(
-                        html.div(`MODO ${getFormRenderer().getModoDM()} ACTIVADO`).create()
-                    )
-                } catch (err) {
-                    alertPromise(unexpected(err).message);
-                } finally {
-                    procederButton.disabled = false;
-                };
-            } else {
-                alertPromise('contraseña incorrecta.')
-            }
-        }
-    }
-};
-
-function inicializarState(state: CasoState) {
-    // OJO state.opciones se modifica acá y en otro lado con este mismo cartel
-    state.opciones = {
-        forPk: null,
-        pilaForPk: [],
-        modoDespliegue: "relevamiento",
-        modoDirecto: false,
-        modoBorrarRespuesta: null,
-        conCampoOpciones: false,
-        saltoAutomatico: true,
-        pantallaActual: 'hdr',
-    };
-    //@ts-ignore
-    state.feedbackRowValidator = {};
-}
 /*
 function mostrarDatosPersona(hayDatos:boolean, datos:any, divResult:HTMLDivElement){
     //TODO: EVALUAR SI CONVIENE TRAERLO DE LA BASE

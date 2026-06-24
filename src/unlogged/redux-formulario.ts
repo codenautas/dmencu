@@ -298,16 +298,6 @@ export function replaceSpecialWords(text: string, nombre: string, apellido: stri
     });
 }
 
-export function gotoSincronizar() {
-    history.replaceState(null, '', `${location.origin + location.pathname}/../menu#i=sincronizar`);
-    location.reload();
-}
-
-export function gotoCampo() {
-    history.replaceState(null, '', `${location.origin + location.pathname}/../campo`);
-    location.reload();
-}
-
 export function gotoConsistir(operativo: IdOperativo, tarea: IdTarea, enc: IdEnc) {
     // TODO-2023-03: probar con esto:
     history.replaceState(null, '', `${location.origin + location.pathname}/../menu#w=consistir_encuesta&up=${JSON4all.toUrl({ operativo, tarea, enc })}&autoproced=true`);

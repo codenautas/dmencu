@@ -47,7 +47,6 @@ import {
 } from "./bypass-formulario"
 import {
     crearStoreFormulario, dispatchers,
-    gotoSincronizar,
     gotoConsistir,
 } from "./redux-formulario";
 import { useState, useEffect } from "react";
@@ -2251,7 +2250,6 @@ export type AppBarPrincipalProps = {
     pantallaActual?: PantallaNavegacion;
     modoDM: ModoDM;
     soloLectura?: boolean;
-    mostrarSincroLegacy?: boolean;
     children?: React.ReactNode;
 };
 
@@ -2269,16 +2267,6 @@ export function AppBarPrincipal(props: AppBarPrincipalProps): JSX.Element {
                     <Typography><span style={{ marginLeft: '5px' }}> MODO CAPACITACIÓN</span></Typography>
                 ) : null}
                 <UsuarioLogueadoInfo mostrarLogout={!!props.pantallaActual} onLogout={handleLogout} />
-                {props.mostrarSincroLegacy && online ? (
-                    <Button
-                        color="inherit"
-                        variant="outlined"
-                        style={{ margin: '0 8px' }}
-                        onClick={() => gotoSincronizar()}
-                    >
-                        <ICON.SyncAlt />
-                    </Button>
-                ) : null}
             </Toolbar>
             {props.children}
         </AppBar>
@@ -2623,7 +2611,6 @@ setHojaDeRutaDespliegue((props: HojaDeRutaDespliegueProps) => {
                 modoDM={modoDM}
                 titulo="HOJA DE RUTA"
                 pantallaActual="hdr"
-                mostrarSincroLegacy={true}
             />
             <div className="hoja-de-ruta">
                 <Paper style={{ marginBottom: '10px', padding: '10px' }}>
@@ -2704,58 +2691,6 @@ export function AppDmEncu() {
             }
         />
     }
-}
-
-function PantallaSincronizacionRequerida({
-    titulo,
-    mensaje,
-}: {
-    titulo: string;
-    mensaje: React.ReactNode;
-}) {
-    const online = useOnlineStatus();
-
-    const paragraphStyles = { fontSize: "1.2rem", fontWeight: 600, padding: "5px 10px" };
-    const modoDM: ModoDM = getFormRenderer().getModoDM();
-    return (
-        <>
-            <AppBarPrincipal
-                modoDM={modoDM}
-                titulo={<Typography variant="h6">{titulo}{modoDM == 'capa' ? ' - MODO CAPACITACIÓN' : ''}</Typography>}
-            />
-            <main style={{ marginTop: '20px' }}>
-                <Paper style={{ height: '600px', padding: "15px", marginTop: 75 }}>
-                    <div>
-                        {online ?
-                            <>
-                                <Typography component="p" style={paragraphStyles}>
-                                    {mensaje}
-                                </Typography>
-                                <Typography component="p" style={paragraphStyles}>
-                                    Sincronizar dispositivo
-                                    <span style={{ padding: '5px' }}>
-                                        <Button
-                                            color={modoDM == 'capa' ? 'success' : "primary"}
-                                            variant="contained"
-                                            onClick={() => {
-                                                gotoSincronizar()
-                                            }}
-                                        >
-                                            <ICON.SyncAlt /> Sincronizar
-                                        </Button>
-                                    </span>
-                                </Typography>
-                            </>
-                            :
-                            <Typography component="p" style={paragraphStyles}>
-                                No hay conexión a internet, por favor conécte el dispositivo a una red para sincronizar una hoja de ruta.
-                            </Typography>
-                        }
-                    </div>
-                </Paper>
-            </main>
-        </>
-    );
 }
 
 export async function desplegarFormularioActual(
