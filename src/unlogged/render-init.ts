@@ -9,6 +9,8 @@ const MODO_DM_LOCALSTORAGE_KEY = 'modo_dm';
 export const GLOVAR_DATOSBYPASS = 'datosbypass';
 export const GLOVAR_MODOBYPASS = 'modobypass';
 export const GLOVAR_ESTRUCTURA = 'estructura';
+export const SETUP = 'setup';
+export const LAST_LOGGED_SETUP = 'last_logged_setup';
 
 // Configuración de almacenamiento local (localStorage/sessionStorage).
 // Es la configuración recomendada por defecto para el renderer offline.
@@ -46,11 +48,33 @@ const localStorageConfig = {
     },
 
     getIdperLogueado() {
-        return myOwn.getLocalVar('setup').idper;
+        const setup = myOwn.getLocalVar(SETUP) || {};
+        const backup = myOwn.getLocalVar(LAST_LOGGED_SETUP) || {};
+
+        if (setup.idper) {
+            // Si el setup está sano, nos aseguramos de que el backup esté actualizado
+            if (backup.idper !== setup.idper) {
+                myOwn.setLocalVar(LAST_LOGGED_SETUP, { ...backup, idper: setup.idper });
+            }
+            return setup.idper;
+        }
+
+        // Si perdimos la cookie y el setup vino vacío, usamos el backup
+        return backup.idper || null;
     },
 
     getUsernameLogueado() {
-        return myOwn.getLocalVar('setup').username;
+        const setup = myOwn.getLocalVar(SETUP) || {};
+        const backup = myOwn.getLocalVar(LAST_LOGGED_SETUP) || {};
+
+        if (setup.username) {
+            if (backup.username !== setup.username) {
+                myOwn.setLocalVar(LAST_LOGGED_SETUP, { ...backup, username: setup.username });
+            }
+            return setup.username;
+        }
+
+        return backup.username || null;
     },
 
     leerEstructura(): Promise<Estructura | null> {

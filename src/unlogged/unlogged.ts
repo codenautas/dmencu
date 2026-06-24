@@ -29,9 +29,10 @@ async function sincronizarDatos(persistentes: DatosByPassPersistibles | null, ca
     const formRenderer = getFormRenderer();
     let modoDM: ModoDM = formRenderer.getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
     formRenderer.setModoDM(modoDM);
-    var datos = await my.ajax.dm_sincronizar({ persistentes, modo_dm: modoDM, cambia_modo_dm: cambiaModoDM, idper_logueado_tablet: formRenderer.getIdperLogueado() });
+    const idper_logueado_tablet = formRenderer.getIdperLogueado();
+    var datos = await my.ajax.dm_sincronizar({ persistentes, modo_dm: modoDM, cambia_modo_dm: cambiaModoDM, idper_logueado_tablet });
     await formRenderer.persistirDatos({ ...datos, modoAlmacenamiento: 'local' });
-    var estructura = await myOwn.ajax.operativo_estructura_completa({ operativo: datos.operativo });
+    var estructura = await myOwn.ajax.operativo_estructura_completa({ operativo: datos.operativo, idper_logueado_tablet });
     await formRenderer.persistirEstructura(estructura);
     my.removeLocalVar(BACKUPS);
     return datos;

@@ -2389,7 +2389,7 @@ export function LayoutAccionDispositivo(props: LayoutAccionDispositivoProps): JS
 
                     {hayDatosByPassAlmacenados() ? (
                         <div style={{ marginBottom: '20px' }}>
-                            <Typography variant="h6">Información de dispositivo:</Typography>
+                            <Typography variant="h6">Información del dispositivo:</Typography>
                             <Typography>{cantCargas} áreas: {likeAr(datosByPass.cargas).keys().join(', ')}</Typography>
                             <Typography>{cantRespuestas} {estructura?.uaPpal || 'viviendas'}</Typography>
                         </div>
@@ -2470,6 +2470,7 @@ export function PantallaSincronizacion(props: PantallaSincronizacionProps): JSX.
             dispatch(dispatchers.RESET_OPCIONES({}));
             dispatch(dispatchers.SET_OPCION({opcion:'pantallaActual',valor:'sincronizacion'}));
         } catch (err) {
+            console.log(err)
             setAviso({ tipo: 'error', mensaje: `Error de sincronización: ${unexpected(err).message}` });
         } finally {
             setLoading(false);

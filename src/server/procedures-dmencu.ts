@@ -244,7 +244,7 @@ var simularGuardadoDeEncuestaDesdeAppEscritorio = async (context: ProcedureConte
     )
 }
 
-var getHdrQuery = function getHdrQuery(quotedCondViv: string, context: ProcedureContext, unidadAnalisisPrincipal: IdUnidadAnalisis, permiteGenerarMuestra: boolean) {
+var getHdrQuery = function getHdrQuery(quotedCondViv: string, context: ProcedureContext, unidadAnalisisPrincipal: IdUnidadAnalisis, permiteGenerarMuestra: boolean, idper:string) {
     return `
     with ${context.be.db.quoteIdent(unidadAnalisisPrincipal)} as 
         (select t.operativo, t.enc, t.json_encuesta as respuestas, t.resumen_estado as "resumenEstado", 
@@ -287,7 +287,7 @@ var getHdrQuery = function getHdrQuery(quotedCondViv: string, context: Procedure
             ${json(`
                 select a.area as carga, observaciones_hdr as observaciones, min(fecha_asignacion) as fecha, ta.recepcionista,
                 ${permiteGenerarMuestra ? `case
-                        when ta.asignado = ${context.be.db.quoteLiteral(context.user.idper)}
+                        when ta.asignado = ${context.be.db.quoteLiteral(idper)}
                         then true
                         else false
                     end`: `false`} as puede_autogenerar
@@ -296,7 +296,7 @@ var getHdrQuery = function getHdrQuery(quotedCondViv: string, context: Procedure
                 ${permiteGenerarMuestra ? `
                     union -- este union permite visualizar areas asignadas sin encuestas generadas
                     select area as carga, null as observaciones, null as fecha, recepcionista, true as puede_autogenerar
-                        from tareas_areas where asignado = ${context.be.db.quoteLiteral(context.user.idper)} and tarea = 'encu'` : ''}
+                        from tareas_areas where asignado = ${context.be.db.quoteLiteral(idper)} and tarea = 'encu'` : ''}
                 `, 'fecha')} as cargas,
             ${jsono(
         `select enc, jsonb_build_object('tem', tem, 'tarea', tarea) as otras from ${context.be.db.quoteIdent(unidadAnalisisPrincipal)}`,
@@ -307,7 +307,7 @@ var getHdrQuery = function getHdrQuery(quotedCondViv: string, context: Procedure
 `
 }
 
-export var setHdrQuery = (myFun: (quotedCondViv: string, context: ProcedureContext, unidadAnalisisPrincipal: IdUnidadAnalisis, permiteGenerarMuestra: boolean) => string) => getHdrQuery = myFun
+export var setHdrQuery = (myFun: (quotedCondViv: string, context: ProcedureContext, unidadAnalisisPrincipal: IdUnidadAnalisis, permiteGenerarMuestra: boolean, idper: string) => string) => getHdrQuery = myFun
 
 const getUAPrincipal = async (client: Client, operativo: IdOperativo) =>
     (await client.query(
@@ -440,9 +440,12 @@ export const ProceduresDmEncu: ProcedureDef[] = [
         action: 'operativo_estructura_completa',
         parameters: [
             { name: 'operativo', typeName: 'text', references: 'operativos' },
+            { name: 'idper_logueado_tablet', typeName: 'text', defaultValue:null },
+
         ],
         resultOk:'desplegarFormulario',
-        coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters<{operativo: IdOperativo}>){
+        unlogged: true, 
+        coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters<{operativo: IdOperativo, idper_logueado_tablet: string|null}>){
             var be = context.be;
             var result = await context.client.query(
                 `select casilleros_jerarquizados($1) as formularios, 
@@ -525,7 +528,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 jsonb_build_object(
                     'tarea', ${context.be.db.quoteLiteral(defaultTarea.tarea)},
                     'fecha_asignacion', null,
-                    'asignado', ${context.be.db.quoteLiteral(context.user.idper)},
+                    'asignado', ${context.be.db.quoteLiteral(parameters.idper_logueado_tablet || context.user.idper)},
                     'main_form', ${context.be.db.quoteLiteral(defaultTarea.main_form)}
                 ) as tarea
                 `,
@@ -869,7 +872,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     from operativos 
                     where operativo = $1
             `, [operativo]).fetchUniqueValue()).value;
-            var { row } = await context.client.query(getHdrQuery(condviv, context, unidad_analisis, permiteGenerarMuestra), [operativo, pk_raiz_value]).fetchUniqueRow();
+            var { row } = await context.client.query(getHdrQuery(condviv, context, unidad_analisis, permiteGenerarMuestra, context.user.idper), [operativo, pk_raiz_value]).fetchUniqueRow();
             row.informacionHdr[pk_raiz_value].tarea = {
                 tarea,
                 main_form
@@ -1037,14 +1040,14 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     from operativos 
                     where operativo = $1
             `, [OPERATIVO]).fetchUniqueValue()).value;
-            var { row } = await context.client.query(getHdrQuery(condviv, context, UA_PRINCIPAL, permiteGenerarMuestra), [OPERATIVO, idper_logueado_tablet]).fetchUniqueRow();
+            var { row } = await context.client.query(getHdrQuery(condviv, context, UA_PRINCIPAL, permiteGenerarMuestra, idper_logueado_tablet), [OPERATIVO, idper_logueado_tablet]).fetchUniqueRow();
             await context.client.query(
                 `update tareas_tem tt
                     set  estado = $4, cargado_dm=$3::text
                     where ${condviv} 
                     returning enc`
                 ,
-                [OPERATIVO, parameters.enc ? parameters.enc : context.user.idper, token, ESTADO_POSTERIOR_CARGA]
+                [OPERATIVO, idper_logueado_tablet, token, ESTADO_POSTERIOR_CARGA]
             ).fetchAll();
             return {
                 ...row,
@@ -1052,7 +1055,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 soloLectura: false,
                 token,
                 num_sincro,
-                idper: context.user.idper,
+                idper: idper_logueado_tablet,
                 cargas: likeAr.createIndex(row.cargas.map(carga => ({ ...carga, fecha: carga.fecha ? date.iso(carga.fecha).toDmy() : null, estado_carga: 'relevamiento' })), 'carga')
             };
 

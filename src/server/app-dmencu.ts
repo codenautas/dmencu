@@ -266,6 +266,15 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     res.redirect(401, baseUrl + '/login#w=path&path=/campo')
                 }
             });
+            mainApp.get(baseUrl + '/fallback-sincro', function (req, res, next) {
+                const jsonFallback = {
+                    ok: false,
+                    error: {
+                        message: 'No se logró establecer la conexion con el servidor, compruebe su conexion de internet (respuesta desde fallback)'
+                    }
+                };
+                miniTools.serveJson(jsonFallback)(req, res, next);
+            });
             var createServiceWorker = async function () {
                 var sw = await fs.readFile('node_modules/service-worker-admin/dist/service-worker-wo-manifest.js', 'utf8');
                 var manifest = await be.createResourcesForCacheJson();
@@ -504,6 +513,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 cache: [
                     "campo",
                     "offline",
+                    "fallback-sincro",
                     "lib/react.production.min.js",
                     "lib/react-dom.production.min.js",
                     "lib/material-ui.production.min.js",
@@ -586,7 +596,9 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     "lib/xlsx.full.min.js",
                     "carga-dm/web-manifest.webmanifest",
                 ],
-                fallbacks:[],
+                fallbacks:[
+                    {path: 'dm_sincronizar', fallback:'fallback-sincro'}
+                ],
                 defaultFallback: "offline"
             };
             jsonResult.cache = jsonResult.cache.concat(getManifestImageIcons(APP_NAME, sufijo).map((elem) => `menu/${elem.src}`));
