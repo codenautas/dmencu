@@ -345,7 +345,7 @@ export type EstructuraRowValidator = Structure<IdVariable, Valor, IdFin>;
 
 export type ModoDespliegue = 'metadatos' | 'relevamiento' | 'PDF'
 
-export type PantallaNavegacion = 'hdr' | 'sincronizacion' | 'modo';
+export type PantallaNavegacion = 'hdr' | 'sincronizacion' | 'sincronizacion_requerida' | 'modo';
 
 export type InfoFormulario = {
     casilleros: Formulario, // casilleros aplanados

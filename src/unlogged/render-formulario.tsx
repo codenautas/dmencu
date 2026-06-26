@@ -1902,7 +1902,7 @@ function BotonVolverEnDiv({ id }: { id: string }) {
 
 function FormularioDespliegue(props: { forPk: ForPk }) {
     var forPk = props.forPk;
-    var { formulario, modoDespliegue, modo, opciones }
+    var { formulario, modoDespliegue, opciones }
         = useSelectorVivienda(props.forPk);
     var soloLectura = getDatosByPass().soloLectura;
     const dispatch = useDispatch();
@@ -2256,35 +2256,35 @@ export type AppBarPrincipalProps = {
 export function AppBarPrincipal(props: AppBarPrincipalProps): JSX.Element {
     var color: 'secondary' | 'success' | 'primary' = props.soloLectura ? 'secondary' : props.modoDM === 'capa' ? 'success' : 'primary';
     var online = useOnlineStatus();
+    var { pantallaActual } = useSelector((state: CasoState) => state.opciones);
     return (
         <AppBar position="fixed" color={color}>
             <Toolbar>
                 {props.barraNavFormulario}
-                {props.pantallaActual && (
-                    <BotoneraNavegacion pantallaActual={props.pantallaActual}/>  
+                {pantallaActual && pantallaActual !== 'sincronizacion_requerida' && (
+                    <BotoneraNavegacion/>  
                 )} 
                 {props.modoDM === 'capa' && !props.barraNavFormulario ? (
                     <Typography><span style={{ marginLeft: '5px' }}> MODO CAPACITACIÓN</span></Typography>
                 ) : null}
-                <UsuarioLogueadoInfo mostrarLogout={!!props.pantallaActual} onLogout={handleLogout} />
+                <UsuarioLogueadoInfo mostrarLogout={!!pantallaActual} onLogout={handleLogout} />
             </Toolbar>
             {props.children}
         </AppBar>
     );
 }
 
-export function BotoneraNavegacion(props: {
-    pantallaActual: PantallaNavegacion;
-}): JSX.Element {
+export function BotoneraNavegacion(): JSX.Element {
     const dispatch = useDispatch();
+    const { pantallaActual } = useSelector((state: CasoState) => state.opciones);
     return (
         <ButtonGroup variant="outlined" size="small" color="inherit">
             <Button
                 onClick={() => 
                     dispatch(dispatchers.SET_OPCION({ opcion: 'pantallaActual', valor: 'hdr' }))
                 }
-                disabled={props.pantallaActual === 'hdr'}
-                style={props.pantallaActual === 'hdr' ? { backgroundColor: 'rgba(255,255,255,0.1)' } : undefined}
+                disabled={pantallaActual === 'hdr'}
+                style={pantallaActual === 'hdr' ? { backgroundColor: 'rgba(255,255,255,0.1)' } : undefined}
             >
                 Hoja de Ruta
             </Button>
@@ -2292,8 +2292,8 @@ export function BotoneraNavegacion(props: {
                 onClick={() =>
                     dispatch(dispatchers.SET_OPCION({ opcion: 'pantallaActual', valor: 'sincronizacion' }))
                 }
-                disabled={props.pantallaActual === 'sincronizacion'}
-                style={props.pantallaActual === 'sincronizacion' ? { backgroundColor: 'rgba(255,255,255,0.1)' } : undefined}
+                disabled={pantallaActual === 'sincronizacion'}
+                style={pantallaActual === 'sincronizacion' ? { backgroundColor: 'rgba(255,255,255,0.1)' } : undefined}
             >
                 <ICON.SyncAlt /> Sincronización
             </Button>
@@ -2301,8 +2301,8 @@ export function BotoneraNavegacion(props: {
                 onClick={() =>
                     dispatch(dispatchers.SET_OPCION({ opcion: 'pantallaActual', valor: 'modo' }))
                 }
-                disabled={props.pantallaActual === 'modo'}
-                style={props.pantallaActual === 'modo' ? { backgroundColor: 'rgba(255,255,255,0.1)' } : undefined}
+                disabled={pantallaActual === 'modo'}
+                style={pantallaActual === 'modo' ? { backgroundColor: 'rgba(255,255,255,0.1)' } : undefined}
             >
                 Cambio de Modo
             </Button>
@@ -2346,6 +2346,7 @@ export interface LayoutAccionDispositivoProps {
     onAccion: () => void;
 
     deshabilitarBotonVolver?: boolean;
+    ocultarBotonVolver?: boolean;
     mensajeVacio?: string;
 
     childrenModales?: React.ReactNode;
@@ -2367,7 +2368,6 @@ export function LayoutAccionDispositivo(props: LayoutAccionDispositivoProps): JS
             <AppBarPrincipal
                 modoDM={props.modoDM}
                 titulo={props.tituloAppBar}
-                pantallaActual={props.pantallaActual}
             />
             <div className="hoja-de-ruta">
                 <Paper style={{ padding: '20px', margin: 'auto', marginBottom: '10px' }}>
@@ -2408,15 +2408,17 @@ export function LayoutAccionDispositivo(props: LayoutAccionDispositivoProps): JS
                         >
                             {props.textoBotonAccion}
                         </Button>
-                        <Button
-                            variant="outlined"
-                            onClick={() =>
-                                dispatch(dispatchers.SET_OPCION({ opcion: 'pantallaActual', valor: 'hdr' }))
-                            }
-                            disabled={props.deshabilitarBotonVolver || props.loading}
+                        {!props.ocultarBotonVolver && (
+                            <Button
+                                variant="outlined"
+                                onClick={() =>
+                                    dispatch(dispatchers.SET_OPCION({ opcion: 'pantallaActual', valor: 'hdr' }))
+                                }
+                                disabled={props.deshabilitarBotonVolver || props.loading}
                             >
-                            Volver
-                        </Button>
+                                Volver
+                            </Button>
+                        )}
                         
                     </div>
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -2477,7 +2479,7 @@ export function PantallaSincronizacion(props: PantallaSincronizacionProps): JSX.
 
     return (
         <LayoutAccionDispositivo
-            pantallaActual="sincronizacion"
+            pantallaActual={props.requerida ? "sincronizacion_requerida" : "sincronizacion"}
             // Cambiamos un poco el título si es obligatoria o si es capa
             tituloAppBar={props.requerida ? `SINCRONIZACIÓN REQUERIDA${modoDM === 'capa' ? ' - CAPA' : ''}` : 'SINCRONIZACIÓN'}
             modoDM={modoDM}
@@ -2496,7 +2498,7 @@ export function PantallaSincronizacion(props: PantallaSincronizacionProps): JSX.
             colorBotonAccion={modoDM === 'capa' ? 'success' : 'primary'}
             onAccion={handleSincronizar}
             mensajeVacio={props.requerida ? " " : "No hay información de formularios localmente."}
-            deshabilitarBotonVolver={props.requerida}
+            ocultarBotonVolver={props.requerida}
         />
     );
 }
@@ -2536,6 +2538,7 @@ export function PantallaCambioModo(): JSX.Element {
             await formRenderer.cargarMotor();
             setAviso({ tipo: 'success', mensaje: `MODO ${nuevoModo.toUpperCase()} ACTIVADO Y DISPOSITIVO SINCRONIZADO` });
             dispatch(dispatchers.RESET_OPCIONES({}));
+            dispatch(dispatchers.SET_OPCION({ opcion: 'pantallaActual', valor: 'modo' }));
         } catch (err) {
             setAviso({ tipo: 'error', mensaje: `Error al cambiar de modo: ${unexpected(err).message}` });
         } finally {
@@ -2601,7 +2604,7 @@ export var HojaDeRutaDespliegue: HojaDeRutaDespliegueType
 
 export const setHojaDeRutaDespliegue = (hojaDeRuta: HojaDeRutaDespliegueType) => HojaDeRutaDespliegue = hojaDeRuta
 
-setHojaDeRutaDespliegue((props: HojaDeRutaDespliegueProps) => {
+setHojaDeRutaDespliegue((_props: HojaDeRutaDespliegueProps) => {
     var { cargas, num_sincro, informacionHdr, respuestas } = getDatosByPass();
     var feedbackRowValidator = getFeedbackRowValidator();
     const modoDM: ModoDM = getFormRenderer().getModoDM();
@@ -2660,36 +2663,39 @@ export function OpenedTabs() {
 export function AppDmEncu() {
     var { forPk, pantallaActual } = useSelector((state: CasoState) => state.opciones);
     var datosByPass = getDatosByPass();
-    if (!hayDatosByPassAlmacenados()) {
-        return <PantallaSincronizacion
-            requerida={true}
-            mensajeRequerido={
-                <> Debe sincronizar el dispositivo para obtener una hoja de ruta.</>
-            }
-        />
-    }
-    if (datosByPass.idper == getFormRenderer().getIdperLogueado()) {
-        if (forPk == null) {
-            if (pantallaActual === 'sincronizacion') {
-                return <PantallaSincronizacion />
-            } else if (pantallaActual === 'modo') {
-                return <PantallaCambioModo />
-            }
-            return <HojaDeRutaDespliegue />
-        } else {
-            return <FormularioDespliegue forPk={forPk} />
+    const dispatch = useDispatch();
+
+    // Determinar si la sincronización es requerida
+    const sincroRequerida = !hayDatosByPassAlmacenados()
+        || (hayDatosByPassAlmacenados() && datosByPass.idper !== getFormRenderer().getIdperLogueado());
+
+    // Si la sincro es requerida, forzar pantallaActual vía Redux
+    useEffect(() => {
+        if (sincroRequerida && pantallaActual !== 'sincronizacion_requerida') {
+            dispatch(dispatchers.SET_OPCION({ opcion: 'pantallaActual', valor: 'sincronizacion_requerida' }));
         }
+    }, [sincroRequerida, pantallaActual, dispatch]);
+
+    if (sincroRequerida) {
+        const mensaje = !hayDatosByPassAlmacenados()
+            ? <> Debe sincronizar el dispositivo para obtener una hoja de ruta.</>
+            : <> El usuario autenticado no coincide con el usuario asociado al
+                trabajo almacenado en la tablet.
+                <br />
+                Debe sincronizar antes de continuar.
+            </>;
+        return <PantallaSincronizacion requerida={true} mensajeRequerido={mensaje} />;
+    }
+
+    if (forPk == null) {
+        if (pantallaActual === 'sincronizacion') {
+            return <PantallaSincronizacion />
+        } else if (pantallaActual === 'modo') {
+            return <PantallaCambioModo />
+        }
+        return <HojaDeRutaDespliegue />
     } else {
-        return <PantallaSincronizacion
-            requerida={true}
-            mensajeRequerido={
-                <> El usuario autenticado no coincide con el usuario asociado al
-                    trabajo almacenado en la tablet.
-                    <br />
-                    Debe sincronizar antes de continuar.
-                </>
-            }
-        />
+        return <FormularioDespliegue forPk={forPk} />
     }
 }
 
