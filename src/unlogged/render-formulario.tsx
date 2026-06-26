@@ -233,7 +233,8 @@ const TextField = (props: {
 const Typography = ({ children, ...others }: {
     children: any,
     component?: string
-    variant?: 'h6'
+    variant?: 'body2'|'h5'|'h6'
+    color?: ColorValues
 } & CommonAttributes) => React.createElement(others.variant || others.component || 'div', others, children);
 
 function Grid(props: {
@@ -2247,10 +2248,10 @@ export { PantallaNavegacion } from "./tipos";
 export type AppBarPrincipalProps = {
     titulo?: React.ReactNode;
     barraNavFormulario?: React.ReactNode;
-    pantallaActual?: PantallaNavegacion;
     modoDM: ModoDM;
     soloLectura?: boolean;
     children?: React.ReactNode;
+    disabled?: boolean;
 };
 
 export function AppBarPrincipal(props: AppBarPrincipalProps): JSX.Element {
@@ -2258,11 +2259,13 @@ export function AppBarPrincipal(props: AppBarPrincipalProps): JSX.Element {
     var online = useOnlineStatus();
     var { pantallaActual } = useSelector((state: CasoState) => state.opciones);
     return (
-        <AppBar position="fixed" color={color}>
+        <AppBar position="fixed" color={color}
+            style={props.disabled ? { pointerEvents: 'none', opacity: 0.7 } : {}}
+        >
             <Toolbar>
                 {props.barraNavFormulario}
                 {pantallaActual && pantallaActual !== 'sincronizacion_requerida' && (
-                    <BotoneraNavegacion/>  
+                    <BotoneraNavegacion disabled={props.disabled}/>  
                 )} 
                 {props.modoDM === 'capa' && !props.barraNavFormulario ? (
                     <Typography><span style={{ marginLeft: '5px' }}> MODO CAPACITACIÓN</span></Typography>
@@ -2274,7 +2277,7 @@ export function AppBarPrincipal(props: AppBarPrincipalProps): JSX.Element {
     );
 }
 
-export function BotoneraNavegacion(): JSX.Element {
+export function BotoneraNavegacion(props: { disabled?: boolean }): JSX.Element {
     const dispatch = useDispatch();
     const { pantallaActual } = useSelector((state: CasoState) => state.opciones);
     return (
@@ -2283,7 +2286,7 @@ export function BotoneraNavegacion(): JSX.Element {
                 onClick={() => 
                     dispatch(dispatchers.SET_OPCION({ opcion: 'pantallaActual', valor: 'hdr' }))
                 }
-                disabled={pantallaActual === 'hdr'}
+                disabled={pantallaActual === 'hdr' || props.disabled}
                 style={pantallaActual === 'hdr' ? { backgroundColor: 'rgba(255,255,255,0.1)' } : undefined}
             >
                 Hoja de Ruta
@@ -2292,7 +2295,7 @@ export function BotoneraNavegacion(): JSX.Element {
                 onClick={() =>
                     dispatch(dispatchers.SET_OPCION({ opcion: 'pantallaActual', valor: 'sincronizacion' }))
                 }
-                disabled={pantallaActual === 'sincronizacion'}
+                disabled={pantallaActual === 'sincronizacion' || props.disabled}
                 style={pantallaActual === 'sincronizacion' ? { backgroundColor: 'rgba(255,255,255,0.1)' } : undefined}
             >
                 <ICON.SyncAlt /> Sincronización
@@ -2329,8 +2332,6 @@ export function UsuarioLogueadoInfo(props: { mostrarLogout?: boolean, onLogout?:
 }
 
 export interface LayoutAccionDispositivoProps {
-    pantallaActual: string;
-
     tituloAppBar: React.ReactNode;
     tituloPanel: string;
     headerAdicional?: React.ReactNode;
@@ -2342,7 +2343,7 @@ export interface LayoutAccionDispositivoProps {
     aviso?: { tipo: 'info' | 'success' | 'error', mensaje: string } | null;
 
     textoBotonAccion: React.ReactNode;
-    colorBotonAccion?: 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
+    colorBotonAccion?: ColorValues;
     onAccion: () => void;
 
     deshabilitarBotonVolver?: boolean;
@@ -2360,6 +2361,18 @@ export function LayoutAccionDispositivo(props: LayoutAccionDispositivoProps): JS
         scrollToTop();
     }, []);
 
+    const avisoRedux = useSelector((state: CasoState) => state.opciones.avisoPersistente);
+    const avisoAMostrar = props.aviso || avisoRedux;
+    useEffect(() => {
+        if (avisoRedux) {
+            const timer = setTimeout(() => {
+                dispatch(dispatchers.SET_OPCION({ opcion: 'avisoPersistente', valor: null }));
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+        return
+    }, [avisoRedux, dispatch]);
+
     const cantCargas: number = hayDatosByPassAlmacenados() ? likeAr(datosByPass.cargas).array().length : 0;
     const cantRespuestas: number = hayDatosByPassAlmacenados() && estructura ? likeAr(datosByPass.respuestas[estructura.uaPpal]).array().length : 0;
 
@@ -2368,10 +2381,11 @@ export function LayoutAccionDispositivo(props: LayoutAccionDispositivoProps): JS
             <AppBarPrincipal
                 modoDM={props.modoDM}
                 titulo={props.tituloAppBar}
+                disabled={props.loading}
             />
             <div className="hoja-de-ruta">
                 <Paper style={{ padding: '20px', margin: 'auto', marginBottom: '10px' }}>
-                    <Typography variant="h5" gutterBottom>{props.tituloPanel}</Typography>
+                    <Typography variant="h5">{props.tituloPanel}</Typography>
 
                     {props.headerAdicional}
 
@@ -2387,15 +2401,15 @@ export function LayoutAccionDispositivo(props: LayoutAccionDispositivoProps): JS
                         ) : null
                     )}
 
-                    {props.aviso && (
+                    {avisoAMostrar && (
                         <Paper style={{
                             padding: '10px',
                             marginBottom: '20px',
-                            backgroundColor: props.aviso.tipo === 'success' ? '#e6fffa' : props.aviso.tipo === 'error' ? '#fff5f5' : '#edf2f7',
-                            color: props.aviso.tipo === 'success' ? '#234e52' : props.aviso.tipo === 'error' ? '#9b2c2c' : '#2d3748',
-                            border: `1px solid ${props.aviso.tipo === 'success' ? '#319795' : props.aviso.tipo === 'error' ? '#e53e3e' : '#cbd5e0'}`
+                            backgroundColor: avisoAMostrar.tipo === 'success' ? '#e6fffa' : avisoAMostrar.tipo === 'error' ? '#fff5f5' : '#edf2f7',
+                            color: avisoAMostrar.tipo === 'success' ? '#234e52' : avisoAMostrar.tipo === 'error' ? '#9b2c2c' : '#2d3748',
+                            border: `1px solid ${avisoAMostrar.tipo === 'success' ? '#319795' : avisoAMostrar.tipo === 'error' ? '#e53e3e' : '#cbd5e0'}`
                         }}>
-                            <Typography>{props.aviso.mensaje}</Typography>
+                            <Typography>{avisoAMostrar.mensaje}</Typography>
                         </Paper>
                     )}
 
@@ -2416,7 +2430,7 @@ export function LayoutAccionDispositivo(props: LayoutAccionDispositivoProps): JS
                                 }
                                 disabled={props.deshabilitarBotonVolver || props.loading}
                             >
-                                Volver
+                                Volver a Hoja de Ruta
                             </Button>
                         )}
                         
@@ -2444,24 +2458,26 @@ interface PantallaSincronizacionProps {
 
 export function PantallaSincronizacion(props: PantallaSincronizacionProps): JSX.Element {
     const [loading, setLoading] = useState<boolean>(false);
-    const [aviso, setAviso] = useState<{ tipo: 'info' | 'success' | 'error', mensaje: string } | null>(null);
+    const avisoPersistente = useSelector((state: CasoState) => state.opciones.avisoPersistente);
     const online: boolean = useOnlineStatus();
     const dispatch = useDispatch();
     const modoDM = getFormRenderer().getModoDM();
 
     const handleSincronizar = async (): Promise<void> => {
         setLoading(true);
-        setAviso(null);
         try {
+            dispatch(dispatchers.SET_OPCION({ opcion: 'avisoPersistente', valor: null }));
             const formRenderer = getFormRenderer();
             const datos = await formRenderer.sincronizar(await formRenderer.leerDatos(), false);
             await formRenderer.cargarMotor();
-            setAviso({ tipo: 'success', mensaje: `Sincronización exitosa. Sincro Nº ${datos.num_sincro}` });
-            dispatch(dispatchers.RESET_OPCIONES({}));
-            dispatch(dispatchers.SET_OPCION({opcion:'pantallaActual',valor:'sincronizacion'}));
+            const mensajeExito = `Sincronización exitosa. Sincro Nº ${datos.num_sincro}`;
+            dispatch(dispatchers.SET_PANTALLA_ACTUAL({ pantalla: 'sincronizacion', avisoPersistente: { tipo: 'success', mensaje: mensajeExito } }));
         } catch (err) {
             console.log(err)
-            setAviso({ tipo: 'error', mensaje: `Error de sincronización: ${unexpected(err).message}` });
+            dispatch(dispatchers.SET_PANTALLA_ACTUAL({
+                pantalla: props.requerida ? 'sincronizacion_requerida' : 'sincronizacion',
+                avisoPersistente: { tipo: 'error', mensaje: `Error de sincronización: ${unexpected(err).message}` }
+            }));
         } finally {
             setLoading(false);
         }
@@ -2479,21 +2495,18 @@ export function PantallaSincronizacion(props: PantallaSincronizacionProps): JSX.
 
     return (
         <LayoutAccionDispositivo
-            pantallaActual={props.requerida ? "sincronizacion_requerida" : "sincronizacion"}
-            // Cambiamos un poco el título si es obligatoria o si es capa
             tituloAppBar={props.requerida ? `SINCRONIZACIÓN REQUERIDA${modoDM === 'capa' ? ' - CAPA' : ''}` : 'SINCRONIZACIÓN'}
             modoDM={modoDM}
             tituloPanel={props.requerida ? "Sincronización Requerida" : "Sincronizar Dispositivo"}
             headerAdicional={headerAdicional}
-            aviso={aviso}
+            aviso={avisoPersistente}
             loading={loading}
             online={online}
             textoBotonAccion={
-                loading ? 'Sincronizando...' :(
-                    props.requerida ?
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><ICON.SyncAlt /> Sincronizar</span> :
-                        'Sincronizar'
-                )
+                loading ? 
+                    'Sincronizando...'
+                :
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><ICON.SyncAlt /> Sincronizar</span>
             }
             colorBotonAccion={modoDM === 'capa' ? 'success' : 'primary'}
             onAccion={handleSincronizar}
@@ -2537,7 +2550,6 @@ export function PantallaCambioModo(): JSX.Element {
             setModoDM(nuevoModo);
             await formRenderer.cargarMotor();
             setAviso({ tipo: 'success', mensaje: `MODO ${nuevoModo.toUpperCase()} ACTIVADO Y DISPOSITIVO SINCRONIZADO` });
-            dispatch(dispatchers.RESET_OPCIONES({}));
             dispatch(dispatchers.SET_OPCION({ opcion: 'pantallaActual', valor: 'modo' }));
         } catch (err) {
             setAviso({ tipo: 'error', mensaje: `Error al cambiar de modo: ${unexpected(err).message}` });
@@ -2555,7 +2567,6 @@ export function PantallaCambioModo(): JSX.Element {
 
     return (
         <LayoutAccionDispositivo
-            pantallaActual="modo"
             tituloAppBar="CAMBIO DE MODO"
             modoDM={modoDM}
             tituloPanel="Cambiar Modo del Dispositivo"
@@ -2613,7 +2624,6 @@ setHojaDeRutaDespliegue((_props: HojaDeRutaDespliegueProps) => {
             <AppBarPrincipal
                 modoDM={modoDM}
                 titulo="HOJA DE RUTA"
-                pantallaActual="hdr"
             />
             <div className="hoja-de-ruta">
                 <Paper style={{ marginBottom: '10px', padding: '10px' }}>

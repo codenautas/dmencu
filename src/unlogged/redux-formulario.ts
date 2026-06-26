@@ -104,6 +104,8 @@ var reducers = {
                 ...state,
                 opciones: {
                     ...state.opciones,
+                    //si cambia de pantalla por acá reseteo el aviso por las dudas
+                    avisoPersistente: payload.opcion == 'pantallaActual' ? null : state.opciones.avisoPersistente,
                     [payload.opcion]: payload.valor
                 }
             }
@@ -114,7 +116,19 @@ var reducers = {
                 ...state,
                 opciones: {
                     ...state.opciones,
+                    avisoPersistente: null,
                     forPk: null
+                }
+            }
+        },
+    SET_PANTALLA_ACTUAL: (payload: { pantalla: PantallaNavegacion, avisoPersistente: { tipo: 'info' | 'success' | 'error', mensaje: string } | null }) =>
+        function (state: CasoState) {
+            return {
+                ...state,
+                opciones: {
+                    ...state.opciones,
+                    pantallaActual: payload.pantalla,
+                    avisoPersistente: payload.avisoPersistente || null
                 }
             }
         },
@@ -342,7 +356,8 @@ export async function crearStoreFormulario(opts: { operativo?: IdOperativo, forP
                 conCampoOpciones: false,
                 saltoAutomatico: true,
                 modoBorrarRespuesta: null,
-                pantallaActual: 'hdr'
+                pantallaActual: 'hdr',
+                avisoPersistente: null
             } as CasoState["opciones"], // poner los valores por defecto más abajo
         } as CasoState;
         if (casoState) {

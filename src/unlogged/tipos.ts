@@ -411,6 +411,7 @@ export type CasoState = {
         conCampoOpciones: boolean
         saltoAutomatico: boolean
         pantallaActual: PantallaNavegacion
+        avisoPersistente: { tipo: 'info' | 'success' | 'error', mensaje: string} | null
     }
 }
 
