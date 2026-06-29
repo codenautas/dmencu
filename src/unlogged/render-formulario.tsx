@@ -2367,7 +2367,7 @@ export function LayoutAccionDispositivo(props: LayoutAccionDispositivoProps): JS
         if (avisoRedux) {
             const timer = setTimeout(() => {
                 dispatch(dispatchers.SET_OPCION({ opcion: 'avisoPersistente', valor: null }));
-            }, 3000);
+            }, 5000);
             return () => clearTimeout(timer);
         }
         return
@@ -2384,6 +2384,7 @@ export function LayoutAccionDispositivo(props: LayoutAccionDispositivoProps): JS
                 disabled={props.loading}
             />
             <div className="hoja-de-ruta">
+                <InfoVersionSincroDespliegue/>
                 <Paper style={{ padding: '20px', margin: 'auto', marginBottom: '10px' }}>
                     <Typography variant="h5">{props.tituloPanel}</Typography>
 
@@ -2606,6 +2607,22 @@ export function PantallaCambioModo(): JSX.Element {
     );
 }
 
+interface InfoVersionSincroDespliegueProps {
+}
+
+export function InfoVersionSincroDespliegue(_props: InfoVersionSincroDespliegueProps): JSX.Element {
+    const version = getFormRenderer().getAppCacheVersion();
+    const { num_sincro } = getDatosByPass();
+    return (
+        <Paper style={{ marginBottom: '10px', padding: '10px' }}>
+            <div className="nombre-version">
+                <div>Instituto de Estadística y Censos de la Ciudad Autónoma de Buenos Aires - IDECBA</div>
+                <div>versión {version} - {num_sincro ? `sincro: ${num_sincro.toString()}` : 'sin sincronizar'}</div>
+            </div>
+        </Paper>
+    );
+}
+
 export type HojaDeRutaDespliegueProps = {
 };
 
@@ -2626,12 +2643,7 @@ setHojaDeRutaDespliegue((_props: HojaDeRutaDespliegueProps) => {
                 titulo="HOJA DE RUTA"
             />
             <div className="hoja-de-ruta">
-                <Paper style={{ marginBottom: '10px', padding: '10px' }}>
-                    <div className="nombre-version">
-                        <div>Instituto de Estadística y Censos de la Ciudad Autónoma de Buenos Aires - IDECBA</div>
-                        <div>versión {getFormRenderer().getAppCacheVersion() || 'sin versión'} - sincro {num_sincro}</div>
-                    </div>
-                </Paper>
+                <InfoVersionSincroDespliegue/>
                 {likeAr(cargas).map((carga, idCarga, _, posicion) =>
                     <DesplegarCarga key={idCarga} carga={carga} idCarga={idCarga} posicion={posicion} informacionHdr={informacionHdr} feedbackRowValidator={feedbackRowValidator} respuestas={respuestas} />
                 ).array()}
