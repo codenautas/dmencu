@@ -28,7 +28,9 @@ export interface FormularioConfig {
         estructura: Estructura
     ): Promise<void>;
 
-    sincronizar(persistentes: DatosByPassPersistibles | null, cambiaModoDM: boolean): Promise<DatosByPassPersistibles>;
+    onSincronizar(persistentes: DatosByPassPersistibles | null, cambiaModoDM: boolean): Promise<DatosByPassPersistibles>;
+    
+    onLogout(): Promise<void>;
 }
 
 // Función de carga en memoria, registrada desde render-formulario para evitar
@@ -120,8 +122,12 @@ export class FormRenderer implements FormularioConfig {
         return this.config.persistirEstructura(estructura);
     }
 
-    sincronizar(persistentes: DatosByPassPersistibles | null, cambiaModoDM: boolean): Promise<DatosByPassPersistibles> {
-        return this.config.sincronizar(persistentes, cambiaModoDM);
+    onSincronizar(persistentes: DatosByPassPersistibles | null, cambiaModoDM: boolean): Promise<DatosByPassPersistibles> {
+        return this.config.onSincronizar(persistentes, cambiaModoDM);
+    }
+
+    onLogout(): Promise<void> {
+        return this.config.onLogout();
     }
 }
 
@@ -184,7 +190,10 @@ const defaultThrowConfig: FormularioConfig = {
     persistirEstructura(_estructura: Estructura): Promise<void> {
         throw new Error('persistirEstructura no implementado');
     },
-    sincronizar(_persistentes: DatosByPassPersistibles | null, _cambiaModoDM: boolean): Promise<DatosByPassPersistibles> {
-        throw new Error('sincronizar no implementado. Debe proveerse una implementación al llamar createFormRenderer({ sincronizar: ... })');
+    onSincronizar(_persistentes: DatosByPassPersistibles | null, _cambiaModoDM: boolean): Promise<DatosByPassPersistibles> {
+        throw new Error('onSincronizar no implementado. Debe proveerse una implementación al llamar createFormRenderer({ sincronizar: ... })');
+    },
+    onLogout(): Promise<void> {
+        throw new Error('onLogout no implementado');
     },
 };

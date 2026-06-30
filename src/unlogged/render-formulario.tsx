@@ -2238,9 +2238,8 @@ export function DesplegarTem(props: { tem: TEM }) {
     </div>
 }
 
-export const handleLogout = (): void => {
-    alert("Cerrando sesión...");
-    // Completar en el futuro
+export const handleLogout = async (): Promise<void> => {
+    await getFormRenderer().onLogout();
 };
 
 export { PantallaNavegacion } from "./tipos";
@@ -2469,7 +2468,7 @@ export function PantallaSincronizacion(props: PantallaSincronizacionProps): JSX.
         try {
             dispatch(dispatchers.SET_OPCION({ opcion: 'avisoPersistente', valor: null }));
             const formRenderer = getFormRenderer();
-            const datos = await formRenderer.sincronizar(await formRenderer.leerDatos(), false);
+            const datos = await formRenderer.onSincronizar(await formRenderer.leerDatos(), false);
             await formRenderer.cargarMotor();
             const mensajeExito = `Sincronización exitosa. Sincro Nº ${datos.num_sincro}`;
             dispatch(dispatchers.SET_PANTALLA_ACTUAL({ pantalla: 'sincronizacion', avisoPersistente: { tipo: 'success', mensaje: mensajeExito } }));
@@ -2546,7 +2545,7 @@ export function PantallaCambioModo(): JSX.Element {
         try {
             const nuevoModo: ModoDM = modoDM === 'produc' ? 'capa' : 'produc';
             const formRenderer = getFormRenderer();
-            await formRenderer.sincronizar(await formRenderer.leerDatos(), true);
+            await formRenderer.onSincronizar(await formRenderer.leerDatos(), true);
             formRenderer.setModoDM(nuevoModo);
             setModoDM(nuevoModo);
             await formRenderer.cargarMotor();

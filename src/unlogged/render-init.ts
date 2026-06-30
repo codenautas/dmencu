@@ -1,3 +1,4 @@
+import { gotoConsistir } from "./redux-formulario";
 import { createFormRenderer, FormRenderer } from "./render-config";
 import { DatosByPassPersistibles, ModoDM, Estructura, ModoAlmacenamiento } from "./tipos";
 
@@ -105,7 +106,15 @@ const localStorageConfig = {
         }
         myOwn.setSessionVar(GLOVAR_MODOBYPASS, modoAlmacenamiento);
         return Promise.resolve();
+    },
+    onLogout(): Promise<void>{
+        setTimeout(()=>{
+            history.replaceState(null, '', `${location.origin + location.pathname}/../logout`);
+            location.reload();
+        },100)
+        return Promise.resolve();
     }
+    
 };
 
 /**

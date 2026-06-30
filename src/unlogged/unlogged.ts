@@ -96,7 +96,7 @@ window.addEventListener('load', async function(){
             </div>
         `;
         if(location.pathname.endsWith(`/${URL_DM}`)){
-            const formRenderer = createLocalStorageFormRenderer({ sincronizar: sincronizarDatos });
+            const formRenderer = createLocalStorageFormRenderer({ onSincronizar: sincronizarDatos });
             const startApp = async () => {
                 try {
                     var modoDmDefecto: ModoDM = formRenderer.getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
