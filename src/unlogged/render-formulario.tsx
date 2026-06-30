@@ -2259,17 +2259,17 @@ export function AppBarPrincipal(props: AppBarPrincipalProps): JSX.Element {
     var { pantallaActual } = useSelector((state: CasoState) => state.opciones);
     return (
         <AppBar position="fixed" color={color}
-            style={props.disabled ? { pointerEvents: 'none', opacity: 0.7 } : {}}
+            style={props.disabled ? { pointerEvents: 'none', opacity: 0.9 } : {}}
         >
             <Toolbar>
                 {props.barraNavFormulario}
-                {pantallaActual && pantallaActual !== 'sincronizacion_requerida' && (
+                {pantallaActual && pantallaActual !== 'sincronizacion_requerida' && !props.barraNavFormulario ? (
                     <BotoneraNavegacion disabled={props.disabled}/>  
-                )} 
+                ) : null} 
                 {props.modoDM === 'capa' && !props.barraNavFormulario ? (
                     <Typography><span style={{ marginLeft: '5px' }}> MODO CAPACITACIÓN</span></Typography>
                 ) : null}
-                <UsuarioLogueadoInfo mostrarLogout={!!pantallaActual} onLogout={handleLogout} />
+                <UsuarioLogueadoInfo mostrarLogout={!!pantallaActual && !props.barraNavFormulario} onLogout={handleLogout} />
             </Toolbar>
             {props.children}
         </AppBar>
@@ -2315,6 +2315,27 @@ export function BotoneraNavegacion(props: { disabled?: boolean }): JSX.Element {
 export function UsuarioLogueadoInfo(props: { mostrarLogout?: boolean, onLogout?: () => void, navigationMenu?: React.ReactNode }): JSX.Element {
     var username: string | null = getFormRenderer().getUsernameLogueado();
     var idper: string | null = getFormRenderer().getIdperLogueado();
+    var dispatch = useDispatch();
+    var [openDialog, setOpenDialog] = useState<boolean>(false);
+
+    var handleLogoutClick = (): void => {
+        setOpenDialog(true);
+    };
+
+    var handleClose = (): void => {
+        setOpenDialog(false);
+    };
+
+    var handleConfirmLogout = async (): Promise<void> => {
+        setOpenDialog(false);
+        if (props.onLogout) {
+            await props.onLogout();
+        }
+    };
+
+    var datos = getDatosByPass();
+    var tieneEncuestas: boolean = !!(datos && datos.informacionHdr && Object.keys(datos.informacionHdr).length > 0);
+
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {props.navigationMenu}
@@ -2322,10 +2343,43 @@ export function UsuarioLogueadoInfo(props: { mostrarLogout?: boolean, onLogout?:
                 {idper} - {username}
             </Typography>
             {props.mostrarLogout ? (
-                <Button color="inherit" onClick={props.onLogout} style={{ minWidth: 'auto', padding: '6px' }}>
+                <Button color="inherit" onClick={handleLogoutClick} style={{ minWidth: 'auto', padding: '6px' }}>
                     <ICON.ExitToApp />
                 </Button>
             ) : null}
+
+            <Dialog open={openDialog} onClose={handleClose}>
+                <DialogTitle>Cerrar Sesión</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        {tieneEncuestas
+                            ? "Hay encuestas cargadas en el dispositivo. Si sale de la aplicación sin sincronizar podría perder el trabajo realizado."
+                            : "¿Está seguro de que desea salir? Para volver a ingresar deberá iniciar sesión nuevamente."
+                        }
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    {tieneEncuestas ? (
+                        <>
+                            <Button onClick={handleClose} color="primary" variant="contained">
+                                Continuar relevando
+                            </Button>
+                            <Button onClick={handleConfirmLogout} color="secondary">
+                                Salir de todos modos
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                            <Button onClick={handleClose} color="inherit">
+                                Cancelar
+                            </Button>
+                            <Button onClick={handleConfirmLogout} color="primary" variant="contained">
+                                Salir
+                            </Button>
+                        </>
+                    )}
+                </DialogActions>
+            </Dialog>
         </div>
     );
 }
@@ -2522,6 +2576,7 @@ export function PantallaCambioModo(): JSX.Element {
     const [password, setPassword] = useState<string>('');
     const [dialogOpen, setDialogOpen] = useState<boolean>(false);
     const [modoDM, setModoDM] = useState<ModoDM>('produc');
+    const [errorPassword, setErrorPassword] = useState<string | null>(null);
     const online: boolean = useOnlineStatus();
     const dispatch = useDispatch();
 
@@ -2536,9 +2591,10 @@ export function PantallaCambioModo(): JSX.Element {
 
     const handleConfirmarCambio = async (): Promise<void> => {
         if (password !== '1234') {
-            alert('Contraseña incorrecta.');
+            setErrorPassword('Contraseña incorrecta.');
             return;
         }
+        setErrorPassword(null);
         setDialogOpen(false);
         setLoading(true);
         setAviso(null);
@@ -2576,24 +2632,34 @@ export function PantallaCambioModo(): JSX.Element {
             online={online}
             textoBotonAccion={`Cambiar a modo ${modoDM === 'produc' ? 'capa' : 'produc'}`}
             colorBotonAccion={modoDM === 'produc' ? 'primary' : 'success'}
-            onAccion={() => setDialogOpen(true)}
+            onAccion={() => { setErrorPassword(null); setDialogOpen(true); }}
             childrenModales={
-                <Dialog open={dialogOpen} onClose={() => { setDialogOpen(false); setPassword(''); }}>
+                <Dialog open={dialogOpen} onClose={() => { setDialogOpen(false); setPassword(''); setErrorPassword(null); }}>
                     <DialogTitle>Confirmar cambio de modo</DialogTitle>
                     <DialogContent>
                         <DialogContentText style={{ marginBottom: '15px' }}>
                             Confirma cambio de modo "{modoDM}" a "{modoDM === 'produc' ? 'capa' : 'produc'}". Se sincronizará el dispositivo.
                         </DialogContentText>
+                        {errorPassword && (
+                            <Typography style={{ color: '#d32f2f', marginBottom: '15px', fontWeight: 'bold' }}>
+                                {errorPassword}
+                            </Typography>
+                        )}
                         <Typography variant="body2" style={{ marginBottom: '10px' }}>Por favor ingrese la contraseña:</Typography>
                         <input
                             type="password"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                setPassword(e.target.value);
+                                if (errorPassword) {
+                                    setErrorPassword(null);
+                                }
+                            }}
                             style={{ width: '100%', padding: '10px', fontSize: '16px' }}
                         />
                     </DialogContent>
                     <DialogActions>
-                        <Button onClick={() => { setDialogOpen(false); setPassword(''); }} color="inherit">
+                        <Button onClick={() => { setDialogOpen(false); setPassword(''); setErrorPassword(null); }} color="inherit">
                             Cancelar
                         </Button>
                         <Button onClick={handleConfirmarCambio} color="primary" variant="contained">
