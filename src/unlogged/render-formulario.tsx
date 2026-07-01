@@ -2720,6 +2720,9 @@ export var HojaDeRutaDespliegue: HojaDeRutaDespliegueType
 export const setHojaDeRutaDespliegue = (hojaDeRuta: HojaDeRutaDespliegueType) => HojaDeRutaDespliegue = hojaDeRuta
 
 setHojaDeRutaDespliegue((_props: HojaDeRutaDespliegueProps) => {
+    useEffect(() => {
+        scrollToTop();
+    }, []);
     var { cargas, num_sincro, informacionHdr, respuestas } = getDatosByPass();
     var feedbackRowValidator = getFeedbackRowValidator();
     const modoDM: ModoDM = getFormRenderer().getModoDM();
