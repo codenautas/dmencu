@@ -25,7 +25,6 @@ import {
     iterator, empty, ConfiguracionHabilitarBotonFormulario,
     PMatriz,
     ModoDM,
-    PantallaNavegacion
 } from "./tipos";
 import {
     accion_abrir_formulario,
@@ -59,6 +58,9 @@ import {
     AppBar, ButtonGroup, Checkbox,
     Dialog, DialogActions, DialogContent, DialogContentText,
     DialogTitle, Divider, Fab,
+    Icon,
+    ListItemIcon,
+    ListItemText,
     Menu, MenuItem, Paper, Popover,
     Table, TableBody, TableCell, TableHead, TableRow, Toolbar
 } from "@mui/material";
@@ -261,6 +263,42 @@ function Grid(props: {
         } : {
         }}
     >{children}</div>
+}
+
+interface FastSetupProps {
+    disabled?: boolean;
+    children: React.ReactNode;
+}
+
+export function FastSetup(props: FastSetupProps): JSX.Element {
+    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+    const [open, setOpen] = React.useState(false);
+
+    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setAnchorEl(event.currentTarget);
+        setOpen((prev) => !prev);
+    };
+
+    const handleClose = () => {
+        setOpen(false);
+    };
+
+    return (
+        <>
+            <Button onClick={handleClick} disabled={props.disabled}>
+                <ICON.Settings />
+            </Button>
+
+            <Menu
+                open={open}
+                anchorEl={anchorEl}
+                onClose={handleClose}
+                onClick={handleClose}
+            >
+                {props.children}
+            </Menu>
+        </>
+    );
 }
 
 var p12 = 'p12' as IdVariable;
@@ -1705,44 +1743,6 @@ function MenuLetra(props: { tamannio: number, denominacion: string }) {
     >letra {props.denominacion}</MenuItem>
 }
 
-function FastSetup() {
-    const [anchorEl, setAnchorEl] = React.useState(null);
-    const [open, setOpen] = React.useState(false);
-    const handleClick = (event: any) => {
-        setAnchorEl(event.currentTarget);
-        setOpen((prev) => !prev);
-    };
-    const dispatch = useDispatch();
-    const cambiar = (modoDespliegue: ModoDespliegue) => {
-        dispatch(dispatchers.MODO_DESPLIEGUE({ modoDespliegue }));
-        setOpen(false)
-    }
-    const opciones = useSelector((state: CasoState) => state.opciones)
-    return <>
-        <Button onClick={handleClick}>
-            <ICON.Settings />
-        </Button>
-        <Menu open={open} anchorEl={anchorEl} onClose={() => setOpen(false)}>
-            <MenuItem onClick={() => cambiar("relevamiento")}>normal</MenuItem>
-            <MenuItem onClick={() => cambiar("PDF")}>PDF para relevamiento</MenuItem>
-            <MenuItem onClick={() => cambiar("metadatos")}>revisar metadatos</MenuItem>
-            <Divider />
-            <MenuLetra tamannio={12} denominacion="muy chica" />
-            <MenuLetra tamannio={14} denominacion="chica" />
-            <MenuLetra tamannio={16} denominacion="normal" />
-            <MenuLetra tamannio={19} denominacion="grande" />
-            <MenuLetra tamannio={22} denominacion="enorme" />
-            <Divider />
-            <MenuItem><label><Checkbox checked={opciones.conCampoOpciones} onChange={
-                () => dispatch(dispatchers.SET_OPCION({ opcion: 'conCampoOpciones', valor: !opciones.conCampoOpciones }))
-            } inputProps={{ 'aria-label': 'primary checkbox' }} />campo opciones</label></MenuItem>
-            <MenuItem><label><Checkbox checked={opciones.saltoAutomatico} onChange={
-                () => dispatch(dispatchers.SET_OPCION({ opcion: 'saltoAutomatico', valor: !opciones.saltoAutomatico }))
-            } inputProps={{ 'aria-label': 'primary checkbox' }} />salto automático</label></MenuItem>
-        </Menu>
-    </>;
-}
-
 function BarraDeNavegacion(props: { forPk: ForPk, soloLectura: boolean, modoDirecto: boolean }) {
     const dispatch = useDispatch();
     const forPk = props.forPk;
@@ -1764,7 +1764,7 @@ function BarraDeNavegacion(props: { forPk: ForPk, soloLectura: boolean, modoDire
     }
     var botonesFormulario = [];
     if (!opciones.modoDirecto) {
-        botonesFormulario.push({ que: 'hdr', abr: 'HdR', id: ID_BOTON_VOLVER_HDR, label: 'hoja de ruta', retroceso: 0 })
+        botonesFormulario.push({ que: 'hdr', abr: 'HdR', id: ID_BOTON_VOLVER_HDR, label: 'Hoja de Ruta', retroceso: 0 })
     }
     opciones.pilaForPk.forEach((forPk, i) =>
         botonesFormulario.push({ que: 'volver', abr: forPk.formulario.replace(/^F:/, ''), label: forPk.formulario, retroceso: opciones.pilaForPk.length - i })
@@ -1782,6 +1782,9 @@ function BarraDeNavegacion(props: { forPk: ForPk, soloLectura: boolean, modoDire
             elemento.setAttribute('resumen-estado', calcularResumenVivienda(forPk, feedbackAll, r).resumenEstado);
         }
     })
+    const cambiar = (modoDespliegue: ModoDespliegue) => {
+        dispatch(dispatchers.MODO_DESPLIEGUE({ modoDespliegue }));
+    }
     return <>
         <ButtonGroup key="formularios" className="barra-navegacion" solo-lectura={props.soloLectura ? 'si' : 'no'} >
             {botonesFormulario.map((b, i) =>
@@ -1799,6 +1802,7 @@ function BarraDeNavegacion(props: { forPk: ForPk, soloLectura: boolean, modoDire
                     }}
                 >
                     <span className="abr">{b.abr}</span>
+                    {b.que == 'hdr' ? <ICON.Assignment /> : null}
                     <span className="label">{b.label}</span>
                 </Button>
             )}
@@ -1876,7 +1880,24 @@ function BarraDeNavegacion(props: { forPk: ForPk, soloLectura: boolean, modoDire
                 <div key={k}><span>{k}</span><span>{v}</span></div>
             ).array()}
         </Typography>
-        <FastSetup />
+        <FastSetup>
+            <MenuItem onClick={() => cambiar("relevamiento")}>normal</MenuItem>
+            <MenuItem onClick={() => cambiar("PDF")}>PDF para relevamiento</MenuItem>
+            <MenuItem onClick={() => cambiar("metadatos")}>revisar metadatos</MenuItem>
+            <Divider />
+            <MenuLetra tamannio={12} denominacion="muy chica" />
+            <MenuLetra tamannio={14} denominacion="chica" />
+            <MenuLetra tamannio={16} denominacion="normal" />
+            <MenuLetra tamannio={19} denominacion="grande" />
+            <MenuLetra tamannio={22} denominacion="enorme" />
+            <Divider />
+            <MenuItem><label><Checkbox checked={opciones.conCampoOpciones} onChange={
+                () => dispatch(dispatchers.SET_OPCION({ opcion: 'conCampoOpciones', valor: !opciones.conCampoOpciones }))
+            } inputProps={{ 'aria-label': 'primary checkbox' }} />campo opciones</label></MenuItem>
+            <MenuItem><label><Checkbox checked={opciones.saltoAutomatico} onChange={
+                () => dispatch(dispatchers.SET_OPCION({ opcion: 'saltoAutomatico', valor: !opciones.saltoAutomatico }))
+            } inputProps={{ 'aria-label': 'primary checkbox' }} />salto automático</label></MenuItem>
+        </FastSetup>
     </>
 }
 
@@ -2242,8 +2263,6 @@ export const handleLogout = async (): Promise<void> => {
     await getFormRenderer().onLogout();
 };
 
-export { PantallaNavegacion } from "./tipos";
-
 export type AppBarPrincipalProps = {
     titulo?: React.ReactNode;
     barraNavFormulario?: React.ReactNode;
@@ -2255,21 +2274,21 @@ export type AppBarPrincipalProps = {
 
 export function AppBarPrincipal(props: AppBarPrincipalProps): JSX.Element {
     var color: 'secondary' | 'success' | 'primary' = props.soloLectura ? 'secondary' : props.modoDM === 'capa' ? 'success' : 'primary';
-    var online = useOnlineStatus();
-    var { pantallaActual } = useSelector((state: CasoState) => state.opciones);
+    var { forPk, pantallaActual } = useSelector((state: CasoState) => state.opciones);
+    const mostrarBotoneraNavegacion = pantallaActual && pantallaActual !== 'sincronizacion_requerida' && !props.barraNavFormulario;
     return (
         <AppBar position="fixed" color={color}
             style={props.disabled ? { pointerEvents: 'none', opacity: 0.9 } : {}}
         >
             <Toolbar>
                 {props.barraNavFormulario}
-                {pantallaActual && pantallaActual !== 'sincronizacion_requerida' && !props.barraNavFormulario ? (
+                {mostrarBotoneraNavegacion ? (
                     <BotoneraNavegacion disabled={props.disabled}/>  
                 ) : null} 
                 {props.modoDM === 'capa' && !props.barraNavFormulario ? (
                     <Typography><span style={{ marginLeft: '5px' }}> MODO CAPACITACIÓN</span></Typography>
                 ) : null}
-                <UsuarioLogueadoInfo mostrarLogout={!!pantallaActual && !props.barraNavFormulario} onLogout={handleLogout} />
+                <UsuarioLogueadoYConfig mostrarSetup={!forPk} mostrarLogout={!!pantallaActual && !props.barraNavFormulario} onLogout={handleLogout} />
             </Toolbar>
             {props.children}
         </AppBar>
@@ -2288,8 +2307,9 @@ export function BotoneraNavegacion(props: { disabled?: boolean }): JSX.Element {
                 disabled={pantallaActual === 'hdr' || props.disabled}
                 style={pantallaActual === 'hdr' ? { backgroundColor: 'rgba(255,255,255,0.1)' } : undefined}
             >
-                Hoja de Ruta
+                <ICON.Assignment /> Hoja de Ruta
             </Button>
+            
             <Button
                 onClick={() =>
                     dispatch(dispatchers.SET_OPCION({ opcion: 'pantallaActual', valor: 'sincronizacion' }))
@@ -2297,24 +2317,22 @@ export function BotoneraNavegacion(props: { disabled?: boolean }): JSX.Element {
                 disabled={pantallaActual === 'sincronizacion' || props.disabled}
                 style={pantallaActual === 'sincronizacion' ? { backgroundColor: 'rgba(255,255,255,0.1)' } : undefined}
             >
-                <ICON.SyncAlt /> Sincronización
-            </Button>
-            <Button
-                onClick={() =>
-                    dispatch(dispatchers.SET_OPCION({ opcion: 'pantallaActual', valor: 'modo' }))
-                }
-                disabled={pantallaActual === 'modo'}
-                style={pantallaActual === 'modo' ? { backgroundColor: 'rgba(255,255,255,0.1)' } : undefined}
-            >
-                Cambio de Modo
+                <ICON.CloudSync /> Sincronización
             </Button>
         </ButtonGroup>
     );
 }
 
-export function UsuarioLogueadoInfo(props: { mostrarLogout?: boolean, onLogout?: () => void, navigationMenu?: React.ReactNode }): JSX.Element {
+export function UsuarioLogueadoYConfig(props: { 
+    mostrarSetup?: boolean,
+    mostrarLogout?: boolean,
+    onLogout?: () => void, 
+    navigationMenu?: React.ReactNode 
+}): JSX.Element {
     var username: string | null = getFormRenderer().getUsernameLogueado();
     var idper: string | null = getFormRenderer().getIdperLogueado();
+    var { pantallaActual } = useSelector((state: CasoState) => state.opciones);
+
     var dispatch = useDispatch();
     var [openDialog, setOpenDialog] = useState<boolean>(false);
 
@@ -2335,13 +2353,31 @@ export function UsuarioLogueadoInfo(props: { mostrarLogout?: boolean, onLogout?:
 
     var datos = getDatosByPass();
     var tieneEncuestas: boolean = !!(datos && datos.informacionHdr && Object.keys(datos.informacionHdr).length > 0);
-
+    const modoDM = getFormRenderer().getModoDM();
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {props.navigationMenu}
-            <Typography variant="body2" style={{ color: 'inherit', fontWeight: 'bold' }}>
+            <Typography variant="body2" style={{ color: 'inherit', fontWeight: 'bold', marginLeft:'5px' }}>
                 {idper} - {username}
             </Typography>
+            {props.mostrarSetup ? (
+                <FastSetup>
+                    <MenuItem 
+                        onClick={() => 
+                            dispatch(dispatchers.SET_OPCION({ opcion: 'pantallaActual', valor: 'modo' }))}
+                    >
+                        <ListItemIcon>{modoDM === 'capa' ? <ICON.BusinessCenter /> : <ICON.SportsEsports />} </ListItemIcon>
+                        <ListItemText>Cambio a modo {modoDM === 'capa' ? 'Producción' : 'Capacitación'}</ListItemText>
+                    </MenuItem>
+                    <MenuItem 
+                        onClick={() => 
+                            dispatch(dispatchers.RESET_OPCIONES({}))}
+                    >
+                        <ListItemIcon><ICON.Refresh/></ListItemIcon>
+                        <ListItemText>Reset opciones</ListItemText>
+                    </MenuItem>
+                </FastSetup>
+            ) : null}
             {props.mostrarLogout ? (
                 <Button color="inherit" onClick={handleLogoutClick} style={{ minWidth: 'auto', padding: '6px' }}>
                     <ICON.ExitToApp />
@@ -2400,7 +2436,6 @@ export interface LayoutAccionDispositivoProps {
     onAccion: () => void;
 
     deshabilitarBotonVolver?: boolean;
-    ocultarBotonVolver?: boolean;
     mensajeVacio?: string;
 
     childrenModales?: React.ReactNode;
@@ -2475,19 +2510,7 @@ export function LayoutAccionDispositivo(props: LayoutAccionDispositivoProps): JS
                             onClick={props.onAccion}
                         >
                             {props.textoBotonAccion}
-                        </Button>
-                        {!props.ocultarBotonVolver && (
-                            <Button
-                                variant="outlined"
-                                onClick={() =>
-                                    dispatch(dispatchers.SET_OPCION({ opcion: 'pantallaActual', valor: 'hdr' }))
-                                }
-                                disabled={props.deshabilitarBotonVolver || props.loading}
-                            >
-                                Volver a Hoja de Ruta
-                            </Button>
-                        )}
-                        
+                        </Button>                        
                     </div>
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                         {!props.online && (
@@ -2560,12 +2583,11 @@ export function PantallaSincronizacion(props: PantallaSincronizacionProps): JSX.
                 loading ? 
                     'Sincronizando...'
                 :
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><ICON.SyncAlt /> Sincronizar</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><ICON.CloudSync /> Sincronizar</span>
             }
             colorBotonAccion={modoDM === 'capa' ? 'success' : 'primary'}
             onAccion={handleSincronizar}
             mensajeVacio={props.requerida ? " " : "No hay información de formularios localmente."}
-            ocultarBotonVolver={props.requerida}
         />
     );
 }

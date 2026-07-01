@@ -55,7 +55,7 @@ myOwn.autoSetupFunctions.push(async () => {
             });
             var estructura = await formRenderer.leerEstructura();
             var carga = await formRenderer.leerDatos();
-            if (!estructura || (estructura.timestamp ?? 0) < carga.timestampEstructura! || estructura.operativo != operativo || my.config.config.devel) {
+            if (!estructura || (estructura.timestamp ?? 0) < carga?.timestampEstructura! || estructura.operativo != operativo || my.config.config.devel) {
                 estructura = await traerEstructura({ operativo })
                 await formRenderer.persistirEstructura(estructura);
             }
@@ -64,7 +64,7 @@ myOwn.autoSetupFunctions.push(async () => {
             //inicializarState(state);
             var forPkRaiz = { formulario: carga.informacionHdr[enc as IdEnc].tarea.main_form, [estructura.pkAgregadaUaPpal]: enc };
 
-            if (!carga.respuestas[estructura.uaPpal][forPkRaiz[estructura.pkAgregadaUaPpal as CampoPkRaiz]]) {
+            if (!carga?.respuestas[estructura.uaPpal][forPkRaiz[estructura.pkAgregadaUaPpal as CampoPkRaiz]]) {
                 throw new Error(`No se encuentra el/la ${estructura.pkAgregadaUaPpal} ${forPkRaiz[estructura.pkAgregadaUaPpal]}`);
             }
             desplegarFormularioActual(formRenderer, { forPkRaiz:forPkRaiz as ForPkRaiz });

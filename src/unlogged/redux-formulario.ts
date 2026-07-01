@@ -116,6 +116,7 @@ var reducers = {
                 ...state,
                 opciones: {
                     ...state.opciones,
+                    pantallaActual: 'hdr',
                     avisoPersistente: null,
                     forPk: null
                 }
