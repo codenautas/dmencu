@@ -2369,12 +2369,28 @@ export function UsuarioLogueadoYConfig(props: {
                         <ListItemIcon>{modoDM === 'capa' ? <ICON.BusinessCenter /> : <ICON.SportsEsports />} </ListItemIcon>
                         <ListItemText>Cambio a modo {modoDM === 'capa' ? 'Producción' : 'Capacitación'}</ListItemText>
                     </MenuItem>
+                    <Divider/>
+                    <MenuItem
+                        disabled={true}
+                    >
+                        <ListItemText>Soporte técnico</ListItemText>
+                    </MenuItem>
                     <MenuItem 
                         onClick={() => 
                             dispatch(dispatchers.RESET_OPCIONES({}))}
                     >
                         <ListItemIcon><ICON.Refresh/></ListItemIcon>
                         <ListItemText>Reset opciones</ListItemText>
+                    </MenuItem>
+                    <MenuItem
+                        onClick={() => {
+                            dispatch(dispatchers.RESET_OPCIONES({}));
+                            history.replaceState(null, '', `${location.origin + location.pathname}/../menu#i=sincronizar`);
+                            location.reload();
+                        }}  
+                    >
+                        <ListItemIcon><ICON.SyncAlt /></ListItemIcon>
+                        <ListItemText>Sincronización (link viejo)</ListItemText>
                     </MenuItem>
                 </FastSetup>
             ) : null}

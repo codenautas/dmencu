@@ -131,111 +131,6 @@ function htmlNumero(num: number) {
     return html.span({ class: 'numero' }, '' + (num ?? ''))
 }
 
-
-
-var mostrarInfoLocal = async (divAvisoSincro: HTMLDivElement, titulo: string, nroSincro: number | null, mostrarLinkHdr: boolean) => {
-    const formRenderer = getFormRenderer();
-    let datos = await formRenderer.leerDatos();
-    let estructura = await formRenderer.leerEstructura();
-    if (datos) {
-        divAvisoSincro.append(html.div({ id: 'aviso-sincro' }, [
-            nroSincro ? html.p(["Número de sincronización: ", html.b("" + nroSincro.toString())]) : null,
-            html.h4(titulo),
-            html.p([htmlNumero(likeAr(datos.cargas).array().length), ' areas: ', likeAr(datos.cargas).keys().join(', ')]),
-           // html.p([htmlNumero(likeAr(datos.respuestas[estructura.uaPpal]).array().length), ' ' + estructura.uaPpal]),
-            mostrarLinkHdr ? html.a({ href: './campo' }, [html.b('IR A LA HOJA DE RUTA')]) : null
-        ]).create());
-    } else {
-        divAvisoSincro.appendChild(html.div({ class: 'aviso' }, [
-            html.h4('Sistema vacío'),
-            html.p('No hay información de formularios'),
-        ]).create());
-    }
-}
-
-/*
-function mostrarDatosPersona(hayDatos:boolean, datos:any, divResult:HTMLDivElement){
-    //TODO: EVALUAR SI CONVIENE TRAERLO DE LA BASE
-    var tiposDocumento = ['DNI argentino', 'Documento extranjero', 'No tiene documento', 'Otro'];
-    var paisDocumento = ['Uruguay', 'Paraguay', 'Brasil', 'Bolivia', 'Chile', 'Perú', 'Venezuela', 'Otro'];
-    divResult.appendChild(
-        hayDatos?
-            html.div({class:'datos-persona-cargada'},[
-                html.h2("Datos persona"),
-                html.div({class:'ficha-persona'},[
-                    html.div([html.label('Apellido: '), datos.apellido]),
-                    html.div([html.label('Nombres: '), datos.nombres]),
-                    datos.tipoDocumento?
-                        html.div([
-                            html.label('Tipo documento: '), 
-                            tiposDocumento[datos.tipoDocumento-1],
-                            datos.tipoDocumento==4 && datos.tipoDocumentoEspecificado?' ('+ datos.tipoDocumentoEspecificado+')':'',
-                        ])
-                    :
-                        '',
-                    datos.tipoDocumento==2 && datos.paisDocumento?
-                        html.div([
-                            html.label('Pais: '), 
-                            paisDocumento[datos.paisDocumento-1],
-                            datos.paisDocumento==8 && datos.paisDocumentoEspecificado?' ('+datos.paisDocumentoEspecificado+')':'',
-                        ])
-                    :
-                        '',
-                    datos.tipoDocumento!=3 && datos.tipoDocumento?html.div([html.label('Nº Documento: '), datos.documento]):'',
-                    datos.celular?html.div([html.label('Cel.: '), datos.celular]):'',
-                    datos.email?html.div([html.label('Email: '), datos.email]):'',
-                    datos.telefonoAlternativo?html.div([html.label('Tel. alternativo: '), datos.telefonoAlternativo]):'',
-                    datos.observaciones?html.div([html.label('Observaciones: '), datos.observaciones]):'',
-                ])
-            ]).create()
-        :
-            html.p("No se encontró una encuesta para la etiqueta cargada").create()
-    )
-}
-*/
-/*myOwn.clientSides.tareasTemRow={
-    update:(depot)=>{
-        var tarea:'nada'|'preasignar'|'cargar'|'realizar'|'verificar'='nada';
-        var row=depot.row;
-        // @ts-ignore
-        var idper=my.config.idper;
-        var esperar:boolean=false;
-        if(row.habilitada){
-            if(!row.recepcionista && !row.asignado){
-                tarea='preasignar';
-                esperar=true;
-            }else if(!row.asignado || !row.fecha_asignacion || !row.operacion){
-                tarea='cargar';
-                esperar=row.recepcionista!=idper;
-            }else if(!row.rea){
-                tarea='realizar';
-                esperar=row.asignado!=idper;
-            }else if(!row.verificado){
-                tarea='verificar';
-                esperar=row.recepcionista!=idper;
-            }
-        }
-        var poner={
-            recepcionista          :tarea=='preasignar' && (esperar?'esperar':'normal'),
-            asignado           :tarea=='cargar'     && (esperar?'esperar':'normal'),
-            fecha_asignacion   :tarea=='cargar'     && (esperar?'esperar':'normal'),
-            operacion          :tarea=='cargar'     && (esperar?'esperar':'normal'),
-            carga_observaciones:(tarea=='cargar'     || tarea=='realizar' && !row.cargado && !row.rea ) && row.recepcionista==idper && 'optativo',
-            verificado         :tarea=='verificar'  && (esperar?'esperar':'normal'),
-            obs_verificado     :tarea=='verificar'  && (esperar?'esperar':'optativo'),
-        }
-        likeAr(poner).forEach((valor, campo)=>{
-            if(!valor){
-                depot.rowControls[campo].removeAttribute('my-mandatory')
-            }else{
-                depot.rowControls[campo].setAttribute('my-mandatory',valor);
-            }
-        })
-    },
-    prepare: function(){}
-}
-*/
-
 var crearBotonCerrarEncuesta = (label: string) => {
     let path = "M3 3v18h18V3H3zm14 12.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z";
     var svg = html.svg({ class: "svg-cerrar-encuesta" }, [
@@ -704,3 +599,133 @@ myOwn.wScreens.proc.result.mostrar_encuesta_a_borrar = function (result, divResu
 function arrayFlat<T>(arrays: T[][]): T[] {
     return ([] as T[]).concat.apply([], arrays);
 }
+
+
+/*sincronizar y cambio de modo LEGACY */
+async function sincronizarDatos(persistentes: DatosByPassPersistibles | null, cambiaModoDM: boolean) {
+    const formRenderer = getFormRenderer();
+    let modoDM: ModoDM = formRenderer.getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
+    formRenderer.setModoDM(modoDM);
+    const idper_logueado_tablet = formRenderer.getIdperLogueado();
+    var datos = await my.ajax.dm_sincronizar({ persistentes, modo_dm: modoDM, cambia_modo_dm: cambiaModoDM, idper_logueado_tablet });
+    await formRenderer.persistirDatos({ ...datos, modoAlmacenamiento: 'local' });
+    var estructura = await myOwn.ajax.operativo_estructura_completa({ operativo: datos.operativo, idper_logueado_tablet });
+    await formRenderer.persistirEstructura(estructura);
+    my.removeLocalVar(BACKUPS);
+    return datos;
+}
+
+const mostrarInfoLocal = async (divAvisoSincro: HTMLDivElement, titulo: string, nroSincro: number | null, mostrarLinkHdr: boolean) => {
+    const datos = await getFormRenderer().leerDatos();
+    const estructura = await getFormRenderer().leerEstructura();
+    if (datos) {
+        divAvisoSincro.append(html.div({ id: 'aviso-sincro' }, [
+            nroSincro ? html.p(["Número de sincronización: ", html.b("" + nroSincro.toString())]) : null,
+            html.h4(titulo),
+            html.p([htmlNumero(likeAr(datos.cargas).array().length), ' areas: ', likeAr(datos.cargas).keys().join(', ')]),
+            html.p([htmlNumero(likeAr(datos.respuestas[estructura.uaPpal]).array().length), ' ' + estructura.uaPpal]),
+            mostrarLinkHdr ? html.a({ href: './campo' }, [html.b('IR A LA HOJA DE RUTA')]) : null
+        ]).create());
+    } else {
+        divAvisoSincro.appendChild(html.div({ class: 'aviso' }, [
+            html.h4('Sistema vacío'),
+            html.p('No hay información de formularios'),
+        ]).create());
+    }
+}
+
+const mostrarInfoModo = async (mainLayout: HTMLElement) => {
+    let modoDM: ModoDM = getFormRenderer().getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
+    getFormRenderer().setModoDM(modoDM);
+    //@ts-ignore seteo un atributo
+    var divAvisoModo: HTMLDivElement = html.div({ class: "info-modo", "modo-dm": modoDM }, `modo actual: ${modoDM}`).create()
+    mainLayout.appendChild(divAvisoModo)
+    return modoDM;
+}
+
+function cambiarModoDMEnLocalStorage(modoActual: ModoDM) {
+    modoActual = modoActual == 'produc' ? 'capa' : 'produc';
+    getFormRenderer().setModoDM(modoActual);
+}
+
+var procederSincroFun = async (button: HTMLButtonElement, divAvisoSincro: HTMLDivElement, cambiaModoDM: boolean) => {
+    button.disabled = true;
+    button.className = 'download-dm-button';
+    divAvisoSincro.innerHTML = '';
+    try {
+        const persistentes = await getFormRenderer().leerDatos();
+        const datos = await sincronizarDatos(persistentes, cambiaModoDM);
+        let modoDMActual: ModoDM = getFormRenderer().getModoDM() || await my.ajax.modo_dm_defecto_obtener({});
+        if (cambiaModoDM) {
+            cambiarModoDMEnLocalStorage(modoDMActual);
+        }
+        await mostrarInfoLocal(divAvisoSincro, 'datos recibidos', datos.num_sincro, true)
+    } catch (err) {
+        alertPromise(unexpected(err).message)
+        throw err
+    } finally {
+        button.disabled = false;
+        button.className = 'download-dm-button-cont';
+    }
+}
+myOwn.wScreens.sincronizar_dm = async function () {
+    var mainLayout = document.getElementById('main_layout')!;
+    const modoDM = await mostrarInfoModo(mainLayout);
+    var procederButton = html.button({ class: 'download-dm-button-cont' }, 'sincronizar').create();
+    procederButton.setAttribute("modo-dm", modoDM);
+    var divAvisoSincro: HTMLDivElement = html.div().create();
+    await mostrarInfoLocal(mainLayout as HTMLDivElement, 'información a transmitir', null, false)
+    mainLayout.appendChild(procederButton);
+    mainLayout.appendChild(divAvisoSincro);
+    procederButton.onclick = () => procederSincroFun(procederButton, divAvisoSincro, false)
+};
+
+myOwn.wScreens.cambiar_modo_dm = async function () {
+    var mainLayout = document.getElementById('main_layout')!;
+    const modoDM = await mostrarInfoModo(mainLayout);
+    var procederButton = html.button({ class: 'cambiar-modo-dm-button' }, `cambiar a modo ${modoDM == 'produc' ? 'capa' : 'produc'} ⇒`).create();
+    var divAvisoSincro: HTMLDivElement = html.div().create();
+    await mostrarInfoLocal(mainLayout as HTMLDivElement, `información modo "${modoDM}" a transmitir`, null, false)
+    mainLayout.appendChild(procederButton);
+    mainLayout.appendChild(divAvisoSincro);
+    procederButton.onclick = async () => {
+        var mainDiv = html.div().create()
+        mainDiv.appendChild(
+            html.div({}, [
+                html.div({}, [`Confirma cambio de modo "${modoDM}" a ${modoDM == 'produc' ? '"capa"' : '"produc"'}.`])
+            ]).create()
+        );
+        var inputCambiarModo = html.input({ class: 'input-cambiar-modo' }).create();
+        mainDiv.appendChild(html.div([
+            html.div(['Por favor ingrese la contraseña ', inputCambiarModo])
+        ]).create());
+        var cambiarModoValue = await confirmPromise(mainDiv, {
+            withCloseButton: false,
+            reject: false,
+            buttonsDef: [
+                { label: `cambiar`, value: true },
+                { label: `cancelar`, value: false }
+            ]
+        });
+        if (cambiarModoValue) {
+            if (inputCambiarModo.value == '1234') {
+                try {
+                    procederButton.disabled = true;
+                    await procederSincroFun(procederButton, divAvisoSincro, true);
+                    mainLayout.innerHTML = '';
+                    mainLayout.appendChild(
+                        html.div(`MODO ${getFormRenderer().getModoDM()} ACTIVADO`).create()
+                    )
+                } catch (err) {
+                    alertPromise(unexpected(err).message);
+                } finally {
+                    procederButton.disabled = false;
+                };
+            } else {
+                alertPromise('contraseña incorrecta.')
+            }
+        }
+    }
+};
+
+/* FIN sincronizar y cambio de modo LEGACY */
