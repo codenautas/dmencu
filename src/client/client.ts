@@ -624,6 +624,7 @@ const mostrarInfoLocal = async (divAvisoSincro: HTMLDivElement, titulo: string, 
             html.h4(titulo),
             html.p([htmlNumero(likeAr(datos.cargas).array().length), ' areas: ', likeAr(datos.cargas).keys().join(', ')]),
             html.p([htmlNumero(likeAr(datos.respuestas[estructura.uaPpal]).array().length), ' ' + estructura.uaPpal]),
+            
             mostrarLinkHdr ? html.a({ href: './campo' }, [html.b('IR A LA HOJA DE RUTA')]) : null
         ]).create());
     } else {
@@ -659,7 +660,8 @@ var procederSincroFun = async (button: HTMLButtonElement, divAvisoSincro: HTMLDi
         if (cambiaModoDM) {
             cambiarModoDMEnLocalStorage(modoDMActual);
         }
-        await mostrarInfoLocal(divAvisoSincro, 'datos recibidos', datos.num_sincro, true)
+        await mostrarInfoLocal(divAvisoSincro, 'datos recibidos', datos.num_sincro, true);
+        (await crearStoreFormulario({})).dispatch(dispatchers.RESET_OPCIONES({}));
     } catch (err) {
         alertPromise(unexpected(err).message)
         throw err

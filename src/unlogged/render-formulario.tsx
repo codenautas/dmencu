@@ -2384,7 +2384,6 @@ export function UsuarioLogueadoYConfig(props: {
                     </MenuItem>
                     <MenuItem
                         onClick={() => {
-                            dispatch(dispatchers.RESET_OPCIONES({}));
                             history.replaceState(null, '', `${location.origin + location.pathname}/../menu#i=sincronizar`);
                             location.reload();
                         }}  
