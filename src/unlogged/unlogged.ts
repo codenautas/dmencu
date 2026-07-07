@@ -99,8 +99,9 @@ window.addEventListener('load', async function(){
         gap: 24px;
         font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
         text-align: center;
-        min-width: 480px;
+        min-width: 300px;
         max-width: 90%;
+        padding: 25px;
     ">
         <div style="display: flex; flex-direction: column; gap: 8px;">
             <span style="font-size: 22px; font-weight: 500; letter-spacing: 0.25px;">¡Aplicación actualizada!</span>
@@ -121,7 +122,7 @@ window.addEventListener('load', async function(){
             align-items: center;
             gap: 8px;
             letter-spacing: 0.4px;
-            margin: 0 auto;
+            margin: 15px auto;
         ">
             Continuar
         </button>
