@@ -2412,11 +2412,11 @@ export function UsuarioLogueadoYConfig(props: {
                 <DialogActions>
                     {tieneEncuestas ? (
                         <>
-                            <Button onClick={handleClose} color="primary" variant="contained">
-                                Continuar relevando
-                            </Button>
                             <Button onClick={handleConfirmLogout} color="secondary">
                                 Salir de todos modos
+                            </Button>
+                            <Button onClick={handleClose} color="primary" variant="contained">
+                                Continuar relevando
                             </Button>
                         </>
                     ) : (

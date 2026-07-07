@@ -103,8 +103,7 @@ window.addEventListener('load', async function(){
         max-width: 90%;
     ">
         <div style="display: flex; flex-direction: column; gap: 8px;">
-            <span style="font-size: 22px; font-weight: 500; letter-spacing: 0.25px;">¡Aplicación actualizada con éxito!</span>
-            <span style="font-size: 14px; font-weight: 400; opacity: 0.9;">Los nuevos módulos y cambios de la plataforma ya están listos.</span>
+            <span style="font-size: 22px; font-weight: 500; letter-spacing: 0.25px;">¡Aplicación actualizada!</span>
         </div>
         <button id="refrescar" style="
             background-color: #ffffff;
@@ -122,8 +121,9 @@ window.addEventListener('load', async function(){
             align-items: center;
             gap: 8px;
             letter-spacing: 0.4px;
+            margin: 0 auto;
         ">
-            Refrescar Pantalla
+            Continuar
         </button>
     </div>
 
@@ -134,7 +134,6 @@ window.addEventListener('load', async function(){
     <!-- Panel de Progreso Ocupando Más Pantalla (Limpio y Corporativo) -->
     <div id="instalando" style="
         display: none;
-        position: fixed;
         top: 40px;
         left: 40px;
         right: 40px;
@@ -149,6 +148,8 @@ window.addEventListener('load', async function(){
         display: flex;
         flex-direction: column;
         border: 1px solid #e2e8f0;
+        overflow: hidden;
+        min-height: 0;
     ">
         <div id="volver-de-instalacion" style="
             display: flex;
@@ -157,6 +158,7 @@ window.addEventListener('load', async function(){
             margin-bottom: 20px;
             border-bottom: 1px solid #e2e8f0;
             padding-bottom: 16px;
+            flex-shrink: 0;
         ">
             <div style="display: flex; align-items: center; gap: 14px;">
                 <!-- Spinner Minimalista de MUI (CircularProgress) -->
@@ -190,6 +192,9 @@ window.addEventListener('load', async function(){
         <!-- Consola expandida y limpia sin estética terminal -->
         <div id="archivos" style="
             flex-grow: 1;
+            flex-shrink: 1;
+            height: 100%;
+            min-height: 0;
             overflow-y: auto;
             font-size: 13px;
             font-family: monospace;
@@ -199,6 +204,7 @@ window.addEventListener('load', async function(){
             padding: 16px;
             border-radius: 4px;
             border: 1px solid #e2e8f0;
+            margin-bottom: 16px
         ">
         </div>
     </div>
