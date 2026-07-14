@@ -8,7 +8,7 @@ export function sincronizaciones(context: TableContext): TableDefinition {
         elementName:'sincronización',
         editable:context.forDump,
         fields:[
-            {name:'sincro'          , typeName:'bigint', sequence:{prefix:'null', firstValue:101, name:'sincronizacines_seq' }   },
+            {name:'sincro'          , typeName:'bigint', sequence:{firstValue:101, name:'sincronizacines_seq' }   },
             {name:'token'           , typeName:'text'},
             {name:'usuario'         , typeName:'text'},
             {name:'cuando'          , typeName:'timestamp', defaultDbValue:'current_timestamp'},

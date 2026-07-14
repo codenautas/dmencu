@@ -530,7 +530,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     "lib/redux-typed-reducer.js",
                     "dmencu/adapt.js",
                     "dmencu/unlogged.js",
-                    "lib/js-yaml.js",
+                    "lib/js-yaml.umd.min.js",
                     "lib/xlsx.core.min.js",
                     "lib/lazy-some.js",
                     "lib/sql-tools.js",

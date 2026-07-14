@@ -104,7 +104,7 @@ window.addEventListener('load', async function(){
         padding: 25px;
     ">
         <div style="display: flex; flex-direction: column; gap: 8px;">
-            <span style="font-size: 22px; font-weight: 500; letter-spacing: 0.25px;">¡Aplicación actualizada!</span>
+            <span style="font-size: 22px; font-weight: 500; letter-spacing: 0.25px;">¡instalación correcta!</span>
         </div>
         <button id="refrescar" style="
             background-color: #ffffff;
@@ -245,6 +245,7 @@ window.addEventListener('load', async function(){
                     if (archivosContenedor) {
                         archivosContenedor.append(
                             html.div({
+                                id: url,
                                 style: 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 2px 0;'
                             }, `> ${url}`).create()
                         );
@@ -259,10 +260,33 @@ window.addEventListener('load', async function(){
                     console.log(context, error, 'error-console');
                     console.log('error al descargar cache', error.message);
 
+                    if (context && context.startsWith('caching ')) {
+                        const fileUrl = context.replace('caching ', '').trim();
+                        const fileId = fileUrl;
+                        const fileElement = document.getElementById(fileId);
+
+                        if (fileElement) {
+                            // Cambiamos el estilo a un rojo MUI (Error principal) elegante y le agregamos el indicador de fallo
+                            fileElement.style.color = '#d32f2f';
+                            fileElement.style.fontWeight = '700';
+                            fileElement.style.backgroundColor = '#ffebee';
+                            fileElement.style.paddingLeft = '8px';
+                            fileElement.style.borderRadius = '2px';
+                            fileElement.innerHTML = `❌ Error: No se pudo descargar ${fileUrl} (${error.message})`;
+
+                            // Forzamos scroll para que el desarrollador vea el error al final de la consola
+                            const archivosContenedor = document.getElementById('archivos');
+                            if (archivosContenedor) archivosContenedor.scrollTop = archivosContenedor.scrollHeight;
+                        }
+                    }
+
                     if (context != 'initializing service-worker') {
                         try {
                             // Validamos silenciosamente si el problema es falta de sesión (401)
-                            await my.ajax['keep-alive.json']();
+                            const keepAlive = await fetch('keep-alive.json');
+                            if(keepAlive.status!= 200){
+                                throw Error('deslogueado')
+                            }
                         } catch (pingErr) {
                             console.log('Fallo de caché por sesión expirada. Desplegando banner flotante.');
 
