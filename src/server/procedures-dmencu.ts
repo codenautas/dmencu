@@ -70,7 +70,7 @@ export const getOperativoActual = async (context: ProcedureContext) => {
     } else {
         throw Error('no se configuró un operativo en la tabla parámetros');
     }
-}
+};
 
 async function getDefaultTarea(context: ProcedureContext, operativo: IdOperativo) {
     return (await context.client.query(`
@@ -80,13 +80,17 @@ async function getDefaultTarea(context: ProcedureContext, operativo: IdOperativo
     `, [operativo]).fetchUniqueRow()).row;
 }
 
-async function persistirEncuestaAutogeneradaEnDM(context: ProcedureContext, OPERATIVO: IdOperativo, area: number, encAutogeneradoDm: string, token: string, respuestasRaiz: RespuestasRaiz, recepcionista: string, asignado: string, modo_dm: ModoDM, cambia_modo_dm: boolean): Promise<IdEnc> {
-    let idEnc = null;
-    var permite_generar_muestra = (await context.client.query(`
+async function getOperativoPermiteGenerarMuestra(client: Client, operativo: IdOperativo): Promise<boolean> {
+    return (await client.query(`
         select permite_generar_muestra 
             from operativos 
             where operativo = $1
-    `, [OPERATIVO]).fetchUniqueValue()).value;
+    `, [operativo]).fetchUniqueValue()).value;
+}
+
+async function persistirEncuestaAutogeneradaEnDM(context: ProcedureContext, OPERATIVO: IdOperativo, area: number, encAutogeneradoDm: string, token: string, respuestasRaiz: RespuestasRaiz, recepcionista: string, asignado: string, modo_dm: ModoDM, cambia_modo_dm: boolean): Promise<IdEnc> {
+    let idEnc = null;
+    var permite_generar_muestra = await getOperativoPermiteGenerarMuestra(context.client, OPERATIVO);
     if (permite_generar_muestra) {
         const autogeneradoField = modo_dm == 'produc' ? 'enc_autogenerado_dm' : 'enc_autogenerado_dm_capa';
         const resultUpdate = await context.client.query(`
@@ -560,17 +564,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters<{annio:number, mes:number, lote:number}>){
             var be=context.be;
             const OPERATIVO = await getOperativoActual(context);
-            let resultUA = await context.client.query(
-                `select *
-                   from unidad_analisis
-                   where principal = true and operativo = $1
-                `,
-                [OPERATIVO]
-            ).fetchOneRowIfExists();
-            if (resultUA.rowCount === 0) {
-                throw new Error('No se configuró una unidad de analisis como principal');
-            }
-            let row = resultUA.row;
+            let row: UnidadAnalisis = await getUAPrincipal(context.client, OPERATIVO);
             let resultPreguntas = await be.procedure.preguntas_ua_traer.coreFunction(context, row)
             var contenedorVacio: { [key: string]: any } = {};
             resultPreguntas.forEach(function (defPregunta:any) {
@@ -867,11 +861,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         tarea = tarea_actual and tarea_actual = 'proc' and $3 or 
                         tarea = tarea_actual and tarea_actual = 'proc' and estado = 'V'
             )`, [operativo, pk_raiz_value, !usuarioPuedeProcesarEncuestas]).fetchUniqueValue()).value > 0;
-            var permiteGenerarMuestra = (await context.client.query(`
-                select permite_generar_muestra 
-                    from operativos 
-                    where operativo = $1
-            `, [operativo]).fetchUniqueValue()).value;
+            var permiteGenerarMuestra = await getOperativoPermiteGenerarMuestra(context.client, operativo);
             var { row } = await context.client.query(getHdrQuery(condviv, context, unidad_analisis, permiteGenerarMuestra, context.user.idper), [operativo, pk_raiz_value]).fetchUniqueRow();
             row.informacionHdr[pk_raiz_value].tarea = {
                 tarea,
@@ -942,6 +932,10 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         unlogged:true,
         coreFunction:async function(context: ProcedureContext, parameters: CoreFunctionParameters<{persistentes: AnyObject, modo_dm: string, cambia_modo_dm: boolean, idper_logueado_tablet: string}>){
             const OPERATIVO = await getOperativoActual(context);
+            const permiteGenerarMuestra = await getOperativoPermiteGenerarMuestra(context.client, OPERATIVO);
+            if(!permiteGenerarMuestra && parameters.cambia_modo_dm){
+                throw Error('No es posible cambiar de modo en este operativo');
+            }
             var be = context.be;
             var { persistentes, modo_dm, cambia_modo_dm, idper_logueado_tablet } = parameters;
             const usernameLogueadoTablet = (await context.client.query(`select usuario from usuarios where idper = $1`, [idper_logueado_tablet]).fetchUniqueValue()).value; 
@@ -1035,11 +1029,6 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     }
                 }
             }
-            var permiteGenerarMuestra = (await context.client.query(`
-                select permite_generar_muestra 
-                    from operativos 
-                    where operativo = $1
-            `, [OPERATIVO]).fetchUniqueValue()).value;
             var { row } = await context.client.query(getHdrQuery(condviv, context, UA_PRINCIPAL, permiteGenerarMuestra, idper_logueado_tablet), [OPERATIVO, idper_logueado_tablet]).fetchUniqueRow();
             await context.client.query(
                 `update tareas_tem tt
@@ -1189,11 +1178,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         ],
         coreFunction: async function (context: ProcedureContext, params: CoreFunctionParameters<{ operativo: IdOperativo, area: number, dominio: number, cant_encuestas: number, tarea_actual: IdTarea }>) {
             const be = context.be;
-            var permiteGenerarMuestra = (await context.client.query(`
-                select permite_generar_muestra 
-                    from operativos 
-                    where operativo = $1
-            `, [params.operativo]).fetchUniqueValue()).value;
+            var permiteGenerarMuestra = await getOperativoPermiteGenerarMuestra(context.client, params.operativo);
             if (permiteGenerarMuestra) {
                 let totalActual = (await context.client.query(
                     `select count(*) as total
@@ -1223,11 +1208,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         ],
         coreFunction: async function (context: ProcedureContext, params: CoreFunctionParameters<{ operativo: IdOperativo, area: number, dominio: number, cant_encuestas: number, tarea_actual: string }>) {
             const be = context.be;
-            var permiteGenerarMuestra = (await context.client.query(`
-                select permite_generar_muestra 
-                    from operativos 
-                    where operativo = $1
-            `, [params.operativo]).fetchUniqueValue()).value;
+            var permiteGenerarMuestra = await getOperativoPermiteGenerarMuestra(context.client, params.operativo);
             if (permiteGenerarMuestra) {
                 for (let i = 1; i <= params.cant_encuestas; i++) {
                     const enc = await generarNuevoIdEnc(context, params.operativo, params.area, maxAEncPorArea)
@@ -1332,11 +1313,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         roles: ['coor_proc', 'subcoor_campo', 'coor_campo', 'admin'],
         coreFunction: async function (context: ProcedureContext, params: CoreFunctionParameters<{ operativo: IdOperativo, enc: string }>) {
             var be = context.be;
-            var permite_generar_muestra = (await context.client.query(`
-                select permite_generar_muestra 
-                    from operativos 
-                    where operativo = $1
-            `, [params.operativo]).fetchUniqueValue()).value;
+            var permite_generar_muestra = await getOperativoPermiteGenerarMuestra(context.client, params.operativo);
             if (permite_generar_muestra) {
                 var { unidad_analisis, pk_agregada } = (await getUAPrincipal(context.client, params.operativo));
                 const { casoTem } = await buscarEncuestaEnTem(context, params);
@@ -1409,11 +1386,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         roles: ['admin'],
         coreFunction: async function (context: ProcedureContext, params: CoreFunctionParameters<{ operativo: IdOperativo }>) {
             var be = context.be;
-            var permite_generar_muestra = (await context.client.query(`
-                select permite_generar_muestra 
-                    from operativos 
-                    where operativo = $1
-            `, [params.operativo]).fetchUniqueValue()).value;
+            var permite_generar_muestra = await getOperativoPermiteGenerarMuestra(context.client, params.operativo);
             if (permite_generar_muestra) {
                 const encsABorrar = (await context.client.query(
                     `select * 
