@@ -2155,6 +2155,14 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
 
             tables.forEach((_, i) => tables[i].result.rows.forEach(row => row.operativo = params.operativo_destino));
 
+            const disableCasillerosFK = `
+                -- Deshabilitar validación de FK y triggers en casilleros
+                ALTER TABLE ${context.be.db.quoteIdent(params.schema_name)}.casilleros DISABLE TRIGGER ALL;
+            `;
+            const enableCasillerosFK = `
+                -- Habilitar validación de FK y triggers en casilleros
+                ALTER TABLE ${context.be.db.quoteIdent(params.schema_name)}.casilleros ENABLE TRIGGER ALL;
+            `;
             const buildInserts = (query: { name: string, result: ResultRows }) => query.result.rows.map(row =>
                 'insert into ' + context.be.db.quoteIdent(params.schema_name) + '.' + context.be.db.quoteIdent(query.name) +
                 ' (' + query.result.fields.map((f: { name: string }) => context.be.db.quoteIdent(f.name)).join(', ') + ')' +
@@ -2182,11 +2190,12 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             `;
 
             const sql = `set search_path = "${params.schema_name}";` + `\n\n`
+                + disableCasillerosFK
                 + tables.map(query => buildInserts(query)).join('\n\n')
                 + '\n\n' + insertAreas
                 + '\n\n' + insertTareasAreas
-                + '\n\n' + insertTem;
-
+                + '\n\n' + insertTem
+                + '\n\n' + enableCasillerosFK;
             return sql;
         }
     },
