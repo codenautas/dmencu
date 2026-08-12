@@ -168,6 +168,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
                     
                         
             )`,
+            broadWhere: 'true',
         },
         //refrescable: true, //no está permitido aún
         //clientSide:'tareasTemRow' //desactivo para borrar los íconos de las celdas

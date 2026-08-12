@@ -258,7 +258,7 @@ var crearBotonAccion = (depot: myOwn.Depot, action: EstadoAccion) => {
                     tareasTemTable: depot.def.name
                 });
                 var grid = depot.manager;
-                grid.retrieveRowAndRefresh(depot, { retrieveIgnoringWhere: true })
+                grid.retrieveRowAndRefresh(depot, { retrieveWithBroadWhere: true })
                 if (action.nombre_wscreen) {
                     //TODO acomodar esto en algun momento
                     let params = depot.row;
