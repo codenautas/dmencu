@@ -581,7 +581,10 @@ function EncabezadoDespliegue(props: {
                     variant="outlined"
                     className="boton-pregunta-nsnc"
                     onClick={() => {
-                        dispatchByPass(accion_registrar_respuesta, { respuesta: ns_nc, variable: casillero.var_name as IdVariable, forPk: forPk })
+                        var { siguienteVariable } = dispatchByPass(accion_registrar_respuesta, { respuesta: ns_nc, variable: casillero.var_name as IdVariable, forPk: forPk });
+                        if(siguienteVariable) {
+                            enfocarElementoDeVariable(casillero.especial?.scrollTo ?? siguienteVariable);
+                        }
                     }}
                 >
                     NS/NC
@@ -702,7 +705,7 @@ function Campo(props: { disabled: boolean, pregunta: PreguntaSimple | PreguntaCo
     };
     const handleSubmit = ({ esBotonConfirmar }: { esBotonConfirmar: boolean }) => {
         debeSaltar = esBotonConfirmar ? true : (saltoAutomatico || conCampoOpciones);
-        
+
         var isInputFocused = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA');
         if (isInputFocused) {
             if (document.activeElement instanceof HTMLElement) {
@@ -721,9 +724,9 @@ function Campo(props: { disabled: boolean, pregunta: PreguntaSimple | PreguntaCo
             variable={pregunta.var_name}
             forPk={props.forPk}
         />}
-        <form 
-            className="form-campo-wrapper" 
-            style={{ display: 'contents' }} 
+        <form
+            className="form-campo-wrapper"
+            style={{ display: 'contents' }}
             onSubmit={(e) => {
                 e.preventDefault();
                 handleSubmit({ esBotonConfirmar: false });
@@ -734,7 +737,7 @@ function Campo(props: { disabled: boolean, pregunta: PreguntaSimple | PreguntaCo
                     id={`var-${pregunta.var_name || ''}`}
                     disabled={disabled || pregunta.especial?.gps}
                     className="variable"
-                    //var-length={pregunta.longitud} 
+                    //var-length={pregunta.longitud}
                     fullWidth={true}
                     inputProps={inputProps}
                     type={pregunta.despliegueTipoInput ?? adaptarTipoVarCasillero(pregunta.tipovar)}
@@ -1318,14 +1321,14 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
     var sufijoIdElemento = toPlainForPk(forPk);
     /*
     registrarElemento({
-        id:`div-boton-formulario-${sufijoIdElemento}`, 
-        attr:'esta-inhabilitada', 
+        id:`div-boton-formulario-${sufijoIdElemento}`,
+        attr:'esta-inhabilitada',
         // fun: (r:Respuestas)=>habilitador(r)?'SI':'NO'
         fun: (_r:Respuestas)=>'NO'
     });
     registrarElemento<HTMLButtonElement>({
-        id:`boton-formulario-${sufijoIdElemento}`, 
-        prop:'disabled', 
+        id:`boton-formulario-${sufijoIdElemento}`,
+        prop:'disabled',
         // fun: (r:Respuestas)=>!habilitador(r)
         fun: (_r:Respuestas)=>false
     });
@@ -1514,29 +1517,29 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
             <Button color="primary" variant="contained" onClick={() => setConfirmarForzarIr(null)}>Entendido</Button>
         </Dialog>
         {confirmacionBorrado && (
-            <Dialog open={true} onClose={() => { 
-                setConfirmacionBorrado(null); 
-                setFraseBorrado(''); 
-                setErrorFraseBorrado(false); 
+            <Dialog open={true} onClose={() => {
+                setConfirmacionBorrado(null);
+                setFraseBorrado('');
+                setErrorFraseBorrado(false);
             }}>
                 <DialogTitle>Advertencia: Se perderán datos</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
                         {`Está por borrar el formulario ${confirmacionBorrado.defBoton.forPk.formulario} (${estructura.unidades_analisis[estructura.formularios[confirmacionBorrado.defBoton.forPk.formulario].casilleros.unidad_analisis].pk_agregada}: ${confirmacionBorrado.defBoton.num}). Los datos del mismo y todos sus registros asociados se perderán. ¿Desea continuar?`}
                     </DialogContentText>
-                    
+
                     <div style={{ marginTop: '20px', marginBottom: '20px' }}>
                         <DialogContentText>
                             Para confirmar el borrado, escriba la frase <strong>"forzar borrado"</strong> a continuación:
                         </DialogContentText>
-                        <input 
+                        <input
                             id="input-forzar-borrado"
-                            type="text" 
-                            value={fraseBorrado} 
+                            type="text"
+                            value={fraseBorrado}
                             onChange={e => {
                                 setFraseBorrado(e.target.value);
                                 setErrorFraseBorrado(false);
-                            }} 
+                            }}
                             style={{width: '100%', padding: '8px', border: errorFraseBorrado ? '1px solid red' : '1px solid #ccc', borderRadius: '4px'}}
                             placeholder="forzar borrado"
                             autoComplete="off"
@@ -1550,20 +1553,20 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
                     </div>
                 </DialogContent>
                 <DialogActions>
-                    <Button 
-                        color="primary" 
-                        variant="outlined" 
-                        onClick={() => { 
-                            setConfirmacionBorrado(null); 
-                            setFraseBorrado(''); 
-                            setErrorFraseBorrado(false); 
+                    <Button
+                        color="primary"
+                        variant="outlined"
+                        onClick={() => {
+                            setConfirmacionBorrado(null);
+                            setFraseBorrado('');
+                            setErrorFraseBorrado(false);
                         }}
                     >
                         Cancelar
                     </Button>
                     <Button color="secondary" variant="contained" onClick={() => {
                         if (!confirmacionBorrado) return;
-                        
+
                         if (fraseBorrado.trim().toLowerCase() !== "forzar borrado") {
                             setErrorFraseBorrado(true);
                             setTimeout(() => {
@@ -1712,7 +1715,7 @@ function BloqueDespliegue(props: { bloque: Bloque, formulario: Formulario, forPk
     var { modoDespliegue } = useSelectorVivienda(forPk);
     if (multiple) {
         // TODO: GENERALIZAR
-        // @ts-ignore 
+        // @ts-ignore
         // lista=respuestas.personas.map((_persona, i)=>(
         //     {forPk:{...forPk, persona:i+1}, key:i+1, multiple:true}
         // ))
@@ -2078,7 +2081,7 @@ setDesplegarLineaResumenUAPrincipal((props: {
             feedbackAll: { [formulario in PlainForPk]: FormStructureState<IdVariable, Valor, IdFin> },
             _estructura: Estructura
         ) => {
-            //pregunto si es la misma vivienda porque la funcion se dispara 
+            //pregunto si es la misma vivienda porque la funcion se dispara
             //con todas las combinaciones de respuestas para cada forPk
             //@ts-ignore vivienda existe
             if (r[estructura.pkAgregadaUaPpal] == forPk[estructura.pkAgregadaUaPpal]) {
@@ -2283,8 +2286,8 @@ export function AppBarPrincipal(props: AppBarPrincipalProps): JSX.Element {
             <Toolbar>
                 {props.barraNavFormulario}
                 {mostrarBotoneraNavegacion ? (
-                    <BotoneraNavegacion disabled={props.disabled}/>  
-                ) : null} 
+                    <BotoneraNavegacion disabled={props.disabled}/>
+                ) : null}
                 {props.modoDM === 'capa' && !props.barraNavFormulario ? (
                     <Typography><span style={{ marginLeft: '5px' }}> MODO CAPACITACIÓN</span></Typography>
                 ) : null}
@@ -2301,7 +2304,7 @@ export function BotoneraNavegacion(props: { disabled?: boolean }): JSX.Element {
     return (
         <ButtonGroup variant="outlined" size="small" color="inherit">
             <Button
-                onClick={() => 
+                onClick={() =>
                     dispatch(dispatchers.SET_OPCION({ opcion: 'pantallaActual', valor: 'hdr' }))
                 }
                 disabled={pantallaActual === 'hdr' || props.disabled}
@@ -2309,7 +2312,7 @@ export function BotoneraNavegacion(props: { disabled?: boolean }): JSX.Element {
             >
                 <ICON.Assignment /> Hoja de Ruta
             </Button>
-            
+
             <Button
                 onClick={() =>
                     dispatch(dispatchers.SET_OPCION({ opcion: 'pantallaActual', valor: 'sincronizacion' }))
@@ -2323,11 +2326,11 @@ export function BotoneraNavegacion(props: { disabled?: boolean }): JSX.Element {
     );
 }
 
-export function UsuarioLogueadoYConfig(props: { 
+export function UsuarioLogueadoYConfig(props: {
     mostrarSetup?: boolean,
     mostrarLogout?: boolean,
-    onLogout?: () => void, 
-    navigationMenu?: React.ReactNode 
+    onLogout?: () => void,
+    navigationMenu?: React.ReactNode
 }): JSX.Element {
     var username: string | null = getFormRenderer().getUsernameLogueado();
     var idper: string | null = getFormRenderer().getIdperLogueado();
@@ -2362,8 +2365,8 @@ export function UsuarioLogueadoYConfig(props: {
             </Typography>
             {props.mostrarSetup ? (
                 <FastSetup>
-                    <MenuItem 
-                        onClick={() => 
+                    <MenuItem
+                        onClick={() =>
                             dispatch(dispatchers.SET_OPCION({ opcion: 'pantallaActual', valor: 'modo' }))}
                     >
                         <ListItemIcon>{modoDM === 'capa' ? <ICON.BusinessCenter /> : <ICON.SportsEsports />} </ListItemIcon>
@@ -2375,8 +2378,8 @@ export function UsuarioLogueadoYConfig(props: {
                     >
                         <ListItemText>Soporte técnico</ListItemText>
                     </MenuItem>
-                    <MenuItem 
-                        onClick={() => 
+                    <MenuItem
+                        onClick={() =>
                             dispatch(dispatchers.RESET_OPCIONES({}))}
                     >
                         <ListItemIcon><ICON.Refresh/></ListItemIcon>
@@ -2386,7 +2389,7 @@ export function UsuarioLogueadoYConfig(props: {
                         onClick={() => {
                             history.replaceState(null, '', `${location.origin + location.pathname}/../menu#i=sincronizar`);
                             location.reload();
-                        }}  
+                        }}
                     >
                         <ListItemIcon><ICON.SyncAlt /></ListItemIcon>
                         <ListItemText>Sincronización (link viejo)</ListItemText>
@@ -2525,7 +2528,7 @@ export function LayoutAccionDispositivo(props: LayoutAccionDispositivoProps): JS
                             onClick={props.onAccion}
                         >
                             {props.textoBotonAccion}
-                        </Button>                        
+                        </Button>
                     </div>
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                         {!props.online && (
@@ -2595,7 +2598,7 @@ export function PantallaSincronizacion(props: PantallaSincronizacionProps): JSX.
             loading={loading}
             online={online}
             textoBotonAccion={
-                loading ? 
+                loading ?
                     'Sincronizando...'
                 :
                     <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><ICON.CloudSync /> Sincronizar</span>
