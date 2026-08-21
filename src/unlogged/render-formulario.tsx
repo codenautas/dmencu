@@ -581,7 +581,10 @@ function EncabezadoDespliegue(props: {
                     variant="outlined"
                     className="boton-pregunta-nsnc"
                     onClick={() => {
-                        dispatchByPass(accion_registrar_respuesta, { respuesta: ns_nc, variable: casillero.var_name as IdVariable, forPk: forPk })
+                        const { siguienteVariable } = dispatchByPass(accion_registrar_respuesta, { respuesta: ns_nc, variable: casillero.var_name as IdVariable, forPk: forPk });
+                        if(siguienteVariable) {
+                            enfocarElementoDeVariable(casillero.especial?.scrollTo ?? siguienteVariable);
+                        }
                     }}
                 >
                     NS/NC
