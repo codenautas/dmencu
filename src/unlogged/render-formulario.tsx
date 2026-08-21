@@ -540,7 +540,7 @@ function EncabezadoDespliegue(props: {
     forPk: ForPk
 }) {
     var { casillero, forPk } = props;
-    var conCampoOpciones = useSelector((state: CasoState) => state.opciones.conCampoOpciones)
+    var { saltoAutomatico, conCampoOpciones } = useSelector((state: CasoState) => state.opciones);
     var handleClickBorrar = () => {
         dispatchByPass(accion_registrar_respuesta, { respuesta: null, variable: casillero.var_name as IdVariable, forPk: forPk })
     };
@@ -580,8 +580,19 @@ function EncabezadoDespliegue(props: {
                     mi-variable={casillero.var_name}
                     variant="outlined"
                     className="boton-pregunta-nsnc"
-                    onClick={() => {
-                        dispatchByPass(accion_registrar_respuesta, { respuesta: ns_nc, variable: casillero.var_name as IdVariable, forPk: forPk })
+                    onClick={async (event) => {
+                        var { siguienteVariable } = dispatchByPass(accion_registrar_respuesta, { respuesta: ns_nc, variable: casillero.var_name as IdVariable, forPk: forPk });
+                        if (siguienteVariable && saltoAutomatico) {
+                            var botonStyle = (event.currentTarget as HTMLElement)?.style;
+                            if (botonStyle) botonStyle.color = 'green';
+                            await sleep(DELAY_SCROLL_3);
+                            if (botonStyle) botonStyle.color = 'blue';
+                            await sleep(DELAY_SCROLL_3);
+                            if (botonStyle) botonStyle.color = 'green';
+                            await sleep(DELAY_SCROLL_3);
+                            if (botonStyle) botonStyle.color = '';
+                            (casillero.especial?.noScroll == true) ? null : enfocarElementoDeVariable(casillero.especial?.scrollTo ?? siguienteVariable);
+                        }
                     }}
                 >
                     NS/NC
