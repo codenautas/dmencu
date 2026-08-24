@@ -47,6 +47,7 @@ export type CasilleroBase = {
     casillero: IdCasillero
     nombre: string
     salto: IdDestino | IdFin | null
+    salto_ns_nc?: IdDestino | IdFin | null
     ver_id: string | null
     despliegueEncabezado: 'lateral' | 'superior' | null
     despliegueContenido: 'vertical' | 'horizontal' | null
@@ -116,21 +117,21 @@ export type PreguntaSimple = PreguntaBase & {
     tipovar: TipoVariables
     var_name: IdVariable
     longitud: string
-    salto_ns_nc: IdVariable | null
+    salto_ns_nc: IdDestino | IdFin | null
     casilleros: PreguntaSimple[]
 }
 
 export type PreguntaConSiNo = PreguntaBase & {
     tipovar: 'si_no'
     var_name: IdVariable
-    salto_ns_nc: IdVariable | null
+    salto_ns_nc: IdDestino | IdFin | null
     casilleros: [OpcionSi, OpcionNo]
 }
 
 export type PreguntaConOpciones = PreguntaBase & {
     tipovar: 'opciones'
     var_name: IdVariable
-    salto_ns_nc: IdVariable | null
+    salto_ns_nc: IdDestino | IdFin | null
     casilleros: Opcion[]
 }
 
