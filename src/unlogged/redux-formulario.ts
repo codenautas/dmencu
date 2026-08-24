@@ -212,7 +212,7 @@ function rellenarVariablesYOpciones(idFormulario: IdFormulario, estructura: Estr
             opciones: (casillero.tipoc == 'OM' || casillero.tipovar == 'opciones' || casillero.tipovar == 'si_no' ?
                 likeAr.createIndex(casillero.casilleros, 'casillero') : {}) as unknown as { [key: string]: RowValidatorOpcion<IdVariable> },
             salto: casillero.salto as IdVariable,
-            saltoNsNr: 'salto_ns_nc' in casillero && casillero.salto_ns_nc || null,
+            saltoNsNr: casillero.salto_ns_nc as IdVariable || null,
             funcionHabilitar: casillero.expresion_habilitar_js,
             funcionAutoIngresar: casillero.expresion_autoingresar_js,
             calculada:
