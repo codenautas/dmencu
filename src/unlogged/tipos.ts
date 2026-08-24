@@ -80,6 +80,7 @@ export type Opcion = CasilleroBase & {
     var_name?: null
     tipovar?: null
     primera_variable?: null
+    salto_ns_nc?: null
 }
 
 export type OpcionSi = Opcion & {
@@ -102,6 +103,7 @@ export type OpcionMultiple = CasilleroBase & {
     calculada?: boolean
     libre?: boolean
     valor_ns_nc: any
+    salto_ns_nc?: null
 }
 
 export type PreguntaBase = CasilleroBase & {
@@ -139,6 +141,7 @@ export type PreguntaConOpcionesMultiples = PreguntaBase & {
     var_name?: null
     tipovar?: null
     casilleros: OpcionMultiple[]
+    salto_ns_nc?: null
 }
 
 export type Pregunta = PreguntaSimple | PreguntaConSiNo | PreguntaConOpciones | PreguntaConOpcionesMultiples
@@ -149,6 +152,7 @@ export type ConjuntoPreguntas = CasilleroBase & {
     var_name?: null
     tipovar?: null
     casilleros: Pregunta[]
+    salto_ns_nc?: null
 }
 
 /*
@@ -165,6 +169,7 @@ export type Filtro = CasilleroBase & {
     primera_variable?: null
     calculada?: null
     libre?: null
+    salto_ns_nc?: null
 }
 
 export type ContenidoFormulario = Bloque | Pregunta | ConjuntoPreguntas | Filtro | BotonFormulario | Consistencia | Texto
@@ -176,6 +181,7 @@ export type Bloque = CasilleroBase & {
     var_name?: null
     tipovar?: null
     unidad_analisis?: IdUnidadAnalisis
+    salto_ns_nc?: null
 }
 
 export type Consistencia = CasilleroBase & {
@@ -184,6 +190,7 @@ export type Consistencia = CasilleroBase & {
     var_name?: null
     tipovar?: null
     primera_variable?: null
+    salto_ns_nc?: null
 }
 export type Texto = CasilleroBase & {
     tipoc: 'TEXTO'
@@ -191,6 +198,7 @@ export type Texto = CasilleroBase & {
     var_name?: null
     tipovar?: null
     primera_variable?: null
+    salto_ns_nc?: null
 }
 export type Libre = CasilleroBase & {
     tipoc: 'LIBRE'
@@ -198,6 +206,7 @@ export type Libre = CasilleroBase & {
     var_name?: null
     tipovar?: null
     primera_variable?: null
+    salto_ns_nc?: null
 }
 export type BotonFormulario = CasilleroBase & {
     tipoc: 'BF'
@@ -208,6 +217,7 @@ export type BotonFormulario = CasilleroBase & {
     var_names_BF?: IdVariable[]
     longitud?: string
     unidad_analisis?: IdUnidadAnalisis
+    salto_ns_nc?: null
 }
 
 export type Formulario = CasilleroBase & {
@@ -219,10 +229,12 @@ export type Formulario = CasilleroBase & {
     tipovar?: null
     hermano?: true
     unidad_analisis: IdUnidadAnalisis
+    salto_ns_nc?: null
 }
 
 export type PMatriz = CasilleroBase & {
     tipoc: 'PMATRIZ'
+    salto_ns_nc?: null
 }
 
 export type CasillerosImplementados = Formulario | Bloque | Filtro | ConjuntoPreguntas | Pregunta | OpcionMultiple | Opcion | BotonFormulario | Consistencia | Texto | Libre | PMatriz
