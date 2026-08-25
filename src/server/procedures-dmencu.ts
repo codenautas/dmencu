@@ -495,6 +495,13 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     from operativos 
                     where operativo = $1
             `, [parameters.operativo]).fetchUniqueRow()).row;
+
+            var semanas = (await context.client.query(
+                `select  
+                    ${jsono(`select * from semanas where operativo = $1`, 'semana')} as semanas
+                `,
+                [parameters.operativo]
+            ).fetchUniqueRow()).row.semanas;
             let compilarExpresionesDominios = (expresionesDominio: any) =>
                 likeAr(expresionesDominio)
                     .map((expr, dominio) => ({ dominio, expr: compilarExpresion(expr.expr) }))
@@ -550,6 +557,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 noReasSup: be.caches.tableContent.no_rea_sup,
                 defaultInformacionHdr,
                 uaPpal: unidad_analisis,
+                semanas,
                 pkAgregadaUaPpal: pk_agregada
             };
         }

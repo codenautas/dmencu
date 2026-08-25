@@ -366,6 +366,21 @@ export type InfoFormulario = {
 }
 
 export type IdResultado = 'AVERIGUAR' | 'TODO';
+export type IdSemana = 1 | 2 | 'etc'
+
+export type Semana = {
+    operativo: IdOperativo;
+    semana: number;
+    semana_referencia_desde?: string | null;
+    semana_referencia_hasta?: string | null;
+    '30dias_referencia_desde'?: string | null;
+    '30dias_referencia_hasta'?: string | null;
+    mes_referencia?: string | null;
+    carga_enc_desde?: string | null;
+    carga_enc_hasta?: string | null;
+    carga_recu_desde?: string | null;
+    carga_recu_hasta?: string | null;
+};
 
 export type TareasEstructura = {
     [idTarea in IdTarea]: {
@@ -407,7 +422,8 @@ export type Estructura = {
         variable_sup: string
         valor_sup: string
         grupo0_sup: string
-    }[]
+    }[],
+    semanas: { [idSemana in IdSemana]: Semana }
     defaultInformacionHdr: DatosHdrUaPpal
 }
 
