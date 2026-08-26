@@ -206,7 +206,7 @@ var getSettersAndParametersForReaNoReaResumenEstado = (funParams: { tarea: IdTar
     return { setters, params }
 }
 
-var guardarEncuestaEnTem = async (context: ProcedureContext, operativo: IdOperativo, idEnc: IdEnc, respuestasUAPrincipal: RespuestasRaiz, tarea: IdTarea) => {
+var guardarEncuestaEnTem = async (context: ProcedureContext, operativo: IdOperativo, idEnc: string, respuestasUAPrincipal: RespuestasRaiz, tarea: IdTarea) => {
     var { params, setters } = getSettersAndParametersForReaNoReaResumenEstado({
         tarea,
         respuestasUAPrincipal,
@@ -220,6 +220,39 @@ var guardarEncuestaEnTem = async (context: ProcedureContext, operativo: IdOperat
             returning 'ok'`
         ,
         params
+    ).fetchUniqueRow();
+}
+
+async function registrarPaseTabla(
+    context: ProcedureContext,
+    operativo: IdOperativo,
+    idEnc: string | number,
+    respuestasUAPrincipal: any
+) {
+    var be = context.be;
+    var procedureGuardar = be.procedure.caso_guardar;
+    let resultado = `id enc ${idEnc}: `;
+    let param_guardar = { operativo: operativo, id_caso: idEnc, datos_caso: respuestasUAPrincipal };
+    let savepointName = `sp_guardar_${idEnc}`.replace(/[^a-zA-Z0-9_]/g, '_');
+
+    try {
+        await context.client.query(`SAVEPOINT ${savepointName}`).execute();
+        resultado += await procedureGuardar.coreFunction(context, param_guardar);
+        await context.client.query(`RELEASE SAVEPOINT ${savepointName}`).execute();
+    } catch (err) {
+        await context.client.query(`ROLLBACK TO SAVEPOINT ${savepointName}`).execute();
+        var error = expected(err);
+        let errMessage = resultado + "dm_forpkraiz_descargar. " + error.message;
+        resultado = errMessage;
+        console.error(errMessage, error);
+    }
+
+    return await context.client.query(
+        `update tem
+            set pase_tabla = $3
+            where operativo = $1 and enc = $2
+            returning 'ok'`,
+        [operativo, idEnc, resultado]
     ).fetchUniqueRow();
 }
 
@@ -896,37 +929,18 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             var be = context.be;
             var { operativo, persistentes } = parameters;
             const UA_PRINCIPAL = (await getUAPrincipal(context.client, operativo)).unidad_analisis;
-            await Promise.all(likeAr(persistentes.respuestas[UA_PRINCIPAL]).map(async (respuestasUAPrincipal: any, idEnc: any) => {
+            var procedureGuardar = be.procedure.caso_guardar;
+
+            const respuestas = persistentes.respuestas[UA_PRINCIPAL] || {};
+            for (const idEnc in respuestas) {
+                const respuestasUAPrincipal = respuestas[idEnc];
                 if (respuestasUAPrincipal.s1a1_obs == '!prueba de error al grabar!') {
                     throw new Error('DIO PRUEBA DE ERROR AL GRABAR');
                 }
                 await guardarEncuestaEnTem(context, operativo, idEnc, respuestasUAPrincipal, persistentes.informacionHdr[idEnc].tarea.tarea);
-                //guardar paralelamente en tablas ua
-                var procedureGuardar = be.procedure.caso_guardar;
-                let resultado = `id enc ${idEnc}: `;
-                let param_guardar = { operativo: operativo, id_caso: idEnc, datos_caso: respuestasUAPrincipal }
-                let errMessage: string | null;
-                try {
-                    await be.inTransaction(null, async function (_client) {
-                        resultado += await procedureGuardar.coreFunction(context, param_guardar);
-                    })
-                } catch (err) {
-                    var error = expected(err);
-                    errMessage = resultado + "dm_forpkraiz_descargar. " + error.message;
-                    resultado = errMessage
-                    console.error(errMessage, error)
-                }
-                await context.client.query(
-                    `update tem
-                        set pase_tabla= $3
-                        where operativo= $1 and enc = $2
-                        returning 'ok'`
-                    ,
-                    [operativo, idEnc, resultado]
-                ).fetchUniqueRow();
-
-            }).array());
-            return 'ok'
+                await registrarPaseTabla(context, operativo, idEnc, respuestasUAPrincipal)
+            }
+            return 'ok';
         }
     },
     {
@@ -1008,29 +1022,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         puedoGuardarEnTEM = queryTareasTem.rowCount == 1;
                         if (puedoGuardarEnTEM) {
                             await guardarEncuestaEnTem(context, OPERATIVO, idEnc, respuestasUAPrincipal, tarea);
-                            //guardar paralelamente en tablas ua
-                            var procedureGuardar = be.procedure.caso_guardar;
-                            let resultado = `id enc ${idEnc}: `;
-                            let param_guardar = { operativo: OPERATIVO, id_caso: idEnc, datos_caso: respuestasUAPrincipal }
-                            let errMessage: string | null;
-                            try {
-                                await be.inTransaction(null, async function (_client) {
-                                    resultado += await procedureGuardar.coreFunction(context, param_guardar);
-                                })
-                            } catch (err) {
-                                var error = expected(err);
-                                errMessage = resultado + "dm_forpkraiz_descargar. " + error.message;
-                                resultado = errMessage
-                                console.error(errMessage, error)
-                            }
-                            await context.client.query(
-                                `update tem
-                                    set pase_tabla= $3
-                                    where operativo= $1 and enc = $2
-                                    returning 'ok'`
-                                ,
-                                [OPERATIVO, idEnc, resultado]
-                            ).fetchUniqueRow();
+                            await registrarPaseTabla(context, OPERATIVO, idEnc, respuestasUAPrincipal);
                         } else {
                             await fs.appendFile('local-recibido-sin-token.txt', JSON.stringify({ now: new Date(), idper: persistentes.idper, idCaso: idEnc, [pk_agregada]: respuestasUAPrincipal }) + '\n\n', 'utf8');
                         }
