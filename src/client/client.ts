@@ -169,7 +169,7 @@ var crearBotonesVerAbrirTareas = async (depot: myOwn.Depot, fieldName: string, l
     );
     depot.rowControls[fieldName].innerHTML = '';
     misTareas.forEach((tarea: { tarea: string, nombre: string, main_form: IdFormulario }) => {
-        let buttonLabel = `${label} ${tarea.tarea}`;
+        let buttonLabel = `${tarea.tarea}`;
         let ver = crearBotonVerAbrirEncuesta(
             depot.row.operativo as IdOperativo,
             tarea.tarea as IdTarea,
