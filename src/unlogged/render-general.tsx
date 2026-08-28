@@ -325,3 +325,22 @@ export function RenderPrincipal<T, T2 extends Action>(props: { store: Store<T, T
     </React.StrictMode>
 }
 
+export const nombreMeses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+export const nombreDias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+
+export function crearFechaDesdeTextoISO(texto: string): Date {
+    var partes = texto.split(/[/-]/g);
+    return new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
+}
+
+export function mesReferencia(fecha: string): string {
+    var d = crearFechaDesdeTextoISO(fecha);
+    return nombreMeses[d.getMonth()];
+}
+
+export function fechaReferencia(fecha: string): string {
+    var d = crearFechaDesdeTextoISO(fecha);
+    return `${nombreDias[d.getDay()]} ${d.getDate()} de ${mesReferencia(fecha)}`;
+}
+
+

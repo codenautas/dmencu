@@ -1,4 +1,4 @@
-import { createStore } from "redux";
+import { createStore, Store } from "redux";
 import {
     CasillerosImplementados, CasoState,
     EstadoCarga, EstructuraRowValidator,
@@ -13,6 +13,7 @@ import {
     Estructura,
     ModoDM,
     PantallaNavegacion,
+    IdComodin,
 } from "./tipos";
 import { createReducer, createDispatchers, ActionsFrom } from "redux-typed-reducer";
 import * as likeAr from "like-ar";
@@ -144,6 +145,20 @@ var reducers = {
                 }
             }
         },
+    CAMBIAR_COMODIN: (payload: { idComodin: IdComodin, valor: any }) =>
+        function (state: CasoState) {
+            if (state.opciones.comodines[payload.idComodin] === payload.valor) return state;
+            return {
+                ...state,
+                opciones: {
+                    ...state.opciones,
+                    comodines: {
+                        ...state.opciones.comodines,
+                        [payload.idComodin]: payload.valor
+                    }
+                }
+            }
+        }
 }
 
 export type ActionFormularioState = ActionsFrom<typeof reducers>;
@@ -342,6 +357,12 @@ export function adaptarEstructura(estructuraBackend:any) {
     return estructura;
 }
 
+let storeFormularioInstance: ReturnType<typeof createStore> | null = null;
+
+export const comodinesIniciales = {
+    'SEM_REF' : '@SEM_REF@'
+}
+
 export async function crearStoreFormulario(opts: { operativo?: IdOperativo, forPkRaiz?: ForPkRaiz }) {
     var getCasoState = getFormRenderer().getCasoState.bind(getFormRenderer());
     var setCasoState = getFormRenderer().setCasoState.bind(getFormRenderer());
@@ -358,7 +379,8 @@ export async function crearStoreFormulario(opts: { operativo?: IdOperativo, forP
                 saltoAutomatico: true,
                 modoBorrarRespuesta: null,
                 pantallaActual: 'hdr',
-                avisoPersistente: null
+                avisoPersistente: null,
+                comodines: comodinesIniciales
             } as CasoState["opciones"], // poner los valores por defecto más abajo
         } as CasoState;
         if (casoState) {
@@ -391,6 +413,7 @@ export async function crearStoreFormulario(opts: { operativo?: IdOperativo, forP
     /* CARGA Y GUARDADO DE STATE */
     /* CREACION STORE */
     const store = createStore(hdrReducer, initialState);
+    storeFormularioInstance = store;
     saveState(store.getState());
     store.subscribe(function () {
         saveState(store.getState());
@@ -398,4 +421,11 @@ export async function crearStoreFormulario(opts: { operativo?: IdOperativo, forP
     /* FIN CREACION STORE */
     //HDR CON STORE CREADO
     return store;
+}
+
+export function getStoreFormulario() {
+    if (!storeFormularioInstance) {
+        console.warn("Intentaste acceder a la store antes de que fuera creada.");
+    }
+    return storeFormularioInstance;
 }

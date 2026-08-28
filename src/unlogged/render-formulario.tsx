@@ -8,6 +8,7 @@ import {
     materialIoIconsSvgPath,
     useOnlineStatus,
     RenderizadorJSON,
+    fechaReferencia,
 } from "./render-general";
 import {
     Bloque, BotonFormulario,
@@ -25,6 +26,8 @@ import {
     iterator, empty, ConfiguracionHabilitarBotonFormulario,
     PMatriz,
     ModoDM,
+    IdComodin,
+    IdSemana,
 } from "./tipos";
 import {
     accion_abrir_formulario,
@@ -45,7 +48,9 @@ import {
     setEstructura
 } from "./bypass-formulario"
 import {
+    comodinesIniciales,
     crearStoreFormulario, dispatchers,
+    getStoreFormulario,
     gotoConsistir,
 } from "./redux-formulario";
 import { useState, useEffect } from "react";
@@ -108,6 +113,29 @@ function breakeableText(text: string | null, diccionario?: { [clave: string]: Re
     /*
     return <span>{partes.map((parte:string, i:number) => <span style={i%2==1?{textDecoration:"underline"}:{}}> {parte+" "} </span>)}</span>
     */
+}
+
+export function BreakeableText(props: {
+    text: string | null | undefined,
+    className?: string,
+    style?: React.CSSProperties,
+}) {
+    const { text, className, style } = props;
+    const comodines = useSelector((state: CasoState) => state.opciones.comodines);
+
+    if (typeof text !== "string") return null;
+
+    let procesado = text.replace(/\//g, "/\u2063").replace(/\/\u2063(\w)\b/g, '/$1');
+    procesado = procesado.replace(/___*/g, (todo) => `[${todo}]`)
+    .replace(/@(\w+)@/g, (todo, idSinArrobas) => {
+        const valor = comodines[idSinArrobas as IdComodin];
+        if (valor !== undefined) {
+            return `[${valor}]`;
+        }
+        throw new Error(`Comodín no encontrado: ${todo}`);
+    });
+    
+    return <span className={className} style={style}>{procesado}</span>;
 }
 
 export function getBFVarNames(salto: string | null) {
@@ -413,9 +441,9 @@ function OpcionDespliegue(props: { casillero: Opcion, valorOpcion: number, varia
                     {casillero.ver_id || casillero.casillero}
                 </Grid>
                 <Grid className="opcion-texto">
-                    <Typography debe-leer={casillero.leer ? 'SI' : casillero.leer === false ? 'NO' : props.leer ? 'SI' : 'NO'}>{breakeableText(casillero.nombre)}</Typography>
+                    <Typography debe-leer={casillero.leer ? 'SI' : casillero.leer === false ? 'NO' : props.leer ? 'SI' : 'NO'}><BreakeableText text={casillero.nombre} /></Typography>
                     {casillero.aclaracion ?
-                        <Typography className='aclaracion'>{breakeableText(casillero.aclaracion)}</Typography>
+                        <Typography className='aclaracion'><BreakeableText text={casillero.aclaracion} /></Typography>
                         : null}
                 </Grid>
             </Grid>
@@ -592,7 +620,7 @@ function EncabezadoDespliegue(props: {
             </div>
         </div>
         <div className="nombre-div">
-            <div className="nombre">{breakeableText(casillero.nombre)}
+            <div className="nombre"><BreakeableText text={casillero.nombre} />
                 {casillero.especial?.gps ?
                     <span>
                         <Button color="primary" variant="outlined" style={{ marginLeft: '10px' }} onClick={(_event) => {
@@ -628,7 +656,7 @@ function EncabezadoDespliegue(props: {
                     {casillero.salto && casillero.tipoc == 'FILTRO' ?
                         <SaltoDespliegue casillero={casillero} prefijo={breakeableText(casillero.aclaracion)!} />
                         :
-                        breakeableText(casillero.aclaracion)
+                        <BreakeableText text={casillero.aclaracion} />
                     }
                 </div>
                 : null}
@@ -854,8 +882,6 @@ function PreguntaDespliegue(props: {
     paraPMatriz?: true
 }) {
     var { pregunta } = props;
-    const dispatch = useDispatch();
-    var estado: EstadoVariable;
     var id = `pregunta-${pregunta.id_casillero}`
     registrarElemento({
         id,
@@ -1926,11 +1952,11 @@ function BotonVolverEnDiv({ id }: { id: string }) {
 }
 
 function FormularioDespliegue(props: { forPk: ForPk }) {
-    var forPk = props.forPk;
-    var { formulario, modoDespliegue, opciones }
-        = useSelectorVivienda(props.forPk);
-    var soloLectura = getDatosByPass().soloLectura;
     const dispatch = useDispatch();
+    const forPk = props.forPk;
+    var { formulario, modoDespliegue, opciones }
+        = useSelectorVivienda(forPk);
+    var soloLectura = getDatosByPass().soloLectura;
     var esVolver = opciones.pilaForPk.length > 0;
     useEffect(() => {
         var controlScroll = () => {
@@ -1951,12 +1977,13 @@ function FormularioDespliegue(props: { forPk: ForPk }) {
                 );
             }
         }
-        const idCaso = likeAr(props.forPk).find((_, k) => {
+        const idCaso = likeAr(forPk).find((_, k) => {
             return k != 'formulario'
         })?.toString();
         window.document.title = getEstructura().operativo + '- ' + idCaso;
         window.addEventListener('scroll', controlScroll);
         controlScroll();
+        calcularComodines(forPk);
         return () => {
             window.removeEventListener('scroll', controlScroll);
         }
@@ -2834,7 +2861,7 @@ export async function desplegarFormularioActual(
     opts: { forPkRaiz?: ForPkRaiz } = {}
 ) {
     await formRenderer.cargarMotor();
-    const store = await crearStoreFormulario(opts)
+    const store = await crearStoreFormulario(opts);
     try {
         await loadCSS(BOOTSTRAP_5_1_3_SRC);
     } catch (err) {
@@ -2962,6 +2989,7 @@ setCalcularVariables((respuestasRaiz: RespuestasRaiz, forPk: ForPk) => {
         })
     }
     respuestasRaiz.vdominio = getDatosByPass().informacionHdr[forPk[estructura.pkAgregadaUaPpal]].tem.dominio;
+    calcularComodines(forPk);
     //TODO: MEJORAR EN ALGUN MOMENTO EL BOTON LISTO
     //let totalH = respuestasRaiz['total_h' as IdVariable];
     //respuestasRaiz['$B.F:S1' as IdVariable] = (respuestasRaiz['hogares'] || []).length == totalH ? 'ok' : null;
@@ -2972,6 +3000,18 @@ setCalcularVariables((respuestasRaiz: RespuestasRaiz, forPk: ForPk) => {
 window.addEventListener('load', function () {
     loadInstance()
 })
+function calcularComodines(forPk: ForPk) {
+    const estructura = getEstructura();
+    const infoHdr = getDatosByPass().informacionHdr[forPk[estructura.pkAgregadaUaPpal]];
+    const semanaNumero = infoHdr?.tem?.semana;
+    const semanaObj = semanaNumero != null ? estructura.semanas?.[semanaNumero as IdSemana] : null;
+    let semRef = comodinesIniciales['SEM_REF'];
+    if (semanaObj?.semana_referencia_desde && semanaObj?.semana_referencia_hasta) {
+        semRef = `${fechaReferencia(semanaObj.semana_referencia_desde)} a ${fechaReferencia(semanaObj.semana_referencia_hasta)}`;
+    }
+    getStoreFormulario()?.dispatch(dispatchers.CAMBIAR_COMODIN({ idComodin: 'SEM_REF', valor: semRef }));
+}
+
 //FIN CONTROL PESTAÑAS
 
 function loadCSS(cssURL: string, id?: string): Promise<void> {
