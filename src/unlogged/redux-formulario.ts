@@ -34,6 +34,20 @@ function forPkToUrl(forPk: ForPk | null, pilaForPk: ForPk[]) {
     });
 }
 
+export const comodinesIniciales: Record<IdComodin, string> = {
+    'SEM_REF': '@SEM_REF@',
+    'D30_REF': '@D30_REF@',
+    'MES_REF': '@MES_REF@',
+    'SEM_NUM': '@SEM_NUM@',
+    'resps1': '@resps1@',
+    'parents1': '@parents1@',
+    'respi1': '@respi1@',
+    'parenti1': '@parenti1@',
+    'njefe': '@njefe@',
+    'frealiz': '@frealiz@',
+    'canti_hogares': '@canti_hogares@'
+};
+
 var reducers = {
     MODO_DESPLIEGUE: (payload: { modoDespliegue: ModoDespliegue }) =>
         function (state: CasoState) {
@@ -155,6 +169,27 @@ var reducers = {
                     comodines: {
                         ...state.opciones.comodines,
                         [payload.idComodin]: payload.valor
+                    }
+                }
+            }
+        },
+    ACTUALIZAR_COMODINES: (payload: Record<IdComodin, string>) =>
+        function (state: CasoState) {
+            // Chequeo de igualdad superficial para evitar clones si NADA cambió
+            const actual = state.opciones.comodines;
+            const cambio = Object.keys(payload).some(
+                (key) => actual[key as IdComodin] !== payload[key as IdComodin]
+            );
+
+            if (!cambio) return state;
+
+            return {
+                ...state,
+                opciones: {
+                    ...state.opciones,
+                    comodines: {
+                        ...comodinesIniciales, // Blanquea/Resetea defaults si faltan claves
+                        ...payload
                     }
                 }
             }
@@ -359,9 +394,7 @@ export function adaptarEstructura(estructuraBackend:any) {
 
 let storeFormularioInstance: ReturnType<typeof createStore> | null = null;
 
-export const comodinesIniciales = {
-    'SEM_REF' : '@SEM_REF@'
-}
+
 
 export async function crearStoreFormulario(opts: { operativo?: IdOperativo, forPkRaiz?: ForPkRaiz }) {
     var getCasoState = getFormRenderer().getCasoState.bind(getFormRenderer());

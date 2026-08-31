@@ -9,6 +9,8 @@ import {
     useOnlineStatus,
     RenderizadorJSON,
     fechaReferencia,
+    mesReferencia,
+    obtenerTextoParentesco,
 } from "./render-general";
 import {
     Bloque, BotonFormulario,
@@ -126,16 +128,27 @@ export function BreakeableText(props: {
     if (typeof text !== "string") return null;
 
     let procesado = text.replace(/\//g, "/\u2063").replace(/\/\u2063(\w)\b/g, '/$1');
-    procesado = procesado.replace(/___*/g, (todo) => `[${todo}]`)
-    .replace(/@(\w+)@/g, (todo, idSinArrobas) => {
-        const valor = comodines[idSinArrobas as IdComodin];
-        if (valor !== undefined) {
-            return `[${valor}]`;
+    procesado = procesado.replace(/___*/g, (todo) => `[${todo}]`);
+
+    const partes = procesado.split(/(@[\w-]+@)/g);
+    const contenido = partes.map((parte, index) => {
+        const match = parte.match(/^@([\w-]+)@$/);
+        if (match) {
+            const idSinArrobas = match[1];
+            const valor = comodines[idSinArrobas as IdComodin];
+            if (valor !== undefined) {
+                return `[${valor}]`;
+            }
+            return (
+                <span key={index} style={{ color: 'red' }} title={`Comodín o tipo no encontrado: ${parte}`}>
+                    {`[${parte}]`}
+                </span>
+            );
         }
-        throw new Error(`Comodín no encontrado: ${todo}`);
+        return parte;
     });
-    
-    return <span className={className} style={style}>{procesado}</span>;
+
+    return <span className={className} style={style}>{contenido}</span>;
 }
 
 export function getBFVarNames(salto: string | null) {
@@ -3005,11 +3018,104 @@ function calcularComodines(forPk: ForPk) {
     const infoHdr = getDatosByPass().informacionHdr[forPk[estructura.pkAgregadaUaPpal]];
     const semanaNumero = infoHdr?.tem?.semana;
     const semanaObj = semanaNumero != null ? estructura.semanas?.[semanaNumero as IdSemana] : null;
-    let semRef = comodinesIniciales['SEM_REF'];
+
+    const comodinesCalculados: Record<IdComodin, string> = { ...comodinesIniciales };
+
     if (semanaObj?.semana_referencia_desde && semanaObj?.semana_referencia_hasta) {
-        semRef = `${fechaReferencia(semanaObj.semana_referencia_desde)} a ${fechaReferencia(semanaObj.semana_referencia_hasta)}`;
+        comodinesCalculados['SEM_REF'] = `${fechaReferencia(semanaObj.semana_referencia_desde)} a ${fechaReferencia(semanaObj.semana_referencia_hasta)}`;
     }
-    getStoreFormulario()?.dispatch(dispatchers.CAMBIAR_COMODIN({ idComodin: 'SEM_REF', valor: semRef }));
+
+    if (semanaObj?.['30dias_referencia_desde'] && semanaObj?.['30dias_referencia_hasta']) {
+        comodinesCalculados['D30_REF'] = `${fechaReferencia(semanaObj['30dias_referencia_desde'])} a ${fechaReferencia(semanaObj['30dias_referencia_hasta'])}`;
+    }
+
+    if (semanaObj?.mes_referencia) {
+        comodinesCalculados['MES_REF'] = `${mesReferencia(semanaObj.mes_referencia)}`;
+    }
+
+    if (semanaObj?.semana != null) {
+        comodinesCalculados['SEM_NUM'] = semanaObj.semana.toString();
+    } else if (semanaNumero != null) {
+        comodinesCalculados['SEM_NUM'] = semanaNumero.toString();
+    }
+
+    const idCaso = forPk[estructura.pkAgregadaUaPpal];
+    const respuestasRaiz = getDatosByPass().respuestas?.[estructura.uaPpal]?.[idCaso] as RespuestasRaiz | undefined;
+
+    let hogarObj: any = null;
+    let personasArray: any[] = [];
+    if (respuestasRaiz) {
+        if (estructura.conReaHogar) {
+            const hogares = respuestasRaiz['hogares' as IdUnidadAnalisis] as any[];
+            const numHogar = forPk.hogar != null ? Number(forPk.hogar) : 1;
+            hogarObj = (hogares && hogares.length > 0) ? (hogares[numHogar - 1] || hogares[0]) : respuestasRaiz;
+            personasArray = (hogarObj && hogarObj['personas' as IdUnidadAnalisis]) || [];
+        } else {
+            hogarObj = respuestasRaiz;
+            personasArray = (respuestasRaiz['personas' as IdUnidadAnalisis] as any[]) || [];
+        }
+    }
+
+    comodinesCalculados['canti_hogares'] = '........';
+    if (respuestasRaiz?.['total_h' as IdVariable] != null) {
+        comodinesCalculados['canti_hogares'] = `${respuestasRaiz['total_h' as IdVariable]}`;
+    } else if (respuestasRaiz?.['total_h_sup' as IdVariable] != null) {
+        comodinesCalculados['canti_hogares'] = `${respuestasRaiz['total_h_sup' as IdVariable]}`;
+    }
+
+    if (hogarObj?.['f_realiz_o']) {
+        comodinesCalculados['frealiz'] = `${hogarObj['f_realiz_o']}`;
+    } else if (respuestasRaiz?.['f_realiz_o' as IdVariable]) {
+        comodinesCalculados['frealiz'] = `${respuestasRaiz['f_realiz_o' as IdVariable]}`;
+    }
+
+    comodinesCalculados['resps1'] = '........';
+    comodinesCalculados['parents1'] = '........';
+    comodinesCalculados['respi1'] = '........';
+    comodinesCalculados['parenti1'] = '........';
+    comodinesCalculados['njefe'] = '........';
+
+    const entrea = hogarObj?.['entrea'] ?? respuestasRaiz?.['entrea' as IdVariable];
+    if (entrea == 1) {
+        if (hogarObj?.['nombrer']) {
+            comodinesCalculados['resps1'] = `${hogarObj['nombrer']}`;
+        }
+
+        const numResp = hogarObj?.['respond'] != null ? Number(hogarObj['respond']) : null;
+        if (numResp != null && personasArray.length > 0) {
+            const personaResp = personasArray.find((p: any, idx: number) => (p?.persona != null ? Number(p.persona) === numResp : (idx + 1) === numResp));
+            if (personaResp) {
+                const p4 = personaResp.p4 != null ? Number(personaResp.p4) : (personaResp.p4r != null ? Number(personaResp.p4r) : null);
+                comodinesCalculados['parents1'] = obtenerTextoParentesco(p4, estructura.operativo);
+            }
+        }
+
+        if (personasArray.length > 0) {
+            const jefe = personasArray.find((p: any, idx: number) => (p?.persona != null ? Number(p.persona) === 1 : idx === 0));
+            if (jefe?.nombre) {
+                comodinesCalculados['njefe'] = `${jefe.nombre}`;
+            }
+        }
+
+        const numRespi = (hogarObj?.['cr_num_miembro'] ?? hogarObj?.['cr_num_miembro_ing']) != null
+            ? Number(hogarObj?.['cr_num_miembro'] ?? hogarObj?.['cr_num_miembro_ing'])
+            : null;
+        if (numRespi != null && personasArray.length > 0) {
+            const personaRespi = personasArray.find((p: any, idx: number) => (p?.persona != null ? Number(p.persona) === numRespi : (idx + 1) === numRespi));
+            if (personaRespi) {
+                if (personaRespi.nombre) {
+                    comodinesCalculados['respi1'] = `${personaRespi.nombre}`;
+                }
+                const p4i = personaRespi.p4 != null ? Number(personaRespi.p4) : (personaRespi.p4r != null ? Number(personaRespi.p4r) : null);
+                comodinesCalculados['parenti1'] = obtenerTextoParentesco(p4i, estructura.operativo);
+            }
+        }
+    }
+
+    const store = getStoreFormulario();
+    if (store) {
+        store.dispatch(dispatchers.ACTUALIZAR_COMODINES(comodinesCalculados));
+    }
 }
 
 //FIN CONTROL PESTAÑAS
