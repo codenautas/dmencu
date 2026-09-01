@@ -3018,7 +3018,6 @@ function calcularComodines(forPk: ForPk) {
     const infoHdr = getDatosByPass().informacionHdr[forPk[estructura.pkAgregadaUaPpal]];
     const semanaNumero = infoHdr?.tem?.semana;
     const semanaObj = semanaNumero != null ? estructura.semanas?.[semanaNumero as IdSemana] : null;
-
     const comodinesCalculados: Record<IdComodin, string> = { ...comodinesIniciales };
 
     if (semanaObj?.semana_referencia_desde && semanaObj?.semana_referencia_hasta) {
@@ -3039,34 +3038,35 @@ function calcularComodines(forPk: ForPk) {
         comodinesCalculados['SEM_NUM'] = semanaNumero.toString();
     }
 
-    const idCaso = forPk[estructura.pkAgregadaUaPpal];
-    const respuestasRaiz = getDatosByPass().respuestas?.[estructura.uaPpal]?.[idCaso] as RespuestasRaiz | undefined;
+    let respuestasAumentadas: Respuestas | undefined;
+    try {
+        ({ respuestasAumentadas } = respuestasForPk(forPk, true));
+    } catch {
+        const idCaso = forPk[estructura.pkAgregadaUaPpal];
+        respuestasAumentadas = getDatosByPass().respuestas?.[estructura.uaPpal]?.[idCaso] as Respuestas | undefined;
+    }
 
-    let hogarObj: any = null;
     let personasArray: any[] = [];
-    if (respuestasRaiz) {
-        if (estructura.conReaHogar) {
-            const hogares = respuestasRaiz['hogares' as IdUnidadAnalisis] as any[];
+    if (respuestasAumentadas) {
+        if (Array.isArray(respuestasAumentadas['personas' as IdUnidadAnalisis])) {
+            personasArray = respuestasAumentadas['personas' as IdUnidadAnalisis] as any[];
+        } else if (estructura.conReaHogar && Array.isArray(respuestasAumentadas['hogares' as IdUnidadAnalisis])) {
+            const hogares = respuestasAumentadas['hogares' as IdUnidadAnalisis] as any[];
             const numHogar = forPk.hogar != null ? Number(forPk.hogar) : 1;
-            hogarObj = (hogares && hogares.length > 0) ? (hogares[numHogar - 1] || hogares[0]) : respuestasRaiz;
-            personasArray = (hogarObj && hogarObj['personas' as IdUnidadAnalisis]) || [];
-        } else {
-            hogarObj = respuestasRaiz;
-            personasArray = (respuestasRaiz['personas' as IdUnidadAnalisis] as any[]) || [];
+            const hogarObj = hogares[numHogar - 1] || hogares[0];
+            personasArray = hogarObj?.['personas' as IdUnidadAnalisis] || [];
         }
     }
 
     comodinesCalculados['canti_hogares'] = '........';
-    if (respuestasRaiz?.['total_h' as IdVariable] != null) {
-        comodinesCalculados['canti_hogares'] = `${respuestasRaiz['total_h' as IdVariable]}`;
-    } else if (respuestasRaiz?.['total_h_sup' as IdVariable] != null) {
-        comodinesCalculados['canti_hogares'] = `${respuestasRaiz['total_h_sup' as IdVariable]}`;
+    const totalH = respuestasAumentadas?.['total_h' as IdVariable] ?? respuestasAumentadas?.['total_h_sup' as IdVariable];
+    if (totalH != null) {
+        comodinesCalculados['canti_hogares'] = `${totalH}`;
     }
 
-    if (hogarObj?.['f_realiz_o']) {
-        comodinesCalculados['frealiz'] = `${hogarObj['f_realiz_o']}`;
-    } else if (respuestasRaiz?.['f_realiz_o' as IdVariable]) {
-        comodinesCalculados['frealiz'] = `${respuestasRaiz['f_realiz_o' as IdVariable]}`;
+    const fRealiz = respuestasAumentadas?.['f_realiz_o' as IdVariable];
+    if (fRealiz) {
+        comodinesCalculados['frealiz'] = `${fRealiz}`;
     }
 
     comodinesCalculados['resps1'] = '........';
@@ -3075,18 +3075,21 @@ function calcularComodines(forPk: ForPk) {
     comodinesCalculados['parenti1'] = '........';
     comodinesCalculados['njefe'] = '........';
 
-    const entrea = hogarObj?.['entrea'] ?? respuestasRaiz?.['entrea' as IdVariable];
+    const entrea = respuestasAumentadas?.['entrea' as IdVariable];
     if (entrea == 1) {
-        if (hogarObj?.['nombrer']) {
-            comodinesCalculados['resps1'] = `${hogarObj['nombrer']}`;
+        const nombrer = respuestasAumentadas?.['nombrer' as IdVariable];
+        if (nombrer) {
+            comodinesCalculados['resps1'] = `${nombrer}`;
         }
 
-        const numResp = hogarObj?.['respond'] != null ? Number(hogarObj['respond']) : null;
+        const numResp = respuestasAumentadas?.['respond' as IdVariable];
         if (numResp != null && personasArray.length > 0) {
-            const personaResp = personasArray.find((p: any, idx: number) => (p?.persona != null ? Number(p.persona) === numResp : (idx + 1) === numResp));
+            const personaResp = personasArray.find((p: any, idx: number) => (p?.persona != null ? Number(p.persona) === Number(numResp) : (idx + 1) === Number(numResp)));
             if (personaResp) {
-                const p4 = personaResp.p4 != null ? Number(personaResp.p4) : (personaResp.p4r != null ? Number(personaResp.p4r) : null);
-                comodinesCalculados['parents1'] = obtenerTextoParentesco(p4, estructura.operativo);
+                const p4 = personaResp.p4 ?? personaResp.p4r;
+                if (p4 != null) {
+                    comodinesCalculados['parents1'] = obtenerTextoParentesco(Number(p4), estructura.operativo);
+                }
             }
         }
 
@@ -3097,17 +3100,17 @@ function calcularComodines(forPk: ForPk) {
             }
         }
 
-        const numRespi = (hogarObj?.['cr_num_miembro'] ?? hogarObj?.['cr_num_miembro_ing']) != null
-            ? Number(hogarObj?.['cr_num_miembro'] ?? hogarObj?.['cr_num_miembro_ing'])
-            : null;
+        const numRespi = respuestasAumentadas?.['cr_num_miembro' as IdVariable];
         if (numRespi != null && personasArray.length > 0) {
-            const personaRespi = personasArray.find((p: any, idx: number) => (p?.persona != null ? Number(p.persona) === numRespi : (idx + 1) === numRespi));
+            const personaRespi = personasArray.find((p: any, idx: number) => (p?.persona != null ? Number(p.persona) === Number(numRespi) : (idx + 1) === Number(numRespi)));
             if (personaRespi) {
                 if (personaRespi.nombre) {
                     comodinesCalculados['respi1'] = `${personaRespi.nombre}`;
                 }
-                const p4i = personaRespi.p4 != null ? Number(personaRespi.p4) : (personaRespi.p4r != null ? Number(personaRespi.p4r) : null);
-                comodinesCalculados['parenti1'] = obtenerTextoParentesco(p4i, estructura.operativo);
+                const p4i = personaRespi.p4 ?? personaRespi.p4r;
+                if (p4i != null) {
+                    comodinesCalculados['parenti1'] = obtenerTextoParentesco(Number(p4i), estructura.operativo);
+                }
             }
         }
     }
