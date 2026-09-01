@@ -161,13 +161,14 @@ var reducers = {
         },
     CAMBIAR_COMODIN: (payload: { idComodin: IdComodin, valor: any }) =>
         function (state: CasoState) {
-            if (state.opciones.comodines[payload.idComodin] === payload.valor) return state;
+            const actual = state.opciones?.comodines || comodinesIniciales;
+            if (actual[payload.idComodin] === payload.valor) return state;
             return {
                 ...state,
                 opciones: {
                     ...state.opciones,
                     comodines: {
-                        ...state.opciones.comodines,
+                        ...actual,
                         [payload.idComodin]: payload.valor
                     }
                 }
@@ -176,8 +177,8 @@ var reducers = {
     CAMBIAR_COMODINES: (payload: Record<IdComodin, string>) =>
         function (state: CasoState) {
             // Chequeo de igualdad superficial para evitar clones si NADA cambió
-            const actual = state.opciones.comodines;
-            const cambio = Object.keys(payload).some(
+            const actual = state.opciones?.comodines || comodinesIniciales;
+            const cambio = !state.opciones?.comodines || Object.keys(payload).some(
                 (key) => actual[key as IdComodin] !== payload[key as IdComodin]
             );
 
@@ -419,7 +420,14 @@ export async function crearStoreFormulario(opts: { operativo?: IdOperativo, forP
         if (casoState) {
             initialState = {
                 ...initialState,
-                opciones: casoState.opciones
+                opciones: {
+                    ...initialState.opciones,
+                    ...casoState.opciones,
+                    comodines: {
+                        ...comodinesIniciales,
+                        ...(casoState.opciones?.comodines || {})
+                    }
+                }
             }
         }
         if (opts.forPkRaiz) {

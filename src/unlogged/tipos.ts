@@ -374,8 +374,8 @@ export type Semana = {
     semana: number;
     semana_referencia_desde?: string | null;
     semana_referencia_hasta?: string | null;
-    '30dias_referencia_desde'?: string | null;
-    '30dias_referencia_hasta'?: string | null;
+    d30_referencia_desde?: string | null;
+    d30_referencia_hasta?: string | null;
     mes_referencia?: string | null;
     carga_enc_desde?: string | null;
     carga_enc_hasta?: string | null;
