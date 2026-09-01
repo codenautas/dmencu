@@ -371,9 +371,13 @@ div.acciones-pregunta
     background-image url("../img/fondo-salteado-error.png")
     background-size 32px
     background-repeat repeat
+    .btn
+      background-color transparent !important
   [nuestro-validator=invalida]
     boton-id-div()
     background repeating-linear-gradient(45deg, #eee, #eee 10px, #f99 10px, #f99 12px)
+    .btn
+      background-color transparent !important
   [esta-inhabilitada=SI]
     &[ocultar-salteada=INHABILITAR]
       &[tiene-valor=NO]
@@ -401,6 +405,8 @@ div.acciones-pregunta
     background-repeat repeat
   [nuestro-validator=fuera_de_flujo_por_omitida]
     background repeating-linear-gradient(45deg, #eee, #eee 10px, #fcc 10px, #fcc 12px)
+    .btn
+      background-color transparent !important
     &[tiene-valor=SI]
       boton-id-div()
 

@@ -1149,8 +1149,8 @@ type DefinicionFormularioAbrir =
     { forPk: ForPk, num: number, actual: boolean, previo: false, esAgregar: true } |
     { forPk: ForPk, num: number, actual: boolean, previo: false, esConfirmar: true } |
     { forPk: ForPk, num: number, actual: boolean, previo: false, permiteBorrar: boolean } |
-    { forPk: ForPk, num: false, actual: boolean, previo: true, unico: true })
-    & { esConfirmar?: true, esAgregar?: true, permiteBorrar?: boolean, permiteBorrarGabinete?: boolean, disabled?: boolean | undefined };
+    { forPk: ForPk, num: false, actual: boolean, previo: boolean, unico: true })
+    & { esConfirmar?: true, esAgregar?: true, permiteBorrar?: boolean, permiteBorrarGabinete?: boolean, disabled?: boolean | undefined, estadoBoton?: string };
 
 
 var botonFormularioConResumen = (
@@ -1171,7 +1171,7 @@ var botonFormularioConResumen = (
         id,
         class: "seccion-boton-formulario",
         $attrs: {
-            "nuestro-validator": defBoton.actual ? 'actual' : defBoton.previo ? 'valida' : 'todavia_no',
+            "nuestro-validator": defBoton.actual ? 'actual' : defBoton.previo ? 'valida' : (defBoton.estadoBoton || 'todavia_no'),
             "ocultar-salteada": casillero.despliegueOculta ? (casillero.expresion_habilitar_js ? 'INHABILITAR' : 'SI') : 'NO',
             "tiene-valor": "NO",
             "def-button": JSON.stringify(defBoton)
@@ -1210,7 +1210,7 @@ var botonFormularioConResumen = (
                     }
                 },
                 $attrs: {
-                    "resumen-estado": estado != 'vacio' ? estado : defBoton.actual ? 'actual' : defBoton.previo ? estado : 'todavia_no',
+                    "resumen-estado": estado != 'vacio' ? estado : defBoton.actual ? 'actual' : defBoton.previo ? estado : (defBoton.estadoBoton || 'todavia_no'),
                 }
                 , children: [
                     (defBoton.esAgregar ? 'agregar' : defBoton.esConfirmar ? 'Listo' : casillero.nombre + ' ' + (defBoton.num || '')),
@@ -1403,7 +1403,8 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
                                 checkFormsVacios(formHnos, feedbackAll, forPk) &&
                                 calcularPermiteBorrarBF(configSorteoFormulario, idFormularioDestino),
                             permiteBorrarGabinete,
-                            disabled: calcularDisabledBF(configSorteoFormulario, habilitacionBotonFormulario, num, idFormularioDestino, respuestasAumentadas)
+                            disabled: calcularDisabledBF(configSorteoFormulario, habilitacionBotonFormulario, num, idFormularioDestino, respuestasAumentadas),
+                            estadoBoton: estado_general
                         }
                     }).array();
                     if (true /*"puede agregar //TODO VER ESTO"*/ && (conjunto instanceof Array || conjunto == null)) {
@@ -1421,7 +1422,8 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
                             esAgregar: true,
                             actual: debeAgregarOlisto,
                             previo: false,
-                            disabled: calcularDisabledBFAgregarListo(configSorteoFormulario, habilitacionBotonFormulario, idFormularioDestino)
+                            disabled: calcularDisabledBFAgregarListo(configSorteoFormulario, habilitacionBotonFormulario, idFormularioDestino),
+                            estadoBoton: estado_general
                         });
                         listaDeBotonesAbrir.push({
                             forPk,
@@ -1429,12 +1431,14 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
                             esConfirmar: true,
                             actual: debeAgregarOlisto,
                             previo: false,
-                            disabled: calcularDisabledBFAgregarListo(configSorteoFormulario, habilitacionBotonFormulario, idFormularioDestino)
+                            disabled: calcularDisabledBFAgregarListo(configSorteoFormulario, habilitacionBotonFormulario, idFormularioDestino),
+                            estadoBoton: estado_general
                         });
                     }
                 } else {
                     let forPk = { ...props.forPk, formulario: idFormularioDestino };
-                    listaDeBotonesAbrir = [{ forPk, num: false, unico: true, actual: esVarActual, previo: true }]
+                    var esPrevioUnico = estado_general == 'valida' || (feedbackAll[toPlainForPk(forPk)]?.resumen != null && feedbackAll[toPlainForPk(forPk)]?.resumen != 'vacio');
+                    listaDeBotonesAbrir = [{ forPk, num: false, unico: true, actual: esVarActual, previo: esPrevioUnico, estadoBoton: estado_general }]
                 }
                 var todosLosBotones = listaDeBotonesAbrir.map(defBoton =>
                     botonFormularioConResumen(defBoton, feedbackAll[toPlainForPk(defBoton.forPk)] ?? { resumen: 'vacio' }, respuestasAumentadas,
