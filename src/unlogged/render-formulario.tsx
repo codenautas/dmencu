@@ -3117,7 +3117,7 @@ function calcularComodines(forPk: ForPk) {
 
     const store = getStoreFormulario();
     if (store) {
-        store.dispatch(dispatchers.ACTUALIZAR_COMODINES(comodinesCalculados));
+        store.dispatch(dispatchers.CAMBIAR_COMODINES(comodinesCalculados));
     }
 }
 

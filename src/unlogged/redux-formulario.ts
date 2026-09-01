@@ -173,7 +173,7 @@ var reducers = {
                 }
             }
         },
-    ACTUALIZAR_COMODINES: (payload: Record<IdComodin, string>) =>
+    CAMBIAR_COMODINES: (payload: Record<IdComodin, string>) =>
         function (state: CasoState) {
             // Chequeo de igualdad superficial para evitar clones si NADA cambió
             const actual = state.opciones.comodines;
