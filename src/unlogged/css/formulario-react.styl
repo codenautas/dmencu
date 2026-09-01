@@ -134,6 +134,21 @@ anchoNormal(ancho)
       margin-left 0.5em
   > .contenido
     margin-left 3em
+    &:has(> .multiple[despliegue-encabezado~=lateral]),
+    &:has(> .pregunta[despliegue-encabezado~=lateral])
+      display grid
+      grid-template-columns fit-content(60%) 1fr
+      row-gap 0.25rem
+      > .pregunta[despliegue-encabezado~=lateral],
+      > .multiple[despliegue-encabezado~=lateral]
+        display grid
+        grid-template-columns subgrid
+        grid-column 1 / -1
+        align-items center
+        > .encabezado
+          grid-column 1
+        > .contenido
+          grid-column 2
     > .multiple
       > .encabezado
         flex-grow: 1
