@@ -331,8 +331,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                         client.query("select ruta from adjuntos where id_adjunto = $1", [req.query.id_adjunto])
                             .fetchUniqueValue()
                 );
-                var path = result.value;
-                miniTools.serveFile(path, {})(req, res);
+                var filePath = result.value;
+                miniTools.serveFile(filePath, {})(req, res);
             });
             this.app.get('/imagenes', async function (req: Request, res: Response) {
                 miniTools.serveFile('local-images/' + req.query.pdf, {})(req, res);
@@ -347,10 +347,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 let base = 'local-attachments'
                 let files = await fs.readdir(base);
                 await Promise.all(files.map(async function (fileName: string) {
-                    var path = base + '/' + fileName;
-                    var stat = await fs.stat(path);
+                    var filePath = base + '/' + fileName;
+                    var stat = await fs.stat(filePath);
                     if (stat.isFile()) {
-                        zip.addFile(path, fileName);
+                        zip.addFile(filePath, fileName);
                     }
                 }));
                 zip.end();

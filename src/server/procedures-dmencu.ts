@@ -22,7 +22,7 @@ import { Context } from "vm";
 import { expected, unexpected } from "cast-error";
 import { getModoByPolicy } from "./app-dmencu";
 
-var path = require('path');
+var Path = require('path');
 var sqlTools = require('sql-tools');
 
 var discrepances = require('discrepances');
@@ -647,7 +647,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             context.informProgress({message:be.messages.fileUploaded});
             //@ts-ignore existe
             let file = files[0]
-            let ext = path.extname(file.path).substr(1);
+            let ext = Path.extname(file.path).substr(1);
             let originalFilename = file.originalFilename.slice(0, -(ext.length + 1));
             let filename = parameters.nombre || originalFilename;
             let newPath = 'local-attachments/file-';

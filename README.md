@@ -1,20 +1,10 @@
-<!--multilang v0 es:LEEME.md en:README.md -->
 
 
-<!--lang:es-->
-<!--lang:en--]
-[!--lang:*-->
 # dmencu
 
-<!--lang:es-->
-Sistema integral para la recolección, seguimiento y gestión de operativos de campo y encuestas basado en Backend-Plus.
-
-<!--lang:en--]
 Comprehensive system for field operations management, survey collection, and tracking based on Backend-Plus.
 
-[!--lang:*-->
 
-<!-- cucardas -->
 [![npm-version](https://img.shields.io/npm/v/dmencu.svg)](https://npmjs.org/package/dmencu)
 [![downloads](https://img.shields.io/npm/dm/dmencu.svg)](https://npmjs.org/package/dmencu)
 [![build](https://github.com/codenautas/dmencu/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/codenautas/dmencu/actions/workflows/build-and-test.yml)
@@ -22,38 +12,11 @@ Comprehensive system for field operations management, survey collection, and tra
 [![security](https://socket.dev/api/badge/npm/package/dmencu)](https://socket.dev/npm/package/dmencu)
 [![qa-control](https://github.com/codenautas/dmencu/actions/workflows/qa-control.yml/badge.svg)](https://github.com/codenautas/dmencu/actions/workflows/qa-control.yml)
 
-<!--multilang buttons-->
 
-idioma: ![castellano](https://raw.githubusercontent.com/codenautas/multilang/master/img/lang-es.png)
-también disponible en:
-[![inglés](https://raw.githubusercontent.com/codenautas/multilang/master/img/lang-en.png)](README.md)
+language: ![English](https://raw.githubusercontent.com/codenautas/multilang/master/img/lang-en.png)
+also available in:
+[![Spanish](https://raw.githubusercontent.com/codenautas/multilang/master/img/lang-es.png)](LEEME.md)
 
-<!--lang:es-->
-
-Es un framework y aplicación avanzada especializada en la administración de operativos estadísticos, Hoja de Ruta (Hdr), recolección de encuestas y control de calidad de datos en campo. Construido sobre el ecosistema **Backend-Plus** y PostgreSQL, está optimizado para funcionamiento en terreno mediante arquitectura PWA/Offline-First.
-
-Sus características destacadas son:
-
-1. **Gestión de Campo y Hoja de Ruta (Hdr):**
-   - Asignación y distribución dinámica de cargas de trabajo por zona, área y encuestador/supervisor.
-   - Seguimiento del estado del relevamiento en tiempo real por vivienda, hogar e individuo.
-   - Control de visitas, motivos de no respuesta, reingresos y derivaciones a supervisión/revisión.
-2. **Motor de Tareas y Acciones:**
-   - Permite modelar tareas, configurar las acciones disponibles en cada una y armar un workflow de trabajo a partir de eso.
-   - Registro automatizado de auditoría y trazabilidad de cambios por usuario y fecha/hora.
-3. **Definición por Metadatos Centralizados:**
-   - Permite modelar cuestionarios a partir de metadatos validando inclusiones válidas a partir del motor de metadatos "meta-enc".
-   - **Motor de consistencias y reglas de validación:** Evaluación automática de inconsistencias lógicas y de rango durante o posterior a la carga.
-   - **Permisos y procesos:** Control granular de acceso a vistas, tablas y acciones según el rol en la estructura de campo (Encuestador, Supervisor, Recuperador, Ingresador, CoorCampo).
-4. **Arquitectura Offline-First (PWA) e Instalador:**
-   - Instalación y actualización transparente gestionada por Service Worker (`swa`).
-   - Servido de recursos estáticos, manifest y Shell de la aplicación de manera pública (sin acoplamiento a cookies de sesión), asegurando la disponibilidad de la app en zonas sin cobertura.
-   - Consola flotante de monitoreo de descarga de archivos e interfaz de re-validación de sesión no intrusiva mediante overlay.
-5. **Grillas Avanzadas y UI de Relevamiento:**
-   - Grillas interactivas editables, filtrables y ordenables con exportación a formato XLSX.
-   - Navegación optimizada para dispositivos móviles y computadoras de escritorio.
-
-<!--lang:en--]
 
 An advanced framework and application specialized in statistical field operation management, field roadmaps (Hdr), survey data collection, and quality control. Built on top of the **Backend-Plus** ecosystem and PostgreSQL, it is fully optimized for field deployment via an Offline-First/PWA architecture.
 
@@ -77,5 +40,3 @@ Main features are:
 5. **Advanced Grids & Survey UI:**
    - Interactive, editable, filterable, and sortable data grids with native XLSX export support.
    - Responsive user interface optimized for mobile devices and desktop operation.
-
-[!--lang:*-->
