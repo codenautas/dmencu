@@ -47,7 +47,8 @@ import {
     respuestasForPk,
     setCalcularVariables,
     setDatosByPass,
-    setEstructura
+    setEstructura,
+    setCalcularComodines
 } from "./bypass-formulario"
 import {
     comodinesIniciales,
@@ -3002,7 +3003,6 @@ setCalcularVariables((respuestasRaiz: RespuestasRaiz, forPk: ForPk) => {
         })
     }
     respuestasRaiz.vdominio = getDatosByPass().informacionHdr[forPk[estructura.pkAgregadaUaPpal]].tem.dominio;
-    calcularComodines(forPk);
     //TODO: MEJORAR EN ALGUN MOMENTO EL BOTON LISTO
     //let totalH = respuestasRaiz['total_h' as IdVariable];
     //respuestasRaiz['$B.F:S1' as IdVariable] = (respuestasRaiz['hogares'] || []).length == totalH ? 'ok' : null;
@@ -3013,6 +3013,7 @@ setCalcularVariables((respuestasRaiz: RespuestasRaiz, forPk: ForPk) => {
 window.addEventListener('load', function () {
     loadInstance()
 })
+
 function calcularComodines(forPk: ForPk) {
     const estructura = getEstructura();
     const infoHdr = getDatosByPass().informacionHdr[forPk[estructura.pkAgregadaUaPpal]];
@@ -3056,6 +3057,8 @@ function calcularComodines(forPk: ForPk) {
     };
     getStoreFormulario()?.dispatch(dispatchers.CAMBIAR_COMODINES(comodinesCalculados));
 }
+
+setCalcularComodines(calcularComodines);
 
 //FIN CONTROL PESTAÑAS
 
