@@ -48,7 +48,9 @@ import {
     setCalcularVariables,
     setDatosByPass,
     setEstructura,
-    setCalcularComodines
+    setCalcularComodines,
+    suscribirCambioVariable,
+    ListenerCambioVariable
 } from "./bypass-formulario"
 import {
     comodinesIniciales,
@@ -56,7 +58,7 @@ import {
     getStoreFormulario,
     gotoConsistir,
 } from "./redux-formulario";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { strict as likeAr } from "like-ar";
 import { sleep, coalesce, datetime } from "best-globals";
@@ -111,7 +113,7 @@ function breakeableText(text: string | null): string | null;
 function breakeableText(text: string | null, diccionario?: { [clave: string]: React.ReactNode }) {
     if (typeof text != "string") return null;
     text = text.replace(/\//g, "/\u2063").replace(/\/\u2063(\w)\b/g, '/$1');
-    text = text.replace(/___*/g, (todo) => `[${todo}]`).replace(/\@\w+\@/g, (todo) => `[${todo}]`);
+    text = text.replace(/___*/g, (todo) => `[${todo}]`).replace(/\@#?[\w-]+@/g, (todo) => `[${todo}]`);
     if (!diccionario || true) return text;
     /*
     return <span>{partes.map((parte:string, i:number) => <span style={i%2==1?{textDecoration:"underline"}:{}}> {parte+" "} </span>)}</span>
@@ -122,22 +124,123 @@ export function BreakeableText(props: {
     text: string | null | undefined,
     className?: string,
     style?: React.CSSProperties,
+    forPk?: ForPk,
 }) {
     const { text, className, style } = props;
     const comodines = useSelector((state: CasoState) => state?.opciones?.comodines) || comodinesIniciales;
+    const reduxForPk = useSelector((state: CasoState) => state?.opciones?.forPk);
+    const forPk = props.forPk || reduxForPk;
+
+    // Variable de estado que se actualiza cada vez que llega un cambio de una variable de interés
+    const [valoresVariables, setValoresVariables] = useState<{ [nombreVariable: string]: any }>({});
+
+    // Variables de interés: el nombre de variable indicado después de # dentro de los arrobas (ej: @#edad@ -> "edad")
+    const variablesInteres = useMemo(() => {
+        if (typeof text !== "string") return [];
+        const matches = text.match(/@#([^@]+)@/g);
+        if (!matches) return [];
+        const vars: string[] = [];
+        for (let i = 0; i < matches.length; i++) {
+            const m = matches[i];
+            const match = m.match(/^@#([\w-]+)@$/);
+            if (match) {
+                const varName = match[1];
+                if (vars.indexOf(varName) === -1) {
+                    vars.push(varName);
+                }
+            }
+        }
+        return vars;
+    }, [text]);
+
+    useEffect(() => {
+        if (!text || variablesInteres.length === 0) return;
+
+        const listener: ListenerCambioVariable = (varModificada, nuevoValor, _forPk, respuestasAumentadas) => {
+            let huboCambio = false;
+            const nuevosValores: { [k: string]: any } = {};
+
+            if (respuestasAumentadas) {
+                for (let i = 0; i < variablesInteres.length; i++) {
+                    const varName = variablesInteres[i];
+                    if (varName in respuestasAumentadas) {
+                        const val = respuestasAumentadas[varName as IdVariable];
+                        nuevosValores[varName] = (val != null && val !== '') ? String(val) : '........';
+                        huboCambio = true;
+                    }
+                }
+            }
+            if (!huboCambio && variablesInteres.indexOf(varModificada) !== -1) {
+                nuevosValores[varModificada] = (nuevoValor != null && nuevoValor !== '') ? String(nuevoValor) : '........';
+                huboCambio = true;
+            }
+
+            if (huboCambio) {
+                setValoresVariables(prev => {
+                    const next: { [k: string]: any } = {};
+                    for (const k in prev) {
+                        next[k] = prev[k];
+                    }
+                    for (const k in nuevosValores) {
+                        next[k] = nuevosValores[k];
+                    }
+                    return next;
+                });
+            }
+        };
+
+        const desuscribir = suscribirCambioVariable(listener, variablesInteres);
+        return () => {
+            desuscribir();
+        };
+    }, [text, variablesInteres]);
 
     if (typeof text !== "string") return null;
 
     let procesado = text.replace(/\//g, "/\u2063").replace(/\/\u2063(\w)\b/g, '/$1');
     procesado = procesado.replace(/___*/g, (todo) => `[${todo}]`);
 
-    const partes = procesado.split(/(@[\w-]+@)/g);
+    const partes = procesado.split(/(@#?[\w-]+@)/g);
     const contenido = partes.map((parte, index) => {
-        const match = parte.match(/^@([\w-]+)@$/);
+        const match = parte.match(/^@(#?)([\w-]+)@$/);
         if (match) {
-            const idSinArrobas = match[1];
-            const valor = comodines?.[idSinArrobas as IdComodin];
-            if (valor !== undefined) {
+            const tieneHash = match[1] === '#';
+            const id = match[2];
+
+            let valor: any = undefined;
+
+            // 1. Si es variable con #, buscar el valor de la variable indicada después de # en el estado del listener (actualizado desde respuestasAumentadas)
+            if (tieneHash) {
+                if (valoresVariables[id] !== undefined) {
+                    valor = valoresVariables[id];
+                }
+            }
+
+            // 2. Si tiene # y aún no está definido, buscar directamente en respuestasAumentadas
+            if (valor === undefined && tieneHash && forPk) {
+                try {
+                    const { respuestasAumentadas } = respuestasForPk(forPk, true);
+                    const val = respuestasAumentadas?.[id as IdVariable];
+                    if (val != null && val !== '') {
+                        valor = String(val);
+                    }
+                } catch {
+                    // Ignorar error si no se pudo acceder a respuestas
+                }
+            }
+
+            // 3. Buscar en comodines (Redux)
+            if (valor === undefined) {
+                valor = comodines?.[id as IdComodin];
+            }
+
+            if (valor !== undefined && valor !== null && valor !== '') {
+                return valor;
+            }
+            if (tieneHash && (valor === '' || valor === null)) {
+                return '........';
+            }
+            if (valor !== undefined && valor !== null) {
                 return valor;
             }
             return (

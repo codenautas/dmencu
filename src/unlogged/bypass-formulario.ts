@@ -40,6 +40,59 @@ export function setCalcularComodines(calcularComodines: (forPk: ForPk) => void) 
     comodines.calcularComodines = calcularComodines
 }
 
+export type ListenerCambioVariable = (variable: string, valor: any, forPk?: ForPk, respuestasAumentadas?: Respuestas) => void;
+
+type SuscripcionCambioVariable = {
+    listener: ListenerCambioVariable;
+    variables?: Set<string>;
+};
+
+var suscripcionesCambioVariable: SuscripcionCambioVariable[] = [];
+
+export function suscribirCambioVariable(listener: ListenerCambioVariable, variables?: string | string[]): () => void {
+    const varsSet = variables
+        ? new Set(Array.isArray(variables) ? variables : [variables])
+        : undefined;
+    const sub: SuscripcionCambioVariable = { listener, variables: varsSet };
+    suscripcionesCambioVariable.push(sub);
+    return () => {
+        const index = suscripcionesCambioVariable.indexOf(sub);
+        if (index > -1) {
+            suscripcionesCambioVariable.splice(index, 1);
+        }
+    };
+}
+
+export function desuscribirCambioVariable(listener: ListenerCambioVariable) {
+    const index = suscripcionesCambioVariable.findIndex(s => s.listener === listener);
+    if (index > -1) {
+        suscripcionesCambioVariable.splice(index, 1);
+    }
+}
+
+export function notificarCambioVariable(variable: string, valor: any, forPk?: ForPk, respuestasAumentadas?: Respuestas) {
+    for (let i = 0; i < suscripcionesCambioVariable.length; i++) {
+        const { listener, variables } = suscripcionesCambioVariable[i];
+        if (variables) {
+            let aplica = variables.has(variable);
+            if (!aplica && respuestasAumentadas) {
+                for (const v of variables) {
+                    if (v in respuestasAumentadas) {
+                        aplica = true;
+                        break;
+                    }
+                }
+            }
+            if (!aplica) continue;
+        }
+        try {
+            listener(variable, valor, forPk, respuestasAumentadas);
+        } catch (err) {
+            console.error('Error en listener de cambio de variable', err);
+        }
+    }
+}
+
 var especiales = {} as {
     calcularVariables?: (respuestasRaiz: RespuestasRaiz, forPk: ForPk) => void
     calcularVariablesEspecificasOperativo?: (respuestasRaiz: RespuestasRaiz, forPk: ForPk) => void
@@ -488,6 +541,8 @@ export function accion_registrar_respuesta(payload: {
         feedbackRow = datosByPass.feedbackRowValidator[toPlainForPk(forPk)];
         calcularVariablesBotonFormulario(forPk);
         volcadoInicialElementosRegistrados(forPk);
+        const { respuestasAumentadas } = respuestasForPk(forPk, true);
+        notificarCambioVariable(variable as string, respuestasAumentadas[variable as IdVariable], forPk, respuestasAumentadas);
         persistirDatosByPass(datosByPass); // OJO ASYNC DESCONTROLADA
         siguienteVariable = variable;
         do {
