@@ -531,7 +531,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     "dmencu/adapt.js",
                     "dmencu/unlogged.js",
                     "lib/js-yaml.umd.min.js",
-                    "lib/xlsx.core.min.js",
+                    "lib/xlsx-now.umd.js",
+                    "lib/xlsx-now-browser.umd.js",
                     "lib/lazy-some.js",
                     "lib/sql-tools.js",
                     "dialog-promise/dialog-promise.js",
@@ -594,7 +595,6 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     "rel-enc/my-things2.css",
                     "css/formulario-react.css",
                     "css/Roboto-Regular.ttf",
-                    "lib/xlsx.full.min.js",
                     "carga-dm/web-manifest.webmanifest",
                 ],
                 fallbacks:[
