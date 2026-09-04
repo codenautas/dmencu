@@ -190,28 +190,52 @@ function createStructure(context: ProcedureContext, tableName: string) {
 
 type AnyObject = { [k: string]: any }
 
-var getSettersAndParametersForReaNoReaResumenEstado = (funParams: { tarea: IdTarea, respuestasUAPrincipal: RespuestasRaiz, setters: string[], params: any[] }) => {
-    let { tarea, respuestasUAPrincipal, setters, params } = funParams;
-    let { resumenEstadoSup, codNoReaSup, codReaSup, resumenEstado, codNoRea, codRea } = respuestasUAPrincipal;
-    setters = setters.concat([
-        `resumen_estado${tarea == 'supe' ? '_sup' : ''}=$${params.length + 1}`,
-        `norea${tarea == 'supe' ? '_sup' : ''}=$${params.length + 2}`,
-        `rea${tarea == 'supe' ? '_sup' : ''}=$${params.length + 3}`
-    ])
-    params = params.concat([
-        tarea == 'supe' ? resumenEstadoSup : resumenEstado,
-        tarea == 'supe' ? codNoReaSup : codNoRea,
-        tarea == 'supe' ? codReaSup : codRea
-    ]);
-    return { setters, params }
-}
+type FunParams = {
+    tarea: IdTarea;
+    respuestasUAPrincipal: RespuestasRaiz;
+    setters: string[];
+    params: any[];
+    destino: 'tem' | 'tareas_tem';
+};
+
+const getSettersAndParametersForReaNoReaResumenEstado = ({
+    tarea,
+    respuestasUAPrincipal: r,
+    setters: settersEntrada,
+    params: paramsEntrada,
+    destino
+}: FunParams) => {
+    const isSupe = tarea === 'supe';
+    const sufijoSupe = isSupe ? '_sup' : '';
+    const prefijoDm = destino === 'tareas_tem' ? 'dm_' : '';
+
+    const offset = paramsEntrada.length + 1;
+
+    const nuevosValores = isSupe
+        ? [r.resumenEstadoSup, r.codNoReaSup, r.codReaSup]
+        : [r.resumenEstado, r.codNoRea, r.codRea];
+
+    const campos = [
+        `${prefijoDm}resumen_estado${sufijoSupe}`,
+        `${prefijoDm}norea${sufijoSupe}`,
+        `${prefijoDm}rea${sufijoSupe}`
+    ];
+
+    const nuevosSetters = campos.map((campo, i) => `${campo}=$${offset + i}`);
+
+    const setters = [...settersEntrada, ...nuevosSetters];
+    const params = [...paramsEntrada, ...nuevosValores];
+
+    return { setters, params };
+};
 
 var guardarEncuestaEnTem = async (context: ProcedureContext, operativo: IdOperativo, idEnc: string, respuestasUAPrincipal: RespuestasRaiz, tarea: IdTarea) => {
     var { params, setters } = getSettersAndParametersForReaNoReaResumenEstado({
         tarea,
         respuestasUAPrincipal,
         setters: [`json_encuesta = $3`, `fecha_modif_encuesta = current_timestamp`],
-        params: [operativo, idEnc, respuestasUAPrincipal]
+        params: [operativo, idEnc, respuestasUAPrincipal],
+        destino: 'tem'
     })
     return await context.client.query(
         `update tem
@@ -1006,7 +1030,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                                 `estado = ${context.be.db.quoteLiteral(ESTADO_POSTERIOR_DESCARGA)}`,
                                 `cargado_dm=null`
                             ],
-                            params: [OPERATIVO, idEnc, tarea, token]
+                            params: [OPERATIVO, idEnc, tarea, token],
+                            destino: 'tareas_tem'
                         })
                         if (cambia_modo_dm || persistentes.idper != idper_logueado_tablet) {
                             setters.push(`operacion = 'descargar'`);
@@ -2102,7 +2127,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                         tarea: tt.tarea,
                         respuestasUAPrincipal: resultBackup.row.json_encuesta,
                         setters: [],
-                        params: [tt.operativo, tt.enc, tt.tarea]
+                        params: [tt.operativo, tt.enc, tt.tarea],
+                        destino: 'tareas_tem'
                     })
                     await context.client.query(
                         `update tareas_tem

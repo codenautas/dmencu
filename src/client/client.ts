@@ -417,9 +417,7 @@ function
 myOwn.clientSides.consistir = botonClientSideEnGrilla({
     nombreBoton: 'consistir',
     llamada: function (depot: myOwn.Depot) {
-        //@ts-ignore def existe en manager
-        var myReaFieldName = depot.manager.def.tableName == "tem" ? 'rea' : 'ult_rea';
-        var filtroRea = consistir_filtro(depot.row.tarea, depot.row[myReaFieldName], depot.row.rea)
+        var filtroRea = consistir_filtro(depot.row.tarea, depot.row['rea'], depot.row.rea)
         return filtroRea ? myOwn.ajax.consistir_encuesta({
             operativo: depot.row.operativo,
             id_caso: depot.row.enc

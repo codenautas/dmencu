@@ -1045,7 +1045,7 @@ function botonesDelFormulario(r: Respuestas, unidad_analisis: IdUnidadAnalisis, 
                                                 {
                                                     forPk,
                                                     num,
-                                                    actual: true || calcularActualBF(configSorteoFormulario, num, null, formulario, r), //REVISAR true para que no se grisen
+                                                    actual: calcularActualBF(configSorteoFormulario, num, null, formulario, r),
                                                     previo: false,
                                                     disabled: calcularDisabledBF(configSorteoFormulario, habilitacionBotonFormulario, num, formulario, r)
                                                 },
@@ -1190,7 +1190,7 @@ var botonFormularioConResumen = (
                 id: `boton-formulario-${sufijoIdElemento}`,
                 variant: defBoton.actual ? "contained" : "outlined",
                 disabled: defBoton.disabled,
-                color: defBoton.actual ? "primary" : "inherit",
+                color: "inherit",
                 onClick: () => {
                     if (defBoton.esConfirmar) {
                         if (defBoton.num != null) {

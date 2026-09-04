@@ -2,7 +2,7 @@
 
 import {TableDefinition, TableContext, FieldDefinition, getDomicilioFields} from "./types-dmencu";
 import * as sqlTools from 'sql-tools';
-import {tareas_tem, OptsTareasTem, getReaFields} from "./table-tareas_tem";
+import {tareas_tem, OptsTareasTem, getReaFieldsForTareasTem} from "./table-tareas_tem";
 
 export var getSqlFrom = (tableDef:TableDefinition, opts:{desde:'ingresa'|'recepciona'|'fin_campo'|'analisis_campo'|'procesa'})=> `(select * from (${tableDef.sql!.from}) aux
 , lateral (
@@ -21,7 +21,7 @@ export function tareas_tem_recepcion(context:TableContext, opts?:OptsTareasTem):
     var tableDef = tareas_tem(context, opts);
     tableDef.name = `tareas_tem_recepcion`;
     var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';       
-    var reaFieldNames = getReaFields(puedeEditar).map((field:FieldDefinition)=>field.name);
+    var reaFieldNames = getReaFieldsForTareasTem(puedeEditar).map((field:FieldDefinition)=>field.name);
     tableDef.fields = tableDef.fields.filter((field)=>!reaFieldNames.includes(field.name));
     tableDef.fields.splice(4,0,
         {name:"acciones"                    , typeName: 'jsonb'      , editable:false   , inTable:false},
@@ -33,7 +33,7 @@ export function tareas_tem_recepcion(context:TableContext, opts?:OptsTareasTem):
         {name:"visible_en_fin_campo"        , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
         {name:"visible_en_analisis_campo"   , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
         {name:"visible_en_procesamiento"    , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
-        ...getReaFields(puedeEditar)
+        ...getReaFieldsForTareasTem(puedeEditar)
     );
     tableDef.fields.forEach((field:FieldDefinition)=>{
         if(!field.table){

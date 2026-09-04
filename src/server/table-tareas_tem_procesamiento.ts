@@ -14,9 +14,7 @@ export function tareas_tem_procesamiento(context:TableContext):TableDefinition {
         {column:'visible_en_procesamiento', operator:'=', value:true}
     ];
     definicionComunFincAnacProc(tableDef);
-    tableDef.fields
-        .filter((field)=>['proie'].includes(field.name))
-        .forEach((field)=>field.visible=true);    
+    tableDef.fields.find((field)=>field.name==='proie')!.visible = true;
     var tableDefTT = tareas_tem(context);
     tableDef.sql!.from=getSqlFrom(tableDefTT,{desde:"procesa"});
     tableDef.refrescable = false;

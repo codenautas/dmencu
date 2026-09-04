@@ -13,18 +13,25 @@ export type OptsTareasTem = {
 
 export var getDiasAPasarQuery = (tareasTemAlias?:string) => `extract(day from ${tareasTemAlias?tareasTemAlias+'.':''}ts_entrada - current_timestamp) + (select dias_finc from parametros where unico_registro)`
 
-export var getReaFields = (puedeEditar:boolean):FieldDefinition[] => [
-    {name:'rea'                         , typeName:'integer'     , editable: puedeEditar, label:'rea_dm'},
-    {name:'norea'                       , typeName:'integer'     , editable: puedeEditar, label:'norea_dm'},
-    //{name:'cod_no_rea'                , typeName:'text'        , editable: false   , inTable:false  },
-    {name:'resumen_estado'              , typeName:'text'        , editable: false   , label: 'resumen_estado_dm'},
-    {name:'ult_rea'                     , typeName:'integer'     , editable: false   ,  inTable:false},
-    {name:'ult_norea'                   , typeName:'integer'     , editable: false   ,  inTable:false},
-    {name:'ult_gru_no_rea'              , typeName:'text'        , editable: false   ,  inTable:false},
-    {name:'ult_resumen_estado'          , typeName:'text'        , editable: false   ,  inTable:false}
+export var getReaFieldsForTareasTem = (puedeEditar:boolean):FieldDefinition[] => [
+    { name: 'dm_rea'                  , typeName:'integer'     , editable: puedeEditar},
+    { name: 'dm_norea'                , typeName:'integer'     , editable: puedeEditar},
+    //{name:'cod_no_rea'              , typeName:'text'        , editable: false   , inTable:false  },
+    { name: 'dm_resumen_estado'       , typeName:'text'        , editable: false },
+    { name: 'rea'                     , typeName:'integer'     , editable: false   ,  inTable:false},
+    { name: 'norea'                   , typeName:'integer'     , editable: false   ,  inTable:false},
+    { name: 'gru_no_rea'              , typeName:'text'        , editable: false   ,  inTable:false},
+    { name: 'resumen_estado'          , typeName:'text'        , editable: false   ,  inTable:false},
+    { name: 'dm_rea_sup'              , typeName: 'integer'    , editable: puedeEditar},
+    { name: 'dm_norea_sup'            , typeName: 'integer'    , editable: puedeEditar},
+    { name: 'dm_resumen_estado_sup'   , typeName: 'text'       , editable: false},
+    { name: 'rea_sup'                 , typeName: 'integer'    , editable: false   , inTable: false },
+    { name: 'norea_sup'               , typeName: 'integer'    , editable: false   , inTable: false },
+    { name: 'resumen_estado_sup'      , typeName: 'text'       , editable: false   , inTable: false }
 ]
 
 export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefinition {
+    const editaProie = ['admin','procesamiento'].includes(context.user.rol);
     if (opts == null) {
         opts = {
             rol: null,
@@ -44,7 +51,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
         {name:'adelantar'                   , typeName:'boolean'     , editable:true                , visible:false},
         {name:'dias_a_pasar'                , typeName:'integer'     , editable:false, inTable:false, visible:false},
         {name:'estado'                      , typeName:'text'        , editable:false   , nullable: false, defaultDbValue:"'0D'"},
-        {name:'proie'                       , typeName:'text'        , editable:true , table: 'tem' , visible:false }
+        {name:'proie'                       , typeName:'text'        , editable:editaProie , table: 'tem' , visible:false }
     ];
     if(opts.abre){
         fields.push({name:'abrir'                       , typeName:'text'        , editable:false   , inTable:false, clientSide:'abrirRecepcion'});
@@ -60,7 +67,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
         {name:'asignado'                    , typeName:'text'        , editable:true, title: opts.name}, // va a la hoja de ruta
         {name:'fecha_asignacion'            , typeName:'date'}, // cargar/descargar
     ]);
-    fields = fields.concat(...getReaFields(puedeEditar),[
+    fields = fields.concat(...getReaFieldsForTareasTem(puedeEditar),[
         //{name:'resultado'                 , typeName:'text'}, // fk tareas_resultados 
         //{name:'fecha_resultado'           , typeName:'date'}, // fk tareas_resultados 
         {name:'modalidad'                   , typeName:'text'        , editable: false, inTable:false},
@@ -70,12 +77,6 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
         {name:'verificado'                  , typeName:'text'        , editable:false,}, 
         {name:'a_recuperacion'              , typeName:'text'        , editable:false , inTable:false}, 
         {name:'obs_verificado'              , typeName:'text'},
-        {name:'rea_sup'                     , typeName:'integer'     , editable: puedeEditar, label:'rea_sup_dm'},
-        {name:'norea_sup'                   , typeName:'integer'     , editable: puedeEditar, label:'norea_sup_dm'},
-        {name:'resumen_estado_sup'          , typeName:'text'        , editable: false,       label: 'resumen_estado_sup_dm'},
-        {name:'ult_rea_sup'                 , typeName:'integer'     , editable: false ,  inTable:false},
-        {name:'ult_norea_sup'               , typeName:'integer'     , editable: false ,  inTable:false},
-        {name:'ult_resumen_estado_sup'      , typeName:'text'        , editable: false ,  inTable:false},
         {name:'operacion'                   , typeName:'text'        , editable:false,}, // cargar/descargar
         {name:"carga_observaciones"         , typeName: "text"       , editable: true},        
         {name:'cargado_dm'                  , typeName:'text'        , editable: false}, //cargar/descargar 
@@ -118,15 +119,15 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
                 select tt.tarea, t.operativo, t.enc, t.area, ${getDiasAPasarQuery('tt')}  as dias_a_pasar,
                     t.tarea_actual
                     ${fields.filter(x=>!(x.isPk ||x.table|| x.inTable===false||x.name=='area')).map(x=>`, tt.${db.quoteIdent(x.name)}`).join('')}
-                    , y.grupo as ult_gru_no_rea
+                    , y.grupo as gru_no_rea
                     , case when tt.tarea='recu' and y.grupo0 in ('ausentes','rechazos') then 'recuperacion' else null end a_recuperacion   
                     , t.supervision_aleatoria
                     , t.supervision_dirigida
                     , case when y.grupo0='no encuestable' or t.supervision_dirigida = 1 or t.supervision_aleatoria = 1 then 'presencial'
                            when t.supervision_dirigida = 2 or t.supervision_aleatoria = 2 then 'telefónica' 
                            else null end as modalidad
-                    , t.rea ult_rea, t.norea as ult_norea, t.resumen_estado ult_resumen_estado
-                    , t.rea_sup ult_rea_sup, t.norea_sup as ult_norea_sup, t.resumen_estado_sup ult_resumen_estado_sup
+                    , t.rea, t.norea, t.resumen_estado
+                    , t.rea_sup, t.norea_sup, t.resumen_estado_sup
                     , t.proie
                     , dominio
                     , aux.consistido
