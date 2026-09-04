@@ -10,8 +10,17 @@ export var definicionComunFincAnacProc = (tableDef:TableDefinition)=>{
     tableDef.fields
         .filter((field:FieldDefinition)=>['recepcionista','asignado'].includes(field.name))
         .forEach((field:FieldDefinition)=>field.visible=false)
-    tableDef.hiddenColumns=tableDef.hiddenColumns?.concat(['asignado__nombre','asignado__apellido',
-             'rec__nombre','rec__apellido']);
+    tableDef.hiddenColumns=tableDef.hiddenColumns?.concat([
+        'dm_norea',
+        'dm_rea',
+        'dm_resumen_estado',
+        'dm_norea_sup',
+        'dm_rea_sup',
+        'dm_resumen_estado_sup',
+        'asignado__nombre',
+        'asignado__apellido',
+        'rec__nombre',
+        'rec__apellido']);
     tableDef.selfRefresh = true;
     tableDef.refrescable = true;
 }
