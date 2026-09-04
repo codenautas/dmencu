@@ -325,3 +325,33 @@ export function RenderPrincipal<T, T2 extends Action>(props: { store: Store<T, T
     </React.StrictMode>
 }
 
+export const nombreMeses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+export const nombreDias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+
+export function crearFechaDesdeTextoISO(texto: string): Date {
+    var partes = texto.split(/[/-]/g);
+    return new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
+}
+
+export function mesReferencia(fecha: string): string {
+    var d = crearFechaDesdeTextoISO(fecha);
+    return nombreMeses[d.getMonth()];
+}
+
+export function fechaReferencia(fecha: string): string {
+    var d = crearFechaDesdeTextoISO(fecha);
+    return `${nombreDias[d.getDay()]} ${d.getDate()} de ${mesReferencia(fecha)}`;
+}
+
+export const textoParentesco = ['Jefe/a', 'Cónyuge/pareja', 'Hijo/a', 'Hijastro/a', 'Yerno o nuera', 'Nieto/a', 'Padre/madre/suegro/a', 'Hermano/a', 'Cuñado/a', 'Sobrino/a', 'Abuelo/a', 'Otro familiar', 'Otro no familiar'];
+export const textoParentescoVcm = ['Respondente', 'Cónyuge/pareja', 'Hijo/a', 'Hijastro/a', 'Yerno o nuera', 'Nieto/a', 'Padre/madre/suegro/a', 'Hermano/a', 'Cuñado/a', 'Sobrino/a', 'Abuelo/a', 'Otro familiar', 'Otro no familiar'];
+
+export function obtenerTextoParentesco(p4: number | null | undefined, operativo?: string): string {
+    if (p4 == null || p4 < 1) return '........';
+    const esVcm = operativo ? operativo.startsWith('vcm') : false;
+    const lista = esVcm ? textoParentescoVcm : textoParentesco;
+    return lista[p4 - 1] || '........';
+}
+
+
+

@@ -224,7 +224,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     var coreFunctionInterno = procDef.coreFunction;
                     procDef.coreFunction = async function (context: ProcedureContext, parameters: CoreFunctionParameters<any>) {
                         var result = await coreFunctionInterno(context, parameters)
-                        if (parameters.table == 'casilleros') {
+                        if (parameters.table == 'casilleros' || parameters.table == 'semanas') {
                             be.caches.timestampEstructura = new Date().getTime();
                             console.log('se tocó la estructura', be.caches.timestampEstructura)
                         }

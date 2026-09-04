@@ -55,7 +55,7 @@ myOwn.autoSetupFunctions.push(async () => {
             });
             var estructura = await formRenderer.leerEstructura();
             var carga = await formRenderer.leerDatos();
-            if (!estructura || (estructura.timestamp ?? 0) < carga?.timestampEstructura! || estructura.operativo != operativo || my.config.config.devel) {
+            if (!estructura || !estructura.semanas || (estructura.timestamp ?? 0) < carga?.timestampEstructura! || estructura.operativo != operativo || my.config.config.devel) {
                 estructura = await traerEstructura({ operativo })
                 await formRenderer.persistirEstructura(estructura);
             }

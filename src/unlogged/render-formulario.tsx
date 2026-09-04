@@ -8,6 +8,9 @@ import {
     materialIoIconsSvgPath,
     useOnlineStatus,
     RenderizadorJSON,
+    fechaReferencia,
+    mesReferencia,
+    obtenerTextoParentesco,
 } from "./render-general";
 import {
     Bloque, BotonFormulario,
@@ -25,6 +28,8 @@ import {
     iterator, empty, ConfiguracionHabilitarBotonFormulario,
     PMatriz,
     ModoDM,
+    IdComodin,
+    IdSemana,
 } from "./tipos";
 import {
     accion_abrir_formulario,
@@ -42,10 +47,13 @@ import {
     respuestasForPk,
     setCalcularVariables,
     setDatosByPass,
-    setEstructura
+    setEstructura,
+    setCalcularComodines
 } from "./bypass-formulario"
 import {
+    comodinesIniciales,
     crearStoreFormulario, dispatchers,
+    getStoreFormulario,
     gotoConsistir,
 } from "./redux-formulario";
 import { useState, useEffect } from "react";
@@ -108,6 +116,40 @@ function breakeableText(text: string | null, diccionario?: { [clave: string]: Re
     /*
     return <span>{partes.map((parte:string, i:number) => <span style={i%2==1?{textDecoration:"underline"}:{}}> {parte+" "} </span>)}</span>
     */
+}
+
+export function BreakeableText(props: {
+    text: string | null | undefined,
+    className?: string,
+    style?: React.CSSProperties,
+}) {
+    const { text, className, style } = props;
+    const comodines = useSelector((state: CasoState) => state?.opciones?.comodines) || comodinesIniciales;
+
+    if (typeof text !== "string") return null;
+
+    let procesado = text.replace(/\//g, "/\u2063").replace(/\/\u2063(\w)\b/g, '/$1');
+    procesado = procesado.replace(/___*/g, (todo) => `[${todo}]`);
+
+    const partes = procesado.split(/(@[\w-]+@)/g);
+    const contenido = partes.map((parte, index) => {
+        const match = parte.match(/^@([\w-]+)@$/);
+        if (match) {
+            const idSinArrobas = match[1];
+            const valor = comodines?.[idSinArrobas as IdComodin];
+            if (valor !== undefined) {
+                return valor;
+            }
+            return (
+                <span key={index} style={{ color: 'red' }}>
+                    {`No se encontró ${parte}`}
+                </span>
+            );
+        }
+        return parte;
+    });
+
+    return <span className={className} style={style}>{contenido}</span>;
 }
 
 export function getBFVarNames(salto: string | null) {
@@ -413,9 +455,9 @@ function OpcionDespliegue(props: { casillero: Opcion, valorOpcion: number, varia
                     {casillero.ver_id || casillero.casillero}
                 </Grid>
                 <Grid className="opcion-texto">
-                    <Typography debe-leer={casillero.leer ? 'SI' : casillero.leer === false ? 'NO' : props.leer ? 'SI' : 'NO'}>{breakeableText(casillero.nombre)}</Typography>
+                    <Typography debe-leer={casillero.leer ? 'SI' : casillero.leer === false ? 'NO' : props.leer ? 'SI' : 'NO'}><BreakeableText text={casillero.nombre} /></Typography>
                     {casillero.aclaracion ?
-                        <Typography className='aclaracion'>{breakeableText(casillero.aclaracion)}</Typography>
+                        <Typography className='aclaracion'><BreakeableText text={casillero.aclaracion} /></Typography>
                         : null}
                 </Grid>
             </Grid>
@@ -592,7 +634,7 @@ function EncabezadoDespliegue(props: {
             </div>
         </div>
         <div className="nombre-div">
-            <div className="nombre">{breakeableText(casillero.nombre)}
+            <div className="nombre"><BreakeableText text={casillero.nombre} />
                 {casillero.especial?.gps ?
                     <span>
                         <Button color="primary" variant="outlined" style={{ marginLeft: '10px' }} onClick={(_event) => {
@@ -628,7 +670,7 @@ function EncabezadoDespliegue(props: {
                     {casillero.salto && casillero.tipoc == 'FILTRO' ?
                         <SaltoDespliegue casillero={casillero} prefijo={breakeableText(casillero.aclaracion)!} />
                         :
-                        breakeableText(casillero.aclaracion)
+                        <BreakeableText text={casillero.aclaracion} />
                     }
                 </div>
                 : null}
@@ -854,8 +896,6 @@ function PreguntaDespliegue(props: {
     paraPMatriz?: true
 }) {
     var { pregunta } = props;
-    const dispatch = useDispatch();
-    var estado: EstadoVariable;
     var id = `pregunta-${pregunta.id_casillero}`
     registrarElemento({
         id,
@@ -1930,11 +1970,11 @@ function BotonVolverEnDiv({ id }: { id: string }) {
 }
 
 function FormularioDespliegue(props: { forPk: ForPk }) {
-    var forPk = props.forPk;
-    var { formulario, modoDespliegue, opciones }
-        = useSelectorVivienda(props.forPk);
-    var soloLectura = getDatosByPass().soloLectura;
     const dispatch = useDispatch();
+    const forPk = props.forPk;
+    var { formulario, modoDespliegue, opciones }
+        = useSelectorVivienda(forPk);
+    var soloLectura = getDatosByPass().soloLectura;
     var esVolver = opciones.pilaForPk.length > 0;
     useEffect(() => {
         var controlScroll = () => {
@@ -1955,12 +1995,13 @@ function FormularioDespliegue(props: { forPk: ForPk }) {
                 );
             }
         }
-        const idCaso = likeAr(props.forPk).find((_, k) => {
+        const idCaso = likeAr(forPk).find((_, k) => {
             return k != 'formulario'
         })?.toString();
         window.document.title = getEstructura().operativo + '- ' + idCaso;
         window.addEventListener('scroll', controlScroll);
         controlScroll();
+        calcularComodines(forPk);
         return () => {
             window.removeEventListener('scroll', controlScroll);
         }
@@ -2838,7 +2879,7 @@ export async function desplegarFormularioActual(
     opts: { forPkRaiz?: ForPkRaiz } = {}
 ) {
     await formRenderer.cargarMotor();
-    const store = await crearStoreFormulario(opts)
+    const store = await crearStoreFormulario(opts);
     try {
         await loadCSS(BOOTSTRAP_5_1_3_SRC);
     } catch (err) {
@@ -2976,6 +3017,53 @@ setCalcularVariables((respuestasRaiz: RespuestasRaiz, forPk: ForPk) => {
 window.addEventListener('load', function () {
     loadInstance()
 })
+
+function calcularComodines(forPk: ForPk) {
+    const estructura = getEstructura();
+    const infoHdr = getDatosByPass().informacionHdr[forPk[estructura.pkAgregadaUaPpal]];
+    const semanaNumero = infoHdr?.tem?.semana;
+    const semanaObj = semanaNumero != null ? estructura.semanas?.[semanaNumero as IdSemana] : null;
+    const { respuestasAumentadas } = respuestasForPk(forPk, true);
+    const rangoFecha = (desde?: string | null, hasta?: string | null) =>
+        (desde && hasta) ? `${fechaReferencia(desde)} a ${fechaReferencia(hasta)}` : null;
+    const semRef = rangoFecha(semanaObj?.semana_referencia_desde, semanaObj?.semana_referencia_hasta);
+    const d30Ref = rangoFecha(semanaObj?.d30_referencia_desde, semanaObj?.d30_referencia_hasta);
+    const personasArray = Array.isArray(respuestasAumentadas?.['personas' as IdUnidadAnalisis]) 
+        ? respuestasAumentadas['personas' as IdUnidadAnalisis] as any[] : [];
+    const buscarPersona = (num?: any) => 
+        num != null ? personasArray.find((p: any, idx: number) => (p?.persona != null ? Number(p.persona) === Number(num) : (idx + 1) === Number(num))) : null;
+    const textoParentesco = (p: any) => {
+        const p4 = p?.p4 ?? p?.p4r;
+        return p4 != null ? obtenerTextoParentesco(Number(p4), estructura.operativo) : null;
+    };
+    const esEntrea = respuestasAumentadas?.['entrea' as IdVariable] == 1;
+    const nombrer = respuestasAumentadas?.['nombrer' as IdVariable];
+    const personaResp = esEntrea ? buscarPersona(respuestasAumentadas?.['respond' as IdVariable]) : null;
+    const personaRespi = esEntrea ? buscarPersona(respuestasAumentadas?.['cr_num_miembro' as IdVariable]) : null;
+    const jefe = esEntrea ? buscarPersona(1) : null;
+    const parentResp = textoParentesco(personaResp);
+    const parentRespi = textoParentesco(personaRespi);
+    const totalH = respuestasAumentadas?.['total_h' as IdVariable] ?? respuestasAumentadas?.['total_h_sup' as IdVariable];
+    const fRealiz = respuestasAumentadas?.['f_realiz_o' as IdVariable];
+    const comodinesCalculados: Record<IdComodin, string> = {
+        ...comodinesIniciales,
+        canti_hogares: totalH != null ? String(totalH) : '........',
+        frealiz: fRealiz != null ? String(fRealiz) : '........',
+        resps1: (esEntrea && nombrer) ? String(nombrer) : '........',
+        parents1: (esEntrea && parentResp) ? parentResp : '........',
+        respi1: (esEntrea && personaRespi?.nombre) ? String(personaRespi.nombre) : '........',
+        parenti1: (esEntrea && parentRespi) ? parentRespi : '........',
+        njefe: (esEntrea && jefe?.nombre) ? String(jefe.nombre) : '........',
+        ...(semRef && { SEM_REF: semRef }),
+        ...(d30Ref && { D30_REF: d30Ref }),
+        ...(semanaObj?.mes_referencia && { MES_REF: mesReferencia(semanaObj.mes_referencia) }),
+        ...(semanaNumero != null && { SEM_NUM: String(semanaNumero) }),
+    };
+    getStoreFormulario()?.dispatch(dispatchers.CAMBIAR_COMODINES(comodinesCalculados));
+}
+
+setCalcularComodines(calcularComodines);
+
 //FIN CONTROL PESTAÑAS
 
 function loadCSS(cssURL: string, id?: string): Promise<void> {

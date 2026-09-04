@@ -32,6 +32,14 @@ import {
 import { getFormRenderer } from "./render-config";
 import { adaptarEstructura } from "./redux-formulario";
 
+var comodines = {} as {
+    calcularComodines?: (forPk: ForPk) => void
+}
+
+export function setCalcularComodines(calcularComodines: (forPk: ForPk) => void) {
+    comodines.calcularComodines = calcularComodines
+}
+
 var especiales = {} as {
     calcularVariables?: (respuestasRaiz: RespuestasRaiz, forPk: ForPk) => void
     calcularVariablesEspecificasOperativo?: (respuestasRaiz: RespuestasRaiz, forPk: ForPk) => void
@@ -1016,6 +1024,9 @@ function barrerSubArbol(respuestasRaiz: RespuestasRaiz, nodoActual: Respuestas |
             if (hijasResp) {
                 barrerSubArbol(respuestasRaiz, hijasResp as Respuestas[], uaHija as IdUnidadAnalisis, miForPk);
             }
+        }
+        if(comodines.calcularComodines){
+            comodines.calcularComodines(miForPk);
         }
     }
 }
