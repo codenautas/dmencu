@@ -1,7 +1,7 @@
 {
   "name": "dmencu",
   "description": "DM Encu - Encuestas en dispositivo móvil",
-  "version": "3.2.1",
+  "version": "3.2.2",
   "author": "Codenautas <codenautas@googlegroups.com>",
   "license": "MIT",
   "repository": "codenautas/dmencu",
@@ -27,7 +27,8 @@
     "row-validator": "^1.0.0-rc1",
     "service-worker-admin": "^0.2.2",
     "yazl": "~2.5.1",
-    "backend-skins": "^0.1.34"
+    "backend-skins": "^0.1.34",
+    "discrepances": "^0.2.14"
   },
   "dependencias provisorias: las que se pongan en dependencias ponerlas acá y sacarlas juntas": {},
   "devDependencies": {
