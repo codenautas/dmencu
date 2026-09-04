@@ -59,7 +59,7 @@ import {
     gotoConsistir,
 } from "./redux-formulario";
 import { useState, useEffect, useMemo } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector, useDispatch, shallowEqual } from "react-redux";
 import { strict as likeAr } from "like-ar";
 import { sleep, coalesce, datetime } from "best-globals";
 import { unexpected } from "cast-error";
@@ -120,14 +120,44 @@ function breakeableText(text: string | null, diccionario?: { [clave: string]: Re
     */
 }
 
-export function BreakeableText(props: {
+export const BreakeableText = React.memo(function BreakeableText(props: {
     text: string | null | undefined,
     className?: string,
     style?: React.CSSProperties,
     forPk?: ForPk,
 }) {
     const { text, className, style } = props;
-    const comodines = useSelector((state: CasoState) => state?.opciones?.comodines) || comodinesIniciales;
+
+    // Comodines clásicos presentes en el texto (ej: @resps1@ -> "resps1")
+    const comodinesInteres = useMemo(() => {
+        if (typeof text !== "string" || !text.includes('@')) return [];
+        const matches = text.match(/@([a-zA-Z0-9_-]+)@/g);
+        if (!matches) return [];
+        const ids: IdComodin[] = [];
+        for (let i = 0; i < matches.length; i++) {
+            const m = matches[i];
+            if (!m.startsWith('@#')) {
+                const id = m.slice(1, -1) as IdComodin;
+                if (ids.indexOf(id) === -1) {
+                    ids.push(id);
+                }
+            }
+        }
+        return ids;
+    }, [text]);
+
+    // Selector granular con shallowEqual: sólo suscribe y re-evalúa si cambian SUS comodines
+    const comodinesValores = useSelector((state: CasoState) => {
+        if (comodinesInteres.length === 0) return null;
+        const storeComodines = state?.opciones?.comodines || comodinesIniciales;
+        const resultado: { [id: string]: string } = {};
+        for (let i = 0; i < comodinesInteres.length; i++) {
+            const id = comodinesInteres[i];
+            resultado[id] = storeComodines[id] ?? comodinesIniciales[id] ?? '';
+        }
+        return resultado;
+    }, shallowEqual);
+
     const reduxForPk = useSelector((state: CasoState) => state?.opciones?.forPk);
     const forPk = props.forPk || reduxForPk;
 
@@ -229,9 +259,9 @@ export function BreakeableText(props: {
                 }
             }
 
-            // 3. Buscar en comodines (Redux)
+            // 3. Buscar en comodines (Redux granular o comodinesIniciales)
             if (valor === undefined) {
-                valor = comodines?.[id as IdComodin];
+                valor = comodinesValores ? comodinesValores[id] : comodinesIniciales[id as IdComodin];
             }
 
             if (valor !== undefined && valor !== null && valor !== '') {
@@ -253,7 +283,7 @@ export function BreakeableText(props: {
     });
 
     return <span className={className} style={style}>{contenido}</span>;
-}
+});
 
 export function getBFVarNames(salto: string | null) {
     const armoNomSalto = salto?.substring(0, 2) == 'F:' ? salto.slice(2) : salto;
@@ -320,9 +350,14 @@ export const Button = ({ variant, onClick, disabled, children, className, color,
 
 const styleToCss = (style: React.CSSProperties | string | undefined): string | undefined => {
     if (typeof style === 'string' || style == null) return style;
-    return Object.entries(style).map(([k, v]) =>
-        `${k.replace(/[A-Z]/g, m => "-" + m.toLowerCase())}:${v}`
-    ).join(';');
+    const res: string[] = [];
+    for (const k in style) {
+        const v = (style as any)[k];
+        if (v != null) {
+            res.push(`${k.replace(/[A-Z]/g, (m: string) => "-" + m.toLowerCase())}:${v}`);
+        }
+    }
+    return res.join(';');
 }
 
 const Button2 = ({ variant, onClick, disabled, children, className, color, size, style, ...other }: {
@@ -3158,7 +3193,15 @@ function calcularComodines(forPk: ForPk) {
         ...(semanaObj?.mes_referencia && { MES_REF: mesReferencia(semanaObj.mes_referencia) }),
         ...(semanaNumero != null && { SEM_NUM: String(semanaNumero) }),
     };
-    getStoreFormulario()?.dispatch(dispatchers.CAMBIAR_COMODINES(comodinesCalculados));
+    const store = getStoreFormulario();
+    if (!store) return;
+    const actual = (store.getState() as CasoState)?.opciones?.comodines || comodinesIniciales;
+    const cambio = Object.keys(comodinesCalculados).some(
+        (key) => actual[key as IdComodin] !== comodinesCalculados[key as IdComodin]
+    );
+    if (cambio) {
+        store.dispatch(dispatchers.CAMBIAR_COMODINES(comodinesCalculados));
+    }
 }
 
 setCalcularComodines(calcularComodines);
