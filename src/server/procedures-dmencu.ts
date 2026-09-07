@@ -323,7 +323,8 @@ var getHdrQuery = function getHdrQuery(quotedCondViv: string, context: Procedure
                 'prioridad'     , reserva+1     ,
                 'observaciones' , tt.carga_observaciones ,
                 'cita'          , cita ,
-                'carga'         , t.area         
+                'carga'         , t.area        ,
+                'semana'        , t.semana
             ) as tem, t.area,
             --TODO: GENERALIZAR
             jsonb_build_object(
@@ -336,7 +337,7 @@ var getHdrQuery = function getHdrQuery(quotedCondViv: string, context: Procedure
             from tem t left join tareas_tem tt on (t.operativo = tt.operativo and t.enc = tt.enc and t.tarea_actual = tt.tarea)
                        left join tareas ta on t.tarea_actual = ta.tarea
             where t.habilitada and ${quotedCondViv}
-            group by t.operativo, t.enc, t.json_encuesta, t.resumen_estado, dominio, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area, tt.tarea, fecha_asignacion, asignado, main_form
+            group by t.operativo, t.enc, t.json_encuesta, t.resumen_estado, dominio, nomcalle,sector,edificio, entrada, nrocatastral, piso,departamento,habitacion,casa,reserva,tt.carga_observaciones, cita, t.area, tt.tarea, fecha_asignacion, asignado, main_form, t.semana
         )
         select jsonb_build_object(
                 ${context.be.db.quoteLiteral(unidadAnalisisPrincipal)}, ${jsono(
@@ -591,7 +592,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     'prioridad'     , null          ,
                     'observaciones' , null          ,
                     'cita'          , null          ,
-                    'carga'         , null         
+                    'carga'         , null          ,
+                    'semana'        , null
                 ) as tem,
                 jsonb_build_object(
                     'tarea', ${context.be.db.quoteLiteral(defaultTarea.tarea)},

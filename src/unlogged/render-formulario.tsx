@@ -8,6 +8,9 @@ import {
     materialIoIconsSvgPath,
     useOnlineStatus,
     RenderizadorJSON,
+    fechaReferencia,
+    mesReferencia,
+    obtenerTextoParentesco,
 } from "./render-general";
 import {
     Bloque, BotonFormulario,
@@ -25,6 +28,8 @@ import {
     iterator, empty, ConfiguracionHabilitarBotonFormulario,
     PMatriz,
     ModoDM,
+    IdComodin,
+    IdSemana,
 } from "./tipos";
 import {
     accion_abrir_formulario,
@@ -42,14 +47,19 @@ import {
     respuestasForPk,
     setCalcularVariables,
     setDatosByPass,
-    setEstructura
+    setEstructura,
+    setCalcularComodines,
+    suscribirCambioVariable,
+    ListenerCambioVariable
 } from "./bypass-formulario"
 import {
+    comodinesIniciales,
     crearStoreFormulario, dispatchers,
+    getStoreFormulario,
     gotoConsistir,
 } from "./redux-formulario";
-import { useState, useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useState, useEffect, useMemo } from "react";
+import { useSelector, useDispatch, shallowEqual } from "react-redux";
 import { strict as likeAr } from "like-ar";
 import { sleep, coalesce, datetime } from "best-globals";
 import { unexpected } from "cast-error";
@@ -103,12 +113,177 @@ function breakeableText(text: string | null): string | null;
 function breakeableText(text: string | null, diccionario?: { [clave: string]: React.ReactNode }) {
     if (typeof text != "string") return null;
     text = text.replace(/\//g, "/\u2063").replace(/\/\u2063(\w)\b/g, '/$1');
-    text = text.replace(/___*/g, (todo) => `[${todo}]`).replace(/\@\w+\@/g, (todo) => `[${todo}]`);
+    text = text.replace(/___*/g, (todo) => `[${todo}]`).replace(/\@#?[\w-]+@/g, (todo) => `[${todo}]`);
     if (!diccionario || true) return text;
     /*
     return <span>{partes.map((parte:string, i:number) => <span style={i%2==1?{textDecoration:"underline"}:{}}> {parte+" "} </span>)}</span>
     */
 }
+
+export const BreakeableText = React.memo(function BreakeableText(props: {
+    text: string | null | undefined,
+    className?: string,
+    style?: React.CSSProperties,
+    forPk?: ForPk,
+}) {
+    const { text, className, style } = props;
+
+    // Comodines clásicos presentes en el texto (ej: @resps1@ -> "resps1")
+    const comodinesInteres = useMemo(() => {
+        if (typeof text !== "string" || !text.includes('@')) return [];
+        const matches = text.match(/@([a-zA-Z0-9_-]+)@/g);
+        if (!matches) return [];
+        const ids: IdComodin[] = [];
+        for (let i = 0; i < matches.length; i++) {
+            const m = matches[i];
+            if (!m.startsWith('@#')) {
+                const id = m.slice(1, -1) as IdComodin;
+                if (ids.indexOf(id) === -1) {
+                    ids.push(id);
+                }
+            }
+        }
+        return ids;
+    }, [text]);
+
+    // Selector granular con shallowEqual: sólo suscribe y re-evalúa si cambian SUS comodines
+    const comodinesValores = useSelector((state: CasoState) => {
+        if (comodinesInteres.length === 0) return null;
+        const storeComodines = state?.opciones?.comodines || comodinesIniciales;
+        const resultado: { [id: string]: string } = {};
+        for (let i = 0; i < comodinesInteres.length; i++) {
+            const id = comodinesInteres[i];
+            resultado[id] = storeComodines[id] ?? comodinesIniciales[id] ?? '';
+        }
+        return resultado;
+    }, shallowEqual);
+
+    const reduxForPk = useSelector((state: CasoState) => state?.opciones?.forPk);
+    const forPk = props.forPk || reduxForPk;
+
+    // Variable de estado que se actualiza cada vez que llega un cambio de una variable de interés
+    const [valoresVariables, setValoresVariables] = useState<{ [nombreVariable: string]: any }>({});
+
+    // Variables de interés: el nombre de variable indicado después de # dentro de los arrobas (ej: @#edad@ -> "edad")
+    const variablesInteres = useMemo(() => {
+        if (typeof text !== "string") return [];
+        const matches = text.match(/@#([^@]+)@/g);
+        if (!matches) return [];
+        const vars: string[] = [];
+        for (let i = 0; i < matches.length; i++) {
+            const m = matches[i];
+            const match = m.match(/^@#([\w-]+)@$/);
+            if (match) {
+                const varName = match[1];
+                if (vars.indexOf(varName) === -1) {
+                    vars.push(varName);
+                }
+            }
+        }
+        return vars;
+    }, [text]);
+
+    useEffect(() => {
+        if (!text || variablesInteres.length === 0) return;
+
+        const listener: ListenerCambioVariable = (varModificada, nuevoValor, _forPk, respuestasAumentadas) => {
+            let huboCambio = false;
+            const nuevosValores: { [k: string]: any } = {};
+
+            if (respuestasAumentadas) {
+                for (let i = 0; i < variablesInteres.length; i++) {
+                    const varName = variablesInteres[i];
+                    if (varName in respuestasAumentadas) {
+                        const val = respuestasAumentadas[varName as IdVariable];
+                        nuevosValores[varName] = (val != null && val !== '') ? String(val) : '........';
+                        huboCambio = true;
+                    }
+                }
+            }
+            if (!huboCambio && variablesInteres.indexOf(varModificada) !== -1) {
+                nuevosValores[varModificada] = (nuevoValor != null && nuevoValor !== '') ? String(nuevoValor) : '........';
+                huboCambio = true;
+            }
+
+            if (huboCambio) {
+                setValoresVariables(prev => {
+                    const next: { [k: string]: any } = {};
+                    for (const k in prev) {
+                        next[k] = prev[k];
+                    }
+                    for (const k in nuevosValores) {
+                        next[k] = nuevosValores[k];
+                    }
+                    return next;
+                });
+            }
+        };
+
+        const desuscribir = suscribirCambioVariable(listener, variablesInteres);
+        return () => {
+            desuscribir();
+        };
+    }, [text, variablesInteres]);
+
+    if (typeof text !== "string") return null;
+
+    let procesado = text.replace(/\//g, "/\u2063").replace(/\/\u2063(\w)\b/g, '/$1');
+    procesado = procesado.replace(/___*/g, (todo) => `[${todo}]`);
+
+    const partes = procesado.split(/(@#?[\w-]+@)/g);
+    const contenido = partes.map((parte, index) => {
+        const match = parte.match(/^@(#?)([\w-]+)@$/);
+        if (match) {
+            const tieneHash = match[1] === '#';
+            const id = match[2];
+
+            let valor: any = undefined;
+
+            // 1. Si es variable con #, buscar el valor de la variable indicada después de # en el estado del listener (actualizado desde respuestasAumentadas)
+            if (tieneHash) {
+                if (valoresVariables[id] !== undefined) {
+                    valor = valoresVariables[id];
+                }
+            }
+
+            // 2. Si tiene # y aún no está definido, buscar directamente en respuestasAumentadas
+            if (valor === undefined && tieneHash && forPk) {
+                try {
+                    const { respuestasAumentadas } = respuestasForPk(forPk, true);
+                    const val = respuestasAumentadas?.[id as IdVariable];
+                    if (val != null && val !== '') {
+                        valor = String(val);
+                    }
+                } catch {
+                    // Ignorar error si no se pudo acceder a respuestas
+                }
+            }
+
+            // 3. Buscar en comodines (Redux granular o comodinesIniciales)
+            if (valor === undefined) {
+                valor = comodinesValores ? comodinesValores[id] : comodinesIniciales[id as IdComodin];
+            }
+
+            if (valor !== undefined && valor !== null && valor !== '') {
+                return valor;
+            }
+            if (tieneHash && (valor === '' || valor === null)) {
+                return '........';
+            }
+            if (valor !== undefined && valor !== null) {
+                return valor;
+            }
+            return (
+                <span key={index} style={{ color: 'red' }}>
+                    {`No se encontró ${parte}`}
+                </span>
+            );
+        }
+        return parte;
+    });
+
+    return <span className={className} style={style}>{contenido}</span>;
+});
 
 export function getBFVarNames(salto: string | null) {
     const armoNomSalto = salto?.substring(0, 2) == 'F:' ? salto.slice(2) : salto;
@@ -175,9 +350,14 @@ export const Button = ({ variant, onClick, disabled, children, className, color,
 
 const styleToCss = (style: React.CSSProperties | string | undefined): string | undefined => {
     if (typeof style === 'string' || style == null) return style;
-    return Object.entries(style).map(([k, v]) =>
-        `${k.replace(/[A-Z]/g, m => "-" + m.toLowerCase())}:${v}`
-    ).join(';');
+    const res: string[] = [];
+    for (const k in style) {
+        const v = (style as any)[k];
+        if (v != null) {
+            res.push(`${k.replace(/[A-Z]/g, (m: string) => "-" + m.toLowerCase())}:${v}`);
+        }
+    }
+    return res.join(';');
 }
 
 const Button2 = ({ variant, onClick, disabled, children, className, color, size, style, ...other }: {
@@ -413,9 +593,9 @@ function OpcionDespliegue(props: { casillero: Opcion, valorOpcion: number, varia
                     {casillero.ver_id || casillero.casillero}
                 </Grid>
                 <Grid className="opcion-texto">
-                    <Typography debe-leer={casillero.leer ? 'SI' : casillero.leer === false ? 'NO' : props.leer ? 'SI' : 'NO'}>{breakeableText(casillero.nombre)}</Typography>
+                    <Typography debe-leer={casillero.leer ? 'SI' : casillero.leer === false ? 'NO' : props.leer ? 'SI' : 'NO'}><BreakeableText text={casillero.nombre} /></Typography>
                     {casillero.aclaracion ?
-                        <Typography className='aclaracion'>{breakeableText(casillero.aclaracion)}</Typography>
+                        <Typography className='aclaracion'><BreakeableText text={casillero.aclaracion} /></Typography>
                         : null}
                 </Grid>
             </Grid>
@@ -592,7 +772,7 @@ function EncabezadoDespliegue(props: {
             </div>
         </div>
         <div className="nombre-div">
-            <div className="nombre">{breakeableText(casillero.nombre)}
+            <div className="nombre"><BreakeableText text={casillero.nombre} />
                 {casillero.especial?.gps ?
                     <span>
                         <Button color="primary" variant="outlined" style={{ marginLeft: '10px' }} onClick={(_event) => {
@@ -628,7 +808,7 @@ function EncabezadoDespliegue(props: {
                     {casillero.salto && casillero.tipoc == 'FILTRO' ?
                         <SaltoDespliegue casillero={casillero} prefijo={breakeableText(casillero.aclaracion)!} />
                         :
-                        breakeableText(casillero.aclaracion)
+                        <BreakeableText text={casillero.aclaracion} />
                     }
                 </div>
                 : null}
@@ -854,8 +1034,6 @@ function PreguntaDespliegue(props: {
     paraPMatriz?: true
 }) {
     var { pregunta } = props;
-    const dispatch = useDispatch();
-    var estado: EstadoVariable;
     var id = `pregunta-${pregunta.id_casillero}`
     registrarElemento({
         id,
@@ -1930,11 +2108,11 @@ function BotonVolverEnDiv({ id }: { id: string }) {
 }
 
 function FormularioDespliegue(props: { forPk: ForPk }) {
-    var forPk = props.forPk;
-    var { formulario, modoDespliegue, opciones }
-        = useSelectorVivienda(props.forPk);
-    var soloLectura = getDatosByPass().soloLectura;
     const dispatch = useDispatch();
+    const forPk = props.forPk;
+    var { formulario, modoDespliegue, opciones }
+        = useSelectorVivienda(forPk);
+    var soloLectura = getDatosByPass().soloLectura;
     var esVolver = opciones.pilaForPk.length > 0;
     useEffect(() => {
         var controlScroll = () => {
@@ -1955,12 +2133,13 @@ function FormularioDespliegue(props: { forPk: ForPk }) {
                 );
             }
         }
-        const idCaso = likeAr(props.forPk).find((_, k) => {
+        const idCaso = likeAr(forPk).find((_, k) => {
             return k != 'formulario'
         })?.toString();
         window.document.title = getEstructura().operativo + '- ' + idCaso;
         window.addEventListener('scroll', controlScroll);
         controlScroll();
+        calcularComodines(forPk);
         return () => {
             window.removeEventListener('scroll', controlScroll);
         }
@@ -2838,7 +3017,7 @@ export async function desplegarFormularioActual(
     opts: { forPkRaiz?: ForPkRaiz } = {}
 ) {
     await formRenderer.cargarMotor();
-    const store = await crearStoreFormulario(opts)
+    const store = await crearStoreFormulario(opts);
     try {
         await loadCSS(BOOTSTRAP_5_1_3_SRC);
     } catch (err) {
@@ -2976,6 +3155,61 @@ setCalcularVariables((respuestasRaiz: RespuestasRaiz, forPk: ForPk) => {
 window.addEventListener('load', function () {
     loadInstance()
 })
+
+function calcularComodines(forPk: ForPk) {
+    const estructura = getEstructura();
+    const infoHdr = getDatosByPass().informacionHdr[forPk[estructura.pkAgregadaUaPpal]];
+    const semanaNumero = infoHdr?.tem?.semana;
+    const semanaObj = semanaNumero != null ? estructura.semanas?.[semanaNumero as IdSemana] : null;
+    const { respuestasAumentadas } = respuestasForPk(forPk, true);
+    const rangoFecha = (desde?: string | null, hasta?: string | null) =>
+        (desde && hasta) ? `${fechaReferencia(desde)} a ${fechaReferencia(hasta)}` : null;
+    const semRef = rangoFecha(semanaObj?.semana_referencia_desde, semanaObj?.semana_referencia_hasta);
+    const d30Ref = rangoFecha(semanaObj?.d30_referencia_desde, semanaObj?.d30_referencia_hasta);
+    const personasArray = Array.isArray(respuestasAumentadas?.['personas' as IdUnidadAnalisis]) 
+        ? respuestasAumentadas['personas' as IdUnidadAnalisis] as any[] : [];
+    const buscarPersona = (num?: any) => 
+        num != null ? personasArray.find((p: any, idx: number) => (p?.persona != null ? Number(p.persona) === Number(num) : (idx + 1) === Number(num))) : null;
+    const textoParentesco = (p: any) => {
+        const p4 = p?.p4 ?? p?.p4r;
+        return p4 != null ? obtenerTextoParentesco(Number(p4), estructura.operativo) : null;
+    };
+    const esEntrea = respuestasAumentadas?.['entrea' as IdVariable] == 1;
+    const nombrer = respuestasAumentadas?.['nombrer' as IdVariable];
+    const personaResp = esEntrea ? buscarPersona(respuestasAumentadas?.['respond' as IdVariable]) : null;
+    const personaRespi = esEntrea ? buscarPersona(respuestasAumentadas?.['cr_num_miembro' as IdVariable]) : null;
+    const jefe = esEntrea ? buscarPersona(1) : null;
+    const parentResp = textoParentesco(personaResp);
+    const parentRespi = textoParentesco(personaRespi);
+    const totalH = respuestasAumentadas?.['total_h' as IdVariable] ?? respuestasAumentadas?.['total_h_sup' as IdVariable];
+    const fRealiz = respuestasAumentadas?.['f_realiz_o' as IdVariable];
+    const comodinesCalculados: Record<IdComodin, string> = {
+        ...comodinesIniciales,
+        canti_hogares: totalH != null ? String(totalH) : '........',
+        frealiz: fRealiz != null ? String(fRealiz) : '........',
+        resps1: (esEntrea && nombrer) ? String(nombrer) : '........',
+        parents1: (esEntrea && parentResp) ? parentResp : '........',
+        respi1: (esEntrea && personaRespi?.nombre) ? String(personaRespi.nombre) : '........',
+        parenti1: (esEntrea && parentRespi) ? parentRespi : '........',
+        njefe: (esEntrea && jefe?.nombre) ? String(jefe.nombre) : '........',
+        ...(semRef && { SEM_REF: semRef }),
+        ...(d30Ref && { D30_REF: d30Ref }),
+        ...(semanaObj?.mes_referencia && { MES_REF: mesReferencia(semanaObj.mes_referencia) }),
+        ...(semanaNumero != null && { SEM_NUM: String(semanaNumero) }),
+    };
+    const store = getStoreFormulario();
+    if (!store) return;
+    const actual = (store.getState() as CasoState)?.opciones?.comodines || comodinesIniciales;
+    const cambio = Object.keys(comodinesCalculados).some(
+        (key) => actual[key as IdComodin] !== comodinesCalculados[key as IdComodin]
+    );
+    if (cambio) {
+        store.dispatch(dispatchers.CAMBIAR_COMODINES(comodinesCalculados));
+    }
+}
+
+setCalcularComodines(calcularComodines);
+
 //FIN CONTROL PESTAÑAS
 
 function loadCSS(cssURL: string, id?: string): Promise<void> {

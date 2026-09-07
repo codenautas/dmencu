@@ -1,7 +1,6 @@
 "use strict";
 import { Structure, Feedback } from "row-validator";
 import * as LikeAr from "like-ar";
-import { OperativoGenerator } from "meta-enc";
 
 export type ModoAlmacenamiento = 'session' | // cuando sea para una sola pestaña, se usa en modo directo,
     'local'    // para todo el dispositivo, se usa al cargar hojas de ruta entres
@@ -16,6 +15,7 @@ export type IdUnidadAnalisis = 'viviendas' | 'hogares' | 'personas'
 export type IdBotonFormulario = 'BF:F1' | 'BF:F2' | 'etc...'
 export type IdConsistencia = 'CONS1' | 'CONS2' | 'etc...'
 export type IdTexto = 'D30_REF' | 'MES_REF' | 'SEM_REF' | 'etc...'
+export type IdComodin = 'D30_REF' | 'MES_REF' | 'SEM_REF' | 'SEM_NUM' | 'resps1' | 'parents1' | 'respi1' | 'parenti1' | 'njefe' | 'frealiz' | 'canti_hogares'
 export type IdFiltro = 'FILTRO1' | 'FILTRO2' | 'etc...'
 export type IdCasillero = IdVariable | IdPregunta | IdBloque | IdFormulario | IdFiltro | IdOpcion
 export type IdFin = 'fin'; // never // TODO: poder poner 'FIN'
@@ -306,7 +306,8 @@ export type TEM = {
     observaciones: string
     seleccionado: number,
     cita: string,
-    carga: string
+    carga: string,
+    semana?: number
 }
 
 export type ResumenEstado = 'vacio' | 'con problemas' | 'incompleto' | 'ok' | 'no rea' | 'cita pactada';
@@ -373,8 +374,8 @@ export type Semana = {
     semana: number;
     semana_referencia_desde?: string | null;
     semana_referencia_hasta?: string | null;
-    '30dias_referencia_desde'?: string | null;
-    '30dias_referencia_hasta'?: string | null;
+    d30_referencia_desde?: string | null;
+    d30_referencia_hasta?: string | null;
     mes_referencia?: string | null;
     carga_enc_desde?: string | null;
     carga_enc_hasta?: string | null;
@@ -441,6 +442,7 @@ export type CasoState = {
         saltoAutomatico: boolean
         pantallaActual: PantallaNavegacion
         avisoPersistente: { tipo: 'info' | 'success' | 'error', mensaje: string} | null
+        comodines: {[idComodin in IdComodin]?: string}
     }
 }
 
