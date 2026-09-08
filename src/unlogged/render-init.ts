@@ -88,7 +88,7 @@ const localStorageConfig = {
     },
 
     leerDatos(): Promise<DatosByPassPersistibles | null> {
-        var modoAlmacenamiento = myOwn.getSessionVar(GLOVAR_MODOBYPASS) as ModoAlmacenamiento;
+        var modoAlmacenamiento = myOwn.getLocalVar(GLOVAR_MODOBYPASS) as ModoAlmacenamiento;
         
         if (modoAlmacenamiento == 'local') {
             return Promise.resolve(myOwn.getLocalVar(GLOVAR_DATOSBYPASS));
@@ -104,7 +104,7 @@ const localStorageConfig = {
         } else {
             myOwn.setSessionVar(GLOVAR_DATOSBYPASS, datos);
         }
-        myOwn.setSessionVar(GLOVAR_MODOBYPASS, modoAlmacenamiento);
+        myOwn.setLocalVar(GLOVAR_MODOBYPASS, modoAlmacenamiento);
         return Promise.resolve();
     },
     onLogout(): Promise<void>{
