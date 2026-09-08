@@ -3032,41 +3032,6 @@ export async function desplegarFormularioActual(
     )
 }
 
-function loadInstance() {
-    if (typeof BroadcastChannel === 'undefined') {
-        return;
-    }
-    var bc = new BroadcastChannel('contador');
-    var myId = String.fromCodePoint(100 + Math.floor(Math.random() * 1000)) + Math.floor(Math.random() * 100)//+'-'+new Date().getTime();
-    allOpenedTabs[myId] = 1;
-    infoOpenedTabs.myId = myId;
-    var event = new Event('my-tabs');
-    bc.onmessage = function (ev) {
-        if (ev.data.que == 'soy') {
-            if (!allOpenedTabs[ev.data.id]) {
-                allOpenedTabs[ev.data.id] = 0;
-            }
-            allOpenedTabs[ev.data.id]++;
-        }
-        if (ev.data.que == 'unload') {
-            delete allOpenedTabs[ev.data.id];
-        }
-        if (ev.data.que == 'load') {
-            allOpenedTabs[ev.data.id] = 1;
-            bc.postMessage({ que: 'soy', id: myId });
-        }
-        infoOpenedTabs.otherTabsNames = likeAr(allOpenedTabs).filter((_, id) => id != myId).join(',');
-        window.dispatchEvent(event);
-    };
-    bc.postMessage({ que: 'load', id: myId });
-    window.dispatchEvent(event);
-    window.addEventListener('unload', function () {
-        bc.postMessage({ que: 'unload', id: myId });
-        window.dispatchEvent(event);
-    })
-    //mostrarQuienesSomos();
-}
-
 export const setLibreDespliegue = (libre: LibreDespliegueType) => LibreDespliegue = libre
 
 setLibreDespliegue((props: {
@@ -3152,9 +3117,6 @@ setCalcularVariables((respuestasRaiz: RespuestasRaiz, forPk: ForPk) => {
     //respuestasRaiz['$B.F:S1_SUP' as IdVariable] = (respuestasRaiz['hogares_sup' as IdUnidadAnalisis] || []).length == totalHsup ? 'ok' : null;
 })
 
-window.addEventListener('load', function () {
-    loadInstance()
-})
 
 function calcularComodines(forPk: ForPk) {
     const estructura = getEstructura();
@@ -3210,8 +3172,6 @@ function calcularComodines(forPk: ForPk) {
 
 setCalcularComodines(calcularComodines);
 
-//FIN CONTROL PESTAÑAS
-
 function loadCSS(cssURL: string, id?: string): Promise<void> {
     return new Promise((resolve, reject) => {
         var link = document.createElement('link');
@@ -3236,3 +3196,46 @@ function removeCSSById(id: string) {
 }
 
 const BOOTSTRAP_5_1_3_SRC = 'css/bootstrap.min.css';
+
+//INICIO CONTROL PESTAÑAS ABIERTAS
+function loadInstance() {
+    if (typeof BroadcastChannel === 'undefined') {
+        return;
+    }
+    var bc = new BroadcastChannel('contador');
+    var myId = String.fromCodePoint(100 + Math.floor(Math.random() * 1000)) + Math.floor(Math.random() * 100)//+'-'+new Date().getTime();
+    allOpenedTabs[myId] = 1;
+    infoOpenedTabs.myId = myId;
+    var event = new Event('my-tabs');
+    bc.onmessage = function (ev) {
+        if (ev.data.que == 'soy') {
+            if (!allOpenedTabs[ev.data.id]) {
+                allOpenedTabs[ev.data.id] = 0;
+            }
+            allOpenedTabs[ev.data.id]++;
+        }
+        if (ev.data.que == 'unload') {
+            delete allOpenedTabs[ev.data.id];
+        }
+        if (ev.data.que == 'load') {
+            allOpenedTabs[ev.data.id] = 1;
+            bc.postMessage({ que: 'soy', id: myId });
+        }
+        infoOpenedTabs.otherTabsNames = likeAr(allOpenedTabs).filter((_, id) => id != myId).join(',');
+        window.dispatchEvent(event);
+    };
+    bc.postMessage({ que: 'load', id: myId });
+    window.dispatchEvent(event);
+    var notifyUnload = function () {
+        bc.postMessage({ que: 'unload', id: myId });
+    };
+    window.addEventListener('beforeunload', notifyUnload);
+    window.addEventListener('pagehide', notifyUnload)
+    //mostrarQuienesSomos();
+}
+
+window.addEventListener('load', function () {
+    loadInstance()
+})
+
+//FIN CONTROL PESTAÑAS ABIERTAS
