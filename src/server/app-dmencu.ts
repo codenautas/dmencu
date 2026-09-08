@@ -5,7 +5,6 @@ import { emergeAppProcesamiento, emergeAppConsistencias, emergeAppVarCal, emerge
 import { pasarEncuestasAProie, ProceduresDmEncu } from "./procedures-dmencu";
 
 import * as pg from "pg-promise-strict";
-import { json } from "pg-promise-strict";
 import * as miniTools from "mini-tools";
 import {
     Client, Context, CoreFunctionParameters,
@@ -696,6 +695,75 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             return null
         }
 
+        getMenuConfigurar(context: Context): MenuInfoBase[] {
+            const menuConfigurar: MenuInfoBase[] = [];
+
+            if (context.puede?.campo?.administrar || context.puede?.encuestas?.procesar) {
+                const submenuMuestra: MenuInfoBase[] = [
+                    { menuType: 'table', name: 'tem', label: 'TEM' },
+                    { menuType: 'proc', name: 'muestra_generar', label: 'generar muestra' },
+                    { menuType: 'table', name: 'semanas' },
+                    { menuType: 'table', name: 'area_enc_proximas' },
+                ];
+                menuConfigurar.push({
+                    menuType: 'menu',
+                    name: 'muestra',
+                    label: 'muestra',
+                    menuContent: submenuMuestra
+                });
+            }
+
+            if (context.puede?.casilleros_texto?.editar) {
+                menuConfigurar.push({
+                    menuType: 'menu',
+                    name: 'metadatos',
+                    menuContent: [
+                        { menuType: 'table', name: 'operativos' },
+                        { menuType: 'table', name: 'formularios', table: 'casilleros_principales' },
+                        { menuType: 'table', name: 'plano', table: 'casilleros' },
+                        { menuType: 'table', name: 'variables', table: 'casilleros', fc: [{ column: 'var_name', operator: '!=\u2205', value: null }] },
+                        { menuType: 'table', name: 'tipoc', label: 'tipos de celdas' },
+                        { menuType: 'table', name: 'tipoc_tipoc', label: 'inclusiones de celdas' },
+                    ]
+                });
+            }
+
+            if (context.superuser) {
+                menuConfigurar.push(
+                    {
+                        menuType: 'menu',
+                        name: 'estados_acciones_tareas',
+                        label: 'estados/acciones/tareas',
+                        menuContent: [
+                            { menuType: 'table', name: 'tareas' },
+                            { menuType: 'table', name: 'estados' },
+                            { menuType: 'table', name: 'acciones' },
+                            { menuType: 'table', name: 'estados_acciones' },
+                            { menuType: 'table', name: 'tareas_proximas' },
+                        ]
+                    },
+                    { menuType: 'table', name: 'momentos_consistencia' },
+                    { menuType: 'table', name: 'parametros' },
+                    { menuType: 'table', name: 'modos_dm' },
+                );
+            }
+
+            if (context.puede?.campo?.administrar || context.puede?.encuestas?.procesar) {
+                menuConfigurar.push({
+                    menuType: 'menu',
+                    name: 'usuarios',
+                    menuContent: [
+                        { menuType: 'table', name: 'usuarios', selectedByDefault: true },
+                        { menuType: 'table', name: 'roles' },
+                        { menuType: 'table', name: 'permisos' },
+                        { menuType: 'table', name: 'roles_permisos' },
+                    ]
+                });
+            }
+
+            return menuConfigurar;
+        }
+
         override getMenu(context: Context) {
             let menu: MenuInfoBase[] = [];
             if (getModoByPolicy(context.be) === 'RELEVAMIENTO') {
@@ -749,60 +817,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                         },
                     );
                 }
-                var menuConfigurar: MenuInfoBase[] = [];
-                if (context.puede?.campo?.administrar || context.puede?.encuestas?.procesar) {
-                    let submenuMuestra: MenuInfoBase[] = [
-                        { menuType: 'table', name: 'tem', label: 'TEM' },
-                        { menuType: 'proc', name: 'muestra_generar', label: 'generar muestra' },
-                        { menuType: 'table', name: 'semanas' },
-                        { menuType: 'table', name: 'area_enc_proximas' },
-                    ]
-                    menuConfigurar.push(
-                        { menuType: 'menu', name: 'muestra', label: 'muestra', menuContent: submenuMuestra }
-                    );
-                }
-                if (context.puede?.casilleros_texto?.editar) {
-                    menuConfigurar.push(
-                        {
-                            menuType: 'menu', name: 'metadatos', menuContent: [
-                                { menuType: 'table', name: 'operativos' },
-                                { menuType: 'table', name: 'formularios', table: 'casilleros_principales' },
-                                { menuType: 'table', name: 'plano', table: 'casilleros' },
-                                { menuType: 'table', name: 'variables', table: 'casilleros', fc: [{ column: 'var_name', operator: '!=\u2205', value: null }] },
-                                { menuType: 'table', name: 'tipoc', label: 'tipos de celdas' },
-                                { menuType: 'table', name: 'tipoc_tipoc', label: 'inclusiones de celdas' },
-                            ]
-                        },
-                    );
-                }
-                if (context.superuser) {
-                    menuConfigurar.push(
-                        {
-                            menuType: 'menu', name: 'estados_acciones_tareas', label: 'estados/acciones/tareas', menuContent: [
-                                { menuType: 'table', name: 'tareas' },
-                                { menuType: 'table', name: 'estados' },
-                                { menuType: 'table', name: 'acciones' },
-                                { menuType: 'table', name: 'estados_acciones' },
-                                { menuType: 'table', name: 'tareas_proximas' },
-                            ]
-                        },
-                        { menuType: 'table', name: 'momentos_consistencia' },
-                        { menuType: 'table', name: 'parametros' },
-                        { menuType: 'table', name: 'modos_dm' },
-                    )
-                }
-                if (context.puede?.campo?.administrar || context.puede?.encuestas?.procesar) {
-                    menuConfigurar.push(
-                        {
-                            menuType: 'menu', name: 'usuarios', menuContent: [
-                                { menuType: 'table', name: 'usuarios', selectedByDefault: true },
-                                { menuType: 'table', name: 'roles' },
-                                { menuType: 'table', name: 'permisos' },
-                                { menuType: 'table', name: 'roles_permisos' },
-                            ]
-                        },
-                    )
-                }
+                const menuConfigurar = this.getMenuConfigurar(context);
                 if (menuConfigurar.length) {
                     menu.push({ menuType: 'menu', name: 'configurar', menuContent: menuConfigurar });
                 }
