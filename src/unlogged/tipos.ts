@@ -305,7 +305,7 @@ export type TEM = {
     prioridad: 1 | 2 | 3
     observaciones: string
     seleccionado: number,
-    cita: string,
+    cita?: string,
     carga: string,
     semana?: number
 }

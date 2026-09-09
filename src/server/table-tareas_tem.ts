@@ -47,10 +47,11 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
         {name:'operativo'                   , typeName:'text', isPk:2, editable:false},
         {name:'enc'                         , typeName:'text', isPk:3, editable:false},
         {name:'tarea'                       , typeName:'text', isPk:1, editable:false},
+        {name:'area'                        , typeName: 'integer'    , editable:false   , inTable:false },
+        {name:'estado'                      , typeName:'text'        , editable:false   , nullable: false, defaultDbValue:"'0D'"},
         {name:'ts_entrada'                  , typeName:'timestamp'   , editable:false               , visible:false},
         {name:'adelantar'                   , typeName:'boolean'     , editable:true                , visible:false},
         {name:'dias_a_pasar'                , typeName:'integer'     , editable:false, inTable:false, visible:false},
-        {name:'estado'                      , typeName:'text'        , editable:false   , nullable: false, defaultDbValue:"'0D'"},
         {name:'proie'                       , typeName:'text'        , editable:editaProie , table: 'tem' , visible:false }
     ];
     if(opts.abre){
@@ -60,7 +61,6 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
         fields.push({name:"consistir"                   , typeName: 'text'       , editable:false   , inTable:false, clientSide:'consistir'});
     }
     fields=fields.concat([
-        {name:'area'                        , typeName: 'integer'    , editable:false   , inTable:false },
         {name:'tarea_actual'                , typeName:'text'        , inTable:false    , editable:false, serverSide:true},
       //  {name:'ok'                          , typeName: 'text'       , editable:false   , inTable:false },
         {name:'recepcionista'               , typeName:'text'        , editable:true }, 
@@ -103,10 +103,10 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
             {references:'usuarios', fields:[{source:'recepcionista' , target:'idper'}], alias:'recepcionista'},
         ],
         softForeignKeys:[
-            {references:'usuarios', fields:[{source:'recepcionista', target:'idper'}], alias:'at'},
-            {references:'tem' , fields:['operativo','enc'], displayAllFields:true, displayAfterFieldName:'resumen_estado_sup', alias:"tem_rec"},
+            //{references:'usuarios', fields:[{source:'recepcionista', target:'idper'}], alias:'at'},
+            { references: 'tem', fields: ['operativo', 'enc'], displayAllFields: true, displayAfterFieldName:'resumen_estado_sup', alias:"tem_rec"},
             {references:'tokens', fields:[{source:'cargado_dm', target:'token'}], displayFields:['username'], displayAfterFieldName:'cargado'},
-            {references:'recepcionistas', fields:[{source:'recepcionista', target:'persona'}], alias:'rec'},
+            //{references:'recepcionistas', fields:[{source:'recepcionista', target:'persona'}], alias:'rec'},
         ],
         detailTables: [
             {table: "inconsistencias", abr: "I", fields: [{source:'operativo', target:'operativo'},{source:'enc', target:OperativoGenerator.mainTDPK}], refreshParent:true, refreshFromParent:true}

@@ -1063,25 +1063,26 @@ function barrerSubArbol(respuestasRaiz: RespuestasRaiz, nodoActual: Respuestas |
         if (!resp) continue;
 
         var num = esArray ? i + 1 : (forPkAcumulado[uaDef.pk_agregada] || 1);
-        var idFormulario = Object.keys(estructura.formularios).find(key => estructura.formularios[key as IdFormulario].casilleros.unidad_analisis === unidad_analisis) as IdFormulario;
-        var miForPk: ForPk = { ...forPkAcumulado, [uaDef.pk_agregada]: num, formulario: idFormulario || forPkAcumulado.formulario };
-
-        if (especiales.calcularVariables) {
-            especiales.calcularVariables(respuestasRaiz, miForPk);
-        }
-        if (especiales.calcularVariablesEspecificasOperativo) {
-            especiales.calcularVariablesEspecificasOperativo(respuestasRaiz, miForPk);
-        }
-
-        var hijas = likeAr(estructura.unidades_analisis).filter(u => u.padre === unidad_analisis).keys();
-        for (var uaHija of hijas) {
-            var hijasResp = resp[uaHija as IdUnidadAnalisis];
-            if (hijasResp) {
-                barrerSubArbol(respuestasRaiz, hijasResp as Respuestas[], uaHija as IdUnidadAnalisis, miForPk);
+        var idFormularios = Object.keys(estructura.formularios).filter(key => estructura.formularios[key as IdFormulario].casilleros.unidad_analisis === unidad_analisis);
+        for (const idFormulario of idFormularios) {
+            var miForPk: ForPk = { ...forPkAcumulado, [uaDef.pk_agregada]: num, formulario: idFormulario as IdFormulario || forPkAcumulado.formulario };
+            if (especiales.calcularVariables) {
+                especiales.calcularVariables(respuestasRaiz, miForPk);
             }
-        }
-        if(comodines.calcularComodines){
-            comodines.calcularComodines(miForPk);
+            if (especiales.calcularVariablesEspecificasOperativo) {
+                especiales.calcularVariablesEspecificasOperativo(respuestasRaiz, miForPk);
+            }
+
+            var hijas = likeAr(estructura.unidades_analisis).filter(u => u.padre === unidad_analisis).keys();
+            for (var uaHija of hijas) {
+                var hijasResp = resp[uaHija as IdUnidadAnalisis];
+                if (hijasResp) {
+                    barrerSubArbol(respuestasRaiz, hijasResp as Respuestas[], uaHija as IdUnidadAnalisis, miForPk);
+                }
+            }
+            if(comodines.calcularComodines){
+                comodines.calcularComodines(miForPk);
+            }
         }
     }
 }

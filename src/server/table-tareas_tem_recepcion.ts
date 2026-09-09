@@ -17,13 +17,15 @@ export var getSqlFrom = (tableDef:TableDefinition, opts:{desde:'ingresa'|'recepc
     ) y
 )`
 
+const despuesDe = (tableDef: TableDefinition, fieldName: string)=>tableDef.fields.findIndex((field: FieldDefinition) => field.name === fieldName) + 1
+
 export function tareas_tem_recepcion(context:TableContext, opts?:OptsTareasTem):TableDefinition {
     var tableDef = tareas_tem(context, opts);
     tableDef.name = `tareas_tem_recepcion`;
     var puedeEditar = context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista';       
     var reaFieldNames = getReaFieldsForTareasTem(puedeEditar).map((field:FieldDefinition)=>field.name);
     tableDef.fields = tableDef.fields.filter((field)=>!reaFieldNames.includes(field.name));
-    tableDef.fields.splice(4,0,
+    tableDef.fields.splice(despuesDe(tableDef, 'estado'),0,
         {name:"acciones"                    , typeName: 'jsonb'      , editable:false   , inTable:false},
         {name:"acciones_avance"             , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesAvance'},
         {name:"acciones_retroceso"          , typeName: 'text'       , editable:false   , inTable:false, clientSide:'accionesRetroceso'},
@@ -33,6 +35,8 @@ export function tareas_tem_recepcion(context:TableContext, opts?:OptsTareasTem):
         {name:"visible_en_fin_campo"        , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
         {name:"visible_en_analisis_campo"   , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
         {name:"visible_en_procesamiento"    , typeName: "boolean"    , editable:false   , inTable:false, visible:false},
+    );
+    tableDef.fields.splice(despuesDe(tableDef, 'tarea_actual'), 0,
         ...getReaFieldsForTareasTem(puedeEditar)
     );
     tableDef.fields.forEach((field:FieldDefinition)=>{

@@ -10,12 +10,12 @@ AS $BODY$
         v_recepcionista text;
         v_asignado text;
         v_json_encuesta jsonb;
-        v_resumen_estado text;
-        v_resumen_estado_sup text;
-        v_rea integer;
-        v_norea integer;
-        v_rea_sup integer;
-        v_norea_sup integer;
+        v_dm_resumen_estado text;
+        v_dm_resumen_estado_sup text;
+        v_dm_rea integer;
+        v_dm_norea integer;
+        v_dm_rea_sup integer;
+        v_dm_norea_sup integer;
         v_estado text;
         v_verificado text;
 begin
@@ -24,8 +24,8 @@ begin
             from historial_tem 
             where operativo = old.operativo and enc = old.enc;
         
-        select recepcionista, asignado, resumen_estado, resumen_estado_sup, rea, norea, rea_sup, norea_sup, estado, verificado  into
-            v_recepcionista, v_asignado, v_resumen_estado, v_resumen_estado_sup, v_rea, v_norea, v_rea_sup, v_norea_sup, v_estado, v_verificado
+        select recepcionista, asignado, dm_resumen_estado, dm_resumen_estado_sup, dm_rea, dm_norea, dm_rea_sup, dm_norea_sup, estado, verificado  into
+            v_recepcionista, v_asignado, v_dm_resumen_estado, v_dm_resumen_estado_sup, v_dm_rea, v_dm_norea, v_dm_rea_sup, v_dm_norea_sup, v_estado, v_verificado
             from tareas_tem 
             where operativo = old.operativo and enc = old.enc and tarea = old.tarea_actual;
         
@@ -35,7 +35,7 @@ begin
             where operativo = old.operativo and enc = old.enc;
 
         insert into historial_tem (operativo, enc, orden, tarea, estado, verificado, ts_salida, recepcionista, asignado, json_encuesta, resumen_estado, resumen_estado_sup, rea, norea, rea_sup, norea_sup) values 
-            (old.operativo, old.enc, v_proximo_orden, old.tarea_actual, v_estado, v_verificado, current_timestamp, v_recepcionista, v_asignado, v_json_encuesta, v_resumen_estado, v_resumen_estado_sup, v_rea, v_norea, v_rea_sup, v_norea_sup);
+            (old.operativo, old.enc, v_proximo_orden, old.tarea_actual, v_estado, v_verificado, current_timestamp, v_recepcionista, v_asignado, v_json_encuesta, v_dm_resumen_estado, v_dm_resumen_estado_sup, v_dm_rea, v_dm_norea, v_dm_rea_sup, v_dm_norea_sup);
     end if;
     return new;
 end;
