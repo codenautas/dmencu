@@ -61,7 +61,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {name:'zona'                 , typeName:'text'    , editable: false  },
             {name:'enc_ant'              , typeName:'text'    , editable: false  },
             {name:'area_ant'             , typeName:'integer' , editable: false  },
-            {name:'seleccionado_ant'     , typeName:'text'    , editable: false  },
+            {name:'seleccionado_ant'     , typeName:'jsonb'   , editable: false  },
             {name:'cita'                 , typeName:'text'    , editable: true   },
             {name:'rea'                  , typeName:'integer' , editable: false  },
             {name:'norea'                , typeName:'integer' , editable: false  },

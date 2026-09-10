@@ -2419,13 +2419,88 @@ export function DesplegarCitaPactada(props: { respuestas: Respuestas }) {
     </div>
 }
 
+let ordenPorDefectoGlobal: string[] | null = null;
+
+/**
+ * Permite a la app final (ej. ggs) definir el orden por defecto
+ * para los atributos de la cita/seleccionado anterior.
+ */
+export function setOrdenPorDefectoAtributos(orden: string[]) {
+    ordenPorDefectoGlobal = orden;
+}
+
 export function DesplegarCitaPactadaYSeleccionadoAnteriorTem(props: { tem: TEM }) {
-    const { tem } = props;
-    return <div>
+    const { cita } = props.tem;
+
+    if (!cita) return null;
+
+    let citaObjeto: Record<string, any> | null = null;
+
+    if (typeof cita === 'string' && (cita.startsWith('{') || cita.startsWith('['))) {
+        try {
+            const parsed = JSON.parse(cita);
+            if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+                citaObjeto = parsed;
+            }
+        } catch (e) {
+            // No era un JSON válido
+        }
+    } else if (typeof cita === 'object' && cita !== null) {
+        citaObjeto = cita;
+    }
+
+    let claves: string[] = [];
+
+    if (citaObjeto) {
+        const todasLasClaves = Object.keys(citaObjeto).filter((k) => k !== 'orden');
+
+        // Priority 1: 'orden' dentro del JSON individual
+        // Priority 2: 'orden' global inyectado por la app final
+        // Priority 3: null (orden no determinístico / tal como vienen las keys)
+        const ordenEspecifico = Array.isArray(citaObjeto.orden) ? citaObjeto.orden : null;
+        const ordenAplicar = ordenEspecifico || ordenPorDefectoGlobal;
+
+        if (ordenAplicar && ordenAplicar.length > 0) {
+            claves = todasLasClaves.sort((a, b) => {
+                const idxA = ordenAplicar.indexOf(a);
+                const idxB = ordenAplicar.indexOf(b);
+
+                const posA = idxA !== -1 ? idxA : Number.MAX_SAFE_INTEGER;
+                const posB = idxB !== -1 ? idxB : Number.MAX_SAFE_INTEGER;
+
+                return posA - posB;
+            });
+        } else {
+            claves = todasLasClaves;
+        }
+    }
+
+    return (
         <div className="tem-cita">
-            <Atributo nombre="Cita:" valor={tem.cita} />
+            {citaObjeto ? (
+                <div
+                    className="tem-cita-grid"
+                    style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '8px 16px',
+                        alignItems: 'center'
+                    }}
+                >
+                    {claves.map((clave) => (
+                        <div key={clave} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                            <Atributo
+                                nombre={`${clave}:`}
+                                valor={citaObjeto![clave]}
+                            />
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <Atributo nombre="Cita:" valor={cita} />
+            )}
         </div>
-    </div>
+    );
 }
 
 export function DesplegarTem(props: { tem: TEM }) {
