@@ -25,7 +25,7 @@ export function grilla_hoja_ruta(_context:TableContext):TableDefinition {
             {name:'estado'               , typeName:'text'    , editable: false , nullable: false },
             {name:'area'                 , typeName:'integer' , editable: false  },
             {name:'zona'                 , typeName:'text'    , editable: false  },
-            {name:'seleccionado_ant'     , typeName:'text'    , editable: false  },
+            {name:'seleccionado_ant'     , typeName:'jsonb'    , editable: false  },
             {name:'cita'                 , typeName:'text'    , editable:true , table: 'tem' },
             {name:'semana'               , typeName:'integer' , editable: false  ,visible: true   },
             {name:'codcalle'             , typeName:'integer' , editable: false  },
