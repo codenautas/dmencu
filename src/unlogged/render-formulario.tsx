@@ -30,6 +30,7 @@ import {
     ModoDM,
     IdComodin,
     IdSemana,
+    UnidadAnalisis,
 } from "./tipos";
 import {
     accion_abrir_formulario,
@@ -1194,55 +1195,90 @@ function botonesDelFormulario(r: Respuestas, unidad_analisis: IdUnidadAnalisis, 
     var formsVivienda = getFormulariosForValuePkRaiz(forPkPadre[estructura.pkAgregadaUaPpal]);
     var uaDef = estructura.unidades_analisis[unidad_analisis];
     var arrayEstructuraFormularios = (likeAr(estructura.formularios)).array();
-    var x = likeAr(uaDef.hijas).filter(uaHija =>
-        //descarto uas que no estén en ningun form
-        arrayEstructuraFormularios.filter((infoFormulario) =>
-            infoFormulario.casilleros.unidad_analisis == uaHija?.unidad_analisis && formsVivienda.includes(infoFormulario.casilleros.id_casillero as IdFormulario)
-        ).length > 0
-    ).map(uaHija => (
-        uaHija == null ? null :
-            html.div({ class: 'ua-hijas' }, [
-                html.div(uaHija.unidad_analisis),
-                html.div(
-                    likeAr(r[uaHija.unidad_analisis] || []).map((respuestasHija, i) => {
-                        var num = Number(i) + 1
-                        var forPkHijaParcial = { ...forPkPadre, [uaHija.pk_agregada]: num };
-                        var configSorteoFormulario = estructura.configSorteo ? estructura.configSorteo[getMainFormForVivienda(forPkPadre[estructura.pkAgregadaUaPpal])] : null
-                        var habilitacionBotonFormulario = estructura.habilitacionBotonFormulario;
-                        return html.div({ class: 'numerador-ua' }, [
-                            html.div({ class: 'botones-ua' }, [
-                                html.div({ class: 'numero-ua' }, num.toString()),
-                                ...likeAr(estructura.formularios)
-                                    .filter(formDef => formDef.casilleros.unidad_analisis == uaHija.unidad_analisis && formsVivienda.includes(formDef.casilleros.id_casillero as IdFormulario))
-                                    .map((_formDef, formulario) => {
-                                        var forPk = { ...forPkHijaParcial, formulario };
-                                        var feedbackForm = feedbackAll[toPlainForPk(forPk)];
-                                        return feedbackForm ? html.div({}, [
-                                            // html.button((uaHija!).pk_agregada+" ok: "+(Number(i)+1)),
-                                            botonFormularioConResumen(
-                                                {
-                                                    forPk,
-                                                    num,
-                                                    actual: calcularActualBF(configSorteoFormulario, num, null, formulario, r),
-                                                    previo: false,
-                                                    disabled: calcularDisabledBF(configSorteoFormulario, habilitacionBotonFormulario, num, formulario, r)
-                                                },
-                                                feedbackForm,
-                                                r,
-                                                { despliegueOculta: false, expresion_habilitar_js: '', nombre: formulario, aclaracion: null, salto: formulario },
-                                                forPkPadre,
-                                                "boton-ir-resumen-formulario",
-                                                estructura.formularios[formulario].casilleros
-                                            )
-                                        ]) : null
-                                    }).array().map(x => x == null ? null : x).reverse(),
-                            ])
-                            , botonesDelFormulario(respuestasHija, uaHija.unidad_analisis, estructura, forPkHijaParcial, feedbackAll)
+
+    var casillerosPadre = estructura.formularios[forPkPadre.formulario]?.casilleros?.casilleros || [];
+    var ordenFormulariosBfPadre: IdFormulario[] = [];
+    for (var casillero of casillerosPadre) {
+        if (casillero.tipoc == 'BF' && casillero.salto) {
+            var formHijo = (casillero.salto.startsWith('F:') ? casillero.salto : 'F:' + casillero.salto) as IdFormulario;
+            if (!ordenFormulariosBfPadre.includes(formHijo)) {
+                ordenFormulariosBfPadre.push(formHijo);
+            }
+        }
+    }
+
+    var obtenerPosicionFormulario = (formulario: IdFormulario): number => {
+        var idxBf = ordenFormulariosBfPadre.indexOf(formulario);
+        if (idxBf >= 0) {
+            return idxBf;
+        }
+        var idxEstructura = arrayEstructuraFormularios.findIndex((infoFormulario) => infoFormulario.casilleros.id_casillero == formulario);
+        return idxEstructura >= 0 ? 1000 + idxEstructura : 9999;
+    };
+
+    var obtenerPosicionFormularioUa = (ua: UnidadAnalisis): number => {
+        var posiciones = arrayEstructuraFormularios
+            .filter((infoFormulario) => infoFormulario.casilleros.unidad_analisis == ua.unidad_analisis)
+            .map((infoFormulario) => obtenerPosicionFormulario(infoFormulario.casilleros.id_casillero as IdFormulario));
+        return posiciones.length > 0 ? Math.min(...posiciones) : 9999;
+    };
+
+    var hijasFiltradasYOrdenadas = (likeAr(uaDef.hijas))
+        .array()
+        .filter((uaHija): uaHija is UnidadAnalisis =>
+            uaHija != null &&
+            arrayEstructuraFormularios.some((infoFormulario) =>
+                infoFormulario.casilleros.unidad_analisis == uaHija.unidad_analisis && formsVivienda.includes(infoFormulario.casilleros.id_casillero as IdFormulario)
+            )
+        )
+        .sort((a, b) => obtenerPosicionFormularioUa(a) - obtenerPosicionFormularioUa(b));
+
+    var x = hijasFiltradasYOrdenadas.map(uaHija => (
+        html.div({ class: 'ua-hijas' }, [
+            html.div(uaHija.unidad_analisis),
+            html.div(
+                likeAr(r[uaHija.unidad_analisis] || []).map((respuestasHija, i) => {
+                    var num = Number(i) + 1
+                    var forPkHijaParcial = { ...forPkPadre, [uaHija.pk_agregada]: num };
+                    var configSorteoFormulario = estructura.configSorteo ? estructura.configSorteo[getMainFormForVivienda(forPkPadre[estructura.pkAgregadaUaPpal])] : null
+                    var habilitacionBotonFormulario = estructura.habilitacionBotonFormulario;
+                    return html.div({ class: 'numerador-ua' }, [
+                        html.div({ class: 'botones-ua' }, [
+                            html.div({ class: 'numero-ua' }, num.toString()),
+                            ...likeAr(estructura.formularios)
+                                .filter(formDef => formDef.casilleros.unidad_analisis == uaHija.unidad_analisis && formsVivienda.includes(formDef.casilleros.id_casillero as IdFormulario))
+                                .array()
+                                .sort((a, b) => obtenerPosicionFormulario(a.casilleros.id_casillero as IdFormulario) - obtenerPosicionFormulario(b.casilleros.id_casillero as IdFormulario))
+                                .map((infoFormulario) => {
+                                    var formulario = infoFormulario.casilleros.id_casillero as IdFormulario;
+                                    var forPk = { ...forPkHijaParcial, formulario };
+                                    var feedbackForm = feedbackAll[toPlainForPk(forPk)];
+                                    return feedbackForm ? html.div({}, [
+                                        // html.button((uaHija!).pk_agregada+" ok: "+(Number(i)+1)),
+                                        botonFormularioConResumen(
+                                            {
+                                                forPk,
+                                                num,
+                                                actual: calcularActualBF(configSorteoFormulario, num, null, formulario, r),
+                                                previo: false,
+                                                disabled: calcularDisabledBF(configSorteoFormulario, habilitacionBotonFormulario, num, formulario, r)
+                                            },
+                                            feedbackForm,
+                                            r,
+                                            { despliegueOculta: false, expresion_habilitar_js: '', nombre: formulario, aclaracion: null, salto: formulario },
+                                            forPkPadre,
+                                            "boton-ir-resumen-formulario",
+                                            estructura.formularios[formulario].casilleros
+                                        )
+                                    ]) : null
+                                }),
                         ])
-                    }).array().map(x => x == null ? null : x)
-                )
-            ])
-    )).array().map(x => x == null ? null : x);
+                        , botonesDelFormulario(respuestasHija, uaHija.unidad_analisis, estructura, forPkHijaParcial, feedbackAll)
+                    ])
+                }).array().map(x => x == null ? null : x)
+            )
+        ])
+    ));
     return html.div(/*{style:'display:flex; flex-direction:row'},*/x);
 }
 
