@@ -110,11 +110,155 @@ registrarCargarMotor(async function cargarEstructuraYDatosEnMemoria() {
 
 const DELAY_SCROLL_3 = 50;
 
+let ordenPorDefectoGlobal: string[] | null = null;
+
+/**
+ * Permite a la app final (ej. ggs) definir el orden por defecto
+ * para los atributos de la cita/seleccionado anterior.
+ */
+export function setOrdenPorDefectoAtributos(orden: string[]) {
+    ordenPorDefectoGlobal = orden;
+}
+
+export function obtenerTemActual(forPk: ForPk | null | undefined): TEM | undefined {
+    try {
+        const datosByPass = getDatosByPass();
+        if (!datosByPass?.informacionHdr) return undefined;
+        let idEnc: any = undefined;
+        if (forPk) {
+            try {
+                const estructura = getEstructura();
+                if (estructura?.pkAgregadaUaPpal) {
+                    idEnc = forPk[estructura.pkAgregadaUaPpal];
+                }
+            } catch {
+                // ignorar si estructura aún no está cargada
+            }
+            if (idEnc == null) {
+                idEnc = (forPk as any).enc ?? (forPk as any).vivienda;
+            }
+            if (idEnc == null) {
+                for (const k in forPk) {
+                    const val = (forPk as any)[k];
+                    if (val != null && (datosByPass.informacionHdr as any)[val]) {
+                        idEnc = val;
+                        break;
+                    }
+                }
+            }
+        }
+        if (idEnc != null && (datosByPass.informacionHdr as any)[idEnc]) {
+            return (datosByPass.informacionHdr as any)[idEnc].tem;
+        }
+        const keys = Object.keys(datosByPass.informacionHdr);
+        if (keys.length === 1) {
+            return (datosByPass.informacionHdr as any)[keys[0]]?.tem;
+        }
+    } catch {
+        // ignorar error
+    }
+    return undefined;
+}
+
+export function evaluarComodinTem(parte: string, tem: TEM | undefined): any {
+    if (!tem) return undefined;
+
+    // parte es algo como "@$tem@", "@$tem.cita@", "@$tem?.cita@", "@$tem.cita.sel@", etc.
+    const pathStr = parte.slice(5, -1); // quita "@$tem" / "@$TEM" del inicio y "@" del final
+    const segmentos = pathStr.split(/\??\./).filter(Boolean);
+
+    let actual: any = tem;
+    for (let i = 0; i < segmentos.length; i++) {
+        if (actual == null) {
+            return '........';
+        }
+        const seg = segmentos[i];
+        // Si actual es un string que contiene JSON, parsearlo para permitir acceder a sus atributos
+        if (typeof actual === 'string' && (actual.trim().startsWith('{') || actual.trim().startsWith('['))) {
+            try {
+                actual = JSON.parse(actual);
+            } catch {
+                // no es JSON válido
+            }
+        }
+        if (typeof actual === 'object' && actual !== null) {
+            let val = actual[seg];
+            if (val === undefined) {
+                const segLower = seg.toLowerCase();
+                const foundKey = Object.keys(actual).find(k => k.toLowerCase() === segLower);
+                if (foundKey) {
+                    val = actual[foundKey];
+                }
+            }
+            actual = val;
+        } else {
+            return '........';
+        }
+    }
+
+    if (actual === undefined || actual === null || actual === '') {
+        return '........';
+    }
+
+    // Si el valor final es un string que contiene JSON o es un objeto, formatearlo
+    let parsed: any = null;
+    if (typeof actual === 'string' && (actual.trim().startsWith('{') || actual.trim().startsWith('['))) {
+        try {
+            parsed = JSON.parse(actual);
+        } catch {
+            // no es JSON válido
+        }
+    } else if (typeof actual === 'object' && actual !== null) {
+        parsed = actual;
+    }
+
+    if (parsed && typeof parsed === 'object') {
+        if (Array.isArray(parsed)) {
+            return parsed.join(', ');
+        }
+        // Si es el objeto tem completo (segmentos.length === 0) y tiene nomcalle
+        if (segmentos.length === 0 && (parsed.nomcalle || parsed.nrocatastral)) {
+            const partesDom = [
+                parsed.nomcalle,
+                parsed.nrocatastral,
+                parsed.piso ? `piso ${parsed.piso}` : '',
+                parsed.departamento ? `dpto ${parsed.departamento}` : '',
+                parsed.sector ? `sector ${parsed.sector}` : '',
+                parsed.edificio ? `edif ${parsed.edificio}` : '',
+                parsed.casa ? `casa ${parsed.casa}` : '',
+                parsed.entrada ? `entrada ${parsed.entrada}` : '',
+                parsed.habitacion ? `hab ${parsed.habitacion}` : ''
+            ].filter(Boolean).join(' ');
+            if (partesDom) return partesDom;
+        }
+
+        const todasLasClaves = Object.keys(parsed).filter((k) => k !== 'orden');
+        const ordenEspecifico = Array.isArray(parsed.orden) ? parsed.orden : null;
+        const ordenAplicar = ordenEspecifico || ordenPorDefectoGlobal;
+        let claves = todasLasClaves;
+        if (ordenAplicar && ordenAplicar.length > 0) {
+            claves = todasLasClaves.sort((a, b) => {
+                const idxA = ordenAplicar.indexOf(a);
+                const idxB = ordenAplicar.indexOf(b);
+                const posA = idxA !== -1 ? idxA : Number.MAX_SAFE_INTEGER;
+                const posB = idxB !== -1 ? idxB : Number.MAX_SAFE_INTEGER;
+                return posA - posB;
+            });
+        }
+        const partes = claves
+            .filter(clave => parsed[clave] != null && parsed[clave] !== '')
+            .map(clave => `${clave}: ${parsed[clave]}`);
+        return partes.length > 0 ? partes.join(', ') : '........';
+    }
+
+    return String(actual);
+}
+
 function breakeableText(text: string | null): string | null;
 function breakeableText(text: string | null, diccionario?: { [clave: string]: React.ReactNode }) {
     if (typeof text != "string") return null;
     text = text.replace(/\//g, "/\u2063").replace(/\/\u2063(\w)\b/g, '/$1');
-    text = text.replace(/___*/g, (todo) => `[${todo}]`).replace(/\@#?[\w-]+@/g, (todo) => `[${todo}]`);
+    text = text.replace(/___*/g, (todo) => `[${todo}]`).replace(/@(?:#?[\w-]+|\$[tT][eE][mM][^@]*)@/g, (todo) => `[${todo}]`);
     if (!diccionario || true) return text;
     /*
     return <span>{partes.map((parte:string, i:number) => <span style={i%2==1?{textDecoration:"underline"}:{}}> {parte+" "} </span>)}</span>
@@ -137,7 +281,7 @@ export const BreakeableText = React.memo(function BreakeableText(props: {
         const ids: IdComodin[] = [];
         for (let i = 0; i < matches.length; i++) {
             const m = matches[i];
-            if (!m.startsWith('@#')) {
+            if (!m.startsWith('@#') && !m.startsWith('@$')) {
                 const id = m.slice(1, -1) as IdComodin;
                 if (ids.indexOf(id) === -1) {
                     ids.push(id);
@@ -161,6 +305,7 @@ export const BreakeableText = React.memo(function BreakeableText(props: {
 
     const reduxForPk = useSelector((state: CasoState) => state?.opciones?.forPk);
     const forPk = props.forPk || reduxForPk;
+    const tem = obtenerTemActual(forPk);
 
     // Variable de estado que se actualiza cada vez que llega un cambio de una variable de interés
     const [valoresVariables, setValoresVariables] = useState<{ [nombreVariable: string]: any }>({});
@@ -231,8 +376,20 @@ export const BreakeableText = React.memo(function BreakeableText(props: {
     let procesado = text.replace(/\//g, "/\u2063").replace(/\/\u2063(\w)\b/g, '/$1');
     procesado = procesado.replace(/___*/g, (todo) => `[${todo}]`);
 
-    const partes = procesado.split(/(@#?[\w-]+@)/g);
+    const partes = procesado.split(/(@(?:#?[\w-]+|\$[tT][eE][mM][^@]*)@)/g);
     const contenido = partes.map((parte, index) => {
+        const matchTem = parte.match(/^@(\$tem[^@]*)@$/i);
+        if (matchTem) {
+            const valor = evaluarComodinTem(parte, tem);
+            if (valor !== undefined && valor !== null) {
+                return valor;
+            }
+            return (
+                <span key={index} style={{ color: 'red' }}>
+                    {`No se encontró ${parte}`}
+                </span>
+            );
+        }
         const match = parte.match(/^@(#?)([\w-]+)@$/);
         if (match) {
             const tieneHash = match[1] === '#';
@@ -254,21 +411,23 @@ export const BreakeableText = React.memo(function BreakeableText(props: {
                     const val = respuestasAumentadas?.[id as IdVariable];
                     if (val != null && val !== '') {
                         valor = String(val);
+                    } else {
+                        valor = '........';
                     }
                 } catch {
                     // Ignorar error si no se pudo acceder a respuestas
                 }
             }
 
-            // 3. Buscar en comodines (Redux granular o comodinesIniciales)
-            if (valor === undefined) {
+            // 3. Buscar en comodines (Redux granular o comodinesIniciales) si no es variable con #
+            if (valor === undefined && !tieneHash) {
                 valor = comodinesValores ? comodinesValores[id] : comodinesIniciales[id as IdComodin];
             }
 
             if (valor !== undefined && valor !== null && valor !== '') {
                 return valor;
             }
-            if (tieneHash && (valor === '' || valor === null)) {
+            if (tieneHash && (valor === '' || valor === null || valor === undefined)) {
                 return '........';
             }
             if (valor !== undefined && valor !== null) {
@@ -2453,16 +2612,6 @@ export function DesplegarCitaPactada(props: { respuestas: Respuestas }) {
         <div><Atributo nombre="Fecha:" valor={respuestas[sp4]} /></div>
         <div><Atributo nombre="Hora:" valor={respuestas[sp5]} /></div>
     </div>
-}
-
-let ordenPorDefectoGlobal: string[] | null = null;
-
-/**
- * Permite a la app final (ej. ggs) definir el orden por defecto
- * para los atributos de la cita/seleccionado anterior.
- */
-export function setOrdenPorDefectoAtributos(orden: string[]) {
-    ordenPorDefectoGlobal = orden;
 }
 
 export function DesplegarCitaPactadaYSeleccionadoAnteriorTem(props: { tem: TEM }) {
