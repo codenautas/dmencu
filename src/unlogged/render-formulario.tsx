@@ -110,11 +110,21 @@ registrarCargarMotor(async function cargarEstructuraYDatosEnMemoria() {
 
 const DELAY_SCROLL_3 = 50;
 
+function obtenerPorPath<T = unknown>(objeto: Record<string, any>, path: string): T | null {
+  if (!objeto || typeof path !== 'string') return null;
+
+  const resultado = path.split('.').reduce<any>((acc, clave) => {
+    return acc !== null && acc !== undefined ? acc[clave] : null;
+  }, objeto);
+
+  return (resultado ?? null) as T | null;
+}
+
 function breakeableText(text: string | null): string | null;
 function breakeableText(text: string | null, diccionario?: { [clave: string]: React.ReactNode }) {
     if (typeof text != "string") return null;
     text = text.replace(/\//g, "/\u2063").replace(/\/\u2063(\w)\b/g, '/$1');
-    text = text.replace(/___*/g, (todo) => `[${todo}]`).replace(/\@#?[\w-]+@/g, (todo) => `[${todo}]`);
+    text = text.replace(/___*/g, (todo) => `[${todo}]`).replace(/@(?:#?[\w-]+|\$[tT][eE][mM][^@]*)@/g, (todo) => `[${todo}]`);
     if (!diccionario || true) return text;
     /*
     return <span>{partes.map((parte:string, i:number) => <span style={i%2==1?{textDecoration:"underline"}:{}}> {parte+" "} </span>)}</span>
@@ -137,7 +147,7 @@ export const BreakeableText = React.memo(function BreakeableText(props: {
         const ids: IdComodin[] = [];
         for (let i = 0; i < matches.length; i++) {
             const m = matches[i];
-            if (!m.startsWith('@#')) {
+            if (!m.startsWith('@#') && !m.startsWith('@$')) {
                 const id = m.slice(1, -1) as IdComodin;
                 if (ids.indexOf(id) === -1) {
                     ids.push(id);
@@ -231,8 +241,30 @@ export const BreakeableText = React.memo(function BreakeableText(props: {
     let procesado = text.replace(/\//g, "/\u2063").replace(/\/\u2063(\w)\b/g, '/$1');
     procesado = procesado.replace(/___*/g, (todo) => `[${todo}]`);
 
-    const partes = procesado.split(/(@#?[\w-]+@)/g);
+    const partes = procesado.split(/(@(?:#?[\w-]+|\$[tT][eE][mM][^@]*)@)/g);
     const contenido = partes.map((parte, index) => {
+        const matchTem = parte.match(/^@\$(tem[^@]*)@$/i);
+        if (matchTem) {
+            const infoHdr = getDatosByPass()?.informacionHdr as Record<string, any> | undefined;
+            if (infoHdr) {
+                const estructura = getEstructura();
+                const idEnc = (forPk && estructura?.pkAgregadaUaPpal && forPk[estructura.pkAgregadaUaPpal])
+                    ?? (forPk as any)?.vivienda
+                    ?? (forPk as any)?.enc
+                    ?? Object.keys(infoHdr)[0];
+                const encData = idEnc ? infoHdr[idEnc] : undefined;
+                const path = matchTem[1];
+                const valor = obtenerPorPath(encData, path);
+                if (valor !== undefined && valor !== null) {
+                    return typeof valor === 'object' ? JSON.stringify(valor) : valor;
+                }
+            }
+            return (
+                <span key={index} style={{ color: 'red' }}>
+                    {`No se encontró ${parte}`}
+                </span>
+            );
+        }
         const match = parte.match(/^@(#?)([\w-]+)@$/);
         if (match) {
             const tieneHash = match[1] === '#';
@@ -254,21 +286,23 @@ export const BreakeableText = React.memo(function BreakeableText(props: {
                     const val = respuestasAumentadas?.[id as IdVariable];
                     if (val != null && val !== '') {
                         valor = String(val);
+                    } else {
+                        valor = '........';
                     }
                 } catch {
                     // Ignorar error si no se pudo acceder a respuestas
                 }
             }
 
-            // 3. Buscar en comodines (Redux granular o comodinesIniciales)
-            if (valor === undefined) {
+            // 3. Buscar en comodines (Redux granular o comodinesIniciales) si no es variable con #
+            if (valor === undefined && !tieneHash) {
                 valor = comodinesValores ? comodinesValores[id] : comodinesIniciales[id as IdComodin];
             }
 
             if (valor !== undefined && valor !== null && valor !== '') {
                 return valor;
             }
-            if (tieneHash && (valor === '' || valor === null)) {
+            if (tieneHash && (valor === '' || valor === null || valor === undefined)) {
                 return '........';
             }
             if (valor !== undefined && valor !== null) {
@@ -3238,7 +3272,7 @@ function calcularComodines(forPk: ForPk) {
     const rangoFecha = (desde?: string | null, hasta?: string | null) =>
         (desde && hasta) ? `${fechaReferencia(desde)} a ${fechaReferencia(hasta)}` : null;
     const semRef = rangoFecha(semanaObj?.semana_referencia_desde, semanaObj?.semana_referencia_hasta);
-    const d30Ref = rangoFecha(semanaObj?.d30_referencia_desde, semanaObj?.d30_referencia_hasta);
+    const d30Ref = rangoFecha(semanaObj?.['30dias_referencia_desde'], semanaObj?.['30dias_referencia_hasta']);
     const personasArray = Array.isArray(respuestasAumentadas?.['personas' as IdUnidadAnalisis]) 
         ? respuestasAumentadas['personas' as IdUnidadAnalisis] as any[] : [];
     const buscarPersona = (num?: any) => 
