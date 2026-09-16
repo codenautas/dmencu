@@ -131,189 +131,184 @@ function breakeableText(text: string | null, diccionario?: { [clave: string]: Re
     */
 }
 
+// ==========================================
+// 1. HELPERS PUROS Y EXPRESIONES REGULARES
+// ==========================================
+
+// RegEx principal para dividir el texto conservando los tokens delimitados por @...@
+const REGEX_SPLIT_COMODINES = /(@(?:#?[\w-]+|\$[tT][eE][mM][^@]*)@)/g;
+
+// Sub-RegExs para identificar el tipo de comodín
+const IS_TEM_PATTERN = /^@\$(tem[^@]*)@$/i;
+const IS_VARIABLE_HASH_PATTERN = /^@#([\w-]+)@$/;
+const IS_COMODIN_REDUX_PATTERN = /^@([\w-]+)@$/;
+
+/** Extrae nombres de comodines estándar (@comodin@) */
+function extraerComodinesRedux(text: string): IdComodin[] {
+    if (!text || !text.includes('@')) return [];
+    const matches = text.match(/@([a-zA-Z0-9_-]+)@/g);
+    if (!matches) return [];
+
+    const ids: IdComodin[] = [];
+    for (const m of matches) {
+        if (!m.startsWith('@#') && !m.startsWith('@$')) {
+            const id = m.slice(1, -1) as IdComodin;
+            if (!ids.includes(id)) ids.push(id);
+        }
+    }
+    return ids;
+}
+
+/** Extrae nombres de variables dinámicas (@#variable@) */
+function extraerVariablesInteres(text: string): string[] {
+    if (!text) return [];
+    const matches = text.match(/@#([\w-]+)@/g);
+    if (!matches) return [];
+
+    const vars: string[] = [];
+    for (const m of matches) {
+        const varName = m.slice(2, -1); // Remueve '@#' y '@'
+        if (!vars.includes(varName)) vars.push(varName);
+    }
+    return vars;
+}
+
+// ==========================================
+// 2. HOOK PERSONALIZADO PARA BINDING DINÁMICO
+// ==========================================
+
+function useVariablesEscuchadas(text: string, forPk: ForPk) {
+    const variablesInteres = useMemo(() => extraerVariablesInteres(text), [text]);
+
+    // Estado local con los valores reales para que React solo re-renderice si el string CAMBIA
+    const [mapaVariables, setMapaVariables] = useState<Record<string, string>>(() =>
+        obtenerValoresActuales(variablesInteres, forPk)
+    );
+
+    // Sincronizamos cuando cambian variablesInteres o forPk
+    useEffect(() => {
+        setMapaVariables(obtenerValoresActuales(variablesInteres, forPk));
+    }, [variablesInteres, forPk]);
+
+    useEffect(() => {
+        if (variablesInteres.length === 0 || !forPk) return;
+
+        const listener: ListenerCambioVariable = (varModificada, _nuevoValor, _forPk, respuestasAumentadas) => {
+            const impactaVariable = variablesInteres.includes(varModificada);
+            const impactaRespuestas = respuestasAumentadas && variablesInteres.some(v => v in respuestasAumentadas);
+
+            if (!impactaVariable && !impactaRespuestas) return;
+
+            // Leemos el nuevo estado de la fuente de verdad
+            const nuevosValores = obtenerValoresActuales(variablesInteres, forPk);
+
+            setMapaVariables(prev => {
+                // Comparamos valor por valor si realmente cambió algo visible
+                const huboCambio = variablesInteres.some(v => prev[v] !== nuevosValores[v]);
+                // Si NO hubo cambio real, devolvemos 'prev' (misma referencia) y React CANCELA el re-render
+                return huboCambio ? nuevosValores : prev;
+            });
+        };
+
+        const desuscribir = suscribirCambioVariable(listener, variablesInteres);
+        return () => desuscribir();
+    }, [variablesInteres, forPk]);
+
+    // Getter expuesto para mantener tu sintaxis
+    return (nombreVar: string): string => {
+        return mapaVariables[nombreVar] ?? '........';
+    };
+}
+
+function obtenerValoresActuales(variables: string[], forPk: ForPk): Record<string, string> {
+    const mapa: Record<string, string> = {};
+    if (variables.length === 0) return mapa;
+    const { respuestasAumentadas } = respuestasForPk(forPk, true);
+    for (const v of variables) {
+        const val = respuestasAumentadas?.[v as IdVariable];
+        mapa[v] = String(val ?? '........');
+    }
+    return mapa;
+}
+
 export const BreakeableText = React.memo(function BreakeableText(props: {
-    text: string | null | undefined,
-    className?: string,
-    style?: React.CSSProperties,
-    forPk?: ForPk,
+    text: string | null | undefined;
+    className?: string;
+    style?: React.CSSProperties;
+    forPk?: ForPk;
 }) {
     const { text, className, style } = props;
 
-    // Comodines clásicos presentes en el texto (ej: @resps1@ -> "resps1")
-    const comodinesInteres = useMemo(() => {
-        if (typeof text !== "string" || !text.includes('@')) return [];
-        const matches = text.match(/@([a-zA-Z0-9_-]+)@/g);
-        if (!matches) return [];
-        const ids: IdComodin[] = [];
-        for (let i = 0; i < matches.length; i++) {
-            const m = matches[i];
-            if (!m.startsWith('@#') && !m.startsWith('@$')) {
-                const id = m.slice(1, -1) as IdComodin;
-                if (ids.indexOf(id) === -1) {
-                    ids.push(id);
-                }
-            }
-        }
-        return ids;
-    }, [text]);
+    // 1. Early Return
+    if (typeof text !== 'string') return null;
 
-    // Selector granular con shallowEqual: sólo suscribe y re-evalúa si cambian SUS comodines
+    // 2. Extracción de dependencias Redux (después de la guarda)
+    const reduxForPk = useSelector((state: CasoState) => state?.opciones?.forPk);
+    const forPk = props.forPk || reduxForPk;
+
+    // --- A. Suscripción Redux (Comodines) ---
+    const comodinesInteres = useMemo(() => extraerComodinesRedux(text), [text]);
+
     const comodinesValores = useSelector((state: CasoState) => {
         if (comodinesInteres.length === 0) return null;
         const storeComodines = state?.opciones?.comodines || comodinesIniciales;
-        const resultado: { [id: string]: string } = {};
-        for (let i = 0; i < comodinesInteres.length; i++) {
-            const id = comodinesInteres[i];
+        const resultado: Record<string, string> = {};
+        for (const id of comodinesInteres) {
             resultado[id] = storeComodines[id] ?? comodinesIniciales[id] ?? '';
         }
         return resultado;
     }, shallowEqual);
 
-    const reduxForPk = useSelector((state: CasoState) => state?.opciones?.forPk);
-    const forPk = props.forPk || reduxForPk;
+    // --- B. Suscripción a variables con # (Le pasamos forPk seguro, opcional) ---
+    const obtenerValorVariable = useVariablesEscuchadas(text, forPk!);
 
-    // Variable de estado que se actualiza cada vez que llega un cambio de una variable de interés
-    const [valoresVariables, setValoresVariables] = useState<{ [nombreVariable: string]: any }>({});
+    // --- C. Preprocesamiento sintáctico ---
+    const procesado = text
+        .replace(/\//g, '/\u2063')
+        .replace(/\/\u2063(\w)\b/g, '/$1')
+        .replace(/___*/g, todo => `[${todo}]`);
 
-    // Variables de interés: el nombre de variable indicado después de # dentro de los arrobas (ej: @#edad@ -> "edad")
-    const variablesInteres = useMemo(() => {
-        if (typeof text !== "string") return [];
-        const matches = text.match(/@#([^@]+)@/g);
-        if (!matches) return [];
-        const vars: string[] = [];
-        for (let i = 0; i < matches.length; i++) {
-            const m = matches[i];
-            const match = m.match(/^@#([\w-]+)@$/);
-            if (match) {
-                const varName = match[1];
-                if (vars.indexOf(varName) === -1) {
-                    vars.push(varName);
-                }
-            }
-        }
-        return vars;
-    }, [text]);
+    // --- D. Tokenizado y Resolución ---
+    const partes = procesado.split(REGEX_SPLIT_COMODINES);
 
-    useEffect(() => {
-        if (!text || variablesInteres.length === 0) return;
-
-        const listener: ListenerCambioVariable = (varModificada, nuevoValor, _forPk, respuestasAumentadas) => {
-            let huboCambio = false;
-            const nuevosValores: { [k: string]: any } = {};
-
-            if (respuestasAumentadas) {
-                for (let i = 0; i < variablesInteres.length; i++) {
-                    const varName = variablesInteres[i];
-                    if (varName in respuestasAumentadas) {
-                        const val = respuestasAumentadas[varName as IdVariable];
-                        nuevosValores[varName] = (val != null && val !== '') ? String(val) : '........';
-                        huboCambio = true;
-                    }
-                }
-            }
-            if (!huboCambio && variablesInteres.indexOf(varModificada) !== -1) {
-                nuevosValores[varModificada] = (nuevoValor != null && nuevoValor !== '') ? String(nuevoValor) : '........';
-                huboCambio = true;
-            }
-
-            if (huboCambio) {
-                setValoresVariables(prev => {
-                    const next: { [k: string]: any } = {};
-                    for (const k in prev) {
-                        next[k] = prev[k];
-                    }
-                    for (const k in nuevosValores) {
-                        next[k] = nuevosValores[k];
-                    }
-                    return next;
-                });
-            }
-        };
-
-        const desuscribir = suscribirCambioVariable(listener, variablesInteres);
-        return () => {
-            desuscribir();
-        };
-    }, [text, variablesInteres]);
-
-    if (typeof text !== "string") return null;
-
-    let procesado = text.replace(/\//g, "/\u2063").replace(/\/\u2063(\w)\b/g, '/$1');
-    procesado = procesado.replace(/___*/g, (todo) => `[${todo}]`);
-
-    const partes = procesado.split(/(@(?:#?[\w-]+|\$[tT][eE][mM][^@]*)@)/g);
     const contenido = partes.map((parte, index) => {
-        const matchTem = parte.match(/^@\$(tem[^@]*)@$/i);
+        // CASO 1: Comodín tipo TEM (@$tem.path.al.campo@)
+        const matchTem = parte.match(IS_TEM_PATTERN);
         if (matchTem) {
-            const infoHdr = getDatosByPass()?.informacionHdr as Record<string, any> | undefined;
-            if (infoHdr) {
-                const estructura = getEstructura();
-                const idEnc = (forPk && estructura?.pkAgregadaUaPpal && forPk[estructura.pkAgregadaUaPpal])
-                    ?? (forPk as any)?.vivienda
-                    ?? (forPk as any)?.enc
-                    ?? Object.keys(infoHdr)[0];
-                const encData = idEnc ? infoHdr[idEnc] : undefined;
-                const path = matchTem[1];
-                const valor = obtenerPorPath(encData, path);
-                if (valor !== undefined && valor !== null) {
-                    return typeof valor === 'object' ? JSON.stringify(valor) : valor;
-                }
-            }
-            return (
+            const infoHdr = getDatosByPass().informacionHdr;
+            const estructura = getEstructura();
+            const idEnc = forPk?.[estructura.pkAgregadaUaPpal];
+            const path = matchTem[1];
+            const valor = idEnc ? obtenerPorPath(infoHdr[idEnc], path) : null;
+
+            return valor ?? (
                 <span key={index} style={{ color: 'red' }}>
                     {`No se encontró ${parte}`}
                 </span>
             );
         }
-        const match = parte.match(/^@(#?)([\w-]+)@$/);
-        if (match) {
-            const tieneHash = match[1] === '#';
-            const id = match[2];
 
-            let valor: any = undefined;
+        // CASO 2: Variable dinámica con Hash (@#variable@)
+        const matchVarHash = parte.match(IS_VARIABLE_HASH_PATTERN);
+        if (matchVarHash) {
+            return obtenerValorVariable(matchVarHash[1]);
+        }
 
-            // 1. Si es variable con #, buscar el valor de la variable indicada después de # en el estado del listener (actualizado desde respuestasAumentadas)
-            if (tieneHash) {
-                if (valoresVariables[id] !== undefined) {
-                    valor = valoresVariables[id];
-                }
-            }
+        // CASO 3: Comodín global de Redux (@comodin@)
+        const matchComodin = parte.match(IS_COMODIN_REDUX_PATTERN);
+        if (matchComodin) {
+            const nombreComodin = matchComodin[1];
+            const valor = comodinesValores
+                ? comodinesValores[nombreComodin]
+                : comodinesIniciales[nombreComodin as IdComodin];
 
-            // 2. Si tiene # y aún no está definido, buscar directamente en respuestasAumentadas
-            if (valor === undefined && tieneHash && forPk) {
-                try {
-                    const { respuestasAumentadas } = respuestasForPk(forPk, true);
-                    const val = respuestasAumentadas?.[id as IdVariable];
-                    if (val != null && val !== '') {
-                        valor = String(val);
-                    } else {
-                        valor = '........';
-                    }
-                } catch {
-                    // Ignorar error si no se pudo acceder a respuestas
-                }
-            }
-
-            // 3. Buscar en comodines (Redux granular o comodinesIniciales) si no es variable con #
-            if (valor === undefined && !tieneHash) {
-                valor = comodinesValores ? comodinesValores[id] : comodinesIniciales[id as IdComodin];
-            }
-
-            if (valor !== undefined && valor !== null && valor !== '') {
-                return valor;
-            }
-            if (tieneHash && (valor === '' || valor === null || valor === undefined)) {
-                return '........';
-            }
-            if (valor !== undefined && valor !== null) {
-                return valor;
-            }
-            return (
+            return valor ??
                 <span key={index} style={{ color: 'red' }}>
                     {`No se encontró ${parte}`}
                 </span>
-            );
         }
+
+        // CASO 4: Texto plano
         return parte;
     });
 
