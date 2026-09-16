@@ -142,6 +142,9 @@ function obtenerPorPath<T = unknown>(objeto: Record<string, any>, path: string):
     };
 }
 
+const NO_CARGADO_AUN = '........';
+const NO_ENCONTRADO_EN_OBJETO_TEM = '-';
+
 function breakeableText(text: string | null): string | null;
 function breakeableText(text: string | null, diccionario?: { [clave: string]: React.ReactNode }) {
     if (typeof text != "string") return null;
@@ -238,7 +241,7 @@ function useVariablesEscuchadas(text: string, forPk: ForPk) {
 
     // Getter expuesto para mantener tu sintaxis
     return (nombreVar: string): string => {
-        return mapaVariables[nombreVar] ?? '........';
+        return mapaVariables[nombreVar] ?? NO_CARGADO_AUN;
     };
 }
 
@@ -248,7 +251,7 @@ function obtenerValoresActuales(variables: string[], forPk: ForPk): Record<strin
     const { respuestasAumentadas } = respuestasForPk(forPk, true);
     for (const v of variables) {
         const val = respuestasAumentadas?.[v as IdVariable];
-        mapa[v] = String(val ?? '........');
+        mapa[v] = String(val ?? NO_CARGADO_AUN);
     }
     return mapa;
 }
@@ -303,7 +306,7 @@ export const BreakeableText = React.memo(function BreakeableText(props: {
             const path = matchTem[1];
             const {encontrado, valor} = obtenerPorPath(infoHdr[idEnc], path)
 
-            return encontrado ? String(valor ?? '-'): (
+            return encontrado ? String(valor ?? NO_ENCONTRADO_EN_OBJETO_TEM): (
                 <span key={index} style={{ color: 'red' }}>
                     {`No se encontró ${parte}`}
                 </span>
@@ -3309,13 +3312,13 @@ function calcularComodines(forPk: ForPk) {
     const fRealiz = respuestasAumentadas?.['f_realiz_o' as IdVariable];
     const comodinesCalculados: Record<IdComodin, string> = {
         ...comodinesIniciales,
-        canti_hogares: totalH != null ? String(totalH) : '........',
-        frealiz: fRealiz != null ? String(fRealiz) : '........',
-        resps1: (esEntrea && nombrer) ? String(nombrer) : '........',
-        parents1: (esEntrea && parentResp) ? parentResp : '........',
-        respi1: (esEntrea && personaRespi?.nombre) ? String(personaRespi.nombre) : '........',
-        parenti1: (esEntrea && parentRespi) ? parentRespi : '........',
-        njefe: (esEntrea && jefe?.nombre) ? String(jefe.nombre) : '........',
+        canti_hogares: totalH != null ? String(totalH) : NO_CARGADO_AUN,
+        frealiz: fRealiz != null ? String(fRealiz) : NO_CARGADO_AUN,
+        resps1: (esEntrea && nombrer) ? String(nombrer) : NO_CARGADO_AUN,
+        parents1: (esEntrea && parentResp) ? parentResp : NO_CARGADO_AUN,
+        respi1: (esEntrea && personaRespi?.nombre) ? String(personaRespi.nombre) : NO_CARGADO_AUN,
+        parenti1: (esEntrea && parentRespi) ? parentRespi : NO_CARGADO_AUN,
+        njefe: (esEntrea && jefe?.nombre) ? String(jefe.nombre) : NO_CARGADO_AUN,
         ...(semRef && { SEM_REF: semRef }),
         ...(d30Ref && { D30_REF: d30Ref }),
         ...(semanaObj?.mes_referencia && { MES_REF: mesReferencia(semanaObj.mes_referencia) }),
