@@ -303,7 +303,7 @@ export const BreakeableText = React.memo(function BreakeableText(props: {
             const path = matchTem[1];
             const {encontrado, valor} = obtenerPorPath(infoHdr[idEnc], path)
 
-            return encontrado ? String(valor): (
+            return encontrado ? String(valor ?? '-'): (
                 <span key={index} style={{ color: 'red' }}>
                     {`No se encontró ${parte}`}
                 </span>
