@@ -110,14 +110,36 @@ registrarCargarMotor(async function cargarEstructuraYDatosEnMemoria() {
 
 const DELAY_SCROLL_3 = 50;
 
-function obtenerPorPath<T = unknown>(objeto: Record<string, any>, path: string): T | null {
-  if (!objeto || typeof path !== 'string') return null;
+export type ResultadoPath<T = unknown> = {
+    encontrado: boolean;
+    valor: T | null;
+};
 
-  const resultado = path.split('.').reduce<any>((acc, clave) => {
-    return acc !== null && acc !== undefined ? acc[clave] : null;
-  }, objeto);
+function obtenerPorPath<T = unknown>(objeto: Record<string, any>, path: string): ResultadoPath<T> {
+    const noEncontrado: ResultadoPath<T> = { encontrado: false, valor: null };
 
-  return (resultado ?? null) as T | null;
+    if (!objeto || typeof path !== 'string' || path.trim() === '') {
+        return noEncontrado;
+    }
+
+    const claves = path.split('.');
+    let actual: any = objeto;
+
+    for (let i = 0; i < claves.length; i++) {
+        const clave = claves[i];
+
+        // Si el nivel actual no es un objeto/array o la clave NO existe en él
+        if (actual === null || typeof actual !== 'object' || !(clave in actual)) {
+            return noEncontrado;
+        }
+
+        actual = actual[clave];
+    }
+
+    return {
+        encontrado: true,
+        valor: (actual ?? null) as T | null,
+    };
 }
 
 function breakeableText(text: string | null): string | null;
@@ -277,11 +299,11 @@ export const BreakeableText = React.memo(function BreakeableText(props: {
         if (matchTem) {
             const infoHdr = getDatosByPass().informacionHdr;
             const estructura = getEstructura();
-            const idEnc = forPk?.[estructura.pkAgregadaUaPpal];
+            const idEnc = forPk![estructura.pkAgregadaUaPpal];
             const path = matchTem[1];
-            const valor = idEnc ? obtenerPorPath(infoHdr[idEnc], path) : null;
+            const {encontrado, valor} = obtenerPorPath(infoHdr[idEnc], path)
 
-            return valor ?? (
+            return encontrado ? String(valor): (
                 <span key={index} style={{ color: 'red' }}>
                     {`No se encontró ${parte}`}
                 </span>
