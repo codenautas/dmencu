@@ -143,7 +143,7 @@ function obtenerPorPath<T = unknown>(objeto: Record<string, any>, path: string):
 }
 
 const NO_CARGADO_AUN = '........';
-const NO_ENCONTRADO_EN_OBJETO_TEM = '-';
+const SIN_VALOR_EN_OBJETO_TEM = '';
 
 function breakeableText(text: string | null): string | null;
 function breakeableText(text: string | null, diccionario?: { [clave: string]: React.ReactNode }) {
@@ -154,6 +154,10 @@ function breakeableText(text: string | null, diccionario?: { [clave: string]: Re
     /*
     return <span>{partes.map((parte:string, i:number) => <span style={i%2==1?{textDecoration:"underline"}:{}}> {parte+" "} </span>)}</span>
     */
+}
+
+export function formatearResultadoComodin(valor: string): string {
+    return `[${valor}]`;
 }
 
 // ==========================================
@@ -306,17 +310,16 @@ export const BreakeableText = React.memo(function BreakeableText(props: {
             const path = matchTem[1];
             const {encontrado, valor} = obtenerPorPath(infoHdr[idEnc], path)
 
-            return encontrado ? String(valor ?? NO_ENCONTRADO_EN_OBJETO_TEM): (
+            return encontrado ? formatearResultadoComodin(String(valor ?? SIN_VALOR_EN_OBJETO_TEM)): 
                 <span key={index} style={{ color: 'red' }}>
                     {`No se encontró ${parte}`}
-                </span>
-            );
+                </span> 
         }
 
         // CASO 2: Variable dinámica con Hash (@#variable@)
         const matchVarHash = parte.match(IS_VARIABLE_HASH_PATTERN);
         if (matchVarHash) {
-            return obtenerValorVariable(matchVarHash[1]);
+            return formatearResultadoComodin(obtenerValorVariable(matchVarHash[1]));
         }
 
         // CASO 3: Comodín global de Redux (@comodin@)
@@ -327,7 +330,7 @@ export const BreakeableText = React.memo(function BreakeableText(props: {
                 ? comodinesValores[nombreComodin]
                 : comodinesIniciales[nombreComodin as IdComodin];
 
-            return valor ??
+            return formatearResultadoComodin(valor) ??
                 <span key={index} style={{ color: 'red' }}>
                     {`No se encontró ${parte}`}
                 </span>
