@@ -87,7 +87,7 @@ Si se encontró pero no hay valor se mostrará `[]`. Ej: `@$tem.cita.hora@` → 
 * **Texto a escribir en la pregunta:**
   > En la semana del **@SEM_REF@**, ¿**@resps1@** trabajó al menos una hora?
 * **Cómo lo ve el encuestador:**
-  > En la semana del **Lunes 10 de Marzo a Domingo 16 de Marzo**, ¿**Juan Pérez** trabajó al menos una hora?
+  > En la semana del **[Lunes 10 de Marzo a Domingo 16 de Marzo]**, ¿**[Juan Pérez]** trabajó al menos una hora?
 
 ---
 
