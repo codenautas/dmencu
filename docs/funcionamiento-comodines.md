@@ -26,17 +26,17 @@ Se escriben directamente con su nombre entre arrobas. El sistema los calcula aut
 
 | Comodín | ¿Qué muestra? | Ejemplo de salida |
 | :--- | :--- | :--- |
-| `@SEM_REF@` | Rango de la semana de referencia de la encuesta | `Lunes 10 de Marzo a Domingo 16 de Marzo` |
-| `@D30_REF@` | Rango de los últimos 30 días de referencia | `10 de Febrero a 11 de Marzo` |
-| `@MES_REF@` | Mes de referencia de la semana | `Marzo` |
-| `@SEM_NUM@` | Número de semana del operativo | `12` |
-| `@resps1@` | Nombre del respondente de la encuesta general (S1) | `Juan Pérez` |
-| `@parents1@` | Parentesco del respondente de S1 con el jefe de hogar | `Cónyuge/pareja` |
-| `@respi1@` | Nombre del miembro elegido para la encuesta individual | `María Gómez` |
-| `@parenti1@` | Parentesco del miembro individual con el jefe de hogar | `Hijo/a` |
-| `@njefe@` | Nombre del jefe o jefa de hogar (persona 1) | `Carlos Rodríguez` |
-| `@frealiz@` | Fecha de realización de la encuesta | `15/03/2026` |
-| `@canti_hogares@` | Total de hogares relevados en la vivienda | `2` |
+| `@SEM_REF@` | Rango de la semana de referencia de la encuesta | `[Lunes 10 de Marzo a Domingo 16 de Marzo]` |
+| `@D30_REF@` | Rango de los últimos 30 días de referencia | `[10 de Febrero a 11 de Marzo]` |
+| `@MES_REF@` | Mes de referencia de la semana | `[Marzo]` |
+| `@SEM_NUM@` | Número de semana del operativo | `[12]` |
+| `@resps1@` | Nombre del respondente de la encuesta general (S1) | `[Juan Pérez]` |
+| `@parents1@` | Parentesco del respondente de S1 con el jefe de hogar | `[Cónyuge/pareja]` |
+| `@respi1@` | Nombre del miembro elegido para la encuesta individual | `[María Gómez]` |
+| `@parenti1@` | Parentesco del miembro individual con el jefe de hogar | `[Hijo/a]` |
+| `@njefe@` | Nombre del jefe o jefa de hogar (persona 1) | `[Carlos Rodríguez]` |
+| `@frealiz@` | Fecha de realización de la encuesta | `[15/03/2026]` |
+| `@canti_hogares@` | Total de hogares relevados en la vivienda | `[2]` |
 
 ---
 
@@ -50,13 +50,12 @@ Permiten mostrar el valor de **cualquier variable** que se esté respondiendo en
   ```
 * **Cómo funciona:** A medida que el encuestador escribe la respuesta en esa variable, el texto donde esté puesto el comodín se actualiza en tiempo real.
 * **Ejemplos:**
-  - `@#nombre@` → Muestra el nombre cargado en la variable `nombre`.
-  - `@#edad@` → Muestra la edad cargada en la variable `edad`.
-  - `@#p2@` → Muestra la respuesta cargada en `p2`.
+  - `@#nombre@` → Muestra el nombre cargado en la variable `nombre`, Ej: `[Juan]`.
+  - `@#edad@` → Muestra la edad cargada en la variable `edad`, Ej: `[28]`.
 
 ---
 
-### C. Datos del Marco Muestral / TEM (`@$tem...`)
+### C. Datos del Marco Muestral / TEM (`@$tem...`) **(USO INTERNO DE AREA DE SISTEMAS)**
 
 Permiten mostrar información precargada de la vivienda o de la muestra que viene en el encabezado de la encuesta.
 
@@ -66,20 +65,20 @@ Permiten mostrar información precargada de la vivienda o de la muestra que vien
   @$tem.objeto.campo@
   ```
 * **Ejemplos frecuentes:**
-  - `@$tem.dominio@` → Dominio de la vivienda.
-  - `@$tem.cita.fecha@` → Fecha de una cita pactada anteriormente.
-  - `@$tem.cita.hora@` → Hora de la cita pactada.
-  - `@$tem.nomcalle@` → Nombre de la calle de la vivienda.
+  - `@$tem.dominio@` → . Ej: `[3]` o `[5]`. 
+  - `@$tem.cita.fecha@` → Fecha de una cita pactada anteriormente. Ej: `[18/03/2026]`
+  - `@$tem.cita.hora@` → Hora de la cita pactada. Ej: `[10:30]`
+  - `@$tem.nomcalle@` → Nombre de la calle de la vivienda. Ej: `[Av. Rivadavia]`
 
 ---
 
 ## 3. ¿Qué pasa si el dato todavía no fue cargado?
 
 * **Comodines estándar y variables (`@#...`):** Si la variable aún no se respondió o el dato todavía no está disponible, el sistema muestra puntos suspensivos:  
-  `........`
+  `[........]`
 * **Comodines de marco (`@$tem...`):** Si el campo solicitado no existe en la información de la muestra, el sistema muestra una advertencia en color rojo:  
   `No se encontró @$tem.campo@`
-
+Si se encontró pero no hay valor se mostrará `[]`. Ej: `@$tem.cita.hora@` → `[]`. Ej: `@$tem.cita.fecha@` → `[]`. 
 ---
 
 ## 4. Ejemplos Prácticos de Redacción
@@ -97,9 +96,9 @@ Permiten mostrar información precargada de la vivienda o de la muestra que vien
   > ¿Me confirma que la edad de **@#nombre@** es **@#edad@** años?
 * **Cómo lo ve el encuestador:**
   - Si aún no completó los datos:  
-    `¿Me confirma que la edad de ........ es ........ años?`
+    `¿Me confirma que la edad de [........] es [........] años?`
   - Al completar `nombre = Lucas` y `edad = 28`:  
-    `¿Me confirma que la edad de Lucas es 28 años?`
+    `¿Me confirma que la edad de [Lucas] es [28] años?`
 
 ---
 
@@ -107,4 +106,4 @@ Permiten mostrar información precargada de la vivienda o de la muestra que vien
 * **Texto a escribir en la aclaración:**
   > Atención: hay una cita coordinada para el día **@$tem.cita.fecha@** a las **@$tem.cita.hora@** hs.
 * **Cómo lo ve el encuestador:**
-  > Atención: hay una cita coordinada para el día **18/03/2026** a las **10:30** hs.
+  > Atención: hay una cita coordinada para el día **[18/03/2026]** a las **[10:30]** hs.
