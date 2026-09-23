@@ -87,6 +87,7 @@ import {
     numberOrStringIncIfArray,
     calcularElementoEnfocado,
     accion_registrar_respuesta,
+    accion_registrar_respuestas,
     accion_id_pregunta,
     accion_agregar_formulario,
     NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO,
@@ -350,6 +351,32 @@ export function getBFVarNames(salto: string | null) {
         agregar: '$B.F:' + armoNomSalto + '_agregar' as IdVariable,
         idFormulario: 'F:' + armoNomSalto as IdFormulario
     };
+}
+
+export function registrarRespuestasBotonFormulario(opts: {
+    forPkPadre: ForPk,
+    salto: string | null,
+    expresionHabilitar?: string,
+    listoValor?: Valor,
+    agregarValor?: Valor,
+    habilitarValor?: Valor
+}) {
+    var respuestasABypasear: { variable: IdVariable, respuesta: Valor }[] = [];
+    if (opts.salto) {
+        const { listo, agregar } = getBFVarNames(opts.salto);
+        if (opts.listoValor !== undefined) {
+            respuestasABypasear.push({ variable: listo, respuesta: opts.listoValor });
+        }
+        if (opts.agregarValor !== undefined) {
+            respuestasABypasear.push({ variable: agregar, respuesta: opts.agregarValor });
+        }
+    }
+    if (opts.expresionHabilitar && opts.habilitarValor !== undefined) {
+        respuestasABypasear.push({ variable: opts.expresionHabilitar as IdVariable, respuesta: opts.habilitarValor });
+    }
+    if (respuestasABypasear.length > 0) {
+        dispatchByPass(accion_registrar_respuestas, { forPk: opts.forPkPadre, respuestas: respuestasABypasear });
+    }
 }
 
 const VER_DOMINIO = false; // el encuestador no necesita ver el dominio en cada encuesta porque el dominio depende del área y se deduce del primer dígito del número de encuesta
@@ -1465,14 +1492,14 @@ var botonFormularioConResumen = (
                 onClick: () => {
                     if (defBoton.esConfirmar) {
                         if (defBoton.num != null) {
-                            if (casillero.salto) {
-                                const { listo, agregar } = getBFVarNames(casillero.salto);
-                                dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: listo, respuesta: defBoton.num as Valor });
-                                dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: agregar, respuesta: 1 as Valor });
-                            }
-                            if (casillero.expresion_habilitar) {
-                                dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: casillero.expresion_habilitar as IdVariable, respuesta: defBoton.num as Valor });
-                            }
+                            registrarRespuestasBotonFormulario({
+                                forPkPadre,
+                                salto: casillero.salto,
+                                expresionHabilitar: casillero.expresion_habilitar,
+                                listoValor: defBoton.num as Valor,
+                                agregarValor: 1 as Valor,
+                                habilitarValor: defBoton.num as Valor
+                            });
                         }
                     } else {
                         var button = document.getElementById(idButton)! as HTMLButtonElement;
@@ -1503,14 +1530,14 @@ var botonFormularioConResumen = (
                     onClick: () => {
                         if (defBoton.permiteBorrar) {
                             accion_borrar_formulario({ forPk, forPkPadre });
-                            const { listo, agregar } = getBFVarNames(casillero.salto);
-                            if (defBoton.num === 1) {
-                                dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: agregar, respuesta: null as unknown as Valor });
-                            }
-                            dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: listo, respuesta: null as unknown as Valor });
-                            if (casillero.expresion_habilitar) {
-                                dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: casillero.expresion_habilitar as IdVariable, respuesta: null as unknown as Valor });
-                            }
+                            registrarRespuestasBotonFormulario({
+                                forPkPadre,
+                                salto: casillero.salto,
+                                expresionHabilitar: casillero.expresion_habilitar,
+                                listoValor: null as unknown as Valor,
+                                agregarValor: defBoton.num === 1 ? (null as unknown as Valor) : undefined,
+                                habilitarValor: null as unknown as Valor
+                            });
                         } else if (defBoton.permiteBorrarGabinete && pedirConfirmacionBorrado) {
                             pedirConfirmacionBorrado(defBoton, forPkPadre);
                         }
@@ -1530,12 +1557,14 @@ var botonFormularioConResumen = (
                         ]),
                     ],
                     onClick: () => {
-                        const { listo, agregar } = getBFVarNames(casillero.salto);
-                        dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: agregar, respuesta: null as unknown as Valor });
-                        dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: listo, respuesta: null as unknown as Valor });
-                        if (casillero.expresion_habilitar) {
-                            dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: casillero.expresion_habilitar as IdVariable, respuesta: null as unknown as Valor });
-                        }
+                        registrarRespuestasBotonFormulario({
+                            forPkPadre,
+                            salto: casillero.salto,
+                            expresionHabilitar: casillero.expresion_habilitar,
+                            listoValor: null as unknown as Valor,
+                            agregarValor: null as unknown as Valor,
+                            habilitarValor: null as unknown as Valor
+                        });
                     }
                 })
                 : null)
@@ -1751,11 +1780,14 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
                 (nuevaForPk as any)[nuevoCampoPk] = defBoton.num
                 if (defBoton.esAgregar) {
                     dispatchByPass(accion_agregar_formulario, { forPk: nuevaForPk });
-                    dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: BF_agregar, respuesta: 1 as Valor });
-                    dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: BF_listo, respuesta: null as unknown as Valor });
-                    if (casillero.expresion_habilitar) {
-                        dispatchByPass(accion_registrar_respuesta, { forPk: props.forPk, variable: casillero.expresion_habilitar as IdVariable, respuesta: null as unknown as Valor });
-                    }
+                    registrarRespuestasBotonFormulario({
+                        forPkPadre: props.forPk,
+                        salto: casillero.salto,
+                        expresionHabilitar: casillero.expresion_habilitar,
+                        listoValor: null as unknown as Valor,
+                        agregarValor: 1 as Valor,
+                        habilitarValor: null as unknown as Valor
+                    });
                 } else {
                     dispatchByPass(accion_abrir_formulario, { forPk: nuevaForPk });
                     // Si abro uno existente, también reseteo el listo para forzar que vuelvan a apretarlo si cambian algo
@@ -1856,14 +1888,14 @@ function BotonFormularioDespliegue(props: { casillero: BotonFormulario, formular
                         const {defBoton, forPkPadre} = confirmacionBorrado;
                         const forPk = defBoton.forPk;
                         accion_borrar_formulario({ forPk, forPkPadre });
-                        const { listo, agregar } = getBFVarNames(casillero.salto);
-                        if (defBoton.num === 1) {
-                            dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: agregar, respuesta: null as unknown as Valor });
-                        }
-                        dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: listo, respuesta: null as unknown as Valor });
-                        if (casillero.expresion_habilitar) {
-                            dispatchByPass(accion_registrar_respuesta, { forPk: forPkPadre, variable: casillero.expresion_habilitar as IdVariable, respuesta: null as unknown as Valor });
-                        }
+                        registrarRespuestasBotonFormulario({
+                            forPkPadre,
+                            salto: casillero.salto,
+                            expresionHabilitar: casillero.expresion_habilitar,
+                            listoValor: null as unknown as Valor,
+                            agregarValor: defBoton.num === 1 ? (null as unknown as Valor) : undefined,
+                            habilitarValor: null as unknown as Valor
+                        });
                         setConfirmacionBorrado(null);
                         setFraseBorrado('');
                         setErrorFraseBorrado(false);

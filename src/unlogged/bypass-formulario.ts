@@ -494,65 +494,128 @@ function refrescarMarcaDirty() {
     }
 }
 
+function aplicarCambioUnaRespuesta(
+    forPk: ForPk,
+    respuestas: Respuestas,
+    variable: IdVariable,
+    respuestaInput: Valor
+) {
+    var respuesta = respuestaInput;
+    var valorAnterior = respuestas[variable];
+    if (respuesta === '') {
+        respuesta = null;
+    } else if (estructura.formularios[forPk.formulario].estructuraRowValidator.variables[variable]?.tipo == 'numero') {
+        if (respuesta != null) {
+            respuesta = Number(respuesta);
+        }
+    }
+    // si es un falsy (0 == false) tengo que comparar con !==
+    var recentModified = respuesta ? valorAnterior != respuesta : valorAnterior !== respuesta;
+    if (recentModified) {
+        respuestas[variable] = respuesta ?? null; // cambio undefined por null
+    }
+    return { recentModified, valorAnterior, respuestaProcesada: respuesta };
+}
+
+function refrescarYRecalcularBypass(
+    forPk: ForPk,
+    respuestas: Respuestas,
+    respuestasRaiz: RespuestasRaiz,
+    forPkRaiz: ForPkRaiz,
+    variablesModificadas: IdVariable[],
+    recentModified: boolean
+) {
+    recalcularTodoElArbol(respuestasRaiz, forPkRaiz);
+    if (estructura.configSorteo && !datosByPass?.soloLectura) {
+        for (var i = 0; i < variablesModificadas.length; i++) {
+            verificarSorteo({
+                configuracionSorteo: estructura.configSorteo[getMainFormForVivienda(forPk[estructura.pkAgregadaUaPpal])],
+                respuestas,
+                respuestasRaiz,
+                variableActual: variablesModificadas[i],
+                forPk: forPk
+            });
+        }
+    }
+    datosByPass.dirty = datosByPass.dirty || recentModified;
+    respuestasRaiz.$dirty = respuestasRaiz.$dirty || recentModified;
+    refrescarMarcaDirty();
+    calcularFeedback(respuestasRaiz, forPkRaiz, { autoIngreso: true });
+    var feedbackRow = datosByPass.feedbackRowValidator[toPlainForPk(forPk)];
+    calcularVariablesBotonFormulario(forPk);
+    volcadoInicialElementosRegistrados(forPk);
+    const { respuestasAumentadas } = respuestasForPk(forPk, true);
+    for (var j = 0; j < variablesModificadas.length; j++) {
+        var v = variablesModificadas[j];
+        notificarCambioVariable(v as string, respuestasAumentadas[v], forPk, respuestasAumentadas);
+    }
+    persistirDatosByPass(datosByPass); // OJO ASYNC DESCONTROLADA
+    return feedbackRow;
+}
+
 export function accion_registrar_respuesta(payload: {
     forPk: ForPk,
     variable: IdVariable | typeof NO_CAMBIAR__SOLO_TRAER_STATUS,
     respuesta: Valor | typeof NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO
 }, _datosByPass: DatosByPass) {
-    let token = 'AVERIGUAR TODO'
+    let token = 'AVERIGUAR TODO';
     let { forPk, respuesta, variable } = payload;
     var { respuestas, respuestasRaiz, forPkRaiz } = respuestasForPk(forPk);
     var unidad_analisis = estructura.formularios[forPk.formulario];
     var recentModified = false;
     var valorAnterior = variable != NO_CAMBIAR__SOLO_TRAER_STATUS ? respuestas[variable] : null;
-    var feedbackRow = datosByPass.feedbackRowValidator[toPlainForPk(forPk)]
+    var feedbackRow = datosByPass.feedbackRowValidator[toPlainForPk(forPk)];
+    var siguienteVariable: IdVariable | IdFin | null | undefined;
+
     if (respuesta !== NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO && variable != NO_CAMBIAR__SOLO_TRAER_STATUS) {
-        if (respuesta === '') {
-            respuesta = null;
-        } else if (estructura.formularios[forPk.formulario].estructuraRowValidator.variables[variable]?.tipo == 'numero') {
-            if (respuesta != null) {
-                respuesta = Number(respuesta);
-            }
-        }
-        // si es un falsy (0 == false) tengo que comparar con !==
-        recentModified = respuesta ? valorAnterior != respuesta : valorAnterior !== respuesta
-        if (recentModified) {
-            respuestas[variable] = respuesta ?? null; // cambio undefined por null
-        } else {
+        var resCambio = aplicarCambioUnaRespuesta(forPk, respuestas, variable, respuesta);
+        recentModified = resCambio.recentModified;
+        if (!recentModified) {
             siguienteVariable = feedbackRow.feedback[variable]?.siguiente;
         }
     }
-    var siguienteVariable: IdVariable | IdFin | null | undefined;
+
     if (variable != NO_CAMBIAR__SOLO_TRAER_STATUS && (recentModified || NO_CAMBIAR__VERIFICAR_SI_ES_NECESARIO && feedbackRow.autoIngresadas?.[variable])) {
-        recalcularTodoElArbol(respuestasRaiz, forPkRaiz);
-        if (estructura.configSorteo && !datosByPass?.soloLectura) {
-            verificarSorteo({
-                configuracionSorteo: estructura.configSorteo[getMainFormForVivienda(forPk[estructura.pkAgregadaUaPpal])],
-                respuestas,
-                respuestasRaiz,
-                variableActual: variable,
-                forPk: forPk
-            })
-        }
-        datosByPass.dirty = datosByPass.dirty || recentModified;
-        respuestasRaiz.$dirty = respuestasRaiz.$dirty || recentModified;
-        refrescarMarcaDirty();
-        calcularFeedback(respuestasRaiz, forPkRaiz, { autoIngreso: true });
-        feedbackRow = datosByPass.feedbackRowValidator[toPlainForPk(forPk)];
-        calcularVariablesBotonFormulario(forPk);
-        volcadoInicialElementosRegistrados(forPk);
-        const { respuestasAumentadas } = respuestasForPk(forPk, true);
-        notificarCambioVariable(variable as string, respuestasAumentadas[variable as IdVariable], forPk, respuestasAumentadas);
-        persistirDatosByPass(datosByPass); // OJO ASYNC DESCONTROLADA
+        feedbackRow = refrescarYRecalcularBypass(forPk, respuestas, respuestasRaiz, forPkRaiz, [variable], recentModified);
         siguienteVariable = variable;
         do {
             siguienteVariable = feedbackRow.feedback[siguienteVariable]?.siguiente;
-        } while (valorAnterior == null && recentModified && siguienteVariable != null && siguienteVariable != 'fin' && estructura.formularios[forPk.formulario].estructuraRowValidator.variables[siguienteVariable].funcionAutoIngresar)
+        } while (valorAnterior == null && recentModified && siguienteVariable != null && siguienteVariable != 'fin' && estructura.formularios[forPk.formulario].estructuraRowValidator.variables[siguienteVariable].funcionAutoIngresar);
         if (siguienteVariable == null && feedbackRow.feedback[variable]?.estado == 'valida') {
             siguienteVariable = 'fin';
         }
     }
     return { recentModified, siguienteVariable, variableActual: feedbackRow.actual };
+}
+
+export type RegistroRespuestaSimple = {
+    variable: IdVariable,
+    respuesta: Valor
+};
+
+export function accion_registrar_respuestas(payload: {
+    forPk: ForPk,
+    respuestas: RegistroRespuestaSimple[]
+}, _datosByPass: DatosByPass) {
+    let { forPk, respuestas: listaRespuestas } = payload;
+    var { respuestas, respuestasRaiz, forPkRaiz } = respuestasForPk(forPk);
+    var recentModifiedAny = false;
+    var variablesModificadas: IdVariable[] = [];
+
+    for (var i = 0; i < listaRespuestas.length; i++) {
+        var item = listaRespuestas[i];
+        var resCambio = aplicarCambioUnaRespuesta(forPk, respuestas, item.variable, item.respuesta);
+        if (resCambio.recentModified) {
+            recentModifiedAny = true;
+            variablesModificadas.push(item.variable);
+        }
+    }
+
+    if (recentModifiedAny && variablesModificadas.length > 0) {
+        refrescarYRecalcularBypass(forPk, respuestas, respuestasRaiz, forPkRaiz, variablesModificadas, recentModifiedAny);
+    }
+
+    return { recentModified: recentModifiedAny };
 }
 
 export function accion_registrar_nota(payload: { forPkRaiz: ForPkRaiz, tarea: IdTarea, nota: string | null }, _datosByPass: DatosByPass) {
