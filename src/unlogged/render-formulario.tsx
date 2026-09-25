@@ -3319,52 +3319,112 @@ setCalcularVariables((respuestasRaiz: RespuestasRaiz, forPk: ForPk) => {
 
 
 function calcularComodines(forPk: ForPk) {
+    const store = getStoreFormulario();
+    if (!store) return;
+
+    const actual = (store.getState() as CasoState)?.opciones?.comodines || comodinesIniciales;
     const estructura = getEstructura();
     const infoHdr = getDatosByPass().informacionHdr[forPk[estructura.pkAgregadaUaPpal]];
     const semanaNumero = infoHdr?.tem?.semana;
     const semanaObj = semanaNumero != null ? estructura.semanas?.[semanaNumero as IdSemana] : null;
-    const { respuestasAumentadas } = respuestasForPk(forPk, true);
-    const rangoFecha = (desde?: string | null, hasta?: string | null) =>
-        (desde && hasta) ? `${fechaReferencia(desde)} a ${fechaReferencia(hasta)}` : null;
-    const semRef = rangoFecha(semanaObj?.semana_referencia_desde, semanaObj?.semana_referencia_hasta);
-    const d30Ref = rangoFecha(semanaObj?.['30dias_referencia_desde'], semanaObj?.['30dias_referencia_hasta']);
-    const personasArray = Array.isArray(respuestasAumentadas?.['personas' as IdUnidadAnalisis]) 
-        ? respuestasAumentadas['personas' as IdUnidadAnalisis] as any[] : [];
-    const buscarPersona = (num?: any) => 
-        num != null ? personasArray.find((p: any, idx: number) => (p?.persona != null ? Number(p.persona) === Number(num) : (idx + 1) === Number(num))) : null;
-    const textoParentesco = (p: any) => {
-        const p4 = p?.p4 ?? p?.p4r;
-        return p4 != null ? obtenerTextoParentesco(Number(p4), estructura.operativo) : null;
-    };
-    const esEntrea = respuestasAumentadas?.['entrea' as IdVariable] == 1;
-    const nombrer = respuestasAumentadas?.['nombrer' as IdVariable];
-    const personaResp = esEntrea ? buscarPersona(respuestasAumentadas?.['respond' as IdVariable]) : null;
-    const personaRespi = esEntrea ? buscarPersona(respuestasAumentadas?.['cr_num_miembro' as IdVariable]) : null;
-    const jefe = esEntrea ? buscarPersona(1) : null;
-    const parentResp = textoParentesco(personaResp);
-    const parentRespi = textoParentesco(personaRespi);
-    const totalH = respuestasAumentadas?.['total_h' as IdVariable] ?? respuestasAumentadas?.['total_h_sup' as IdVariable];
-    const fRealiz = respuestasAumentadas?.['f_realiz_o' as IdVariable];
+
+    // Respuestas base a partir del forPk recibido
+    const { respuestasRaiz } = respuestasForPk(forPk);
+
+    // 1. Identificamos el contenedor de personas según 'conReaHogar'
+    let contenedorPersonas: Record<string, any> | null = null;
+    const varNameRealizada = estructura.conReaHogar ? 'entrea' : 'entreav';
+
+    if (estructura.conReaHogar) {
+        const pkHogar = (estructura.unidades_analisis?.hogares?.pk_agregada as keyof ForPk) || 'hogar';
+        const numHogarActual = forPk[pkHogar] as number | undefined;
+
+        if (numHogarActual != null) {
+            const idxHogar = numHogarActual - 1;
+            const hogaresArray = respuestasRaiz['hogares' as IdUnidadAnalisis] as any[];
+            contenedorPersonas = Array.isArray(hogaresArray) ? hogaresArray[idxHogar] : null;
+        }
+    } else {
+        contenedorPersonas = respuestasRaiz;
+    }
+
     const comodinesCalculados: Record<IdComodin, string> = {
         ...comodinesIniciales,
-        canti_hogares: totalH != null ? String(totalH) : NO_CARGADO_AUN,
-        frealiz: fRealiz != null ? String(fRealiz) : NO_CARGADO_AUN,
-        resps1: (esEntrea && nombrer) ? String(nombrer) : NO_CARGADO_AUN,
-        parents1: (esEntrea && parentResp) ? parentResp : NO_CARGADO_AUN,
-        respi1: (esEntrea && personaRespi?.nombre) ? String(personaRespi.nombre) : NO_CARGADO_AUN,
-        parenti1: (esEntrea && parentRespi) ? parentRespi : NO_CARGADO_AUN,
-        njefe: (esEntrea && jefe?.nombre) ? String(jefe.nombre) : NO_CARGADO_AUN,
-        ...(semRef && { SEM_REF: semRef }),
-        ...(d30Ref && { D30_REF: d30Ref }),
-        ...(semanaObj?.mes_referencia && { MES_REF: mesReferencia(semanaObj.mes_referencia) }),
-        ...(semanaNumero != null && { SEM_NUM: String(semanaNumero) }),
-    };
-    const store = getStoreFormulario();
-    if (!store) return;
-    const actual = (store.getState() as CasoState)?.opciones?.comodines || comodinesIniciales;
+        ...actual,
+        ...{
+            resps1: NO_CARGADO_AUN,
+            parents1: NO_CARGADO_AUN,
+            respi1: NO_CARGADO_AUN,
+            parenti1: NO_CARGADO_AUN,
+            njefe: NO_CARGADO_AUN,
+        }
+    }
+
+    // 2. Evaluamos comodines de la entrevista realizada ('entrea' o 'entreav')
+    if (contenedorPersonas && varNameRealizada in contenedorPersonas) {
+        if (contenedorPersonas[varNameRealizada] == 1) {
+            const nombrer = contenedorPersonas['nombrer'];
+            const respond = contenedorPersonas['respond'];
+            const crNumMiembro = contenedorPersonas['cr_num_miembro'];
+
+            const personasArray = Array.isArray(contenedorPersonas['personas'])
+                ? (contenedorPersonas['personas'] as any[])
+                : [];
+
+            const buscarPersona = (num?: any) =>
+                num != null
+                    ? personasArray.find((p: any, idx: number) =>
+                        p?.persona != null ? Number(p.persona) === Number(num) : (idx + 1) === Number(num)
+                    )
+                    : null;
+
+            const textoParentesco = (p: any) => {
+                const p4 = p?.p4 ?? p?.p4r;
+                return p4 != null ? obtenerTextoParentesco(Number(p4), estructura.operativo) : null;
+            };
+
+            const personaResp = buscarPersona(respond);
+            const personaRespi = buscarPersona(crNumMiembro);
+            const jefe = buscarPersona(1);
+            const parentResp = textoParentesco(personaResp);
+            const parentRespi = textoParentesco(personaRespi);
+
+            Object.assign(comodinesCalculados, {
+                resps1: nombrer ? String(nombrer) : NO_CARGADO_AUN,
+                parents1: parentResp ? parentResp : NO_CARGADO_AUN,
+                respi1: personaRespi?.nombre ? String(personaRespi.nombre) : NO_CARGADO_AUN,
+                parenti1: parentRespi ? parentRespi : NO_CARGADO_AUN,
+                njefe: jefe?.nombre ? String(jefe.nombre) : NO_CARGADO_AUN,
+            });
+        } 
+    }
+
+    // 3. Comodines independientes / globales
+    const rangoFecha = (desde?: string | null, hasta?: string | null) =>
+        (desde && hasta) ? `${fechaReferencia(desde)} a ${fechaReferencia(hasta)}` : null;
+
+    const semRef = rangoFecha(semanaObj?.semana_referencia_desde, semanaObj?.semana_referencia_hasta);
+    const d30Ref = rangoFecha(semanaObj?.['30dias_referencia_desde'], semanaObj?.['30dias_referencia_hasta']);
+
+    // 'canti_hogares' solo si conReaHogar === true, directo de 'total_h' en la raíz
+    if (estructura.conReaHogar) {
+        const totalH = respuestasRaiz['total_h' as IdVariable];
+        comodinesCalculados.cant_hogares = totalH != null ? String(totalH) : NO_CARGADO_AUN;
+    }
+
+    // Fecha de realización: se consulta siempre en la raíz de la vivienda
+    const fRealiz = respuestasRaiz['f_realiz_o' as IdVariable];
+    comodinesCalculados.frealiz = fRealiz != null ? String(fRealiz) : NO_CARGADO_AUN;
+
+    if (semRef) comodinesCalculados.SEM_REF = semRef;
+    if (d30Ref) comodinesCalculados.D30_REF = d30Ref;
+    if (semanaObj?.mes_referencia) comodinesCalculados.MES_REF = mesReferencia(semanaObj.mes_referencia);
+    if (semanaNumero != null) comodinesCalculados.SEM_NUM = String(semanaNumero);
+
     const cambio = Object.keys(comodinesCalculados).some(
         (key) => actual[key as IdComodin] !== comodinesCalculados[key as IdComodin]
     );
+
     if (cambio) {
         store.dispatch(dispatchers.CAMBIAR_COMODINES(comodinesCalculados));
     }

@@ -45,7 +45,7 @@ export const comodinesIniciales: Record<IdComodin, string> = {
     'parenti1': '@parenti1@',
     'njefe': '@njefe@',
     'frealiz': '@frealiz@',
-    'canti_hogares': '@canti_hogares@'
+    'cant_hogares': '@cant_hogares@'
 };
 
 var reducers = {

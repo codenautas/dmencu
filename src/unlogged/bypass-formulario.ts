@@ -526,6 +526,7 @@ function refrescarYRecalcularBypass(
     recentModified: boolean
 ) {
     recalcularTodoElArbol(respuestasRaiz, forPkRaiz);
+    recalcularComodinesForPk(forPk);
     if (estructura.configSorteo && !datosByPass?.soloLectura) {
         for (var i = 0; i < variablesModificadas.length; i++) {
             verificarSorteo({
@@ -551,6 +552,12 @@ function refrescarYRecalcularBypass(
     }
     persistirDatosByPass(datosByPass); // OJO ASYNC DESCONTROLADA
     return feedbackRow;
+}
+
+function recalcularComodinesForPk(forPk: ForPk) {
+    if (comodines.calcularComodines) {
+        comodines.calcularComodines(forPk);
+    }
 }
 
 export function accion_registrar_respuesta(payload: {
@@ -638,6 +645,7 @@ export function accion_borrar_visita(payload: { forPkRaiz: ForPkRaiz, index: num
 export function accion_agregar_formulario({ forPk }: { forPk: ForPk }, _datosByPass: DatosByPass) {
     var { respuestas, unidadAnalisis, respuestasAumentadas, respuestasRaiz, forPkRaiz } = respuestasForPk(forPk, true, true);
     recalcularTodoElArbol(respuestasRaiz, forPkRaiz);
+    recalcularComodinesForPk(forPk);
     calcularFeedbackUnidadAnalisis(datosByPass.feedbackRowValidator, estructura.formularios, respuestas, unidadAnalisis.unidad_analisis, forPk, respuestasAumentadas, null, {})
     calcularVariablesBotonFormulario(forPk);
     persistirDatosByPass(datosByPass); // OJO ASYNC DESCONTROLADA
@@ -646,6 +654,7 @@ export function accion_agregar_formulario({ forPk }: { forPk: ForPk }, _datosByP
 export function accion_abrir_formulario({ forPk }: { forPk: ForPk }, _datosByPass: DatosByPass) {
     var { respuestas, unidadAnalisis, respuestasAumentadas, respuestasRaiz, forPkRaiz } = respuestasForPk(forPk, true, true);
     recalcularTodoElArbol(respuestasRaiz, forPkRaiz);
+    recalcularComodinesForPk(forPk);
     calcularFeedbackUnidadAnalisis(datosByPass.feedbackRowValidator, estructura.formularios, respuestas, unidadAnalisis.unidad_analisis, forPk, respuestasAumentadas, null, {})
     calcularVariablesBotonFormulario(forPk);
     persistirDatosByPass(datosByPass); // OJO ASYNC DESCONTROLADA
@@ -659,6 +668,7 @@ export function accion_borrar_formulario({ forPk, forPkPadre }: { forPk: ForPk, 
     var { respuestas: respuestasPadre } = respuestasForPk(forPkPadre, true, true);
     (respuestasPadre[unidad_analisis] as Respuestas[]).splice(index - 1, 1);
     recalcularTodoElArbol(respuestasRaiz, forPkRaiz);
+    recalcularComodinesForPk(forPk);
     datosByPass.dirty = datosByPass.dirty || true;
     respuestasRaiz.$dirty = respuestasRaiz.$dirty || true;
     refrescarMarcaDirty();
@@ -1143,16 +1153,12 @@ function barrerSubArbol(respuestasRaiz: RespuestasRaiz, nodoActual: Respuestas |
                     barrerSubArbol(respuestasRaiz, hijasResp as Respuestas[], uaHija as IdUnidadAnalisis, miForPk);
                 }
             }
-            if(comodines.calcularComodines){
-                comodines.calcularComodines(miForPk);
-            }
         }
     }
 }
 
 export function recalcularTodoElArbol(respuestasRaiz: RespuestasRaiz, forPkRaiz: ForPk) {
     var uaPpal = Object.keys(estructura.unidades_analisis).find(key => !estructura.unidades_analisis[key as IdUnidadAnalisis].padre) as IdUnidadAnalisis;
-    
     barrerSubArbol(respuestasRaiz, respuestasRaiz, uaPpal, forPkRaiz);
     barrerSubArbol(respuestasRaiz, respuestasRaiz, uaPpal, forPkRaiz);
 }
