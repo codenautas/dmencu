@@ -18,9 +18,11 @@ export function no_rea(context:TableContext):TableDefinition {
             {name:'grupo0'                  , typeName:'text'},
             {name:'pasa_a_recuperacion'     , typeName:'boolean', nullable:false, defaultDbValue:'false'},
             {name:'pasa_a_supervision'      , typeName:'boolean', nullable:false, defaultDbValue:'false'},
+            {name:'orden'                   , typeName:'integer', nullable:false, defaultDbValue:'0'}
         ],
         primaryKey:['operativo', 'no_rea'],
         foreignKeys:[{references:'operativos', fields:['operativo']}],
+        sortColumns: [{ column: "operativo", order: 1 }, { column: "orden", order: 1 }],
     };
 }
 

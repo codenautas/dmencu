@@ -605,6 +605,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 []
             ).fetchUniqueRow()).row;
             var { unidad_analisis, pk_agregada } = (await getUAPrincipal(context.client, parameters.operativo));
+            console.log(be.caches.tableContent.no_rea)
+            console.log(be.caches.tableContent.no_rea_sup)
             return {
                 timestamp: be.caches.timestampEstructura,
                 ...result.row,

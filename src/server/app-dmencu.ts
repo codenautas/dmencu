@@ -451,7 +451,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         async refreshCaches() {
             this.caches.tableContent = this.caches.tableContent || {};
             await this.inDbClient(null, async (client) => {
-                this.caches.tableContent.no_rea = (await client.query(`select * from no_rea order by orden`).fetchAll()).rows;
+                this.caches.tableContent.no_rea = (await client.query(`select * from no_rea order by operativo, orden`).fetchAll()).rows;
                 console.log('caches', this.caches.tableContent.no_rea)
                 this.caches.tableContent.no_rea_groups = (await client.query(`
                 select grupo, jsonb_agg(to_json(r.*)) as codigos from no_rea r group by grupo order by 1
@@ -459,7 +459,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 this.caches.tableContent.no_rea_groups0 = (await client.query(`
                 select grupo0 as grupo, jsonb_agg(to_json(r.*)) as codigos from no_rea r group by grupo0 order by 1
             `).fetchAll()).rows;
-                this.caches.tableContent.no_rea_sup = (await client.query(`select * from no_rea_sup order by orden`).fetchAll()).rows;
+                this.caches.tableContent.no_rea_sup = (await client.query(`select * from no_rea_sup order by operativo, orden`).fetchAll()).rows;
                 console.log('caches', this.caches.tableContent.no_rea_sup)
                 this.caches.tableContent.no_rea_sup_groups = (await client.query(`
             select grupo_sup, jsonb_agg(to_json(r.*)) as codigos from no_rea_sup r group by grupo_sup order by 1
