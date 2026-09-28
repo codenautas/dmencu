@@ -26,7 +26,8 @@ import {
     IdCarga,
     Carga,
     CampoPkRaiz,
-    ValuePkRaiz
+    ValuePkRaiz,
+    FuncionesCalculoReaNoRea
 } from "./tipos";
 
 import { getFormRenderer } from "./render-config";
@@ -810,71 +811,64 @@ export const getFuncionValorar = getFuncionCompilada(funcionesValorar);
 
 
 var rowValidator = getRowValidator<IdVariable, Valor, IdFin>({ getFuncionHabilitar, getFuncionValorar })
-export var buscarNoReaEnRespuestas = (unidadesARecorrerPrm: IdUnidadAnalisis[], unidadAnalisis: UnidadAnalisis, respuestas: Respuestas, noReasTarea: any[], nombNoRea: string)
-    : { nrcodigo: string | null, esvalor: boolean } => {
-    var nrcodigo: string | null = null;
-    var esvalor = false;
-    var rvalor: string | null = null;
-    var rvariable: string;
-    var rnorea: string | null = null;
-    // var result={nrcod:String, esval:Boolean};
-    if (unidadesARecorrerPrm.includes(unidadAnalisis.unidad_analisis)) {
-        for (let noRea of noReasTarea) { //estructura.noReas, estructura.noReasSup
-            if (nombNoRea == 'no_rea') {
-                var { variable, valor, no_rea } = noRea;
-                rnorea = no_rea;
-                rvalor = valor;
-                rvariable = variable;
-            } else {
-                var { variable_sup, valor_sup, no_rea_sup } = noRea;
-                rnorea = no_rea_sup;
-                rvalor = valor_sup;
-                rvariable = variable_sup;
-            }
-            if (respuestas[rvariable as IdVariable] == rvalor) {
-                nrcodigo = rnorea;  //no_rea, no_rea_sup
-                esvalor = true;
-                return { nrcodigo, esvalor }
-            } else {
-                nrcodigo = null;
-                esvalor = false;
-            }
+export const buscarNoReaEnRespuestas = (
+    unidadAnalisis: UnidadAnalisis,
+    respuestas: Respuestas,
+    noReasTarea: any[],
+    nombNoRea: 'no_rea' | 'no_rea_sup' | string
+): { nrcodigo: string | null; esvalor: boolean } => {
+    const esSup = nombNoRea === 'no_rea_sup';
+    for (const noRea of noReasTarea) {
+        const rvariable = esSup ? noRea.variable_sup : noRea.variable;
+        const rvalor = esSup ? noRea.valor_sup : noRea.valor;
+        const rnorea = esSup ? noRea.no_rea_sup : noRea.no_rea;
+        if (rvariable in respuestas && respuestas[rvariable as IdVariable] == rvalor) {
+            return { nrcodigo: rnorea, esvalor: true };
         }
     }
-    for (let ua of (likeAr(unidadAnalisis?.hijas).array())) {
-        if (ua?.unidad_analisis && respuestas[ua.unidad_analisis] instanceof Array) {
-            for (let respuestasHijas of iterator(respuestas[ua?.unidad_analisis] ?? [])) {
-                let result = buscarNoReaEnRespuestas(unidadesARecorrerPrm, ua, respuestasHijas, noReasTarea, nombNoRea);
+    const hijas = likeAr(unidadAnalisis?.hijas).array();
+    for (const uaHija of hijas) {
+        const nombreUaHija = uaHija?.unidad_analisis;
+        if (nombreUaHija && Array.isArray(respuestas[nombreUaHija])) {
+            for (const respuestasHija of respuestas[nombreUaHija]) {
+                const result = buscarNoReaEnRespuestas(uaHija, respuestasHija, noReasTarea, nombNoRea);
                 if (result.esvalor) {
-                    nrcodigo = result.nrcodigo;
-                    esvalor = result.esvalor;
-                    return { nrcodigo, esvalor }
-                    break;
-                } else {
-                    nrcodigo = null;
-                    esvalor = false;
-                    // return {nrcodigo, esvalor}
+                    return result;
                 }
             }
         }
     }
-    return { nrcodigo, esvalor }
-}
-
-
+    return { nrcodigo: null, esvalor: false };
+};
 
 export var defOperativo: DefOperativo = {
-    esNoRea: (_respuestas: Respuestas) => {
-        //IMPLEMENTAR EN OPERATIVO
-        var esNoRea = false;
-        var codNoRea: string | null = null;
+    esNoRea: (respuestas: Respuestas) => {
+        const estructura = getEstructura();
+        const uaPrincipal = likeAr(estructura.unidades_analisis).find((ua) => !ua.padre);
+
+        let esNoRea = false;
+        let codNoRea: string | null = null;
+
+        const { esRea } = defOperativo.esRealizada(respuestas);
+
+        if (!esRea) {
+            const resNoRea = buscarNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReas, 'no_rea');
+            codNoRea = resNoRea.nrcodigo;
+            esNoRea = resNoRea.esvalor;
+        }
+
         return { codNoRea, esNoRea };
     },
-    esNoReaSup: (_respuestas: Respuestas) => {
-        //IMPLEMENTAR EN OPERATIVO
-        var esNoReaSup = false;
-        var codNoReaSup: string | null = null;
-        return { codNoReaSup, esNoReaSup }
+    esNoReaSup: (respuestas: Respuestas) => {
+        const estructura = getEstructura();
+        const uaPrincipal = likeAr(estructura.unidades_analisis).find((ua) => !ua.padre);
+
+        const resNoReaSup = buscarNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReasSup, 'no_rea_sup');
+
+        return {
+            codNoReaSup: resNoReaSup.nrcodigo,
+            esNoReaSup: resNoReaSup.esvalor
+        };
     },
     esRealizada: (_respuestas: Respuestas) => {
         //IMPLEMENTAR EN OPERATIVO
@@ -894,20 +888,14 @@ export var defOperativo: DefOperativo = {
 }
 ///// ABAJO de esta línea no puede haber otros nombres de variables o formularios o casilleros en general
 
-export var setCalculoReaNoRea = (
-    esNoRea: (respuestas: Respuestas) => { codNoRea: string | null, esNoRea: boolean },
-    esNoReaSup: (respuestas: Respuestas) => { codNoReaSup: string | null, esNoReaSup: boolean },
-    esRealizada: (respuestas: Respuestas) => { codRea: number | null, esRea: boolean },
-    esRealizadaSup: (respuestas: Respuestas) => { codReaSup: number | null, esReaSup: boolean }
+export const setCalculoReaNoRea = (
+  funciones: Partial<FuncionesCalculoReaNoRea> = {}
 ) => {
-    defOperativo = {
-        ...defOperativo,
-        esNoRea,
-        esNoReaSup,
-        esRealizada,
-        esRealizadaSup
-    }
-}
+  defOperativo = {
+    ...defOperativo,
+    ...funciones
+  };
+};
 
 // TODO: GENERALIZAR
 type Persona = { p1: string, p2: number, p3: number, p4: number | null, p5: 1 | null, p6: 1 | null }

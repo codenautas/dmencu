@@ -415,6 +415,7 @@ export type Estructura = {
         variable: string
         valor: string
         grupo0: string
+        orden: number
     }[]
     noReasSup: {
         no_rea_sup: string
@@ -423,6 +424,7 @@ export type Estructura = {
         variable_sup: string
         valor_sup: string
         grupo0_sup: string
+        orden: number
     }[],
     semanas: { [idSemana in IdSemana]: Semana }
     defaultInformacionHdr: DatosHdrUaPpal
@@ -445,6 +447,13 @@ export type CasoState = {
         comodines: {[idComodin in IdComodin]?: string}
     }
 }
+
+export type FuncionesCalculoReaNoRea = {
+  esNoRea: (respuestas: Respuestas) => { codNoRea: string | null; esNoRea: boolean };
+  esNoReaSup: (respuestas: Respuestas) => { codNoReaSup: string | null; esNoReaSup: boolean };
+  esRealizada: (respuestas: Respuestas) => { codRea: number | null; esRea: boolean };
+  esRealizadaSup: (respuestas: Respuestas) => { codReaSup: number | null; esReaSup: boolean };
+};
 
 export type DefOperativo = {
     esNoRea: (respuestas: Respuestas) => { codNoRea: string | null, esNoRea: boolean },

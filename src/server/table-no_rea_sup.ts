@@ -9,6 +9,7 @@ export function no_rea_sup(context:TableContext):TableDefinition {
         elementName:'no_rea_sup',
         editable:puedeEditar,
         fields:[
+            {name:'operativo'                       , typeName:'text', nullable:false},
             {name:'no_rea_sup'                      , typeName:'text'},
             {name:'desc_norea_sup'                  , typeName:'text'},
             {name:'grupo_sup'                       , typeName:'text'},
@@ -16,7 +17,7 @@ export function no_rea_sup(context:TableContext):TableDefinition {
             {name:'valor_sup'                       , typeName:'text'},
             {name:'grupo0_sup'                      , typeName:'text'},
         ],
-        primaryKey:['no_rea_sup'],
+        primaryKey:['operativo','no_rea_sup'],
     };
 }
 
