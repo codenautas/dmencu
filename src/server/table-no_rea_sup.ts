@@ -10,18 +10,18 @@ export function no_rea_sup(context:TableContext):TableDefinition {
         editable:puedeEditar,
         fields:[
             {name:'operativo'                       , typeName:'text', nullable:false},
+            {name:'orden'                           , typeName:'integer', nullable: false, defaultDbValue: '0' },
             {name:'no_rea_sup'                      , typeName:'text'},
             {name:'desc_norea_sup'                  , typeName:'text'},
             {name:'grupo_sup'                       , typeName:'text'},
             {name:'variable_sup'                    , typeName:'text'},
             {name:'valor_sup'                       , typeName:'text'},
             {name:'grupo0_sup'                      , typeName:'text'},
-            {name:'orden'                           , typeName:'integer', nullable: false, defaultDbValue: '0' }
 
         ],
         primaryKey:['operativo','no_rea_sup'],
         foreignKeys: [{ references: 'operativos', fields: ['operativo'] }],
-        sortColumns: [{ column: "operativo", order: 1 }, { column: "orden", order: 1 }],
+        sortColumns: [{ column: "operativo", order: 1 }, { column: "orden", order: 1 }, { column: "no_rea_sup", order: 1 }],
     };
 }
 

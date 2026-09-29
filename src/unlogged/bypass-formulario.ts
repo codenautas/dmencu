@@ -918,18 +918,14 @@ export var defOperativo: DefOperativo = {
     esNoRea: (respuestas: Respuestas) => {
         const estructura = getEstructura();
         const uaPrincipal = likeAr(estructura.unidades_analisis).find((ua) => !ua.padre);
-
         let esNoRea = false;
         let codNoRea: string | null = null;
-
         const { esRea } = defOperativo.esRealizada(respuestas);
-
         if (!esRea) {
             const resNoRea = buscarNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReas, 'no_rea');
             codNoRea = resNoRea.nrcodigo;
             esNoRea = resNoRea.esvalor;
         }
-
         return { codNoRea, esNoRea };
     },
     esNoReaSup: (respuestas: Respuestas) => {
@@ -959,8 +955,6 @@ export var defOperativo: DefOperativo = {
     defUA: {} as { [i in IdUnidadAnalisis]: { pk: IdVariable, incluidas: IdUnidadAnalisis[], idsFor: IdFormulario[] } },
     defFor: {} as { [f in IdFormulario]: {/*arbolUA:IdUnidadAnalisis[], */ hermano?: true } }
 }
-///// ABAJO de esta línea no puede haber otros nombres de variables o formularios o casilleros en general
-
 export const setCalculoReaNoRea = (
   funciones: Partial<FuncionesCalculoReaNoRea> = {}
 ) => {
