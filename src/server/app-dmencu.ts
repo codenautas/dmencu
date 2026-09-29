@@ -221,9 +221,9 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             parentProc = parentProc.map(procDef => {
                 if (procDef.action == 'table_record_save' || procDef.action == 'table_record_delete') {
                     var coreFunctionInterno = procDef.coreFunction;
-                    procDef.coreFunction = async function (context: ProcedureContext, parameters: CoreFunctionParameters<any>) {
-                        var result = await coreFunctionInterno(context, parameters)
-                        if (parameters.table == 'casilleros' || parameters.table == 'semanas') {
+                    procDef.coreFunction = async function (...args:any[]) {
+                        var result = await (coreFunctionInterno as Function)(...args)
+                        if (args[1].table == 'casilleros' || args[1].table == 'semanas') {
                             be.caches.timestampEstructura = new Date().getTime();
                             console.log('se tocó la estructura', be.caches.timestampEstructura)
                         }
