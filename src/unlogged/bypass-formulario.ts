@@ -955,14 +955,15 @@ export var defOperativo: DefOperativo = {
     defUA: {} as { [i in IdUnidadAnalisis]: { pk: IdVariable, incluidas: IdUnidadAnalisis[], idsFor: IdFormulario[] } },
     defFor: {} as { [f in IdFormulario]: {/*arbolUA:IdUnidadAnalisis[], */ hermano?: true } }
 }
-export const setCalculoReaNoRea = (
-  funciones: Partial<FuncionesCalculoReaNoRea> = {}
-) => {
-  defOperativo = {
-    ...defOperativo,
-    ...funciones
-  };
-};
+
+export function setCalculoReaNoRea(
+    funciones: Partial<FuncionesCalculoReaNoRea>
+): void {
+    defOperativo = {
+        ...defOperativo,
+        ...funciones
+    };
+}
 
 // TODO: GENERALIZAR
 type Persona = { p1: string, p2: number, p3: number, p4: number | null, p5: 1 | null, p6: 1 | null }
