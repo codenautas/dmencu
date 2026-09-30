@@ -956,13 +956,37 @@ export var defOperativo: DefOperativo = {
     defFor: {} as { [f in IdFormulario]: {/*arbolUA:IdUnidadAnalisis[], */ hermano?: true } }
 }
 
+// 1. Sobrecarga para la forma antigua (4 funciones posicionales)
+export function setCalculoReaNoRea(
+    esNoRea: (respuestas: Respuestas) => { codNoRea: string | null, esNoRea: boolean },
+    esNoReaSup: (respuestas: Respuestas) => { codNoReaSup: string | null, esNoReaSup: boolean },
+    esRealizada: (respuestas: Respuestas) => { codRea: number | null, esRea: boolean },
+    esRealizadaSup: (respuestas: Respuestas) => { codReaSup: number | null, esReaSup: boolean }
+): void;
+
+// 2. Sobrecarga para la forma nueva (objeto parcial)
 export function setCalculoReaNoRea(
     funciones: Partial<FuncionesCalculoReaNoRea>
+): void;
+
+// 3. Implementación unificada
+export function setCalculoReaNoRea(
+    esNoReaOrFunciones:
+        | ((respuestas: Respuestas) => { codNoRea: string | null, esNoRea: boolean })
+        | Partial<FuncionesCalculoReaNoRea>,
+    _esNoReaSup?: (respuestas: Respuestas) => { codNoReaSup: string | null, esNoReaSup: boolean },
+    _esRealizada?: (respuestas: Respuestas) => { codRea: number | null, esRea: boolean },
+    _esRealizadaSup?: (respuestas: Respuestas) => { codReaSup: number | null, esReaSup: boolean }
 ): void {
-    defOperativo = {
-        ...defOperativo,
-        ...funciones
-    };
+    if (typeof esNoReaOrFunciones === 'function') {
+        console.warn("setCalculoReaNoRea: la forma antigua está deprecada, se ignoran sobrescrituras, usar setCalculoReaNoRea({ esNoRea, esNoReaSup, esRealizada, esRealizadaSup })");
+        
+    } else {
+        defOperativo = {
+            ...defOperativo,
+            ...esNoReaOrFunciones
+        };
+    }
 }
 
 // TODO: GENERALIZAR
