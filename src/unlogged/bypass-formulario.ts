@@ -669,7 +669,7 @@ export function accion_borrar_formulario({ forPk, forPkPadre }: { forPk: ForPk, 
     var { respuestas: respuestasPadre } = respuestasForPk(forPkPadre, true, true);
     (respuestasPadre[unidad_analisis] as Respuestas[]).splice(index - 1, 1);
     recalcularTodoElArbol(respuestasRaiz, forPkRaiz);
-    recalcularComodinesForPk(forPk);
+    recalcularComodinesForPk(forPkPadre);
     datosByPass.dirty = datosByPass.dirty || true;
     respuestasRaiz.$dirty = respuestasRaiz.$dirty || true;
     refrescarMarcaDirty();
