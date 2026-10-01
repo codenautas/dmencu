@@ -26,11 +26,13 @@ import {
     IdCarga,
     Carga,
     CampoPkRaiz,
-    ValuePkRaiz
+    ValuePkRaiz,
+    FuncionesCalculoReaNoRea,
 } from "./tipos";
 
 import { getFormRenderer } from "./render-config";
 import { adaptarEstructura } from "./redux-formulario";
+import { buscarReaNoReaEnRespuestas } from "./calculos-encuesta";
 
 var comodines = {} as {
     calcularComodines?: (forPk: ForPk) => void
@@ -883,102 +885,100 @@ export const getFuncionValorar = getFuncionCompilada(funcionesValorar);
 
 
 var rowValidator = getRowValidator<IdVariable, Valor, IdFin>({ getFuncionHabilitar, getFuncionValorar })
-export var buscarNoReaEnRespuestas = (unidadesARecorrerPrm: IdUnidadAnalisis[], unidadAnalisis: UnidadAnalisis, respuestas: Respuestas, noReasTarea: any[], nombNoRea: string)
-    : { nrcodigo: string | null, esvalor: boolean } => {
-    var nrcodigo: string | null = null;
-    var esvalor = false;
-    var rvalor: string | null = null;
-    var rvariable: string;
-    var rnorea: string | null = null;
-    // var result={nrcod:String, esval:Boolean};
-    if (unidadesARecorrerPrm.includes(unidadAnalisis.unidad_analisis)) {
-        for (let noRea of noReasTarea) { //estructura.noReas, estructura.noReasSup
-            if (nombNoRea == 'no_rea') {
-                var { variable, valor, no_rea } = noRea;
-                rnorea = no_rea;
-                rvalor = valor;
-                rvariable = variable;
-            } else {
-                var { variable_sup, valor_sup, no_rea_sup } = noRea;
-                rnorea = no_rea_sup;
-                rvalor = valor_sup;
-                rvariable = variable_sup;
-            }
-            if (respuestas[rvariable as IdVariable] == rvalor) {
-                nrcodigo = rnorea;  //no_rea, no_rea_sup
-                esvalor = true;
-                return { nrcodigo, esvalor }
-            } else {
-                nrcodigo = null;
-                esvalor = false;
-            }
-        }
-    }
-    for (let ua of (likeAr(unidadAnalisis?.hijas).array())) {
-        if (ua?.unidad_analisis && respuestas[ua.unidad_analisis] instanceof Array) {
-            for (let respuestasHijas of iterator(respuestas[ua?.unidad_analisis] ?? [])) {
-                let result = buscarNoReaEnRespuestas(unidadesARecorrerPrm, ua, respuestasHijas, noReasTarea, nombNoRea);
-                if (result.esvalor) {
-                    nrcodigo = result.nrcodigo;
-                    esvalor = result.esvalor;
-                    return { nrcodigo, esvalor }
-                    break;
-                } else {
-                    nrcodigo = null;
-                    esvalor = false;
-                    // return {nrcodigo, esvalor}
-                }
-            }
-        }
-    }
-    return { nrcodigo, esvalor }
-}
-
-
 
 export var defOperativo: DefOperativo = {
-    esNoRea: (_respuestas: Respuestas) => {
-        //IMPLEMENTAR EN OPERATIVO
-        var esNoRea = false;
-        var codNoRea: string | null = null;
+    esNoRea: (respuestas: Respuestas) => {
+        const estructura = getEstructura();
+        const uaPrincipal = likeAr(estructura.unidades_analisis).find((ua) => !ua.padre);
+        const { esRea } = defOperativo.esRealizada(respuestas);
+
+        let codNoRea: string | null = null;
+        let esNoRea = false;
+
+        if (!esRea) {
+            const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReas, 'no_rea');
+            codNoRea = res.codigo as string | null;
+            esNoRea = res.esResultado;
+        }
         return { codNoRea, esNoRea };
     },
-    esNoReaSup: (_respuestas: Respuestas) => {
-        //IMPLEMENTAR EN OPERATIVO
-        var esNoReaSup = false;
-        var codNoReaSup: string | null = null;
-        return { codNoReaSup, esNoReaSup }
+
+    esNoReaSup: (respuestas: Respuestas) => {
+        const estructura = getEstructura();
+        const uaPrincipal = likeAr(estructura.unidades_analisis).find((ua) => !ua.padre);
+
+        const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReasSup, 'no_rea_sup');
+        return {
+            codNoReaSup: res.codigo as string | null,
+            esNoReaSup: res.esResultado
+        };
     },
-    esRealizada: (_respuestas: Respuestas) => {
-        //IMPLEMENTAR EN OPERATIVO
-        var esRea = false;
-        var codRea: string | null = null;
-        return { codRea, esRea }
+
+    esRealizada: (respuestas: Respuestas) => {
+        const estructura = getEstructura();
+        const uaPrincipal = likeAr(estructura.unidades_analisis).find((ua) => !ua.padre);
+
+        let codRea: number | null = null;
+        let esRea = false;
+
+        if (estructura.reas && estructura.reas.length > 0) {
+            const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.reas, 'rea');
+            codRea = res.codigo !== null ? Number(res.codigo) : null;
+            esRea = res.esResultado;
+        }
+        return { codRea, esRea };
     },
-    esRealizadaSup: (_respuestas: Respuestas) => {
-        //IMPLEMENTAR EN OPERATIVO
-        var esReaSup = false;
-        var codReaSup: number | null = null;
-        return { codReaSup, esReaSup }
+
+    esRealizadaSup: (respuestas: Respuestas) => {
+        const estructura = getEstructura();
+        const uaPrincipal = likeAr(estructura.unidades_analisis).find((ua) => !ua.padre);
+
+        let codReaSup: number | null = null;
+        let esReaSup = false;
+
+        if (estructura.reasSup && estructura.reasSup.length > 0) {
+            const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.reasSup, 'rea_sup');
+            codReaSup = res.codigo !== null ? Number(res.codigo) : null;
+            esReaSup = res.esResultado;
+        }
+        return { codReaSup, esReaSup };
     },
+
     UAprincipal: '' as IdUnidadAnalisis,
     defUA: {} as { [i in IdUnidadAnalisis]: { pk: IdVariable, incluidas: IdUnidadAnalisis[], idsFor: IdFormulario[] } },
-    defFor: {} as { [f in IdFormulario]: {/*arbolUA:IdUnidadAnalisis[], */ hermano?: true } }
-}
-///// ABAJO de esta línea no puede haber otros nombres de variables o formularios o casilleros en general
+    defFor: {} as { [f in IdFormulario]: { hermano?: true } }
+};
 
-export var setCalculoReaNoRea = (
+// 1. Sobrecarga para la forma antigua (4 funciones posicionales)
+export function setCalculoReaNoRea(
     esNoRea: (respuestas: Respuestas) => { codNoRea: string | null, esNoRea: boolean },
     esNoReaSup: (respuestas: Respuestas) => { codNoReaSup: string | null, esNoReaSup: boolean },
     esRealizada: (respuestas: Respuestas) => { codRea: number | null, esRea: boolean },
     esRealizadaSup: (respuestas: Respuestas) => { codReaSup: number | null, esReaSup: boolean }
-) => {
-    defOperativo = {
-        ...defOperativo,
-        esNoRea,
-        esNoReaSup,
-        esRealizada,
-        esRealizadaSup
+): void;
+
+// 2. Sobrecarga para la forma nueva (objeto parcial)
+export function setCalculoReaNoRea(
+    funciones: Partial<FuncionesCalculoReaNoRea>
+): void;
+
+// 3. Implementación unificada
+export function setCalculoReaNoRea(
+    esNoReaOrFunciones:
+        | ((respuestas: Respuestas) => { codNoRea: string | null, esNoRea: boolean })
+        | Partial<FuncionesCalculoReaNoRea>,
+    _esNoReaSup?: (respuestas: Respuestas) => { codNoReaSup: string | null, esNoReaSup: boolean },
+    _esRealizada?: (respuestas: Respuestas) => { codRea: number | null, esRea: boolean },
+    _esRealizadaSup?: (respuestas: Respuestas) => { codReaSup: number | null, esReaSup: boolean }
+): void {
+    if (typeof esNoReaOrFunciones === 'function') {
+        console.warn("setCalculoReaNoRea: la forma antigua está deprecada, se ignoran sobrescrituras, usar setCalculoReaNoRea({ esNoRea, esNoReaSup, esRealizada, esRealizadaSup })");
+        
+    } else {
+        defOperativo = {
+            ...defOperativo,
+            ...esNoReaOrFunciones
+        };
     }
 }
 
