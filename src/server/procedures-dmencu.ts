@@ -614,6 +614,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 habilitacionBotonFormulario,
                 noReas: be.caches.tableContent.no_rea,
                 noReasSup: be.caches.tableContent.no_rea_sup,
+                reas: be.caches.tableContent.rea,
+                reasSup: be.caches.tableContent.rea_sup,
                 defaultInformacionHdr,
                 uaPpal: unidad_analisis,
                 semanas,

@@ -27,11 +27,12 @@ import {
     Carga,
     CampoPkRaiz,
     ValuePkRaiz,
-    FuncionesCalculoReaNoRea
+    FuncionesCalculoReaNoRea,
 } from "./tipos";
 
 import { getFormRenderer } from "./render-config";
 import { adaptarEstructura } from "./redux-formulario";
+import { buscarReaNoReaEnRespuestas } from "./calculos-encuesta";
 
 var comodines = {} as {
     calcularComodines?: (forPk: ForPk) => void
@@ -884,77 +885,69 @@ export const getFuncionValorar = getFuncionCompilada(funcionesValorar);
 
 
 var rowValidator = getRowValidator<IdVariable, Valor, IdFin>({ getFuncionHabilitar, getFuncionValorar })
-export const buscarNoReaEnRespuestas = (
-    unidadAnalisis: UnidadAnalisis,
-    respuestas: Respuestas,
-    noReasTarea: any[],
-    nombNoRea: 'no_rea' | 'no_rea_sup' | string
-): { nrcodigo: string | null; esvalor: boolean } => {
-    const esSup = nombNoRea === 'no_rea_sup';
-    for (const noRea of noReasTarea) {
-        const rvariable = esSup ? noRea.variable_sup : noRea.variable;
-        const rvalor = esSup ? noRea.valor_sup : noRea.valor;
-        const rnorea = esSup ? noRea.no_rea_sup : noRea.no_rea;
-        if (rvariable in respuestas && respuestas[rvariable as IdVariable] == rvalor) {
-            return { nrcodigo: rnorea, esvalor: true };
-        }
-    }
-    const hijas = likeAr(unidadAnalisis?.hijas).array();
-    for (const uaHija of hijas) {
-        const nombreUaHija = uaHija?.unidad_analisis;
-        if (nombreUaHija && Array.isArray(respuestas[nombreUaHija])) {
-            for (const respuestasHija of respuestas[nombreUaHija]) {
-                const result = buscarNoReaEnRespuestas(uaHija, respuestasHija, noReasTarea, nombNoRea);
-                if (result.esvalor) {
-                    return result;
-                }
-            }
-        }
-    }
-    return { nrcodigo: null, esvalor: false };
-};
 
 export var defOperativo: DefOperativo = {
     esNoRea: (respuestas: Respuestas) => {
         const estructura = getEstructura();
         const uaPrincipal = likeAr(estructura.unidades_analisis).find((ua) => !ua.padre);
-        let esNoRea = false;
-        let codNoRea: string | null = null;
         const { esRea } = defOperativo.esRealizada(respuestas);
+
+        let codNoRea: string | null = null;
+        let esNoRea = false;
+
         if (!esRea) {
-            const resNoRea = buscarNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReas, 'no_rea');
-            codNoRea = resNoRea.nrcodigo;
-            esNoRea = resNoRea.esvalor;
+            const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReas, 'no_rea');
+            codNoRea = res.codigo as string | null;
+            esNoRea = res.esResultado;
         }
         return { codNoRea, esNoRea };
     },
+
     esNoReaSup: (respuestas: Respuestas) => {
         const estructura = getEstructura();
         const uaPrincipal = likeAr(estructura.unidades_analisis).find((ua) => !ua.padre);
 
-        const resNoReaSup = buscarNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReasSup, 'no_rea_sup');
-
+        const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReasSup, 'no_rea_sup');
         return {
-            codNoReaSup: resNoReaSup.nrcodigo,
-            esNoReaSup: resNoReaSup.esvalor
+            codNoReaSup: res.codigo as string | null,
+            esNoReaSup: res.esResultado
         };
     },
-    esRealizada: (_respuestas: Respuestas) => {
-        //IMPLEMENTAR EN OPERATIVO
-        var esRea = false;
-        var codRea: string | null = null;
-        return { codRea, esRea }
+
+    esRealizada: (respuestas: Respuestas) => {
+        const estructura = getEstructura();
+        const uaPrincipal = likeAr(estructura.unidades_analisis).find((ua) => !ua.padre);
+
+        let codRea: number | null = null;
+        let esRea = false;
+
+        if (estructura.reas && estructura.reas.length > 0) {
+            const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.reas, 'rea');
+            codRea = res.codigo !== null ? Number(res.codigo) : null;
+            esRea = res.esResultado;
+        }
+        return { codRea, esRea };
     },
-    esRealizadaSup: (_respuestas: Respuestas) => {
-        //IMPLEMENTAR EN OPERATIVO
-        var esReaSup = false;
-        var codReaSup: number | null = null;
-        return { codReaSup, esReaSup }
+
+    esRealizadaSup: (respuestas: Respuestas) => {
+        const estructura = getEstructura();
+        const uaPrincipal = likeAr(estructura.unidades_analisis).find((ua) => !ua.padre);
+
+        let codReaSup: number | null = null;
+        let esReaSup = false;
+
+        if (estructura.reasSup && estructura.reasSup.length > 0) {
+            const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.reasSup, 'rea_sup');
+            codReaSup = res.codigo !== null ? Number(res.codigo) : null;
+            esReaSup = res.esResultado;
+        }
+        return { codReaSup, esReaSup };
     },
+
     UAprincipal: '' as IdUnidadAnalisis,
     defUA: {} as { [i in IdUnidadAnalisis]: { pk: IdVariable, incluidas: IdUnidadAnalisis[], idsFor: IdFormulario[] } },
-    defFor: {} as { [f in IdFormulario]: {/*arbolUA:IdUnidadAnalisis[], */ hermano?: true } }
-}
+    defFor: {} as { [f in IdFormulario]: { hermano?: true } }
+};
 
 // 1. Sobrecarga para la forma antigua (4 funciones posicionales)
 export function setCalculoReaNoRea(
