@@ -1,7 +1,7 @@
 "use strict";
 
 import { describe, it } from 'mocha';
-import assert from 'node:assert';
+import assert = require('node:assert');
 
 import { buscarReaNoReaEnRespuestas } from '../unlogged/calculos-encuesta';
 import type { Estructura } from '../unlogged/tipos';
@@ -13,10 +13,10 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
 
     beforeEach(() => {
         uaPrincipalMock = {
-            unidad_analisis: 'vivienda',
+            unidad_analisis: 'viviendas',
             padre: null,
             hijas: [
-                { unidad_analisis: 'persona', padre: 'vivienda', hijas: [] }
+                { unidad_analisis: 'hogares', padre: 'viviendas', hijas: [] }
             ]
         };
 
@@ -28,16 +28,16 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
                 { no_rea_sup: 'NRS1', desc_norea_sup: 'Ausente Sup', grupo_sup: 'GS1', variable_sup: 'v_norea_sup', valor_sup: '1', grupo0_sup: '0', orden: 1 }
             ],
             reas: [
-                { rea: '1', descripcion: 'Completa', variable: 'v_rea', valor: '1', orden: 1, es_rea: true },
-                { rea: '2', descripcion: 'Incompleta', variable: 'v_rea', valor: '2', orden: 2, es_rea: false }
+                { rea: '1', descripcion: 'Completa', variable: 'v_rea', valor: '1', orden: 1 },
+                { rea: '2', descripcion: 'Incompleta', variable: 'v_rea', valor: '2', orden: 2 }
             ],
             reasSup: [
-                { rea_sup: '1', descripcion: 'Completa Sup', variable_sup: 'v_rea_sup', valor_sup: '1', orden: 1, es_rea_sup: true }
+                { rea_sup: '1', descripcion: 'Completa Sup', variable_sup: 'v_rea_sup', valor_sup: '1', orden: 1 }
             ]
         };
     });
 
-    describe('Casos de Realizadas (rea)', () => {
+    describe('Casos de Realizadas y No Realizadas (rea / no_rea)', () => {
         it('encuentra una encuesta realizada en la unidad principal', () => {
             const respuestas = { v_rea: '1' } as any;
             const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.reas!, 'rea');
@@ -48,23 +48,49 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
             });
         });
 
-        it('encuentra una encuesta no realizada (es_rea: false) en la unidad principal', () => {
+        it('encuentra otra encuesta realizada con código 2 en la unidad principal', () => {
             const respuestas = { v_rea: '2' } as any;
             const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.reas!, 'rea');
 
             assert.deepStrictEqual(resultado, {
                 codigo: '2',
-                esResultado: false
+                esResultado: true // Corregido: si encuentra código válido, esResultado es true
             });
         });
 
-        it('devuelve null y false si no coincide ninguna regla de rea', () => {
+        it('encuentra una no-rea en la unidad principal', () => {
+            const respuestas = { v_norea: '1' } as any;
+            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.noReas!, 'no_rea');
+
+            assert.deepStrictEqual(resultado, {
+                codigo: 'NR1',
+                esResultado: true
+            });
+        });
+
+        it('devuelve null y false si no coincide ninguna regla', () => {
             const respuestas = { v_rea: '99' } as any;
             const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.reas!, 'rea');
 
             assert.deepStrictEqual(resultado, {
                 codigo: null,
                 esResultado: false
+            });
+        });
+        it('respeta el orden de prioridad independientemente de cómo venga ordenada la lista', () => {
+            const respuestas = { v_rea: '1' } as any; // Ambas cumplirían, pero el orden 1 debe ganar
+
+            // Pasamos la lista deliberadamente desordenada (orden 2 primero, orden 1 después)
+            const listaDesordenada = [
+                { rea: '2', descripcion: 'Incompleta', variable: 'v_rea', valor: '1', orden: 2 },
+                { rea: '1', descripcion: 'Completa', variable: 'v_rea', valor: '1', orden: 1 }
+            ];
+
+            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, listaDesordenada as any, 'rea');
+
+            assert.deepStrictEqual(resultado, {
+                codigo: '1', // Debe ganar el orden 1, no el 2
+                esResultado: true
             });
         });
     });
@@ -91,11 +117,11 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
         });
     });
 
-    describe('Búsqueda recursiva en unidades hijas (ej. persona dentro de vivienda)', () => {
+    describe('Búsqueda recursiva en unidades hijas (ej. hogar dentro de vivienda)', () => {
         it('encuentra una no-rea dentro de un array de una unidad hija', () => {
             const respuestas = {
                 vivienda_id: 1,
-                persona: [
+                hogares: [
                     { id: 1, v_norea: '2' },
                     { id: 2, v_norea: '1' }
                 ]
@@ -112,9 +138,23 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
         it('devuelve nulo si la unidad hija no tiene respuestas válidas', () => {
             const respuestas = {
                 vivienda_id: 1,
-                persona: [
+                hogares: [
                     { id: 1, v_norea: '9' }
                 ]
+            } as any;
+
+            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.noReas!, 'no_rea');
+
+            assert.deepStrictEqual(resultado, {
+                codigo: null,
+                esResultado: false
+            });
+        });
+
+        it('maneja de forma segura si la unidad hija viene vacía o no es un array', () => {
+            const respuestas = {
+                vivienda_id: 1,
+                hogares: null
             } as any;
 
             const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.noReas!, 'no_rea');

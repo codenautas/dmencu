@@ -396,6 +396,7 @@ export type TareasEstructura = {
 export type TipoCondicion = 'no_rea' | 'no_rea_sup' | 'rea' | 'rea_sup';
 
 export type NoRea = {
+    operativo: string
     no_rea: string;
     descripcion: string;
     grupo: string;
@@ -406,6 +407,7 @@ export type NoRea = {
 };
 
 export type NoReaSup = {
+    operativo: string
     no_rea_sup: string;
     desc_norea_sup: string;
     grupo_sup: string;
@@ -416,6 +418,7 @@ export type NoReaSup = {
 };
 
 export type Rea = {
+    operativo: string
     rea: string;
     descripcion: string;
     variable: string;
@@ -424,6 +427,7 @@ export type Rea = {
 };
 
 export type ReaSup = {
+    operativo: string
     rea_sup: string;
     descripcion: string;
     variable_sup: string;
@@ -580,7 +584,7 @@ export type ConfiguracionHabilitarBotonFormularioForm = {
 }
 
 export function toPlainForPk(forPk: ForPk): PlainForPk {
-    return JSON.stringify(forPk);
+    return JSON.stringify(forPk) as PlainForPk;
 }
 
 export var iterator: <T>(o: ObjetoNumeradoOArray<T>) => Iterable<T> = LikeAr.iterator

@@ -30,20 +30,16 @@ const estrategiasCondicion: {
     }
 };
 
-// Una única función genérica que reemplaza todas las sobrecargas
-export function buscarReaNoReaEnRespuestas<T extends TipoCondicion>(
+function buscarRecursivo<T extends TipoCondicion>(
     unidadAnalisis: UnidadAnalisis,
     respuestas: Respuestas,
-    lista: MapeoTipoItem[T][],
+    listaOrdenada: MapeoTipoItem[T][],
     tipo: T
 ): { codigo: string | null; esResultado: boolean } {
 
     const estrategia = estrategiasCondicion[tipo];
-    if (!estrategia) {
-        throw new Error(`Tipo de condición desconocido: ${tipo}`);
-    }
 
-    for (const item of lista) {
+    for (const item of listaOrdenada) {
         const rvariable = estrategia.getVariable(item);
         const rvalor = estrategia.getValor(item);
 
@@ -55,13 +51,12 @@ export function buscarReaNoReaEnRespuestas<T extends TipoCondicion>(
         }
     }
 
-    // Búsqueda recursiva en unidades hijas de forma nativa
     const hijas = likeAr(unidadAnalisis?.hijas).array();
     for (const uaHija of hijas) {
         const nombreUaHija = uaHija?.unidad_analisis;
         if (nombreUaHija && Array.isArray(respuestas[nombreUaHija])) {
             for (const respuestasHija of respuestas[nombreUaHija]) {
-                const result = buscarReaNoReaEnRespuestas(uaHija, respuestasHija, lista, tipo);
+                const result = buscarRecursivo(uaHija, respuestasHija, listaOrdenada, tipo);
                 if (result.esResultado || result.codigo !== null) {
                     return result;
                 }
@@ -70,4 +65,19 @@ export function buscarReaNoReaEnRespuestas<T extends TipoCondicion>(
     }
 
     return { codigo: null, esResultado: false };
+}
+
+export function buscarReaNoReaEnRespuestas<T extends TipoCondicion>(
+    unidadAnalisis: UnidadAnalisis,
+    respuestas: Respuestas,
+    lista: MapeoTipoItem[T][],
+    tipo: T
+): { codigo: string | null; esResultado: boolean } {
+
+    if (!estrategiasCondicion[tipo]) {
+        throw new Error(`Tipo de condición desconocido: ${tipo}`);
+    }
+
+    const listaOrdenada = [...lista].sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+    return buscarRecursivo(unidadAnalisis, respuestas, listaOrdenada, tipo);
 }

@@ -4,7 +4,7 @@ import { ProcedureDef, TableDefinition, Client, TableDefinitions } from "./types
 import { ProcedureContext, CoreFunctionParameters, ForeignKey } from "meta-enc";
 import * as likeAr from "like-ar";
 export * from "./types-dmencu";
-import { IdUnidadAnalisis, UnidadAnalisis, EstadoAccion, IdEnc, IdTarea, RespuestasRaiz, IdOperativo, IdCarga, ModoDM } from "../unlogged/tipos";
+import { IdUnidadAnalisis, UnidadAnalisis, EstadoAccion, IdEnc, IdTarea, RespuestasRaiz, IdOperativo, IdCarga, ModoDM, Rea, NoRea, NoReaSup, ReaSup } from "../unlogged/tipos";
 
 import { OperativoGenerator } from "procesamiento";
 
@@ -612,10 +612,10 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 conReaHogar,
                 configSorteo,
                 habilitacionBotonFormulario,
-                noReas: be.caches.tableContent.no_rea,
-                noReasSup: be.caches.tableContent.no_rea_sup,
-                reas: be.caches.tableContent.rea,
-                reasSup: be.caches.tableContent.rea_sup,
+                noReas: (be.caches.tableContent.no_rea || []).filter((noRea:NoRea) => noRea.operativo==parameters.operativo),
+                noReasSup: (be.caches.tableContent.no_rea_sup || []).filter((noReaSup:NoReaSup) => noReaSup.operativo==parameters.operativo),
+                reas: (be.caches.tableContent.rea || []).filter((rea:Rea) => rea.operativo==parameters.operativo), 
+                reasSup: (be.caches.tableContent.rea_sup || []).filter((reaSup:ReaSup) => reaSup.operativo==parameters.operativo),
                 defaultInformacionHdr,
                 uaPpal: unidad_analisis,
                 semanas,
