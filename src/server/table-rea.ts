@@ -15,6 +15,9 @@ export function rea(context:TableContext):TableDefinition {
             {name:'descripcion'             , typeName:'text'},
             {name:'variable'                , typeName:'text'},
             {name:'valor'                   , typeName:'text'},
+            //rol/tarea
+            //positiva/negativa
+            //condicion?
         ],
         primaryKey:['operativo', 'rea'],
         foreignKeys:[{references:'operativos', fields:['operativo']}],

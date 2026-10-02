@@ -20,19 +20,21 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
             ]
         };
 
+        const operativo = 'dmencu';
+
         estructuraMock = {
             noReas: [
-                { no_rea: 'NR1', descripcion: 'Ausente', grupo: 'G1', variable: 'v_norea', valor: '1', grupo0: '0', orden: 1 }
+                { operativo, no_rea: 'NR1', descripcion: 'Ausente', grupo: 'G1', variable: 'v_norea', valor: '1', grupo0: '0', orden: 1 }
             ],
             noReasSup: [
-                { no_rea_sup: 'NRS1', desc_norea_sup: 'Ausente Sup', grupo_sup: 'GS1', variable_sup: 'v_norea_sup', valor_sup: '1', grupo0_sup: '0', orden: 1 }
+                { operativo, no_rea_sup: 'NRS1', desc_norea_sup: 'Ausente Sup', grupo_sup: 'GS1', variable_sup: 'v_norea_sup', valor_sup: '1', grupo0_sup: '0', orden: 1 }
             ],
             reas: [
-                { rea: '1', descripcion: 'Completa', variable: 'v_rea', valor: '1', orden: 1 },
-                { rea: '2', descripcion: 'Incompleta', variable: 'v_rea', valor: '2', orden: 2 }
+                { operativo, rea: '1', descripcion: 'Completa', variable: 'v_rea', valor: '1', orden: 1 },
+                { operativo, rea: '2', descripcion: 'Incompleta', variable: 'v_rea', valor: '2', orden: 2 }
             ],
             reasSup: [
-                { rea_sup: '1', descripcion: 'Completa Sup', variable_sup: 'v_rea_sup', valor_sup: '1', orden: 1 }
+                { operativo, rea_sup: '1', descripcion: 'Completa Sup', variable_sup: 'v_rea_sup', valor_sup: '1', orden: 1 }
             ]
         };
     });
