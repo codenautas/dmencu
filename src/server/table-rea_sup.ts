@@ -15,9 +15,14 @@ export function rea_sup(context:TableContext):TableDefinition {
             {name:'descripcion'                     , typeName:'text'},
             {name:'variable_sup'                    , typeName:'text'},
             {name:'valor_sup'                       , typeName:'text'},
+            {name:'es_positiva'                     , typeName:'boolean', nullable:false, defaultDbValue:'true'},
+            {name:'tarea'                           , typeName:'text'},
         ],
         primaryKey:['operativo','rea_sup'],
-        foreignKeys: [{ references: 'operativos', fields: ['operativo'] }],
+        foreignKeys: [
+            { references: 'operativos', fields: ['operativo'] },
+            { references: 'tareas', fields: ['operativo', 'tarea'] }
+        ],
         sortColumns: [{ column: "operativo", order: 1 }, { column: "orden", order: 1 }, { column: "rea_sup", order: 1 }],
     };
 }

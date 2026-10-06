@@ -30,11 +30,20 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
                 { operativo, no_rea_sup: 'NRS1', desc_norea_sup: 'Ausente Sup', grupo_sup: 'GS1', variable_sup: 'v_norea_sup', valor_sup: '1', grupo0_sup: '0', orden: 1 }
             ],
             reas: [
-                { operativo, rea: '1', descripcion: 'Completa', variable: 'v_rea', valor: '1', orden: 1 },
-                { operativo, rea: '2', descripcion: 'Incompleta', variable: 'v_rea', valor: '2', orden: 2 }
+                {
+                    operativo, rea: '1', descripcion: 'Completa', variable: 'v_rea', valor: '1', orden: 1,
+                    es_positiva: true, tarea: 'encu'
+                },
+                {
+                    operativo, rea: '2', descripcion: 'Incompleta', variable: 'v_rea', valor: '2', orden: 2,
+                    es_positiva: false, tarea: 'encu'
+                }
             ],
             reasSup: [
-                { operativo, rea_sup: '1', descripcion: 'Completa Sup', variable_sup: 'v_rea_sup', valor_sup: '1', orden: 1 }
+                {
+                    operativo, rea_sup: '1', descripcion: 'Completa Sup', variable_sup: 'v_rea_sup', valor_sup: '1', orden: 1,
+                    es_positiva: false, tarea: null
+                }
             ]
         };
     });
@@ -42,7 +51,7 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
     describe('Casos de Realizadas y No Realizadas (rea / no_rea)', () => {
         it('encuentra una encuesta realizada en la unidad principal', () => {
             const respuestas = { v_rea: '1' } as any;
-            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.reas!, 'rea');
+            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.reas!, 'rea', 'encu');
 
             assert.deepStrictEqual(resultado, {
                 codigo: '1',
@@ -52,7 +61,7 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
 
         it('encuentra otra encuesta realizada con código 2 en la unidad principal', () => {
             const respuestas = { v_rea: '2' } as any;
-            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.reas!, 'rea');
+            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.reas!, 'rea', 'encu');
 
             assert.deepStrictEqual(resultado, {
                 codigo: '2',
@@ -62,7 +71,7 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
 
         it('encuentra una no-rea en la unidad principal', () => {
             const respuestas = { v_norea: '1' } as any;
-            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.noReas!, 'no_rea');
+            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.noReas!, 'no_rea', 'encu');
 
             assert.deepStrictEqual(resultado, {
                 codigo: 'NR1',
@@ -72,7 +81,7 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
 
         it('devuelve null y false si no coincide ninguna regla', () => {
             const respuestas = { v_rea: '99' } as any;
-            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.reas!, 'rea');
+            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.reas!, 'rea', 'encu');
 
             assert.deepStrictEqual(resultado, {
                 codigo: null,
@@ -88,11 +97,51 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
                 { rea: '1', descripcion: 'Completa', variable: 'v_rea', valor: '1', orden: 1 }
             ];
 
-            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, listaDesordenada as any, 'rea');
+            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, listaDesordenada as any, 'rea', 'encu');
 
             assert.deepStrictEqual(resultado, {
                 codigo: '1', // Debe ganar el orden 1, no el 2
                 esResultado: true
+            });
+        });
+
+        it('respeta la propiedad es_positiva devolviendo false cuando es una rea negativa', () => {
+            const respuestas = { v_rea: '0' } as any;
+            const reasConNegativa = [
+                { operativo: 'dmencu', rea: '0', descripcion: 'No Realizada', variable: 'v_rea', valor: '0', orden: 1, es_positiva: false }
+            ];
+
+            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, reasConNegativa as any, 'rea', 'encu');
+
+            assert.deepStrictEqual(resultado, {
+                codigo: '0',
+                esResultado: false
+            });
+        });
+
+        it('filtra correctamente las reglas según la tarea especificada', () => {
+            const respuestas = { v_rea: '1' } as any;
+            const reasConTarea = [
+                { operativo: 'dmencu', rea: '1', descripcion: 'Encu', variable: 'v_rea', valor: '1', orden: 1, tarea: 'encu' },
+                { operativo: 'dmencu', rea: '2', descripcion: 'Recu', variable: 'v_rea', valor: '1', orden: 2, tarea: 'encu' }
+            ];
+
+            const resultadoEncu = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, reasConTarea as any, 'rea', 'encu');
+            assert.deepStrictEqual(resultadoEncu, {
+                codigo: '1',
+                esResultado: true
+            });
+
+            const resultadoRecu = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, reasConTarea as any, 'rea', 'recu');
+            assert.deepStrictEqual(resultadoRecu, {
+                codigo: '2',
+                esResultado: true
+            });
+
+            const resultadoSupe = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, reasConTarea as any, 'rea', 'supe');
+            assert.deepStrictEqual(resultadoSupe, {
+                codigo: null,
+                esResultado: false
             });
         });
     });
@@ -100,7 +149,7 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
     describe('Casos de Supervisión (rea_sup y no_rea_sup)', () => {
         it('encuentra una supervisión realizada correctamente', () => {
             const respuestas = { v_rea_sup: '1' } as any;
-            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.reasSup!, 'rea_sup');
+            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.reasSup!, 'rea_sup', 'encu');
 
             assert.deepStrictEqual(resultado, {
                 codigo: '1',
@@ -110,7 +159,7 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
 
         it('encuentra una no-rea de supervisión', () => {
             const respuestas = { v_norea_sup: '1' } as any;
-            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.noReasSup!, 'no_rea_sup');
+            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.noReasSup!, 'no_rea_sup', 'encu');
 
             assert.deepStrictEqual(resultado, {
                 codigo: 'NRS1',
@@ -129,7 +178,7 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
                 ]
             } as any;
 
-            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.noReas!, 'no_rea');
+            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.noReas!, 'no_rea', 'encu');
 
             assert.deepStrictEqual(resultado, {
                 codigo: 'NR1',
@@ -145,7 +194,7 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
                 ]
             } as any;
 
-            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.noReas!, 'no_rea');
+            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.noReas!, 'no_rea', 'encu');
 
             assert.deepStrictEqual(resultado, {
                 codigo: null,
@@ -159,7 +208,7 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
                 hogares: null
             } as any;
 
-            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.noReas!, 'no_rea');
+            const resultado = buscarReaNoReaEnRespuestas(uaPrincipalMock, respuestas, estructuraMock.noReas!, 'no_rea', 'encu');
 
             assert.deepStrictEqual(resultado, {
                 codigo: null,
@@ -167,5 +216,4 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
             });
         });
     });
-
 });

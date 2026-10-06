@@ -32,7 +32,9 @@ import {
 
 import { getFormRenderer } from "./render-config";
 import { adaptarEstructura } from "./redux-formulario";
-import { buscarReaNoReaEnRespuestas } from "./calculos-encuesta";
+import {
+    buscarReaNoReaEnRespuestas
+} from "./calculos-encuesta";
 
 var comodines = {} as {
     calcularComodines?: (forPk: ForPk) => void
@@ -887,34 +889,41 @@ export const getFuncionValorar = getFuncionCompilada(funcionesValorar);
 var rowValidator = getRowValidator<IdVariable, Valor, IdFin>({ getFuncionHabilitar, getFuncionValorar })
 
 export var defOperativo: DefOperativo = {
-    esNoRea: (respuestas: Respuestas) => {
+    esNoRea: (respuestas: Respuestas, tarea: string) => {
         const estructura = getEstructura();
         const uaPrincipal = likeAr(estructura.unidades_analisis).find((ua) => !ua.padre);
-        const { esRea } = defOperativo.esRealizada(respuestas);
-
-        let codNoRea: string | null = null;
+        
+        let codNoRea: number | null = null;
         let esNoRea = false;
-
+        
+        const { codRea, esRea } = defOperativo.esRealizada(respuestas, tarea);
+        
         if (!esRea) {
-            const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReas, 'no_rea');
-            codNoRea = res.codigo as string | null;
-            esNoRea = res.esResultado;
+            const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReas, 'no_rea', tarea);
+            if(res.codigo !== null) {
+                codNoRea = res.codigo;
+                esNoRea = res.resultado;
+            }
         }
         return { codNoRea, esNoRea };
     },
 
-    esNoReaSup: (respuestas: Respuestas) => {
+    esNoReaSup: (respuestas: Respuestas, tarea: string) => {
         const estructura = getEstructura();
         const uaPrincipal = likeAr(estructura.unidades_analisis).find((ua) => !ua.padre);
 
-        const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReasSup, 'no_rea_sup');
-        return {
-            codNoReaSup: res.codigo as string | null,
-            esNoReaSup: res.esResultado
-        };
+        let codNoReaSup: number | null = null;
+        let esNoReaSup = false;
+
+        const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReasSup, 'no_rea_sup', tarea);
+        if (res.codigo !== null) {
+            codNoReaSup = res.codigo;
+            esNoReaSup = res.resultado;
+        }
+        return { codNoReaSup, esNoReaSup };
     },
 
-    esRealizada: (respuestas: Respuestas) => {
+    esRealizada: (respuestas: Respuestas, tarea: string) => {
         const estructura = getEstructura();
         const uaPrincipal = likeAr(estructura.unidades_analisis).find((ua) => !ua.padre);
 
@@ -922,14 +931,16 @@ export var defOperativo: DefOperativo = {
         let esRea = false;
 
         if (estructura.reas && estructura.reas.length > 0) {
-            const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.reas, 'rea');
-            codRea = res.codigo !== null ? Number(res.codigo) : null;
-            esRea = res.esResultado;
+            const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.reas, 'rea', tarea);
+            if(res.codigo !== null) {
+                codRea = res.codigo;
+                esRea = res.resultado;
+            }
         }
         return { codRea, esRea };
     },
 
-    esRealizadaSup: (respuestas: Respuestas) => {
+    esRealizadaSup: (respuestas: Respuestas, tarea: string) => {
         const estructura = getEstructura();
         const uaPrincipal = likeAr(estructura.unidades_analisis).find((ua) => !ua.padre);
 
@@ -937,9 +948,11 @@ export var defOperativo: DefOperativo = {
         let esReaSup = false;
 
         if (estructura.reasSup && estructura.reasSup.length > 0) {
-            const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.reasSup, 'rea_sup');
-            codReaSup = res.codigo !== null ? Number(res.codigo) : null;
-            esReaSup = res.esResultado;
+            const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.reasSup, 'rea_sup', tarea);
+            if(res.codigo !== null) {
+                codReaSup = res.codigo;
+                esReaSup = res.resultado;
+            }
         }
         return { codReaSup, esReaSup };
     },
@@ -951,10 +964,10 @@ export var defOperativo: DefOperativo = {
 
 // 1. Sobrecarga para la forma antigua (4 funciones posicionales)
 export function setCalculoReaNoRea(
-    esNoRea: (respuestas: Respuestas) => { codNoRea: string | null, esNoRea: boolean },
-    esNoReaSup: (respuestas: Respuestas) => { codNoReaSup: string | null, esNoReaSup: boolean },
-    esRealizada: (respuestas: Respuestas) => { codRea: number | null, esRea: boolean },
-    esRealizadaSup: (respuestas: Respuestas) => { codReaSup: number | null, esReaSup: boolean }
+    esNoRea: (respuestas: Respuestas, tarea: string) => { codNoRea: string | null, esNoRea: boolean },
+    esNoReaSup: (respuestas: Respuestas, tarea: string) => { codNoReaSup: string | null, esNoReaSup: boolean },
+    esRealizada: (respuestas: Respuestas, tarea: string) => { codRea: number | null, esRea: boolean },
+    esRealizadaSup: (respuestas: Respuestas, tarea: string) => { codReaSup: number | null, esReaSup: boolean }
 ): void;
 
 // 2. Sobrecarga para la forma nueva (objeto parcial)
@@ -965,11 +978,11 @@ export function setCalculoReaNoRea(
 // 3. Implementación unificada
 export function setCalculoReaNoRea(
     esNoReaOrFunciones:
-        | ((respuestas: Respuestas) => { codNoRea: string | null, esNoRea: boolean })
+        | ((respuestas: Respuestas, tarea: string) => { codNoRea: string | null, esNoRea: boolean })
         | Partial<FuncionesCalculoReaNoRea>,
-    _esNoReaSup?: (respuestas: Respuestas) => { codNoReaSup: string | null, esNoReaSup: boolean },
-    _esRealizada?: (respuestas: Respuestas) => { codRea: number | null, esRea: boolean },
-    _esRealizadaSup?: (respuestas: Respuestas) => { codReaSup: number | null, esReaSup: boolean }
+    _esNoReaSup?: (respuestas: Respuestas, tarea: string) => { codNoReaSup: string | null, esNoReaSup: boolean },
+    _esRealizada?: (respuestas: Respuestas, tarea: string) => { codRea: number | null, esRea: boolean },
+    _esRealizadaSup?: (respuestas: Respuestas, tarea: string) => { codReaSup: number | null, esReaSup: boolean }
 ): void {
     if (typeof esNoReaOrFunciones === 'function') {
         console.warn("setCalculoReaNoRea: la forma antigua está deprecada, se ignoran sobrescrituras, usar setCalculoReaNoRea({ esNoRea, esNoReaSup, esRealizada, esRealizadaSup })");
@@ -1368,9 +1381,9 @@ export var calcularPermiteBorrarBF = (configSorteoFormulario: ConfiguracionSorte
 type ResultadoResumen = {
     resumenEstado: ResumenEstado,
     resumenEstadoSup: ResumenEstado,
-    codRea: number | null,
+    codRea: string | null,
     codNoRea: string | null,
-    codReaSup: number | null
+    codReaSup: string | null
     codNoReaSup: string | null,
 }
 
@@ -1379,10 +1392,11 @@ export function calcularResumenVivienda(
     feedbackRowValidator: { [formulario in PlainForPk]: FormStructureState<IdVariable, Valor, IdFin> },
     respuestas: Respuestas
 ): ResultadoResumen {
-    var { codRea, esRea } = defOperativo.esRealizada(respuestas)
-    var { codNoRea, esNoRea } = defOperativo.esNoRea(respuestas)
-    var { codReaSup, esReaSup } = defOperativo.esRealizadaSup(respuestas)
-    var { codNoReaSup, esNoReaSup } = defOperativo.esNoReaSup(respuestas)
+    var tarea = datosByPass.informacionHdr[forPkRaiz[estructura.pkAgregadaUaPpal] as unknown as IdEnc].tarea.tarea;
+    var { codRea, esRea } = defOperativo.esRealizada(respuestas, tarea)
+    var { codNoRea, esNoRea } = defOperativo.esNoRea(respuestas, tarea)
+    var { codReaSup, esReaSup } = defOperativo.esRealizadaSup(respuestas, tarea)
+    var { codNoReaSup, esNoReaSup } = defOperativo.esNoReaSup(respuestas, tarea)
     var formsFeedback = getFormulariosForValuePkRaiz(forPkRaiz[estructura.pkAgregadaUaPpal]);
     var configuracionSorteoFormulario = estructura.configSorteo && estructura.configSorteo[getMainFormForVivienda(forPkRaiz[estructura.pkAgregadaUaPpal])]
     var habilitacionBotonFormulario = estructura.habilitacionBotonFormulario;

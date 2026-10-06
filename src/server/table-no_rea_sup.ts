@@ -11,7 +11,7 @@ export function no_rea_sup(context:TableContext):TableDefinition {
         fields:[
             {name:'operativo'                       , typeName:'text', nullable:false},
             {name:'orden'                           , typeName:'integer', nullable: false, defaultDbValue: '0' },
-            {name:'no_rea_sup'                      , typeName:'text'},
+            {name:'no_rea_sup'                      , typeName:'integer'},
             {name:'desc_norea_sup'                  , typeName:'text'},
             {name:'grupo_sup'                       , typeName:'text'},
             {name:'variable_sup'                    , typeName:'text'},

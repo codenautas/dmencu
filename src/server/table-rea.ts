@@ -11,16 +11,18 @@ export function rea(context:TableContext):TableDefinition {
         fields:[
             {name:'operativo'               , typeName:'text', nullable:false},
             {name:'orden'                   , typeName:'integer', nullable:false, defaultDbValue:'0'},
-            {name:'rea'                     , typeName:'text'},
+            {name:'rea'                     , typeName:'integer'},
             {name:'descripcion'             , typeName:'text'},
             {name:'variable'                , typeName:'text'},
             {name:'valor'                   , typeName:'text'},
-            //rol/tarea
-            //positiva/negativa
-            //condicion?
+            {name:'es_positiva'             , typeName:'boolean', nullable:false, defaultDbValue:'true'},
+            {name:'tarea'                   , typeName:'text'},
         ],
         primaryKey:['operativo', 'rea'],
-        foreignKeys:[{references:'operativos', fields:['operativo']}],
+        foreignKeys:[
+            {references:'operativos', fields:['operativo']},
+            {references:'tareas', fields:['operativo', 'tarea']}
+        ],
         sortColumns: [{ column: "operativo", order: 1 }, { column: "orden", order: 1 }, {column:"rea", order:1}],
     };
 }

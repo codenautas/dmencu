@@ -230,6 +230,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                             console.log('se tocó la estructura', be.caches.timestampEstructura)
                         }
                         if (args[1].table == 'rea' || args[1].table == 'no_rea' || args[1].table == 'rea_sup' || args[1].table == 'no_rea_sup') {
+                            be.caches.timestampEstructura = new Date().getTime();
                             await be.refreshCaches(args[0].client);
                         }
                         return result;

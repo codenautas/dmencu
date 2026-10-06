@@ -397,7 +397,7 @@ export type TipoCondicion = 'no_rea' | 'no_rea_sup' | 'rea' | 'rea_sup';
 
 export type NoRea = {
     operativo: string
-    no_rea: string;
+    no_rea: number;
     descripcion: string;
     grupo: string;
     variable: string;
@@ -408,7 +408,7 @@ export type NoRea = {
 
 export type NoReaSup = {
     operativo: string
-    no_rea_sup: string;
+    no_rea_sup: number;
     desc_norea_sup: string;
     grupo_sup: string;
     variable_sup: string;
@@ -419,20 +419,24 @@ export type NoReaSup = {
 
 export type Rea = {
     operativo: string
-    rea: string;
+    rea: number;
     descripcion: string;
     variable: string;
     valor: string;
     orden: number;
+    es_positiva: boolean;
+    tarea: string | null;
 };
 
 export type ReaSup = {
     operativo: string
-    rea_sup: string;
+    rea_sup: number;
     descripcion: string;
     variable_sup: string;
     valor_sup: string;
     orden: number;
+    es_positiva: boolean;
+    tarea: string | null
 };
 
 // Mapeo de tipos para asociar el string de la condición con su interfaz correspondiente
@@ -485,17 +489,13 @@ export type CasoState = {
 }
 
 export type FuncionesCalculoReaNoRea = {
-  esNoRea: (respuestas: Respuestas) => { codNoRea: string | null; esNoRea: boolean };
-  esNoReaSup: (respuestas: Respuestas) => { codNoReaSup: string | null; esNoReaSup: boolean };
-  esRealizada: (respuestas: Respuestas) => { codRea: number | null; esRea: boolean };
-  esRealizadaSup: (respuestas: Respuestas) => { codReaSup: number | null; esReaSup: boolean };
+  esNoRea: (respuestas: Respuestas, tarea: string) => { codNoRea: number | null; esNoRea: boolean };
+  esNoReaSup: (respuestas: Respuestas, tarea: string) => { codNoReaSup: number | null; esNoReaSup: boolean };
+  esRealizada: (respuestas: Respuestas, tarea: string) => { codRea: number | null; esRea: boolean };
+  esRealizadaSup: (respuestas: Respuestas, tarea: string) => { codReaSup: number | null; esReaSup: boolean };
 };
 
-export type DefOperativo = {
-    esNoRea: (respuestas: Respuestas) => { codNoRea: string | null, esNoRea: boolean },
-    esNoReaSup: (respuestas: Respuestas) => { codNoReaSup: string | null, esNoReaSup: boolean },
-    esRealizada: (respuestas: Respuestas) => { codRea: number | null, esRea: boolean },
-    esRealizadaSup: (respuestas: Respuestas) => { codReaSup: number | null, esReaSup: boolean },
+export type DefOperativo = FuncionesCalculoReaNoRea & {
     UAprincipal: IdUnidadAnalisis,
     defUA: { [i in IdUnidadAnalisis]: { pk: IdVariable, incluidas: IdUnidadAnalisis[], idsFor: IdFormulario[] } },
     defFor: { [f in IdFormulario]: {/*arbolUA:IdUnidadAnalisis[], */ hermano?: true } }

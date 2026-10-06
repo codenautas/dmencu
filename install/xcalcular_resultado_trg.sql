@@ -15,7 +15,7 @@ begin
           when (new.rea=2 and new.norea is not null) then
             (select grupo 
               from no_rea 
-              where new.norea=no_rea::integer
+              where new.norea=no_rea
             )  
           else null 
         end  into vresultado

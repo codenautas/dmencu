@@ -11,7 +11,7 @@ export function no_rea(context:TableContext):TableDefinition {
         fields:[
             {name:'operativo'               , typeName:'text', nullable:false},
             {name:'orden'                   , typeName:'integer', nullable:false, defaultDbValue:'0'},
-            {name:'no_rea'                  , typeName:'text'},
+            {name:'no_rea'                  , typeName:'integer'},
             {name:'descripcion'             , typeName:'text'},
             {name:'grupo'                   , typeName:'text'},
             {name:'variable'                , typeName:'text'},

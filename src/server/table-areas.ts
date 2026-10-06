@@ -26,7 +26,7 @@ from ( select t.operativo, enc, cluster, nrocomuna, clase,
             json_backup, grupo as gru_no_rea
             , bool_or(t.habilitada) thabilitada, string_agg(tt.cargado_dm,'-') ttcargado_dm                             
         from tem t left join tareas_tem tt using(operativo,enc) 
-            left join no_rea y on y.no_rea::integer=t.norea
+            left join no_rea y on y.no_rea=t.norea
         where ${filter}    
         group by  1,2,3,4,5,6,7,8,9,10,11,12,13,14
 ) tem
