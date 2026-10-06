@@ -265,16 +265,24 @@ export type RespuestaLasUA = {
     [ua in IdUnidadAnalisis]: ObjetoNumeradoOArray<Respuestas>
 }
 
+export type codReaNoRea = {
+    codRea: number | null,
+    codNoRea: number | null,
+    codReaSup: number | null,
+    codNoReaSup: number | null,
+}
+
+
+
+export type ResultadoResumen = codReaNoRea & {
+    resumenEstado: ResumenEstado,
+    resumenEstadoSup: ResumenEstado,
+}
+
 export type Respuestas = RespuestasUnaUA & RespuestaLasUA
 
-export type RespuestasRaiz = Respuestas & {
-    resumenEstado: ResumenEstado
-    resumenEstadoSup: ResumenEstado
+export type RespuestasRaiz = Respuestas & ResultadoResumen & {
     $dirty: boolean
-    codNoRea: string | null
-    codRea: number | null
-    codNoReaSup: string | null
-    codReaSup: number | null
 }
 
 /*
@@ -488,11 +496,17 @@ export type CasoState = {
     }
 }
 
+type ResultadoFuncion<K extends keyof codReaNoRea, B extends string> = {
+    [P in K]: codReaNoRea[K];
+} & {
+    [P in B]: boolean;
+};
+
 export type FuncionesCalculoReaNoRea = {
-  esNoRea: (respuestas: Respuestas, tarea: string) => { codNoRea: number | null; esNoRea: boolean };
-  esNoReaSup: (respuestas: Respuestas, tarea: string) => { codNoReaSup: number | null; esNoReaSup: boolean };
-  esRealizada: (respuestas: Respuestas, tarea: string) => { codRea: number | null; esRea: boolean };
-  esRealizadaSup: (respuestas: Respuestas, tarea: string) => { codReaSup: number | null; esReaSup: boolean };
+  esNoRea: (respuestas: Respuestas, tarea: string) => ResultadoFuncion<'codNoRea', 'esNoRea'>;
+  esNoReaSup: (respuestas: Respuestas, tarea: string) => ResultadoFuncion<'codNoReaSup', 'esNoReaSup'>;
+  esRealizada: (respuestas: Respuestas, tarea: string) => ResultadoFuncion<'codRea', 'esRea'>;
+  esRealizadaSup: (respuestas: Respuestas, tarea: string) => ResultadoFuncion<'codReaSup', 'esReaSup'>;
 };
 
 export type DefOperativo = FuncionesCalculoReaNoRea & {

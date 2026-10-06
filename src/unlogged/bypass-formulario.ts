@@ -28,6 +28,7 @@ import {
     CampoPkRaiz,
     ValuePkRaiz,
     FuncionesCalculoReaNoRea,
+    ResultadoResumen,
 } from "./tipos";
 
 import { getFormRenderer } from "./render-config";
@@ -962,12 +963,13 @@ export var defOperativo: DefOperativo = {
     defFor: {} as { [f in IdFormulario]: { hermano?: true } }
 };
 
+
 // 1. Sobrecarga para la forma antigua (4 funciones posicionales)
 export function setCalculoReaNoRea(
-    esNoRea: (respuestas: Respuestas, tarea: string) => { codNoRea: string | null, esNoRea: boolean },
-    esNoReaSup: (respuestas: Respuestas, tarea: string) => { codNoReaSup: string | null, esNoReaSup: boolean },
-    esRealizada: (respuestas: Respuestas, tarea: string) => { codRea: number | null, esRea: boolean },
-    esRealizadaSup: (respuestas: Respuestas, tarea: string) => { codReaSup: number | null, esReaSup: boolean }
+    esNoRea: FuncionesCalculoReaNoRea['esNoRea'],
+    esNoReaSup: FuncionesCalculoReaNoRea['esNoReaSup'],
+    esRealizada: FuncionesCalculoReaNoRea['esRealizada'],
+    esRealizadaSup: FuncionesCalculoReaNoRea['esRealizadaSup']
 ): void;
 
 // 2. Sobrecarga para la forma nueva (objeto parcial)
@@ -978,11 +980,11 @@ export function setCalculoReaNoRea(
 // 3. Implementación unificada
 export function setCalculoReaNoRea(
     esNoReaOrFunciones:
-        | ((respuestas: Respuestas, tarea: string) => { codNoRea: string | null, esNoRea: boolean })
+        | ((respuestas: Respuestas, tarea: string) => FuncionesCalculoReaNoRea['esNoRea'])
         | Partial<FuncionesCalculoReaNoRea>,
-    _esNoReaSup?: (respuestas: Respuestas, tarea: string) => { codNoReaSup: string | null, esNoReaSup: boolean },
-    _esRealizada?: (respuestas: Respuestas, tarea: string) => { codRea: number | null, esRea: boolean },
-    _esRealizadaSup?: (respuestas: Respuestas, tarea: string) => { codReaSup: number | null, esReaSup: boolean }
+    _esNoReaSup?: (respuestas: Respuestas, tarea: string) => FuncionesCalculoReaNoRea['esNoReaSup'],
+    _esRealizada?: (respuestas: Respuestas, tarea: string) => FuncionesCalculoReaNoRea['esRealizada'],
+    _esRealizadaSup?: (respuestas: Respuestas, tarea: string) => FuncionesCalculoReaNoRea['esRealizadaSup']
 ): void {
     if (typeof esNoReaOrFunciones === 'function') {
         console.warn("setCalculoReaNoRea: la forma antigua está deprecada, se ignoran sobrescrituras, usar setCalculoReaNoRea({ esNoRea, esNoReaSup, esRealizada, esRealizadaSup })");
@@ -1377,15 +1379,6 @@ export var calcularDisabledBF = (
 export var calcularPermiteBorrarBF = (configSorteoFormulario: ConfiguracionSorteoFormulario | null, formulario: IdFormulario) =>
     !(configSorteoFormulario &&
         configSorteoFormulario.id_formulario_individual == formulario)
-
-type ResultadoResumen = {
-    resumenEstado: ResumenEstado,
-    resumenEstadoSup: ResumenEstado,
-    codRea: string | null,
-    codNoRea: string | null,
-    codReaSup: string | null
-    codNoReaSup: string | null,
-}
 
 export function calcularResumenVivienda(
     forPkRaiz: ForPkRaiz,
