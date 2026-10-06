@@ -265,16 +265,14 @@ export type RespuestaLasUA = {
     [ua in IdUnidadAnalisis]: ObjetoNumeradoOArray<Respuestas>
 }
 
-export type codReaNoRea = {
+export type CodReaNoRea = {
     codRea: number | null,
     codNoRea: number | null,
     codReaSup: number | null,
     codNoReaSup: number | null,
 }
 
-
-
-export type ResultadoResumen = codReaNoRea & {
+export type ResultadoResumen = CodReaNoRea & {
     resumenEstado: ResumenEstado,
     resumenEstadoSup: ResumenEstado,
 }
@@ -496,17 +494,17 @@ export type CasoState = {
     }
 }
 
-type ResultadoFuncion<K extends keyof codReaNoRea, B extends string> = {
-    [P in K]: codReaNoRea[K];
+export type ResultadoReaNoRea<K extends keyof CodReaNoRea, B extends string> = {
+    [P in K]: CodReaNoRea[K];
 } & {
     [P in B]: boolean;
 };
 
 export type FuncionesCalculoReaNoRea = {
-  esNoRea: (respuestas: Respuestas, tarea: string) => ResultadoFuncion<'codNoRea', 'esNoRea'>;
-  esNoReaSup: (respuestas: Respuestas, tarea: string) => ResultadoFuncion<'codNoReaSup', 'esNoReaSup'>;
-  esRealizada: (respuestas: Respuestas, tarea: string) => ResultadoFuncion<'codRea', 'esRea'>;
-  esRealizadaSup: (respuestas: Respuestas, tarea: string) => ResultadoFuncion<'codReaSup', 'esReaSup'>;
+  esNoRea: (respuestas: Respuestas, tarea: string) => ResultadoReaNoRea<'codNoRea', 'esNoRea'>;
+  esNoReaSup: (respuestas: Respuestas, tarea: string) => ResultadoReaNoRea<'codNoReaSup', 'esNoReaSup'>;
+  esRealizada: (respuestas: Respuestas, tarea: string) => ResultadoReaNoRea<'codRea', 'esRea'>;
+  esRealizadaSup: (respuestas: Respuestas, tarea: string) => ResultadoReaNoRea<'codReaSup', 'esReaSup'>;
 };
 
 export type DefOperativo = FuncionesCalculoReaNoRea & {

@@ -29,6 +29,7 @@ import {
     ValuePkRaiz,
     FuncionesCalculoReaNoRea,
     ResultadoResumen,
+    ResultadoReaNoRea,
 } from "./tipos";
 
 import { getFormRenderer } from "./render-config";
@@ -894,68 +895,76 @@ export var defOperativo: DefOperativo = {
         const estructura = getEstructura();
         const uaPrincipal = likeAr(estructura.unidades_analisis).find((ua) => !ua.padre);
         
-        let codNoRea: number | null = null;
-        let esNoRea = false;
+        let result: ResultadoReaNoRea<'codNoRea', 'esNoRea'> = {
+            codNoRea: null,
+            esNoRea: false
+        }
         
         const { codRea, esRea } = defOperativo.esRealizada(respuestas, tarea);
         
         if (!esRea) {
             const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReas, 'no_rea', tarea);
             if(res.codigo !== null) {
-                codNoRea = res.codigo;
-                esNoRea = res.resultado;
+                result.codNoRea = res.codigo;
+                result.esNoRea = res.resultado;
             }
         }
-        return { codNoRea, esNoRea };
+        return result;
     },
 
     esNoReaSup: (respuestas: Respuestas, tarea: string) => {
         const estructura = getEstructura();
         const uaPrincipal = likeAr(estructura.unidades_analisis).find((ua) => !ua.padre);
 
-        let codNoReaSup: number | null = null;
-        let esNoReaSup = false;
+        let result: ResultadoReaNoRea<'codNoReaSup', 'esNoReaSup'> = {
+            codNoReaSup: null,
+            esNoReaSup: false
+        }
 
         const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReasSup, 'no_rea_sup', tarea);
         if (res.codigo !== null) {
-            codNoReaSup = res.codigo;
-            esNoReaSup = res.resultado;
+            result.codNoReaSup = res.codigo;
+            result.esNoReaSup = res.resultado;
         }
-        return { codNoReaSup, esNoReaSup };
+        return result;
     },
 
     esRealizada: (respuestas: Respuestas, tarea: string) => {
         const estructura = getEstructura();
         const uaPrincipal = likeAr(estructura.unidades_analisis).find((ua) => !ua.padre);
 
-        let codRea: number | null = null;
-        let esRea = false;
+        let result: ResultadoReaNoRea<'codRea', 'esRea'> = {
+            codRea: null,
+            esRea: false
+        }
 
         if (estructura.reas && estructura.reas.length > 0) {
             const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.reas, 'rea', tarea);
             if(res.codigo !== null) {
-                codRea = res.codigo;
-                esRea = res.resultado;
+                result.codRea = res.codigo;
+                result.esRea = res.resultado;
             }
         }
-        return { codRea, esRea };
+        return result;
     },
 
     esRealizadaSup: (respuestas: Respuestas, tarea: string) => {
         const estructura = getEstructura();
         const uaPrincipal = likeAr(estructura.unidades_analisis).find((ua) => !ua.padre);
 
-        let codReaSup: number | null = null;
-        let esReaSup = false;
+        let result: ResultadoReaNoRea<'codReaSup', 'esReaSup'> = {
+            codReaSup: null,
+            esReaSup: false
+        }
 
         if (estructura.reasSup && estructura.reasSup.length > 0) {
             const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.reasSup, 'rea_sup', tarea);
             if(res.codigo !== null) {
-                codReaSup = res.codigo;
-                esReaSup = res.resultado;
+                result.codReaSup = res.codigo;
+                result.esReaSup = res.resultado;
             }
         }
-        return { codReaSup, esReaSup };
+        return result;
     },
 
     UAprincipal: '' as IdUnidadAnalisis,
@@ -980,11 +989,11 @@ export function setCalculoReaNoRea(
 // 3. Implementación unificada
 export function setCalculoReaNoRea(
     esNoReaOrFunciones:
-        | ((respuestas: Respuestas, tarea: string) => FuncionesCalculoReaNoRea['esNoRea'])
+        | FuncionesCalculoReaNoRea['esNoRea']
         | Partial<FuncionesCalculoReaNoRea>,
-    _esNoReaSup?: (respuestas: Respuestas, tarea: string) => FuncionesCalculoReaNoRea['esNoReaSup'],
-    _esRealizada?: (respuestas: Respuestas, tarea: string) => FuncionesCalculoReaNoRea['esRealizada'],
-    _esRealizadaSup?: (respuestas: Respuestas, tarea: string) => FuncionesCalculoReaNoRea['esRealizadaSup']
+    _esNoReaSup?: FuncionesCalculoReaNoRea['esNoReaSup'],
+    _esRealizada?: FuncionesCalculoReaNoRea['esRealizada'],
+    _esRealizadaSup?: FuncionesCalculoReaNoRea['esRealizadaSup']
 ): void {
     if (typeof esNoReaOrFunciones === 'function') {
         console.warn("setCalculoReaNoRea: la forma antigua está deprecada, se ignoran sobrescrituras, usar setCalculoReaNoRea({ esNoRea, esNoReaSup, esRealizada, esRealizadaSup })");
