@@ -633,8 +633,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters<{annio:number, mes:number, lote:number}>){
             var be=context.be;
             const OPERATIVO = await getOperativoActual(context);
-            let row: UnidadAnalisis = await getUAPrincipal(context.client, OPERATIVO);
-            let resultPreguntas = await be.procedure.preguntas_ua_traer.coreFunction(context, row)
+            let uaPpal = await getUAPrincipal(context.client, OPERATIVO);
+            let resultPreguntas = await be.procedure.preguntas_ua_traer.coreFunction(context, uaPpal)
             var contenedorVacio: { [key: string]: any } = {};
             resultPreguntas.forEach(function (defPregunta:any) {
                 contenedorVacio[defPregunta.var_name] = defPregunta.unidad_analisis ? [] : null;

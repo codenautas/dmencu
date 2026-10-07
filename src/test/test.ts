@@ -1,14 +1,24 @@
 "use strict";
 
 import { describe, it } from 'mocha';
+import * as ExpresionParser from 'expre-parser';
+
 import assert = require('node:assert');
 
 import { buscarReaNoReaEnRespuestas, EvaluadorExpresion } from '../unlogged/calculos-encuesta';
+import { helpersCasilleros } from '../unlogged/helpers-casilleros';
 import type { Estructura, NoRea, NoReaSup, Rea, ReaSup, UnidadAnalisis } from '../unlogged/tipos';
 
 // Evaluador simple para tests: compila la expresión JS con new Function
-const evaluarMock: EvaluadorExpresion = (condicionJs, valores) =>
-    (new Function('valores', 'return ' + condicionJs))(valores);
+const evaluarMock: EvaluadorExpresion = (condicionJs, valores) => {
+    var internalFun = new Function('valores', 'helpers', 'return ' + condicionJs);
+    try {
+        var result = internalFun(valores, helpersCasilleros);
+    } catch (err) {
+        throw err;
+    }
+    return result;
+}
 
 const operativo = 'dmencu';
 
@@ -21,25 +31,64 @@ const uaPrincipalMock: UnidadAnalisis = {
     }
 };
 
+var funcionesConocidas: { [k in string]: boolean } = {}
+
+var compiler = new ExpresionParser.Compiler({
+    language: 'js',
+    varWrapper: (var_name: string) => `helpers.null2zero(valores.${var_name})`,
+    funWrapper: (functionName: string) => {
+        if (!funcionesConocidas[functionName]) {
+            funcionesConocidas[functionName] = true;
+        }
+        return `helpers.funs.${functionName}`
+    }
+})
+
+function compilarExpresion(expresion: string) {
+    return compiler.toCode(ExpresionParser.parse(
+        expresion
+            .replace(/\bis distinct from\b/gi, ' <> ')
+            .replace(/!!/gi, ' ')
+    )).replace(/helpers\.funs\.blanco\(helpers.null2zero\(/g, 'helpers.funs.blanco((')
+        .replace(/helpers\.funs\.informado\(helpers.null2zero\(/g, 'helpers.funs.informado((');
+}
 // ---- Fixtures de datos ----
 
 const reasBase: Rea[] = [
-    { operativo, rea: 1, descripcion: 'Completa',   condicion: "valores.v_rea == '1'", orden: 1, es_positiva: true,  tarea: 'encu' },
-    { operativo, rea: 2, descripcion: 'Incompleta', condicion: "valores.v_rea == '2'", orden: 2, es_positiva: false, tarea: 'encu' },
-];
+    { operativo, rea: 1, descripcion: 'Completa',   condicion: "v_rea = 1", orden: 1, es_positiva: true,  tarea: 'encu' },
+    { operativo, rea: 2, descripcion: 'Incompleta', condicion: "v_rea = 2", orden: 2, es_positiva: false, tarea: 'encu' },
+].map((rea)=>{
+    return {
+        ...rea,
+        condicion_js:compilarExpresion(rea.condicion)
+    }
+});
 
 const reasSinTarea: Rea[] = [
-    { operativo, rea: 1, descripcion: 'Global', condicion: "valores.v_rea == '1'", orden: 1, es_positiva: true, tarea: null },
-];
+    { operativo, rea: 1, descripcion: 'Global', condicion: "v_rea = 1", orden: 1, es_positiva: true, tarea: null },
+].map(rea => ({
+    ...rea,
+    condicion_js:compilarExpresion(rea.condicion)
+}));
 
 const reasConMultiplesTareas: Rea[] = [
-    { operativo, rea: 1, descripcion: 'Encu', condicion: "valores.v_rea == '1'", orden: 1, es_positiva: true, tarea: 'encu' },
-    { operativo, rea: 2, descripcion: 'Recu', condicion: "valores.v_rea == '1'", orden: 2, es_positiva: true, tarea: 'recu' },
-];
+    { operativo, rea: 1, descripcion: 'Encu', condicion: "v_rea = 1", orden: 1, es_positiva: true, tarea: 'encu' },
+    { operativo, rea: 2, descripcion: 'Recu', condicion: "v_rea = 1", orden: 2, es_positiva: true, tarea: 'recu' },
+].map(rea => {
+    return {
+        ...rea,
+        condicion_js: compilarExpresion(rea.condicion)
+    }
+});
 
 const reasSup: ReaSup[] = [
-    { operativo, rea_sup: 10, descripcion: 'Sup Completa', condicion: "valores.v_rea_sup == '1'", orden: 1, es_positiva: false, tarea: null },
-];
+    { operativo, rea_sup: 10, descripcion: 'Sup Completa', condicion: "v_rea_sup = 1", orden: 1, es_positiva: false, tarea: null },
+].map(rea => {
+    return {
+        ...rea,
+        condicion_js: compilarExpresion(rea.condicion)
+    }
+});
 
 const noReas: NoRea[] = [
     { operativo, no_rea: 101, descripcion: 'Ausente', grupo: 'G1', variable: 'v_norea', valor: '1', grupo0: '0', orden: 1 },
@@ -78,9 +127,14 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
 
         it('respeta el orden de prioridad aunque la lista llegue desordenada', () => {
             const listaDesordenada: Rea[] = [
-                { operativo, rea: 2, descripcion: 'Segundo', condicion: "valores.v_rea == '1'", orden: 2, es_positiva: false, tarea: null },
-                { operativo, rea: 1, descripcion: 'Primero', condicion: "valores.v_rea == '1'", orden: 1, es_positiva: true,  tarea: null },
-            ];
+                { operativo, rea: 2, descripcion: 'Segundo', condicion: "v_rea = 2", orden: 2, es_positiva: false, tarea: null },
+                { operativo, rea: 1, descripcion: 'Primero', condicion: "v_rea = 1", orden: 1, es_positiva: true,  tarea: null },
+            ].map(rea => {
+                return {
+                    ...rea,
+                    condicion_js:compilarExpresion(rea.condicion)
+                }
+            });
             const resultado = buscarReaNoReaEnRespuestas(
                 uaPrincipalMock, { v_rea: '1' } as any, listaDesordenada, 'rea', 'encu', evaluarMock
             );
@@ -89,8 +143,13 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
 
         it('aplica una condición JS compleja con múltiples variables', () => {
             const reasComplejas: Rea[] = [
-                { operativo, rea: 5, descripcion: 'Doble condición', condicion: "valores.v1 == '1' && valores.v2 == '2'", orden: 1, es_positiva: true, tarea: null },
-            ];
+                { operativo, rea: 5, descripcion: 'Doble condición', condicion: "v1 = 1 and v2 = 2", orden: 1, es_positiva: true, tarea: null },    
+            ].map(rea => {
+                return {
+                    ...rea,
+                    condicion_js:compilarExpresion(rea.condicion)
+                }
+            });
             const resultado = buscarReaNoReaEnRespuestas(
                 uaPrincipalMock, { v1: '1', v2: '2' } as any, reasComplejas, 'rea', 'encu', evaluarMock
             );
