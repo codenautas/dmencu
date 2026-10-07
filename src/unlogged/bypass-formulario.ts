@@ -35,7 +35,8 @@ import {
 import { getFormRenderer } from "./render-config";
 import { adaptarEstructura } from "./redux-formulario";
 import {
-    buscarReaNoReaEnRespuestas
+    buscarReaNoReaEnRespuestas,
+    EvaluadorExpresion
 } from "./calculos-encuesta";
 
 var comodines = {} as {
@@ -887,6 +888,9 @@ export function getFuncionCompilada<T>(conjuntoDeFunciones: { [key: string]: (va
 export const getFuncionHabilitar = getFuncionCompilada(funcionesHabilitar);
 export const getFuncionValorar = getFuncionCompilada(funcionesValorar);
 
+const evaluarExpresionRea: EvaluadorExpresion = (condicionJs, respuestas) =>
+    getFuncionHabilitar(condicionJs)(respuestas);
+
 
 var rowValidator = getRowValidator<IdVariable, Valor, IdFin>({ getFuncionHabilitar, getFuncionValorar })
 
@@ -903,8 +907,8 @@ export var defOperativo: DefOperativo = {
         const { codRea, esRea } = defOperativo.esRealizada(respuestas, tarea);
         
         if (!esRea) {
-            const {codigo, resultado, encontrado} = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReas, 'no_rea', tarea);
-            if(encontrado) {
+            const {codigo, resultado} = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReas, 'no_rea', tarea);
+            if(codigo !== null) {
                 result.codNoRea = codigo;
                 result.esNoRea = resultado;
             }
@@ -921,8 +925,8 @@ export var defOperativo: DefOperativo = {
             esNoReaSup: false
         }
 
-        const {codigo, resultado, encontrado} = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReasSup, 'no_rea_sup', tarea);
-        if (encontrado) {
+        const {codigo, resultado} = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReasSup, 'no_rea_sup', tarea);
+        if (codigo !== null) {
             result.codNoReaSup = codigo;
             result.esNoReaSup = resultado;
         }
@@ -941,8 +945,8 @@ export var defOperativo: DefOperativo = {
         const { codNoRea, esNoRea } = defOperativo.esNoRea(respuestas, tarea);
         
         if (!esNoRea) {
-            const {codigo, resultado, encontrado} = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.reas, 'rea', tarea);
-            if(encontrado) {
+            const {codigo, resultado} = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.reas, 'rea', tarea, evaluarExpresionRea);
+            if(codigo !== null) {
                 result.codRea = codigo;
                 result.esRea = resultado;
             }
@@ -959,8 +963,8 @@ export var defOperativo: DefOperativo = {
             esReaSup: false
         }
 
-        const {codigo, resultado, encontrado} = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.reasSup, 'rea_sup', tarea);
-        if(encontrado) {
+        const {codigo, resultado} = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.reasSup, 'rea_sup', tarea, evaluarExpresionRea);
+        if(codigo !== null) {
             result.codReaSup = codigo;
             result.esReaSup = resultado;
         }

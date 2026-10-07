@@ -427,8 +427,7 @@ export type Rea = {
     operativo: string
     rea: number;
     descripcion: string;
-    variable: string;
-    valor: string;
+    condicion: string;      // expresión JS (misma sintaxis que expresion_habilitar_js)
     orden: number;
     es_positiva: boolean;
     tarea: string | null;
@@ -438,11 +437,10 @@ export type ReaSup = {
     operativo: string
     rea_sup: number;
     descripcion: string;
-    variable_sup: string;
-    valor_sup: string;
+    condicion: string;      // expresión JS (misma sintaxis que expresion_habilitar_js)
     orden: number;
     es_positiva: boolean;
-    tarea: string | null
+    tarea: string | null;
 };
 
 // Mapeo de tipos para asociar el string de la condición con su interfaz correspondiente

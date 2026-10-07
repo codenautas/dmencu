@@ -24,32 +24,62 @@ alter table "no_rea_sup" add constraint "no_rea_sup operativos REL" foreign key 
 
 alter table "no_rea_sup" drop constraint "no_rea_sup<>''";
 alter table "no_rea" drop constraint "no_rea<>''";
-alter table "rea_sup" drop constraint "rea_sup<>''";
-alter table "rea" drop constraint "rea<>''";
 
 ALTER TABLE "no_rea" ALTER COLUMN "no_rea" TYPE integer USING NULLIF(no_rea, '')::integer;
 ALTER TABLE "no_rea_sup" ALTER COLUMN "no_rea_sup" TYPE integer USING NULLIF(no_rea_sup, '')::integer;
 
-ALTER TABLE "rea" ALTER COLUMN "rea" TYPE integer USING NULLIF(rea, '')::integer;
-ALTER TABLE "rea_sup" ALTER COLUMN "rea_sup" TYPE integer USING NULLIF(rea_sup, '')::integer;
+--revisar admin y owner
 
-ALTER TABLE "rea" ADD COLUMN tarea text;
-ALTER TABLE "rea_sup" ADD COLUMN tarea text;
-ALTER TABLE "rea" ADD COLUMN es_positiva boolean;
-ALTER TABLE "rea_sup" ADD COLUMN es_positiva boolean;
+create table "rea" (
+  "operativo" text, 
+  "orden" integer default 0, 
+  "rea" integer, 
+  "descripcion" text, 
+  "condicion" text, 
+  "es_positiva" boolean default true, 
+  "tarea" text
+, primary key ("operativo", "rea")
+);
+grant select, insert, update, delete on "rea" to etoi274_admin;
+grant all on "rea" to etoi274_owner;
 
+create table "rea_sup" (
+  "operativo" text, 
+  "orden" integer default 0, 
+  "rea_sup" text, 
+  "descripcion" text, 
+  "condicion" text, 
+  "es_positiva" boolean default true, 
+  "tarea" text
+, primary key ("operativo", "rea_sup")
+);
+grant select, insert, update, delete on "rea_sup" to etoi274_admin;
+grant all on "rea_sup" to etoi274_owner;
 
-ALTER TABLE "rea" ALTER COLUMN "es_positiva" SET DEFAULT true;
-ALTER TABLE "rea" ALTER COLUMN "es_positiva" SET NOT NULL;
+alter table "rea" add constraint "operativo<>''" check ("operativo"<>'');
+alter table "rea" alter column "operativo" set not null;
+alter table "rea" alter column "orden" set not null;
+alter table "rea" add constraint "descripcion<>''" check ("descripcion"<>'');
+alter table "rea" add constraint "condicion<>''" check ("condicion"<>'');
+alter table "rea" alter column "es_positiva" set not null;
+alter table "rea" add constraint "tarea<>''" check ("tarea"<>'');
+alter table "rea_sup" add constraint "operativo<>''" check ("operativo"<>'');
+alter table "rea_sup" alter column "operativo" set not null;
+alter table "rea_sup" alter column "orden" set not null;
+alter table "rea_sup" add constraint "rea_sup<>''" check ("rea_sup"<>'');
+alter table "rea_sup" add constraint "descripcion<>''" check ("descripcion"<>'');
+alter table "rea_sup" add constraint "condicion<>''" check ("condicion"<>'');
+alter table "rea_sup" alter column "es_positiva" set not null;
+alter table "rea_sup" add constraint "tarea<>''" check ("tarea"<>'');
 
-ALTER TABLE "rea_sup" ALTER COLUMN "es_positiva" SET DEFAULT true;
-ALTER TABLE "rea_sup" ALTER COLUMN "es_positiva" SET NOT NULL;
-
-
+alter table "rea" add constraint "rea operativos REL" foreign key ("operativo") references "operativos" ("operativo")  on update cascade;
 alter table "rea" add constraint "rea tareas REL" foreign key ("operativo", "tarea") references "tareas" ("operativo", "tarea")  on update cascade;
+alter table "rea_sup" add constraint "rea_sup operativos REL" foreign key ("operativo") references "operativos" ("operativo")  on update cascade;
 alter table "rea_sup" add constraint "rea_sup tareas REL" foreign key ("operativo", "tarea") references "tareas" ("operativo", "tarea")  on update cascade;
 
+create index "operativo 4 rea IDX" ON "rea" ("operativo");
 create index "operativo,tarea 4 rea IDX" ON "rea" ("operativo", "tarea");
+create index "operativo 4 rea_sup IDX" ON "rea_sup" ("operativo");
 create index "operativo,tarea 4 rea_sup IDX" ON "rea_sup" ("operativo", "tarea");
 
 CREATE OR REPLACE FUNCTION tarea_cumple_condicion(p_operativo text, p_tarea text, p_estado text, p_enc text, p_condicion text)
