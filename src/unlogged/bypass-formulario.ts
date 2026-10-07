@@ -903,10 +903,10 @@ export var defOperativo: DefOperativo = {
         const { codRea, esRea } = defOperativo.esRealizada(respuestas, tarea);
         
         if (!esRea) {
-            const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReas, 'no_rea', tarea);
-            if(res.codigo !== null) {
-                result.codNoRea = res.codigo;
-                result.esNoRea = res.resultado;
+            const {codigo, resultado, encontrado} = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReas, 'no_rea', tarea);
+            if(encontrado) {
+                result.codNoRea = codigo;
+                result.esNoRea = resultado;
             }
         }
         return result;
@@ -921,10 +921,10 @@ export var defOperativo: DefOperativo = {
             esNoReaSup: false
         }
 
-        const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReasSup, 'no_rea_sup', tarea);
-        if (res.codigo !== null) {
-            result.codNoReaSup = res.codigo;
-            result.esNoReaSup = res.resultado;
+        const {codigo, resultado, encontrado} = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReasSup, 'no_rea_sup', tarea);
+        if (encontrado) {
+            result.codNoReaSup = codigo;
+            result.esNoReaSup = resultado;
         }
         return result;
     },
@@ -937,12 +937,14 @@ export var defOperativo: DefOperativo = {
             codRea: null,
             esRea: false
         }
-
-        if (estructura.reas && estructura.reas.length > 0) {
-            const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.reas, 'rea', tarea);
-            if(res.codigo !== null) {
-                result.codRea = res.codigo;
-                result.esRea = res.resultado;
+        
+        const { codNoRea, esNoRea } = defOperativo.esNoRea(respuestas, tarea);
+        
+        if (!esNoRea) {
+            const {codigo, resultado, encontrado} = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.reas, 'rea', tarea);
+            if(encontrado) {
+                result.codRea = codigo;
+                result.esRea = resultado;
             }
         }
         return result;
@@ -957,13 +959,12 @@ export var defOperativo: DefOperativo = {
             esReaSup: false
         }
 
-        if (estructura.reasSup && estructura.reasSup.length > 0) {
-            const res = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.reasSup, 'rea_sup', tarea);
-            if(res.codigo !== null) {
-                result.codReaSup = res.codigo;
-                result.esReaSup = res.resultado;
-            }
+        const {codigo, resultado, encontrado} = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.reasSup, 'rea_sup', tarea);
+        if(encontrado) {
+            result.codReaSup = codigo;
+            result.esReaSup = resultado;
         }
+      
         return result;
     },
 
