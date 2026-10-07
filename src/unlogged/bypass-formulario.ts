@@ -891,7 +891,6 @@ export const getFuncionValorar = getFuncionCompilada(funcionesValorar);
 const evaluarExpresionRea: EvaluadorExpresion = (condicionJs, respuestas) =>
     getFuncionHabilitar(condicionJs)(respuestas);
 
-
 var rowValidator = getRowValidator<IdVariable, Valor, IdFin>({ getFuncionHabilitar, getFuncionValorar })
 
 export var defOperativo: DefOperativo = {
@@ -942,14 +941,10 @@ export var defOperativo: DefOperativo = {
             esRea: false
         }
         
-        const { codNoRea, esNoRea } = defOperativo.esNoRea(respuestas, tarea);
-        
-        if (!esNoRea) {
-            const {codigo, resultado} = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.reas, 'rea', tarea, evaluarExpresionRea);
-            if(codigo !== null) {
-                result.codRea = codigo;
-                result.esRea = resultado;
-            }
+        const {codigo, resultado} = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.reas, 'rea', tarea, evaluarExpresionRea);
+        if(codigo !== null) {
+            result.codRea = codigo;
+            result.esRea = resultado;
         }
         return result;
     },

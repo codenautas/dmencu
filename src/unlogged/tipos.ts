@@ -427,7 +427,8 @@ export type Rea = {
     operativo: string
     rea: number;
     descripcion: string;
-    condicion: string;      // expresión JS (misma sintaxis que expresion_habilitar_js)
+    condicion: string;
+    condicion_js: string;
     orden: number;
     es_positiva: boolean;
     tarea: string | null;
@@ -437,7 +438,8 @@ export type ReaSup = {
     operativo: string
     rea_sup: number;
     descripcion: string;
-    condicion: string;      // expresión JS (misma sintaxis que expresion_habilitar_js)
+    condicion: string;
+    condicion_js: string;
     orden: number;
     es_positiva: boolean;
     tarea: string | null;

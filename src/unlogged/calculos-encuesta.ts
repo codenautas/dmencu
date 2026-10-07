@@ -14,7 +14,7 @@ const estrategiasCondicion: {
     }
 } = {
     'rea': {
-        getCondicion: (item) => (item as Rea).condicion,
+        getCondicion: (item) => (item as Rea).condicion_js,
         getVariable: () => null,
         getValor: () => null,
         getCodigo: (item) => (item as Rea).rea,
@@ -30,7 +30,7 @@ const estrategiasCondicion: {
         getTarea: (_item) => null,
     },
     'rea_sup': {
-        getCondicion: (item) => (item as ReaSup).condicion,
+        getCondicion: (item) => (item as ReaSup).condicion_js,
         getVariable: () => null,
         getValor: () => null,
         getCodigo: (item) => (item as ReaSup).rea_sup,

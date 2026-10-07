@@ -13,7 +13,7 @@ export function rea_sup(context:TableContext):TableDefinition {
             {name:'orden'                           , typeName:'integer', nullable: false, defaultDbValue: '0' },
             {name:'rea_sup'                         , typeName:'text'},
             {name:'descripcion'                     , typeName:'text'},
-            {name:'condicion'                       , typeName:'text'},
+            {name:'condicion'                       , typeName:'text', nullable:false},
             {name:'es_positiva'                     , typeName:'boolean', nullable:false, defaultDbValue:'true'},
             {name:'tarea'                           , typeName:'text'},
         ],
