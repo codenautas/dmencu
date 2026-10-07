@@ -788,16 +788,13 @@ export var defOperativo: DefOperativo = {
             codNoRea: null,
             esNoRea: false
         }
-        
-        const { codRea, esRea } = defOperativo.esRealizada(respuestas, tarea);
-        
-        if (!esRea) {
-            const {codigo, resultado} = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReas, 'no_rea', tarea);
-            if(codigo !== null) {
-                result.codNoRea = codigo;
-                result.esNoRea = resultado;
-            }
+                
+        const {codigo, resultado} = buscarReaNoReaEnRespuestas(uaPrincipal!, respuestas, estructura.noReas, 'no_rea', tarea);
+        if(codigo !== null) {
+            result.codNoRea = codigo;
+            result.esNoRea = resultado;
         }
+        
         return result;
     },
 
