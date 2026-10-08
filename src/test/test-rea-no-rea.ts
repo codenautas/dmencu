@@ -438,6 +438,33 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
                 assert.deepStrictEqual(resultado, { codigo: null, resultado: false });
             });
 
+            it('si es_positiva = true y una unidad hija anterior no tiene un campo cargado aún (undefined), NO debe matchear la rea positiva', () => {
+                const reasPositiva = conCondicionJs([
+                    {
+                        operativo,
+                        rea: 1,
+                        descripcion: 'Todos los hogares completos',
+                        condicion: "hogar_completo = 1",
+                        orden: 1,
+                        es_positiva: true,
+                        tarea: 'encu'
+                    },
+                ]);
+
+                const respuestas = {
+                    vivienda_id: 1,
+                    hogares: [
+                        { id: 1 }, // Primer hogar sin 'hogar_completo' cargado aún
+                        { id: 2, hogar_completo: '1' }, // Último hogar cumple la condición
+                    ]
+                } as any;
+
+                const resultado = buscarReaNoReaEnRespuestas(
+                    uaPrincipalMock, respuestas, reasPositiva, 'rea', 'encu', evaluarMock
+                );
+                assert.deepStrictEqual(resultado, { codigo: null, resultado: false });
+            });
+
             it('si es_positiva = true y TODOS los hogares cumplen la condición, debe matchear la rea positiva', () => {
                 const reasPositiva = conCondicionJs([
                     {
