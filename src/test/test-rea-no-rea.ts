@@ -411,6 +411,45 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
                 );
                 assert.deepStrictEqual(resultado, { codigo: 1, resultado: true });
             });
+
+            it('evalúa 2 REAs (positiva y negativa): si la positiva no se cumple para todos los hogares pero la negativa sí, devuelve la REA negativa', () => {
+                const reasMixtas: Rea[] = [
+                    {
+                        operativo,
+                        rea: 1,
+                        descripcion: 'Todos los hogares completos',
+                        condicion: "hogar_completo = 1",
+                        orden: 1,
+                        es_positiva: true,
+                        tarea: 'encu'
+                    },
+                    {
+                        operativo,
+                        rea: 2,
+                        descripcion: 'Al menos un hogar completo',
+                        condicion: "hogar_completo = 1",
+                        orden: 2,
+                        es_positiva: false,
+                        tarea: 'encu'
+                    }
+                ].map(rea => ({
+                    ...rea,
+                    condicion_js: compilarExpresion(rea.condicion)
+                }));
+
+                const respuestas = {
+                    vivienda_id: 1,
+                    hogares: [
+                        { id: 1, hogar_completo: '1' },
+                        { id: 2, hogar_completo: '0' },
+                    ]
+                } as any;
+
+                const resultado = buscarReaNoReaEnRespuestas(
+                    uaPrincipalMock, respuestas, reasMixtas, 'rea', 'encu', evaluarMock
+                );
+                assert.deepStrictEqual(resultado, { codigo: 2, resultado: false });
+            });
         });
     });
 });
