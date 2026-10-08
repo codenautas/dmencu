@@ -288,5 +288,129 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
             );
             assert.deepStrictEqual(resultado, { codigo: 1, resultado: true });
         });
+
+        it('evalúa una rea con condición que combina una variable de la UA principal (vivienda) y una de la UA hija (hogar)', () => {
+            const reasMultilevel: Rea[] = [
+                {
+                    operativo,
+                    rea: 10,
+                    descripcion: 'Vivienda habitada con hogar completo',
+                    condicion: "vivienda_habitada = 1 and hogar_completo = 1",
+                    orden: 1,
+                    es_positiva: true,
+                    tarea: 'encu'
+                },
+            ].map(rea => ({
+                ...rea,
+                condicion_js: compilarExpresion(rea.condicion)
+            }));
+
+            const respuestas = {
+                vivienda_id: 1,
+                vivienda_habitada: '1',
+                hogares: [
+                    { id: 1, hogar_completo: '0' },
+                    { id: 2, hogar_completo: '1' },
+                ]
+            } as any;
+
+            const resultado = buscarReaNoReaEnRespuestas(
+                uaPrincipalMock, respuestas, reasMultilevel, 'rea', 'encu', evaluarMock
+            );
+            assert.deepStrictEqual(resultado, { codigo: 10, resultado: true });
+        });
+
+        it('evalúa una rea_sup con condición que combina una variable de la UA principal y una de la UA hija', () => {
+            const reasSupMultilevel: ReaSup[] = [
+                {
+                    operativo,
+                    rea_sup: 20,
+                    descripcion: 'Supervisión aprobada multinivel',
+                    condicion: "vivienda_status = 1 and hogar_supervisado = 1",
+                    orden: 1,
+                    es_positiva: true,
+                    tarea: 'encu'
+                },
+            ].map(rea => ({
+                ...rea,
+                condicion_js: compilarExpresion(rea.condicion)
+            }));
+
+            const respuestas = {
+                vivienda_id: 1,
+                vivienda_status: '1',
+                hogares: [
+                    { id: 1, hogar_supervisado: '1' },
+                ]
+            } as any;
+
+            const resultado = buscarReaNoReaEnRespuestas(
+                uaPrincipalMock, respuestas, reasSupMultilevel, 'rea_sup', 'encu', evaluarMock
+            );
+            assert.deepStrictEqual(resultado, { codigo: 20, resultado: true });
+        });
+
+        describe('evaluación de es_positiva = true en múltiples unidades hijas', () => {
+
+            it('si es_positiva = true y NO todos los hogares cumplen la condición, NO debe matchear la rea positiva', () => {
+                const reasPositiva: Rea[] = [
+                    {
+                        operativo,
+                        rea: 1,
+                        descripcion: 'Todos los hogares completos',
+                        condicion: "hogar_completo = 1",
+                        orden: 1,
+                        es_positiva: true,
+                        tarea: 'encu'
+                    },
+                ].map(rea => ({
+                    ...rea,
+                    condicion_js: compilarExpresion(rea.condicion)
+                }));
+
+                const respuestas = {
+                    vivienda_id: 1,
+                    hogares: [
+                        { id: 1, hogar_completo: '1' },
+                        { id: 2, hogar_completo: '0' }, // Este hogar no cumple
+                    ]
+                } as any;
+
+                const resultado = buscarReaNoReaEnRespuestas(
+                    uaPrincipalMock, respuestas, reasPositiva, 'rea', 'encu', evaluarMock
+                );
+                assert.deepStrictEqual(resultado, { codigo: null, resultado: false });
+            });
+
+            it('si es_positiva = true y TODOS los hogares cumplen la condición, debe matchear la rea positiva', () => {
+                const reasPositiva: Rea[] = [
+                    {
+                        operativo,
+                        rea: 1,
+                        descripcion: 'Todos los hogares completos',
+                        condicion: "hogar_completo = 1",
+                        orden: 1,
+                        es_positiva: true,
+                        tarea: 'encu'
+                    },
+                ].map(rea => ({
+                    ...rea,
+                    condicion_js: compilarExpresion(rea.condicion)
+                }));
+
+                const respuestas = {
+                    vivienda_id: 1,
+                    hogares: [
+                        { id: 1, hogar_completo: '1' },
+                        { id: 2, hogar_completo: '1' }, // Todos cumplen
+                    ]
+                } as any;
+
+                const resultado = buscarReaNoReaEnRespuestas(
+                    uaPrincipalMock, respuestas, reasPositiva, 'rea', 'encu', evaluarMock
+                );
+                assert.deepStrictEqual(resultado, { codigo: 1, resultado: true });
+            });
+        });
     });
 });

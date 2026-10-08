@@ -99,7 +99,7 @@ function buscarRecursivo<T extends TipoCondicion>(
         const nombreUaHija = uaHija?.unidad_analisis;
         if (nombreUaHija && Array.isArray(respuestas[nombreUaHija])) {
             for (const respuestasHija of respuestas[nombreUaHija]) {
-                const res = buscarRecursivo(uaHija, respuestasHija, listaOrdenada, tipo, tarea, evaluarExpresion);
+                const res = buscarRecursivo(uaHija, { ...respuestas, ...respuestasHija }, listaOrdenada, tipo, tarea, evaluarExpresion);
                 if (res.codigo !== null) {
                     return res;
                 }
