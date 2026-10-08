@@ -76,7 +76,9 @@ function buscarRecursivo<T extends TipoCondicion>(
     listaOrdenada: MapeoTipoItem[T][],
     tipo: T,
     tarea: string,
-    evaluarExpresion: EvaluadorExpresion | undefined
+    evaluarExpresion: EvaluadorExpresion | undefined,
+    respuestasPadre?: Respuestas,
+    hermanasRespuestas?: Respuestas[]
 ): ResultadoBusqueda {
 
     const estrategia = estrategiasCondicion[tipo];
@@ -86,10 +88,31 @@ function buscarRecursivo<T extends TipoCondicion>(
         if (itemTarea && itemTarea !== tarea) {
             continue;
         }
+
         if (itemCumpleCondicion(item, respuestas, estrategia, evaluarExpresion)) {
+            const resultado = estrategia.getResultado(item);
+            const esReaPositiva = (tipo === 'rea' || tipo === 'rea_sup') && resultado === true;
+
+            // Si es una REA/REA_SUP positiva y la UA actual posee hermanas, 
+            // validamos que la condición se cumpla en la totalidad de las hermanas.
+            if (esReaPositiva && respuestasPadre && hermanasRespuestas && hermanasRespuestas.length > 1) {
+                const todasLasHermanasCumplen = hermanasRespuestas.every((respuestasHermana) =>
+                    itemCumpleCondicion(
+                        item,
+                        { ...respuestasPadre, ...respuestasHermana },
+                        estrategia,
+                        evaluarExpresion
+                    )
+                );
+
+                if (!todasLasHermanasCumplen) {
+                    continue; // Si falla en alguna hermana, se descarta este item y se sigue buscando
+                }
+            }
+
             return {
                 codigo: estrategia.getCodigo(item),
-                resultado: estrategia.getResultado(item),
+                resultado,
             };
         }
     }
@@ -98,8 +121,18 @@ function buscarRecursivo<T extends TipoCondicion>(
     for (const uaHija of hijas) {
         const nombreUaHija = uaHija?.unidad_analisis;
         if (nombreUaHija && Array.isArray(respuestas[nombreUaHija])) {
-            for (const respuestasHija of respuestas[nombreUaHija]) {
-                const res = buscarRecursivo(uaHija, { ...respuestas, ...respuestasHija }, listaOrdenada, tipo, tarea, evaluarExpresion);
+            const arregloHijas: Respuestas[] = respuestas[nombreUaHija];
+            for (const respuestasHija of arregloHijas) {
+                const res = buscarRecursivo(
+                    uaHija,
+                    { ...respuestas, ...respuestasHija },
+                    listaOrdenada,
+                    tipo,
+                    tarea,
+                    evaluarExpresion,
+                    respuestas,    // Se pasa el objeto respuestas del padre
+                    arregloHijas  // Se pasa el arreglo de todas las hermanas
+                );
                 if (res.codigo !== null) {
                     return res;
                 }
