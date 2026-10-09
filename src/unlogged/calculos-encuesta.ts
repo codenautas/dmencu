@@ -1,4 +1,3 @@
-import likeAr = require("like-ar");
 import { IdUnidadAnalisis, IdVariable, MapeoTipoItem, NoRea, NoReaSup, Rea, ReaSup, Respuestas, TipoCondicion, UnidadAnalisis, Valor } from "./tipos";
 
 export type EvaluadorExpresion = (condicionJs: string, respuestas: Respuestas) => boolean;
@@ -52,6 +51,42 @@ export type ResultadoBusqueda = {
     resultado: boolean;
 };
 
+// Caché en memoria para no volver a analizar la estructura teórica en cada cambio de input
+const cacheDiccionarioRutas = new WeakMap<UnidadAnalisis, Map<string, Set<string>>>();
+
+/**
+ * Mapea toda la estructura de UAs produciendo un diccionario O(1):
+ * { "viviendas" -> Set("viviendas", "hogares", "personas", "visitas"), "hogares" -> Set("hogares", "personas") }
+ */
+function obtenerDiccionarioRutas(uaRaiz: UnidadAnalisis): Map<string, Set<string>> {
+    let mapa = cacheDiccionarioRutas.get(uaRaiz);
+    if (mapa) return mapa;
+
+    mapa = new Map<string, Set<string>>();
+
+    function mapearNodo(nodo: UnidadAnalisis): Set<string> {
+        const descendientes = new Set<string>();
+        if (nodo?.unidad_analisis) {
+            descendientes.add(nodo.unidad_analisis);
+        }
+        const hijas = nodo?.hijas;
+        if (hijas) {
+            for (const key in hijas) {
+                const descHija = mapearNodo(hijas[key as IdUnidadAnalisis]!);
+                descHija.forEach((d) => descendientes.add(d));
+            }
+        }
+        if (nodo?.unidad_analisis) {
+            mapa!.set(nodo.unidad_analisis, descendientes);
+        }
+        return descendientes;
+    }
+
+    mapearNodo(uaRaiz);
+    cacheDiccionarioRutas.set(uaRaiz, mapa);
+    return mapa;
+}
+
 function itemCumpleCondicion<T extends TipoCondicion>(
     item: MapeoTipoItem[T],
     respuestas: Respuestas,
@@ -70,27 +105,6 @@ function itemCumpleCondicion<T extends TipoCondicion>(
     return !!variable && variable in respuestas && respuestas[variable as IdVariable] == valor;
 }
 
-/**
- * Determina de forma directa si un nodo o subárbol de UA conduce a la UA objetivo.
- * Optimizado sin llamadas a wrapper de librerías para alto rendimiento en dispositivos móviles.
- */
-function rutaLlevaAUa(uaNodo: UnidadAnalisis | undefined, targetUaNombre: string): boolean {
-    if (!uaNodo) return false;
-    if (uaNodo.unidad_analisis === targetUaNombre) return true;
-    if (!uaNodo.hijas) return false;
-
-    for (const key in uaNodo.hijas) {
-        if (rutaLlevaAUa(uaNodo.hijas[key as IdUnidadAnalisis], targetUaNombre)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-/**
- * Fusiona solo los campos planos (no listas de hijas) evitando la instanciación masiva de objetos efímeros
- * para prevenir pausas de Garbage Collection en tablets.
- */
 function fusionarRespuestasPlanas(contextoAcumulado: Respuestas, respuestas: Respuestas): Respuestas {
     const res: Respuestas = Object.assign({}, contextoAcumulado);
     for (const key in respuestas) {
@@ -108,15 +122,14 @@ type ResultadoInstancias = {
 };
 
 /**
- * Recolecta el contexto completo de TODAS las instancias de targetUaNombre en la encuesta
- * (hermanas, primas, etc.). Si en la rama hacia la UA se encuentra un contenedor intermedio
- * sin hijas cargadas (ej: un hogar sin personas), retorna `completa = false` para garantizar
- * la integridad de la condición REA positiva.
+ * Recolecta el contexto completo de TODAS las instancias de targetUaNombre en la encuesta.
+ * Usa el diccionario precalculado para filtrar ramas en O(1) sin hacer recursión innecesaria.
  */
 function obtenerTodasLasInstanciasDeUa(
     unidadAnalisis: UnidadAnalisis,
     respuestas: Respuestas,
     targetUaNombre: string,
+    diccionarioRutas: Map<string, Set<string>>,
     contextoAcumulado = {} as Respuestas
 ): ResultadoInstancias {
     const contextoActual = fusionarRespuestasPlanas(contextoAcumulado, respuestas);
@@ -137,11 +150,15 @@ function obtenerTodasLasInstanciasDeUa(
         const nombreUaHija = uaHija?.unidad_analisis;
         if (!nombreUaHija) continue;
 
-        if (!rutaLlevaAUa(uaHija, targetUaNombre)) continue;
+        // CONSULTA DICCIONARIO O(1): ¿Esta rama contiene a la UA que buscamos?
+        const descendientesDeHija = diccionarioRutas.get(nombreUaHija);
+        if (!descendientesDeHija || !descendientesDeHija.has(targetUaNombre)) {
+            continue; // Ignora ramas como 'visitas' instantáneamente
+        }
 
         const arregloHijas = respuestas[nombreUaHija as IdVariable];
 
-        // Integridad estructural: si la rama conduce a la UA objetivo pero el array de hijas no existe o está vacío
+        // Integridad estructural: rama válida pero sin array o vacío
         if (!Array.isArray(arregloHijas) || arregloHijas.length === 0) {
             return { completa: false, instancias: [] };
         }
@@ -152,6 +169,7 @@ function obtenerTodasLasInstanciasDeUa(
                 uaHija,
                 respuestasHija,
                 targetUaNombre,
+                diccionarioRutas,
                 contextoActual
             );
             if (!res.completa) {
@@ -177,7 +195,8 @@ function buscarRecursivo<T extends TipoCondicion>(
     listaOrdenada: MapeoTipoItem[T][],
     tipo: T,
     tarea: string,
-    evaluarExpresion: EvaluadorExpresion | undefined
+    evaluarExpresion: EvaluadorExpresion | undefined,
+    diccionarioRutas: Map<string, Set<string>>
 ): ResultadoBusqueda {
 
     const estrategia = estrategiasCondicion[tipo];
@@ -199,10 +218,10 @@ function buscarRecursivo<T extends TipoCondicion>(
                     const resInstancias = obtenerTodasLasInstanciasDeUa(
                         uaRaiz,
                         respuestasRaiz,
-                        nombreUaActual
+                        nombreUaActual,
+                        diccionarioRutas
                     );
 
-                    // Si la estructura no está completa (ej: falta cargar personas en algún hogar), se ignora la REA positiva
                     if (!resInstancias.completa) {
                         continue;
                     }
@@ -247,7 +266,8 @@ function buscarRecursivo<T extends TipoCondicion>(
                         listaOrdenada,
                         tipo,
                         tarea,
-                        evaluarExpresion
+                        evaluarExpresion,
+                        diccionarioRutas
                     );
                     if (res.codigo !== null) {
                         return res;
@@ -273,6 +293,9 @@ export function buscarReaNoReaEnRespuestas<T extends TipoCondicion>(
         throw new Error(`Tipo de condición desconocido: ${tipo}`);
     }
 
+    // Obtiene o crea el diccionario de rutas para la estructura recibida
+    const diccionarioRutas = obtenerDiccionarioRutas(unidadAnalisis);
+
     const listaOrdenada = [...lista].sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
     return buscarRecursivo(
         unidadAnalisis,
@@ -282,6 +305,7 @@ export function buscarReaNoReaEnRespuestas<T extends TipoCondicion>(
         listaOrdenada,
         tipo,
         tarea,
-        evaluarExpresion
+        evaluarExpresion,
+        diccionarioRutas
     );
 }
