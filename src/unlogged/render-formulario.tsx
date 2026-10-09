@@ -51,7 +51,8 @@ import {
     setEstructura,
     setCalcularComodines,
     suscribirCambioVariable,
-    ListenerCambioVariable
+    ListenerCambioVariable,
+    getResumenEstadoForTarea
 } from "./bypass-formulario"
 import {
     comodinesIniciales,
@@ -2060,11 +2061,12 @@ function BarraDeNavegacion(props: { forPk: ForPk, soloLectura: boolean, modoDire
     const [confirmaCerrar, setConfirmaCerrar] = useState<boolean | null>(false);
     var estructura = getEstructura();
     var dominio = getDatosByPass().informacionHdr[forPk[estructura.pkAgregadaUaPpal]].tem.dominio;
+    var tarea = getDatosByPass().informacionHdr[forPk[estructura.pkAgregadaUaPpal]].tarea.tarea;
     var cerrarDirecto = async function () {
         removeCSSById(BOOTSTRAP_5_1_3_SRC);
         gotoConsistir(
             estructura.operativo as IdOperativo,
-            getDatosByPass().informacionHdr[forPk[estructura.pkAgregadaUaPpal]].tarea.tarea,
+            tarea,
             forPk[estructura.pkAgregadaUaPpal]
         );
         //var hash=new URLSearchParams(location.hash?.replace(/^\#/,'').split('&autoproced')[0]);
@@ -2088,8 +2090,10 @@ function BarraDeNavegacion(props: { forPk: ForPk, soloLectura: boolean, modoDire
             elemento: HTMLDivElement,
             _feedbackAll: { [formulario in PlainForPk]: FormStructureState<IdVariable, Valor, IdFin> },
             _estructura: Estructura
-        ) =>
-            elemento.setAttribute('resumen-estado', r['resumenEstado' as IdVariable] as ResumenEstado)
+        ) => {
+            const resumenEstado = getResumenEstadoForTarea(r as RespuestasRaiz, tarea as IdTarea)
+            elemento.setAttribute('resumen-estado', resumenEstado);
+        }
     })
     const cambiar = (modoDespliegue: ModoDespliegue) => {
         dispatch(dispatchers.MODO_DESPLIEGUE({ modoDespliegue }));
@@ -2238,6 +2242,7 @@ function FormularioDespliegue(props: { forPk: ForPk }) {
         = useSelectorVivienda(forPk);
     var soloLectura = getDatosByPass().soloLectura;
     var esVolver = opciones.pilaForPk.length > 0;
+    const tarea = getDatosByPass().informacionHdr[forPk[getEstructura().pkAgregadaUaPpal]].tarea.tarea;
     useEffect(() => {
         var controlScroll = () => {
             var arriba = document.getElementById('fab-activo-arriba');
@@ -2288,7 +2293,7 @@ function FormularioDespliegue(props: { forPk: ForPk }) {
                 _feedbackAll: { [formulario in PlainForPk]: FormStructureState<IdVariable, Valor, IdFin> },
                 _estructura: Estructura
             ) => {
-                const resumenEstado = r['resumenEstado' as IdVariable] as ResumenEstado;
+                const resumenEstado = getResumenEstadoForTarea(r as RespuestasRaiz, tarea as IdTarea)
                 elemento.setAttribute('resumen-estado', esVolver ? feedbackForm.resumen : resumenEstado);
             }
         })
@@ -2378,8 +2383,8 @@ setDesplegarLineaResumenUAPrincipal((props: {
     const dispatch = useDispatch();
     useEffect(() => {
         volcadoInicialElementosRegistrados(forPk);
-        intentarBackup(forPk)
-    })
+        intentarBackup(forPk);
+    }, [numVivienda, formPrincipal])
     registrarElemento({
         id, direct: true,
         fun: (
@@ -2388,8 +2393,16 @@ setDesplegarLineaResumenUAPrincipal((props: {
             elemento: HTMLDivElement,
             _feedbackAll: { [formulario in PlainForPk]: FormStructureState<IdVariable, Valor, IdFin> },
             _estructura: Estructura
-        ) =>
-            elemento.setAttribute('resumen-estado', r['resumenEstado' as IdVariable] as ResumenEstado)
+        ) => {
+            //pregunto si es la misma vivienda porque la funcion se dispara
+            //con todas las combinaciones de respuestas para cada forPk
+            //@ts-ignore vivienda existe
+            if (r[estructura.pkAgregadaUaPpal] == forPk[estructura.pkAgregadaUaPpal]) {
+                const resumenEstado = getResumenEstadoForTarea(r as RespuestasRaiz, tarea as IdTarea)
+               elemento.setAttribute('resumen-estado', resumenEstado);
+            }
+        }
+
     })
     return <TableRow key={numVivienda}>
         <TableCell>

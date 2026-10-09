@@ -1349,16 +1349,16 @@ export function calcularResumenVivienda(
         }
     }
 
-    //TODO ARREGLAR ESTE HORROR, GENERALIZAR
     var tarea = datosByPass.informacionHdr[forPkRaiz[estructura.pkAgregadaUaPpal] as unknown as IdEnc].tarea.tarea;
     var resumenEstado: ResumenEstado;
-    var resumenEstadoSup: ResumenEstado = 'vacio';
+    var resumenEstadoSup: ResumenEstado;
+    //seteo calculo o dejo lo que estaba en respuestas para el otro caso
     if (tarea == 'supe') {
         resumenEstadoSup = esNoReaSup ? 'no rea' : minResumen
-        //para que coloree bien en la hdr del DM (luego en bbdd no se guarda)
-        resumenEstado = resumenEstadoSup
+        resumenEstado = respuestas['resumenEstado' as IdVariable] as ResumenEstado
     } else {
         resumenEstado = esNoRea ? 'no rea' : minResumen
+        resumenEstadoSup = respuestas['resumenEstadoSup' as IdVariable] as ResumenEstado
     }
     var resultado: ResultadoResumen = {
         resumenEstado,
@@ -1370,3 +1370,5 @@ export function calcularResumenVivienda(
     }
     return resultado
 }
+
+export const getResumenEstadoForTarea = (respuestasRaiz: RespuestasRaiz, tarea: IdTarea) => tarea == 'supe' ? respuestasRaiz.resumenEstadoSup : respuestasRaiz.resumenEstado;
