@@ -1,5 +1,5 @@
 import likeAr = require("like-ar");
-import { IdVariable, MapeoTipoItem, NoRea, NoReaSup, Rea, ReaSup, Respuestas, TipoCondicion, UnidadAnalisis } from "./tipos";
+import { IdUnidadAnalisis, IdVariable, MapeoTipoItem, NoRea, NoReaSup, Rea, ReaSup, Respuestas, TipoCondicion, UnidadAnalisis, Valor } from "./tipos";
 
 export type EvaluadorExpresion = (condicionJs: string, respuestas: Respuestas) => boolean;
 
@@ -71,46 +71,102 @@ function itemCumpleCondicion<T extends TipoCondicion>(
 }
 
 /**
- * Recorre la estructura completa desde la raíz y extrae el contexto combinado de
- * TODAS las instancias de la UA 'targetUaNombre' (hermanas, primas, etc.).
+ * Determina de forma directa si un nodo o subárbol de UA conduce a la UA objetivo.
+ * Optimizado sin llamadas a wrapper de librerías para alto rendimiento en dispositivos móviles.
+ */
+function rutaLlevaAUa(uaNodo: UnidadAnalisis | undefined, targetUaNombre: string): boolean {
+    if (!uaNodo) return false;
+    if (uaNodo.unidad_analisis === targetUaNombre) return true;
+    if (!uaNodo.hijas) return false;
+
+    for (const key in uaNodo.hijas) {
+        if (rutaLlevaAUa(uaNodo.hijas[key as IdUnidadAnalisis], targetUaNombre)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Fusiona solo los campos planos (no listas de hijas) evitando la instanciación masiva de objetos efímeros
+ * para prevenir pausas de Garbage Collection en tablets.
+ */
+function fusionarRespuestasPlanas(contextoAcumulado: Respuestas, respuestas: Respuestas): Respuestas {
+    const res: Respuestas = Object.assign({}, contextoAcumulado);
+    for (const key in respuestas) {
+        const val = respuestas[key as IdVariable];
+        if (!Array.isArray(val)) {
+            res[key as IdVariable] = val as Valor;
+        }
+    }
+    return res;
+}
+
+type ResultadoInstancias = {
+    completa: boolean;
+    instancias: Respuestas[];
+};
+
+/**
+ * Recolecta el contexto completo de TODAS las instancias de targetUaNombre en la encuesta
+ * (hermanas, primas, etc.). Si en la rama hacia la UA se encuentra un contenedor intermedio
+ * sin hijas cargadas (ej: un hogar sin personas), retorna `completa = false` para garantizar
+ * la integridad de la condición REA positiva.
  */
 function obtenerTodasLasInstanciasDeUa(
     unidadAnalisis: UnidadAnalisis,
     respuestas: Respuestas,
     targetUaNombre: string,
     contextoAcumulado = {} as Respuestas
-): Respuestas[] {
-    const resultados: Respuestas[] = [];
-
-    const respuestasPlanas = {} as Respuestas;
-    for (const [key, value] of Object.keys(respuestas)) {
-        if (!Array.isArray(value)) {
-            respuestasPlanas[key as IdVariable] = value;
-        }
-    }
-    const contextoActual = { ...contextoAcumulado, ...respuestasPlanas };
+): ResultadoInstancias {
+    const contextoActual = fusionarRespuestasPlanas(contextoAcumulado, respuestas);
 
     if (unidadAnalisis?.unidad_analisis === targetUaNombre) {
-        return [contextoActual];
+        return { completa: true, instancias: [contextoActual] };
     }
 
-    const hijas = likeAr(unidadAnalisis?.hijas).array();
-    for (const uaHija of hijas) {
+    const hijas = unidadAnalisis?.hijas;
+    if (!hijas) {
+        return { completa: false, instancias: [] };
+    }
+
+    const instanciasResultantes: Respuestas[] = [];
+
+    for (const key in hijas) {
+        const uaHija = hijas[key as IdUnidadAnalisis];
         const nombreUaHija = uaHija?.unidad_analisis;
-        if (nombreUaHija && Array.isArray(respuestas[nombreUaHija])) {
-            for (const respuestasHija of respuestas[nombreUaHija]) {
-                const res = obtenerTodasLasInstanciasDeUa(
-                    uaHija,
-                    respuestasHija,
-                    targetUaNombre,
-                    contextoActual
-                );
-                resultados.push(...res);
+        if (!nombreUaHija) continue;
+
+        if (!rutaLlevaAUa(uaHija, targetUaNombre)) continue;
+
+        const arregloHijas = respuestas[nombreUaHija as IdVariable];
+
+        // Integridad estructural: si la rama conduce a la UA objetivo pero el array de hijas no existe o está vacío
+        if (!Array.isArray(arregloHijas) || arregloHijas.length === 0) {
+            return { completa: false, instancias: [] };
+        }
+
+        for (let i = 0; i < arregloHijas.length; i++) {
+            const respuestasHija = arregloHijas[i] as Respuestas;
+            const res = obtenerTodasLasInstanciasDeUa(
+                uaHija,
+                respuestasHija,
+                targetUaNombre,
+                contextoActual
+            );
+            if (!res.completa) {
+                return { completa: false, instancias: [] };
+            }
+            for (let j = 0; j < res.instancias.length; j++) {
+                instanciasResultantes.push(res.instancias[j]);
             }
         }
     }
 
-    return resultados;
+    return {
+        completa: instanciasResultantes.length > 0,
+        instancias: instanciasResultantes,
+    };
 }
 
 function buscarRecursivo<T extends TipoCondicion>(
@@ -126,7 +182,8 @@ function buscarRecursivo<T extends TipoCondicion>(
 
     const estrategia = estrategiasCondicion[tipo];
 
-    for (const item of listaOrdenada) {
+    for (let i = 0; i < listaOrdenada.length; i++) {
+        const item = listaOrdenada[i];
         const itemTarea = estrategia.getTarea(item);
         if (itemTarea && itemTarea !== tarea) {
             continue;
@@ -139,20 +196,28 @@ function buscarRecursivo<T extends TipoCondicion>(
             if (esReaPositiva) {
                 const nombreUaActual = unidadAnalisisActual?.unidad_analisis;
                 if (nombreUaActual) {
-                    // Obtener todas las personas/hogares de la encuesta (hermanas + primas)
-                    const todasLasInstancias = obtenerTodasLasInstanciasDeUa(
+                    const resInstancias = obtenerTodasLasInstanciasDeUa(
                         uaRaiz,
                         respuestasRaiz,
                         nombreUaActual
                     );
 
-                    if (todasLasInstancias.length > 1) {
-                        const todasCumplen = todasLasInstancias.every((instanciaContexto) =>
-                            itemCumpleCondicion(item, instanciaContexto, estrategia, evaluarExpresion)
-                        );
+                    // Si la estructura no está completa (ej: falta cargar personas en algún hogar), se ignora la REA positiva
+                    if (!resInstancias.completa) {
+                        continue;
+                    }
+
+                    if (resInstancias.instancias.length > 1) {
+                        let todasCumplen = true;
+                        for (let k = 0; k < resInstancias.instancias.length; k++) {
+                            if (!itemCumpleCondicion(item, resInstancias.instancias[k], estrategia, evaluarExpresion)) {
+                                todasCumplen = false;
+                                break;
+                            }
+                        }
 
                         if (!todasCumplen) {
-                            continue; // Si alguna hermana o prima no cumple, se descarta este item
+                            continue;
                         }
                     }
                 }
@@ -165,23 +230,28 @@ function buscarRecursivo<T extends TipoCondicion>(
         }
     }
 
-    const hijas = likeAr(unidadAnalisisActual?.hijas).array();
-    for (const uaHija of hijas) {
-        const nombreUaHija = uaHija?.unidad_analisis;
-        if (nombreUaHija && Array.isArray(respuestasActuales[nombreUaHija])) {
-            for (const respuestasHija of respuestasActuales[nombreUaHija]) {
-                const res = buscarRecursivo(
-                    uaRaiz,
-                    respuestasRaiz,
-                    uaHija,
-                    { ...respuestasActuales, ...respuestasHija },
-                    listaOrdenada,
-                    tipo,
-                    tarea,
-                    evaluarExpresion
-                );
-                if (res.codigo !== null) {
-                    return res;
+    const hijas = unidadAnalisisActual?.hijas;
+    if (hijas) {
+        for (const key in hijas) {
+            const uaHija = hijas[key as IdUnidadAnalisis];
+            const nombreUaHija = uaHija?.unidad_analisis;
+            if (nombreUaHija && Array.isArray(respuestasActuales[nombreUaHija as IdVariable])) {
+                const arregloHijas = respuestasActuales[nombreUaHija as IdVariable] as unknown as Respuestas[];
+                for (let i = 0; i < arregloHijas.length; i++) {
+                    const respuestasHija = arregloHijas[i];
+                    const res = buscarRecursivo(
+                        uaRaiz,
+                        respuestasRaiz,
+                        uaHija,
+                        { ...respuestasActuales, ...respuestasHija },
+                        listaOrdenada,
+                        tipo,
+                        tarea,
+                        evaluarExpresion
+                    );
+                    if (res.codigo !== null) {
+                        return res;
+                    }
                 }
             }
         }

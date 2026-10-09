@@ -50,6 +50,34 @@ const uaTresNivelesMock: UnidadAnalisis = {
     }
 };
 
+const uaViviendaConVisitasMock: UnidadAnalisis = {
+    unidad_analisis: 'viviendas',
+    padre: undefined,
+    pk_agregada: 'vivienda',
+    hijas: {
+        hogares: {
+            unidad_analisis: 'hogares',
+            padre: 'viviendas',
+            pk_agregada: 'hogar',
+            hijas: {
+                personas: {
+                    unidad_analisis: 'personas',
+                    padre: 'hogares',
+                    pk_agregada: 'persona',
+                    hijas: {}
+                }
+            }
+        },
+        //@ts-ignore visitas es una ua
+        visitas: {
+            unidad_analisis: 'visitas',
+            padre: 'viviendas',
+            pk_agregada: 'visita',
+            hijas: {}
+        }
+    }
+};
+
 var funcionesConocidas: { [k in string]: boolean } = {}
 
 var compiler = new ExpresionParser.Compiler({
@@ -592,45 +620,131 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
                 assert.deepStrictEqual(resultado, { codigo: null, resultado: false });
             });
 
-            it('si es_positiva = true, todas las personasde OTRO hogar (primas) deben cumplir la condicion de rea positiva', () => {
+            it('si es_positiva = true y hay un segundo hogar sin personas cargadas aún, NO debe matchear la REA positiva', () => {
                 const reasPositiva = conCondicionJs([
                     {
                         operativo,
                         rea: 1,
-                        descripcion: 'Todas las personas con p2 = 1',
-                        condicion: "realizadav = 1 and realizadoh and p2 = 1",
+                        descripcion: 'Todas las personas completas en vivienda y hogar válidos',
+                        condicion: "vivienda_habitada = 1 and hogar_valido = 1 and persona_completa = 1",
                         orden: 1,
                         es_positiva: true,
                         tarea: 'encu'
                     },
                 ]);
 
-                const respuestasConPrimaFallida = {
+                const respuestas = {
                     vivienda_id: 1,
-                    realizadav: 1,
+                    vivienda_habitada: '1',
                     hogares: [
                         {
                             hogar_id: 1,
-                            realizadoh: 1,
+                            hogar_valido: '1',
                             personas: [
-                                { persona_id: 1, p2: '1' },
-                                { persona_id: 2, p2: '1' }
+                                { persona_id: 1, persona_completa: '1' }
                             ]
                         },
                         {
                             hogar_id: 2,
+                            hogar_valido: '1',
+                            personas: [] // Sin personas cargadas aún (incompleto)
+                        }
+                    ]
+                } as any;
+
+                const resultado = buscarReaNoReaEnRespuestas(
+                    uaTresNivelesMock, respuestas, reasPositiva, 'rea', 'encu', evaluarMock
+                );
+                assert.deepStrictEqual(resultado, { codigo: null, resultado: false });
+            });
+
+            it('si es_positiva = true y hay un segundo hogar sin personas cargadas aún (sin inicializar array), NO debe matchear la REA positiva', () => {
+                const reasPositiva = conCondicionJs([
+                    {
+                        operativo,
+                        rea: 1,
+                        descripcion: 'Todas las personas completas en vivienda y hogar válidos',
+                        condicion: "vivienda_habitada = 1 and hogar_valido = 1 and persona_completa = 1",
+                        orden: 1,
+                        es_positiva: true,
+                        tarea: 'encu'
+                    },
+                ]);
+
+                const respuestas = {
+                    vivienda_id: 1,
+                    vivienda_habitada: '1',
+                    hogares: [
+                        {
+                            hogar_id: 1,
+                            hogar_valido: '1',
                             personas: [
-                                { persona_id: 3, p2: '1' } 
+                                { persona_id: 1, persona_completa: '1' }
+                            ]
+                        },
+                        {
+                            hogar_id: 2,
+                            hogar_valido: '1',
+                        }
+                    ]
+                } as any;
+
+                const resultado = buscarReaNoReaEnRespuestas(
+                    uaTresNivelesMock, respuestas, reasPositiva, 'rea', 'encu', evaluarMock
+                );
+                assert.deepStrictEqual(resultado, { codigo: null, resultado: false });
+            });
+
+            it('evalúa correctamente una REA positiva multinivel (vivienda + hogar + persona) existiendo ramas independientes de visitas', () => {
+                const reasPositiva = conCondicionJs([
+                    {
+                        operativo,
+                        rea: 1,
+                        descripcion: 'Todas las personas completas en hogares completos de viviendas habitadas',
+                        condicion: "vivienda_habitada = 1 and hogar_completo = 1 and persona_completa = 1",
+                        orden: 1,
+                        es_positiva: true,
+                        tarea: 'encu'
+                    },
+                ]);
+
+                const respuestas = {
+                    vivienda_id: 1,
+                    vivienda_habitada: '1', // Nivel Vivienda
+                    visitas: [
+                        { id: 1, fecha: '2026-10-01', resultado_visita: '1' },
+                        { id: 2, fecha: '2026-10-05', resultado_visita: '1' }
+                    ],
+                    hogares: [
+                        {
+                            hogar_id: 1,
+                            hogar_completo: '1', // Nivel Hogar 1
+                            personas: [
+                                { persona_id: 1, persona_completa: '1' }, // Nivel Persona
+                                { persona_id: 2, persona_completa: '1' }
+                            ]
+                        },
+                        {
+                            hogar_id: 2,
+                            hogar_completo: '1', // Nivel Hogar 2
+                            personas: [
+                                { persona_id: 3, persona_completa: '1' } // Nivel Persona (Prima)
                             ]
                         }
                     ]
                 } as any;
 
                 const resultado = buscarReaNoReaEnRespuestas(
-                    uaTresNivelesMock, respuestasConPrimaFallida, reasPositiva, 'rea', 'encu', evaluarMock
+                    uaViviendaConVisitasMock, respuestas, reasPositiva, 'rea', 'encu', evaluarMock
                 );
                 assert.deepStrictEqual(resultado, { codigo: 1, resultado: true });
+                
+                const resultado2 = buscarReaNoReaEnRespuestas(
+                    uaViviendaConVisitasMock, respuestas, reasPositiva, 'rea', 'recu', evaluarMock
+                );
+                assert.deepStrictEqual(resultado2, { codigo: null, resultado: false });
             });
+            
         });
     });
 });
