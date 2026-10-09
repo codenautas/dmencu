@@ -262,7 +262,7 @@ function buscarRecursivo<T extends TipoCondicion>(
                         uaRaiz,
                         respuestasRaiz,
                         uaHija,
-                        { ...respuestasActuales, ...respuestasHija },
+                        Object.assign({}, respuestasActuales, respuestasHija),
                         listaOrdenada,
                         tipo,
                         tarea,
