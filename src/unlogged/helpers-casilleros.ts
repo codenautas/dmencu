@@ -1,4 +1,6 @@
 
+import { date } from "best-globals";
+
 export const helpersCasilleros = {
     null2zero(posibleNull: any) {
         if (posibleNull == null) {

@@ -2086,11 +2086,10 @@ function BarraDeNavegacion(props: { forPk: ForPk, soloLectura: boolean, modoDire
             r: Respuestas,
             _feedbackForm: FormStructureState<IdVariable, Valor, IdFin>,
             elemento: HTMLDivElement,
-            feedbackAll: { [formulario in PlainForPk]: FormStructureState<IdVariable, Valor, IdFin> },
+            _feedbackAll: { [formulario in PlainForPk]: FormStructureState<IdVariable, Valor, IdFin> },
             _estructura: Estructura
-        ) => {
-            elemento.setAttribute('resumen-estado', calcularResumenVivienda(forPk, feedbackAll, r).resumenEstado);
-        }
+        ) =>
+            elemento.setAttribute('resumen-estado', r['resumenEstado' as IdVariable] as ResumenEstado)
     })
     const cambiar = (modoDespliegue: ModoDespliegue) => {
         dispatch(dispatchers.MODO_DESPLIEGUE({ modoDespliegue }));
@@ -2286,10 +2285,11 @@ function FormularioDespliegue(props: { forPk: ForPk }) {
                 r: Respuestas,
                 feedbackForm: FormStructureState<IdVariable, Valor, IdFin>,
                 elemento: HTMLDivElement,
-                feedbackAll: { [formulario in PlainForPk]: FormStructureState<IdVariable, Valor, IdFin> },
+                _feedbackAll: { [formulario in PlainForPk]: FormStructureState<IdVariable, Valor, IdFin> },
                 _estructura: Estructura
             ) => {
-                elemento.setAttribute('resumen-estado', esVolver ? feedbackForm.resumen : calcularResumenVivienda(forPk, feedbackAll, r).resumenEstado);
+                const resumenEstado = r['resumenEstado' as IdVariable] as ResumenEstado;
+                elemento.setAttribute('resumen-estado', esVolver ? feedbackForm.resumen : resumenEstado);
             }
         })
     })
@@ -2386,17 +2386,10 @@ setDesplegarLineaResumenUAPrincipal((props: {
             r: Respuestas,
             _feedbackForm: FormStructureState<IdVariable, Valor, IdFin>,
             elemento: HTMLDivElement,
-            feedbackAll: { [formulario in PlainForPk]: FormStructureState<IdVariable, Valor, IdFin> },
+            _feedbackAll: { [formulario in PlainForPk]: FormStructureState<IdVariable, Valor, IdFin> },
             _estructura: Estructura
-        ) => {
-            //pregunto si es la misma vivienda porque la funcion se dispara 
-            //con todas las combinaciones de respuestas para cada forPk
-            //@ts-ignore vivienda existe
-            if (r[estructura.pkAgregadaUaPpal] == forPk[estructura.pkAgregadaUaPpal]) {
-                elemento.setAttribute('resumen-estado', calcularResumenVivienda(forPk, feedbackAll, r).resumenEstado);
-            }
-        }
-
+        ) =>
+            elemento.setAttribute('resumen-estado', r['resumenEstado' as IdVariable] as ResumenEstado)
     })
     return <TableRow key={numVivienda}>
         <TableCell>

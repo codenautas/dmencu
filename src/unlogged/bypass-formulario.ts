@@ -2,7 +2,7 @@ import { strict as likeAr, beingArray } from "like-ar";
 
 import { getRowValidator, FormStructureState, OpcionesRowValidator, Feedback } from "row-validator";
 
-import { date, compareForOrder, coalesce } from "best-globals";
+import { compareForOrder, coalesce } from "best-globals";
 import { expected } from "cast-error";
 
 import {
@@ -794,7 +794,7 @@ export var defOperativo: DefOperativo = {
             result.codNoRea = codigo;
             result.esNoRea = resultado;
         }
-        
+
         return result;
     },
 
