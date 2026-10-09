@@ -554,6 +554,83 @@ describe('dmencu - buscarReaNoReaEnRespuestas', () => {
                 );
                 assert.deepStrictEqual(resultado, { codigo: 2, resultado: false });
             });
+            it('si es_positiva = true y una persona de OTRO hogar (prima) no cumple la condición, NO debe matchear la rea positiva', () => {
+                const reasPositiva = conCondicionJs([
+                    {
+                        operativo,
+                        rea: 1,
+                        descripcion: 'Todas las personas con p2 = 1',
+                        condicion: "p2 = 1",
+                        orden: 1,
+                        es_positiva: true,
+                        tarea: 'encu'
+                    },
+                ]);
+
+                const respuestasConPrimaFallida = {
+                    vivienda_id: 1,
+                    hogares: [
+                        {
+                            hogar_id: 1,
+                            personas: [
+                                { persona_id: 1, p2: '1' },
+                                { persona_id: 2, p2: '1' }
+                            ]
+                        },
+                        {
+                            hogar_id: 2,
+                            personas: [
+                                { persona_id: 3, p2: '0' } // La "prima" en el Hogar 2 no cumple
+                            ]
+                        }
+                    ]
+                } as any;
+
+                const resultado = buscarReaNoReaEnRespuestas(
+                    uaTresNivelesMock, respuestasConPrimaFallida, reasPositiva, 'rea', 'encu', evaluarMock
+                );
+                assert.deepStrictEqual(resultado, { codigo: null, resultado: false });
+            });
+
+            it('si es_positiva = true, todas las personasde OTRO hogar (primas) deben cumplir la condicion de rea positiva', () => {
+                const reasPositiva = conCondicionJs([
+                    {
+                        operativo,
+                        rea: 1,
+                        descripcion: 'Todas las personas con p2 = 1',
+                        condicion: "realizadav = 1 and realizadoh and p2 = 1",
+                        orden: 1,
+                        es_positiva: true,
+                        tarea: 'encu'
+                    },
+                ]);
+
+                const respuestasConPrimaFallida = {
+                    vivienda_id: 1,
+                    realizadav: 1,
+                    hogares: [
+                        {
+                            hogar_id: 1,
+                            realizadoh: 1,
+                            personas: [
+                                { persona_id: 1, p2: '1' },
+                                { persona_id: 2, p2: '1' }
+                            ]
+                        },
+                        {
+                            hogar_id: 2,
+                            personas: [
+                                { persona_id: 3, p2: '1' } 
+                            ]
+                        }
+                    ]
+                } as any;
+
+                const resultado = buscarReaNoReaEnRespuestas(
+                    uaTresNivelesMock, respuestasConPrimaFallida, reasPositiva, 'rea', 'encu', evaluarMock
+                );
+                assert.deepStrictEqual(resultado, { codigo: 1, resultado: true });
+            });
         });
     });
 });
