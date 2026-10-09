@@ -4,7 +4,7 @@ import { ProcedureDef, TableDefinition, Client, TableDefinitions } from "./types
 import { ProcedureContext, CoreFunctionParameters, ForeignKey } from "meta-enc";
 import * as likeAr from "like-ar";
 export * from "./types-dmencu";
-import { IdUnidadAnalisis, UnidadAnalisis, EstadoAccion, IdEnc, IdTarea, RespuestasRaiz, IdOperativo, IdCarga, ModoDM } from "../unlogged/tipos";
+import { IdUnidadAnalisis, UnidadAnalisis, EstadoAccion, IdEnc, IdTarea, RespuestasRaiz, IdOperativo, IdCarga, ModoDM, Rea, NoRea, NoReaSup, ReaSup } from "../unlogged/tipos";
 
 import { OperativoGenerator } from "procesamiento";
 
@@ -612,8 +612,10 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 conReaHogar,
                 configSorteo,
                 habilitacionBotonFormulario,
-                noReas: be.caches.tableContent.no_rea,
-                noReasSup: be.caches.tableContent.no_rea_sup,
+                noReas: (be.caches.tableContent.no_rea || []).filter((noRea:NoRea) => noRea.operativo==parameters.operativo),
+                noReasSup: (be.caches.tableContent.no_rea_sup || []).filter((noReaSup:NoReaSup) => noReaSup.operativo==parameters.operativo),
+                reas: (be.caches.tableContent.rea || []).filter((rea:Rea) => rea.operativo==parameters.operativo).map((rea:Rea)=>({ ...rea, condicion_js: compilarExpresion(rea.condicion) })), 
+                reasSup: (be.caches.tableContent.rea_sup || []).filter((reaSup:ReaSup) => reaSup.operativo==parameters.operativo).map((reaSup:ReaSup)=>({ ...reaSup, condicion_js: compilarExpresion(reaSup.condicion) })),
                 defaultInformacionHdr,
                 uaPpal: unidad_analisis,
                 semanas,
@@ -631,8 +633,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         coreFunction:async function(context:ProcedureContext, parameters:CoreFunctionParameters<{annio:number, mes:number, lote:number}>){
             var be=context.be;
             const OPERATIVO = await getOperativoActual(context);
-            let row: UnidadAnalisis = await getUAPrincipal(context.client, OPERATIVO);
-            let resultPreguntas = await be.procedure.preguntas_ua_traer.coreFunction(context, row)
+            let uaPpal = await getUAPrincipal(context.client, OPERATIVO);
+            let resultPreguntas = await be.procedure.preguntas_ua_traer.coreFunction(context, uaPpal)
             var contenedorVacio: { [key: string]: any } = {};
             resultPreguntas.forEach(function (defPregunta:any) {
                 contenedorVacio[defPregunta.var_name] = defPregunta.unidad_analisis ? [] : null;

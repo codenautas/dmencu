@@ -15,7 +15,7 @@ AS $BODY$
 declare
   vresultado       text;
 begin
-    select  case when new.rea=1 then 'efectiva'  when new.rea=3 then 'pendiente' when new.rea=4 then 'mixta' when (new.rea=2 and new.norea is not null) then (select grupo from no_rea where new.norea=no_rea::integer )  else null end  into vresultado
+    select  case when new.rea=1 then 'efectiva'  when new.rea=3 then 'pendiente' when new.rea=4 then 'mixta' when (new.rea=2 and new.norea is not null) then (select grupo from no_rea where new.norea=no_rea )  else null end  into vresultado
       from tem
       where operativo='PREJU_2022' and enc=new.enc;
     

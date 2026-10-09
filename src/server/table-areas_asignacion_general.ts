@@ -57,6 +57,7 @@ export function areas_asignacion_general(context:TableContext):TableDefinition {
     tableDef.allow={
         insert:false,
         delete:false,
+        import:false,
     };
     tableDef.name = `areas_asignacion_general`;
     tableDef.tableName = `areas`;

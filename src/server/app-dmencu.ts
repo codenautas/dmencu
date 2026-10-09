@@ -41,6 +41,8 @@ import { roles_subordinados } from "./table-roles_subordinados";
 
 import { no_rea } from "./table-no_rea";
 import { no_rea_sup } from "./table-no_rea_sup";
+import { rea } from "./table-rea";
+import { rea_sup } from "./table-rea_sup";
 import { tem } from "./table-tem";
 import { semanas } from "./table-semanas";
 import { usuarios } from './table-usuarios';
@@ -226,6 +228,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                         if (args[1].table == 'casilleros' || args[1].table == 'semanas') {
                             be.caches.timestampEstructura = new Date().getTime();
                             console.log('se tocó la estructura', be.caches.timestampEstructura)
+                        }
+                        if (args[1].table == 'rea' || args[1].table == 'no_rea' || args[1].table == 'rea_sup' || args[1].table == 'no_rea_sup') {
+                            be.caches.timestampEstructura = new Date().getTime();
+                            await be.refreshCaches(args[0].client);
                         }
                         return result;
                     }
@@ -431,9 +437,11 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 ...externalResources,
                 { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'adapt.js', path: 'dmencu' },
                 { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'tipos.js', path: 'dmencu' },
+                { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'calculos-encuesta.js', path: 'dmencu' },
                 { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-config.js', path: 'dmencu' },
                 { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-init.js', path: 'dmencu' },
                 { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'redux-formulario.js', path: 'dmencu' },
+                { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'helpers-casilleros.js', path: 'dmencu' },
                 { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'bypass-formulario.js', path: 'dmencu' },
                 { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-general.js', path: 'dmencu' },
                 { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'render-formulario.js', path: 'dmencu' },
@@ -448,30 +456,46 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             // .map(m=>({...m, file:m.fileDevelopment||m.file}));
         }
         
-        async refreshCaches() {
+        async refreshCaches(client: Client | null = null) {
             this.caches.tableContent = this.caches.tableContent || {};
-            await this.inDbClient(null, async (client) => {
-                this.caches.tableContent.no_rea = (await client.query(`select * from no_rea order by no_rea`).fetchAll()).rows;
-                console.log('caches', this.caches.tableContent.no_rea)
-                this.caches.tableContent.no_rea_groups = (await client.query(`
-                select grupo, jsonb_agg(to_json(r.*)) as codigos from no_rea r group by grupo order by 1
-            `).fetchAll()).rows;
-                this.caches.tableContent.no_rea_groups0 = (await client.query(`
-                select grupo0 as grupo, jsonb_agg(to_json(r.*)) as codigos from no_rea r group by grupo0 order by 1
-            `).fetchAll()).rows;
-                this.caches.tableContent.no_rea_sup = (await client.query(`select * from no_rea_sup order by no_rea_sup`).fetchAll()).rows;
-                console.log('caches', this.caches.tableContent.no_rea_sup)
-                this.caches.tableContent.no_rea_sup_groups = (await client.query(`
+
+            // Función auxiliar para ejecutar las queries con el cliente provisto o uno nuevo
+            const executeQueries = async (dbClient:Client) => {
+                this.caches.tableContent.no_rea = (await dbClient.query(`select * from no_rea order by operativo, orden, no_rea`).fetchAll()).rows;
+                this.caches.tableContent.rea = (await dbClient.query(`select * from rea order by operativo, orden, rea`).fetchAll()).rows;
+
+                this.caches.tableContent.no_rea_groups = (await dbClient.query(`
+            select grupo, jsonb_agg(to_json(r.*)) as codigos from no_rea r group by grupo order by 1
+        `).fetchAll()).rows;
+
+                this.caches.tableContent.no_rea_groups0 = (await dbClient.query(`
+            select grupo0 as grupo, jsonb_agg(to_json(r.*)) as codigos from no_rea r group by grupo0 order by 1
+        `).fetchAll()).rows;
+
+                this.caches.tableContent.no_rea_sup = (await dbClient.query(`select * from no_rea_sup order by operativo, orden, no_rea_sup`).fetchAll()).rows;
+                this.caches.tableContent.rea_sup = (await dbClient.query(`select * from rea_sup order by operativo, orden, rea_sup`).fetchAll()).rows;
+
+                this.caches.tableContent.no_rea_sup_groups = (await dbClient.query(`
             select grupo_sup, jsonb_agg(to_json(r.*)) as codigos from no_rea_sup r group by grupo_sup order by 1
-            `).fetchAll()).rows;
-                this.caches.tableContent.no_rea_sup_groups0 = (await client.query(`
+        `).fetchAll()).rows;
+
+                this.caches.tableContent.no_rea_sup_groups0 = (await dbClient.query(`
             select grupo0_sup as grupo, jsonb_agg(to_json(r.*)) as codigos from no_rea_sup r group by grupo0_sup order by 1
         `).fetchAll()).rows;
-                this.caches.tableContent.conReaHogar = (await client.query(`
-            select con_rea_hogar,operativo, config_sorteo from operativos join parametros using (operativo) where unico_registro
-             `).fetchUniqueRow()).row;
-                //console.log('caches ',this.caches.tableContent.conReaHogar )
-            })
+
+                this.caches.tableContent.conReaHogar = (await dbClient.query(`
+            select con_rea_hogar, operativo, config_sorteo from operativos join parametros using (operativo) where unico_registro
+        `).fetchUniqueRow()).row;
+            };
+
+            if (client) {
+                await executeQueries(client);
+            } else {
+                await this.inDbClient(null, async (dbClient) => {
+                    await executeQueries(dbClient);
+                });
+            }
+            console.log('caches', this.caches.tableContent)
             console.log('caches ok');
         }
         //sqlNoreaCase(campoNecesario:string){
@@ -566,6 +590,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     "dmencu/tipos.js",
                     "dmencu/render-config.js",
                     "dmencu/render-init.js",
+                    "dmencu/helpers-casilleros.js",
+                    "dmencu/calculos-encuesta.js",
                     "dmencu/bypass-formulario.js",
                     "dmencu/redux-formulario.js",
                     "dmencu/render-general.js",
@@ -719,6 +745,12 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     name: 'metadatos',
                     menuContent: [
                         { menuType: 'table', name: 'operativos' },
+                        { menuType: 'menu', name: 'rea/norea', menuContent:[
+                            { menuType: 'table', name: 'rea' },
+                            { menuType: 'table', name: 'no_rea' },
+                            { menuType: 'table', name: 'rea_sup' },
+                            { menuType: 'table', name: 'no_rea_sup' },
+                        ]},
                         { menuType: 'table', name: 'formularios', table: 'casilleros_principales' },
                         { menuType: 'table', name: 'plano', table: 'casilleros' },
                         { menuType: 'table', name: 'variables', table: 'casilleros', fc: [{ column: 'var_name', operator: '!=\u2205', value: null }] },
@@ -851,6 +883,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 , roles_subordinados
                 , no_rea
                 , no_rea_sup
+                , rea
+                , rea_sup
                 , semanas
                 , estados
                 , acciones

@@ -10,7 +10,8 @@ export function no_rea(context:TableContext):TableDefinition {
         editable:puedeEditar,
         fields:[
             {name:'operativo'               , typeName:'text', nullable:false},
-            {name:'no_rea'                  , typeName:'text'},
+            {name:'orden'                   , typeName:'integer', nullable:false, defaultDbValue:'0'},
+            {name:'no_rea'                  , typeName:'integer'},
             {name:'descripcion'             , typeName:'text'},
             {name:'grupo'                   , typeName:'text'},
             {name:'variable'                , typeName:'text'},
@@ -21,6 +22,7 @@ export function no_rea(context:TableContext):TableDefinition {
         ],
         primaryKey:['operativo', 'no_rea'],
         foreignKeys:[{references:'operativos', fields:['operativo']}],
+        sortColumns: [{ column: "operativo", order: 1 }, { column: "orden", order: 1 }, {column:"no_rea", order:1}],
     };
 }
 

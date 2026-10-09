@@ -265,16 +265,22 @@ export type RespuestaLasUA = {
     [ua in IdUnidadAnalisis]: ObjetoNumeradoOArray<Respuestas>
 }
 
+export type CodReaNoRea = {
+    codRea: number | null,
+    codNoRea: number | null,
+    codReaSup: number | null,
+    codNoReaSup: number | null,
+}
+
+export type ResultadoResumen = CodReaNoRea & {
+    resumenEstado: ResumenEstado,
+    resumenEstadoSup: ResumenEstado,
+}
+
 export type Respuestas = RespuestasUnaUA & RespuestaLasUA
 
-export type RespuestasRaiz = Respuestas & {
-    resumenEstado: ResumenEstado
-    resumenEstadoSup: ResumenEstado
+export type RespuestasRaiz = Respuestas & ResultadoResumen & {
     $dirty: boolean
-    codNoRea: string | null
-    codRea: number | null
-    codNoReaSup: string | null
-    codReaSup: number | null
 }
 
 /*
@@ -393,40 +399,82 @@ export type TareasEstructura = {
     }
 }
 
+export type TipoCondicion = 'no_rea' | 'no_rea_sup' | 'rea' | 'rea_sup';
+
+export type NoRea = {
+    operativo: string
+    no_rea: number;
+    descripcion: string;
+    grupo: string;
+    variable: string;
+    valor: string;
+    grupo0: string;
+    orden: number;
+};
+
+export type NoReaSup = {
+    operativo: string
+    no_rea_sup: number;
+    desc_norea_sup: string;
+    grupo_sup: string;
+    variable_sup: string;
+    valor_sup: string;
+    grupo0_sup: string;
+    orden: number;
+};
+
+export type Rea = {
+    operativo: string
+    rea: number;
+    descripcion: string;
+    condicion: string;
+    condicion_js: string;
+    orden: number;
+    es_positiva: boolean;
+    tarea: string | null;
+};
+
+export type ReaSup = {
+    operativo: string
+    rea_sup: number;
+    descripcion: string;
+    condicion: string;
+    condicion_js: string;
+    orden: number;
+    es_positiva: boolean;
+    tarea: string | null;
+};
+
+// Mapeo de tipos para asociar el string de la condición con su interfaz correspondiente
+export type MapeoTipoItem = {
+    'rea': Rea;
+    'no_rea': NoRea;
+    'rea_sup': ReaSup;
+    'no_rea_sup': NoReaSup;
+};
+
 export type Estructura = {
     formularios: {
         [nombreFormulario in IdFormulario]: InfoFormulario
-    }
+    };
     unidades_analisis: {
         [idUnidadAnalisis in IdUnidadAnalisis]: UnidadAnalisis
-    }
-    tareas: TareasEstructura
-    uaPpal: IdUnidadAnalisis
-    pkAgregadaUaPpal: CampoPkRaiz
-    timestamp: number
-    operativo: IdOperativo
-    configSorteo: ConfiguracionSorteo
-    habilitacionBotonFormulario: ConfiguracionHabilitarBotonFormulario
-    conReaHogar: boolean
-    noReas: {
-        no_rea: string
-        descripcion: string
-        grupo: string
-        variable: string
-        valor: string
-        grupo0: string
-    }[]
-    noReasSup: {
-        no_rea_sup: string
-        desc_norea_sup: string
-        grupo_sup: string
-        variable_sup: string
-        valor_sup: string
-        grupo0_sup: string
-    }[],
-    semanas: { [idSemana in IdSemana]: Semana }
-    defaultInformacionHdr: DatosHdrUaPpal
-}
+    };
+    tareas: TareasEstructura;
+    uaPpal: IdUnidadAnalisis;
+    pkAgregadaUaPpal: CampoPkRaiz;
+    timestamp: number;
+    operativo: IdOperativo;
+    configSorteo: ConfiguracionSorteo;
+    habilitacionBotonFormulario: ConfiguracionHabilitarBotonFormulario;
+    conReaHogar: boolean;
+    noReas: NoRea[];
+    noReasSup: NoReaSup[];
+    reas: Rea[];
+    reasSup: ReaSup[];
+    semanas: { [idSemana in IdSemana]: Semana };
+    defaultInformacionHdr: DatosHdrUaPpal;
+};
 
 export type IdEnc = 130031 | 130032;
 export type InformacionHdr = { [enc in IdEnc]: DatosHdrUaPpal }
@@ -446,11 +494,20 @@ export type CasoState = {
     }
 }
 
-export type DefOperativo = {
-    esNoRea: (respuestas: Respuestas) => { codNoRea: string | null, esNoRea: boolean },
-    esNoReaSup: (respuestas: Respuestas) => { codNoReaSup: string | null, esNoReaSup: boolean },
-    esRealizada: (respuestas: Respuestas) => { codRea: number | null, esRea: boolean },
-    esRealizadaSup: (respuestas: Respuestas) => { codReaSup: number | null, esReaSup: boolean },
+export type ResultadoReaNoRea<K extends keyof CodReaNoRea, B extends string> = {
+    [P in K]: CodReaNoRea[K];
+} & {
+    [P in B]: boolean;
+};
+
+export type FuncionesCalculoReaNoRea = {
+  esNoRea: (respuestas: Respuestas, tarea: string) => ResultadoReaNoRea<'codNoRea', 'esNoRea'>;
+  esNoReaSup: (respuestas: Respuestas, tarea: string) => ResultadoReaNoRea<'codNoReaSup', 'esNoReaSup'>;
+  esRealizada: (respuestas: Respuestas, tarea: string) => ResultadoReaNoRea<'codRea', 'esRea'>;
+  esRealizadaSup: (respuestas: Respuestas, tarea: string) => ResultadoReaNoRea<'codReaSup', 'esReaSup'>;
+};
+
+export type DefOperativo = FuncionesCalculoReaNoRea & {
     UAprincipal: IdUnidadAnalisis,
     defUA: { [i in IdUnidadAnalisis]: { pk: IdVariable, incluidas: IdUnidadAnalisis[], idsFor: IdFormulario[] } },
     defFor: { [f in IdFormulario]: {/*arbolUA:IdUnidadAnalisis[], */ hermano?: true } }
@@ -539,7 +596,7 @@ export type ConfiguracionHabilitarBotonFormularioForm = {
 }
 
 export function toPlainForPk(forPk: ForPk): PlainForPk {
-    return JSON.stringify(forPk);
+    return JSON.stringify(forPk) as PlainForPk;
 }
 
 export var iterator: <T>(o: ObjetoNumeradoOArray<T>) => Iterable<T> = LikeAr.iterator
