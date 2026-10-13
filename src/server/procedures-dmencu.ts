@@ -2176,15 +2176,65 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         proceedLabel: 'migrar',
         roles: ['admin'],
         coreFunction: async function (context: ProcedureContext, params: { operativo_origen: string, operativo_destino: string, schema_name: string }) {
-            // 1. Consultamos las tablas base del origen para generar sus inserts directos de filas
-            const tablesResult = await Promise.all(
+            // 1. Consultamos las tablas base del origen (siempre tienen operativo)
+            const baseTablesResult = await Promise.all(
                 ['operativos', 'tareas', 'unidad_analisis', 'casilleros'].map(async tableName => ({
                     name: tableName,
+                    hasOperativo: true,
                     result: await context.client.query(`select * from ${context.be.db.quoteIdent(tableName)} where operativo = $1`, [params.operativo_origen]).fetchAll()
                 }))
             );
 
-            tablesResult.forEach((_, i) => tablesResult[i].result.rows.forEach(row => row.operativo = params.operativo_destino));
+            baseTablesResult.forEach((_, i) => baseTablesResult[i].result.rows.forEach(row => row.operativo = params.operativo_destino));
+
+            //Chequeo y consulta de tablas reas (rea, no_rea, rea_sup, no_rea_sup)
+            const optionalTables = ['rea', 'no_rea', 'rea_sup', 'no_rea_sup'];
+            const tablesExistResult = await context.client.query(
+                `select table_name 
+                 from information_schema.tables 
+                 where table_schema = current_schema() 
+                   and table_name = any($1)`,
+                [optionalTables]
+            ).fetchAll();
+
+            const existingOptionalTables = tablesExistResult.rows.map(r => r.table_name);
+            const missingOptionalTables = optionalTables.filter(t => !existingOptionalTables.includes(t));
+
+            const optionalTablesResult = await Promise.all(
+                existingOptionalTables.map(async tableName => {
+                    const colsResult = await context.client.query(
+                        `select column_name 
+                         from information_schema.columns 
+                         where table_schema = current_schema() 
+                           and table_name = $1`,
+                        [tableName]
+                    ).fetchAll();
+
+                    const hasOperativo = colsResult.rows.some(c => c.column_name === 'operativo');
+
+                    const queryStr = hasOperativo
+                        ? `select * from ${context.be.db.quoteIdent(tableName)} where operativo = $1`
+                        : `select * from ${context.be.db.quoteIdent(tableName)}`;
+
+                    const queryParams = hasOperativo ? [params.operativo_origen] : [];
+                    const result = await context.client.query(queryStr, queryParams).fetchAll();
+
+                    return {
+                        name: tableName,
+                        hasOperativo,
+                        result
+                    };
+                })
+            );
+
+            optionalTablesResult.forEach(t => {
+                if (t.hasOperativo) {
+                    t.result.rows.forEach(row => row.operativo = params.operativo_destino);
+                }
+            });
+
+            // Combinamos base y opcionales encontradas
+            const tablesResult = [...baseTablesResult, ...optionalTablesResult];
 
             const disableCasillerosFK = `
                 ALTER TABLE ${context.be.db.quoteIdent(params.schema_name)}.casilleros DISABLE TRIGGER ALL;
@@ -2193,11 +2243,24 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 ALTER TABLE ${context.be.db.quoteIdent(params.schema_name)}.casilleros ENABLE TRIGGER ALL;
             `;
 
-            const buildInserts = (query: { name: string, result: ResultRows }) => query.result.rows.map(row =>
-                'insert into ' + context.be.db.quoteIdent(params.schema_name) + '.' + context.be.db.quoteIdent(query.name) +
-                ' (' + query.result.fields.map((f: { name: string }) => context.be.db.quoteIdent(f.name)).join(', ') + ')' +
-                ' values (' + query.result.fields.map((f: { name: string }) => context.be.db.quoteNullable(row[f.name])).join(', ') + ');'
-            ).join('\n');
+            const buildInserts = (query: { name: string, hasOperativo?: boolean, result: ResultRows }) => {
+                let fields = [...query.result.fields];
+
+                // Si la tabla de rea no tenía la columna operativo, la agregamos al insert
+                if (query.hasOperativo === false && !fields.some((f: { name: string }) => f.name === 'operativo')) {
+                    fields.push({ name: 'operativo' });
+                }
+
+                return query.result.rows.map(row => {
+                    if (query.hasOperativo === false) {
+                        row.operativo = params.operativo_destino;
+                    }
+
+                    return 'insert into ' + context.be.db.quoteIdent(params.schema_name) + '.' + context.be.db.quoteIdent(query.name) +
+                        ' (' + fields.map((f: { name: string }) => context.be.db.quoteIdent(f.name)).join(', ') + ')' +
+                        ' values (' + fields.map((f: { name: string }) => context.be.db.quoteNullable(row[f.name])).join(', ') + ');';
+                }).join('\n');
+            };
 
             const opOrigenQ = context.be.db.quoteNullable(params.operativo_origen);
             const opDestinoQ = context.be.db.quoteNullable(params.operativo_destino);
@@ -2207,6 +2270,11 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 1500, 1510, 1520, 1530, 1540, 7400, 7410, 7420, 7430, 7440,
                 7450, 7460, 7470, 7480, 7490, 7500, 7510, 7520, 7530, 7540
             ];
+
+            // Avisos si alguna tabla opcional no existe en absoluto
+            const noticesSql = missingOptionalTables.length > 0
+                ? "DO \$\$\nBEGIN\n" + missingOptionalTables.map(t => `    RAISE NOTICE 'La tabla "%" no existe en el origen, se omite.', '${t}';`).join("\n") + "\nEND \$\$;"
+                : '';
 
             // 2. Bloque PL/pgSQL con validación y limpieza exclusiva en el camino por defecto
             const conditionalAreasTemSql = `
@@ -2267,24 +2335,27 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                     END IF;
                 END $$;
             `;
-            
+
             const deletes = `
             --deletes if necessary
             --delete from tareas_areas where operativo = ${opDestinoQ};
             --delete from casilleros where operativo = ${opDestinoQ};
-            
             --delete from unidad_analisis where operativo = ${opDestinoQ};
             --delete from tareas_tem where operativo = ${opDestinoQ};
-            
             --delete from tem where operativo = ${opDestinoQ};
             --delete from areas where operativo = ${opDestinoQ};
-            
             --delete from tareas where operativo = ${opDestinoQ};
             --delete from operativos where operativo = ${opDestinoQ};
+            --delete from rea where operativo = ${opDestinoQ};
+            --delete from no_rea where operativo = ${opDestinoQ};
+            --delete from rea_sup where operativo = ${opDestinoQ};
+            --delete from no_rea_sup where operativo = ${opDestinoQ};
             `;
 
             const sql = `set search_path = "${params.schema_name}";` + `\n\n`
                 + disableCasillerosFK
+                + noticesSql
+                + '\n\n'
                 + tablesResult.map(query => buildInserts(query)).join('\n\n')
                 + '\n\n' + conditionalAreasTemSql
                 + '\n\n' + enableCasillerosFK
