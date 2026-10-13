@@ -2178,54 +2178,191 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         proceedLabel: 'migrar',
         roles: ['admin'],
         coreFunction: async function (context: ProcedureContext, params: { operativo_origen: string, operativo_destino: string, schema_name: string }) {
-            const tables = await Promise.all(['operativos', 'tareas', 'unidad_analisis', 'casilleros'].map(async tableName => ({
-                name: tableName,
-                result: await context.client.query(`select * from ${context.be.db.quoteIdent(tableName)} where operativo = $1`, [params.operativo_origen]).fetchAll()
-            })));
+            // 1. Consultamos las tablas base del origen (siempre tienen operativo)
+            const baseTablesResult = await Promise.all(
+                ['operativos', 'tareas', 'unidad_analisis', 'casilleros'].map(async tableName => ({
+                    name: tableName,
+                    hasOperativo: true,
+                    result: await context.client.query(`select * from ${context.be.db.quoteIdent(tableName)} where operativo = $1`, [params.operativo_origen]).fetchAll()
+                }))
+            );
 
-            tables.forEach((_, i) => tables[i].result.rows.forEach(row => row.operativo = params.operativo_destino));
+            baseTablesResult.forEach((_, i) => baseTablesResult[i].result.rows.forEach(row => row.operativo = params.operativo_destino));
+
+            //Chequeo y consulta de tablas reas (rea, no_rea, rea_sup, no_rea_sup)
+            const optionalTables = ['rea', 'no_rea', 'rea_sup', 'no_rea_sup'];
+            const tablesExistResult = await context.client.query(
+                `select table_name 
+                 from information_schema.tables 
+                 where table_schema = current_schema() 
+                   and table_name = any($1)`,
+                [optionalTables]
+            ).fetchAll();
+
+            const existingOptionalTables = tablesExistResult.rows.map(r => r.table_name);
+            const missingOptionalTables = optionalTables.filter(t => !existingOptionalTables.includes(t));
+
+            const optionalTablesResult = await Promise.all(
+                existingOptionalTables.map(async tableName => {
+                    const colsResult = await context.client.query(
+                        `select column_name 
+                         from information_schema.columns 
+                         where table_schema = current_schema() 
+                           and table_name = $1`,
+                        [tableName]
+                    ).fetchAll();
+
+                    const hasOperativo = colsResult.rows.some(c => c.column_name === 'operativo');
+
+                    const queryStr = hasOperativo
+                        ? `select * from ${context.be.db.quoteIdent(tableName)} where operativo = $1`
+                        : `select * from ${context.be.db.quoteIdent(tableName)}`;
+
+                    const queryParams = hasOperativo ? [params.operativo_origen] : [];
+                    const result = await context.client.query(queryStr, queryParams).fetchAll();
+
+                    return {
+                        name: tableName,
+                        hasOperativo,
+                        result
+                    };
+                })
+            );
+
+            optionalTablesResult.forEach(t => {
+                if (t.hasOperativo) {
+                    t.result.rows.forEach(row => row.operativo = params.operativo_destino);
+                }
+            });
+
+            // Combinamos base y opcionales encontradas
+            const tablesResult = [...baseTablesResult, ...optionalTablesResult];
 
             const disableCasillerosFK = `
-                -- Deshabilitar validación de FK y triggers en casilleros
                 ALTER TABLE ${context.be.db.quoteIdent(params.schema_name)}.casilleros DISABLE TRIGGER ALL;
             `;
             const enableCasillerosFK = `
-                -- Habilitar validación de FK y triggers en casilleros
                 ALTER TABLE ${context.be.db.quoteIdent(params.schema_name)}.casilleros ENABLE TRIGGER ALL;
             `;
-            const buildInserts = (query: { name: string, result: ResultRows }) => query.result.rows.map(row =>
-                'insert into ' + context.be.db.quoteIdent(params.schema_name) + '.' + context.be.db.quoteIdent(query.name) +
-                ' (' + query.result.fields.map((f: { name: string }) => context.be.db.quoteIdent(f.name)).join(', ') + ')' +
-                ' values (' + query.result.fields.map((f: { name: string }) => context.be.db.quoteNullable(row[f.name])).join(', ') + ');'
-            ).join('\n');
 
-            const insertAreas = `
-                insert into areas (operativo, area)
-                    select ${context.be.db.quoteNullable(params.operativo_destino)} as operativo, area
-                    from areas where operativo = ${context.be.db.quoteNullable(params.operativo_origen)};
-            `
+            const buildInserts = (query: { name: string, hasOperativo?: boolean, result: ResultRows }) => {
+                let fields = [...query.result.fields];
 
-            const insertTareasAreas = `
-                insert into tareas_areas (operativo,tarea, area)
-                    select ${context.be.db.quoteNullable(params.operativo_destino)} as operativo, tarea, area
-                    from tareas_areas
-                    where operativo = ${context.be.db.quoteNullable(params.operativo_origen)};
+                // Si la tabla de rea no tenía la columna operativo, la agregamos al insert
+                if (query.hasOperativo === false && !fields.some((f: { name: string }) => f.name === 'operativo')) {
+                    fields.push({ name: 'operativo' });
+                }
+
+                return query.result.rows.map(row => {
+                    if (query.hasOperativo === false) {
+                        row.operativo = params.operativo_destino;
+                    }
+
+                    return 'insert into ' + context.be.db.quoteIdent(params.schema_name) + '.' + context.be.db.quoteIdent(query.name) +
+                        ' (' + fields.map((f: { name: string }) => context.be.db.quoteIdent(f.name)).join(', ') + ')' +
+                        ' values (' + fields.map((f: { name: string }) => context.be.db.quoteNullable(row[f.name])).join(', ') + ');';
+                }).join('\n');
+            };
+
+            const opOrigenQ = context.be.db.quoteNullable(params.operativo_origen);
+            const opDestinoQ = context.be.db.quoteNullable(params.operativo_destino);
+
+            const defaultAreas = [
+                1, 1400, 1410, 1420, 1430, 1440, 1450, 1460, 1470, 1480, 1490,
+                1500, 1510, 1520, 1530, 1540, 7400, 7410, 7420, 7430, 7440,
+                7450, 7460, 7470, 7480, 7490, 7500, 7510, 7520, 7530, 7540
+            ];
+
+            // Avisos si alguna tabla opcional no existe en absoluto
+            const noticesSql = missingOptionalTables.length > 0
+                ? "DO \$\$\nBEGIN\n" + missingOptionalTables.map(t => `    RAISE NOTICE 'La tabla "%" no existe en el origen, se omite.', '${t}';`).join("\n") + "\nEND \$\$;"
+                : '';
+
+            // 2. Bloque PL/pgSQL con validación y limpieza exclusiva en el camino por defecto
+            const conditionalAreasTemSql = `
+                DO $$
+                DECLARE
+                    v_tiene_onda boolean;
+                BEGIN
+                    -- Verificar si las 3 tablas tienen registros simultáneamente en el destino
+                    SELECT 
+                        COALESCE((SELECT count(1) FROM areas WHERE operativo = ${opOrigenQ}), 0) > 0 AND
+                        COALESCE((SELECT count(1) FROM tareas_areas WHERE operativo = ${opOrigenQ}), 0) > 0 AND
+                        COALESCE((SELECT count(1) FROM tem WHERE operativo = ${opOrigenQ}), 0) > 0
+                    INTO v_tiene_onda;
+
+                    IF v_tiene_onda THEN
+                        -- --- CAMINO A: El destino TIENE onda anterior completa ---
+                        INSERT INTO areas (operativo, area)
+                            SELECT ${opDestinoQ} AS operativo, area
+                            FROM areas WHERE operativo = ${opOrigenQ};
+
+                        INSERT INTO tareas_areas (operativo, tarea, area)
+                            SELECT ${opDestinoQ} AS operativo, tarea, area
+                            FROM tareas_areas WHERE operativo = ${opOrigenQ};
+
+                        INSERT INTO tem (operativo, area, enc, dominio, habilitada)
+                        SELECT ${opDestinoQ} AS operativo, area, (area || enc::text) enc, 
+                               CASE WHEN encs.enc < 106 THEN 3 ELSE 5 END AS dominio, TRUE AS habilitada
+                        FROM areas 
+                        JOIN (SELECT generate_series(100, 110) enc) encs ON true
+                        WHERE areas.operativo = ${opOrigenQ};
+                    ELSE
+                        -- --- CAMINO B: Alguna tabla está vacía o incompleta (Limpiamos e insertamos por defecto) ---
+                        DELETE FROM tem WHERE operativo = ${opDestinoQ};
+                        DELETE FROM tareas_areas WHERE operativo = ${opDestinoQ};
+                        DELETE FROM areas WHERE operativo = ${opDestinoQ};
+
+                        INSERT INTO areas (operativo, area) VALUES 
+                        ${defaultAreas.map(a => `(${opDestinoQ},${context.be.db.quoteNullable(a)})`).join(', ')};
+
+                        INSERT INTO tareas_areas(operativo, tarea, area)
+                        SELECT * 
+                        FROM (
+                            SELECT ${opDestinoQ} AS operativo, t.tarea, area
+                            FROM areas a, (
+                                SELECT t.operativo, t.tarea 
+                                FROM tareas t
+                            ) t
+                            WHERE a.operativo = ${opDestinoQ}
+                              AND t.operativo = ${opDestinoQ}
+                        ) n
+                        ORDER BY 1, 2, 3;
+                        INSERT INTO tem (operativo, area, enc, dominio, habilitada)
+                        SELECT ${opDestinoQ} AS operativo, area, (area || enc::text) enc, 
+                               CASE WHEN encs.enc < 106 THEN 3 ELSE 5 END AS dominio, TRUE AS habilitada
+                        FROM areas 
+                        JOIN (SELECT generate_series(100, 110) enc) encs ON true
+                        WHERE areas.operativo = ${opDestinoQ};
+                    END IF;
+                END $$;
             `;
 
-            const insertTem = `
-                insert into tem (operativo, area, enc, dominio, habilitada)
-                    select ${context.be.db.quoteNullable(params.operativo_destino)} as operativo, area, (area || enc::text) enc, case when encs.enc < 106 then 3 else 5 end as dominio, true as habilitada
-                    from areas join (SELECT generate_series(100, 110) enc) encs
-                    on operativo = ${context.be.db.quoteNullable(params.operativo_origen)};
+            const deletes = `
+            --deletes if necessary
+            --delete from tareas_areas where operativo = ${opDestinoQ};
+            --delete from casilleros where operativo = ${opDestinoQ};
+            --delete from unidad_analisis where operativo = ${opDestinoQ};
+            --delete from tareas_tem where operativo = ${opDestinoQ};
+            --delete from tem where operativo = ${opDestinoQ};
+            --delete from areas where operativo = ${opDestinoQ};
+            --delete from tareas where operativo = ${opDestinoQ};
+            --delete from operativos where operativo = ${opDestinoQ};
+            --delete from rea where operativo = ${opDestinoQ};
+            --delete from no_rea where operativo = ${opDestinoQ};
+            --delete from rea_sup where operativo = ${opDestinoQ};
+            --delete from no_rea_sup where operativo = ${opDestinoQ};
             `;
 
             const sql = `set search_path = "${params.schema_name}";` + `\n\n`
                 + disableCasillerosFK
-                + tables.map(query => buildInserts(query)).join('\n\n')
-                + '\n\n' + insertAreas
-                + '\n\n' + insertTareasAreas
-                + '\n\n' + insertTem
-                + '\n\n' + enableCasillerosFK;
+                + noticesSql
+                + '\n\n'
+                + tablesResult.map(query => buildInserts(query)).join('\n\n')
+                + '\n\n' + conditionalAreasTemSql
+                + '\n\n' + enableCasillerosFK
+                + '\n\n' + deletes;
+
             return sql;
         }
     },
