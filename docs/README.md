@@ -13,6 +13,7 @@
 | [resumen-estados.md](resumen-estados.md) | Colores y significado de los estados de resumen del formulario |
 | [funcionamiento-comodines.md](funcionamiento-comodines.md) | Guía de comodines (`@...@`) para redactar textos del formulario |
 | [casillero-libre.md](casillero-libre.md) | Casilleros de tipo `LIBRE` y cómo redefinir su despliegue |
+| [publicacion.md](publicacion.md) | Cómo se publica en npm desde GitHub Actions (tags, disparo manual, Trusted publisher) y diagnóstico de errores |
 
 ## Glosario rápido
 
