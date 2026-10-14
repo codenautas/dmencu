@@ -6,6 +6,9 @@
         "lib": [
             "es2019"
         ],
+        "rootDir": "..",
+        "types": ["node", "mocha"],
+        "typeRoots": ["../../node_modules/@types", "../../node_modules/types.d.ts/modules"]
     },
     "include": [
         "."
