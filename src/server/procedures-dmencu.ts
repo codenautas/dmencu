@@ -1,10 +1,10 @@
 "use strict";
 
-import { ProcedureDef, TableDefinition, Client, TableDefinitions } from "./types-dmencu";
+import { ProcedureDef, TableDefinition, Client, TableDefinitions, AppBackend } from "./types-dmencu";
 import { ProcedureContext, CoreFunctionParameters, ForeignKey } from "meta-enc";
-import * as likeAr from "like-ar";
+import likeAr = require("like-ar");
 export * from "./types-dmencu";
-import { IdUnidadAnalisis, UnidadAnalisis, EstadoAccion, IdEnc, IdTarea, RespuestasRaiz, IdOperativo, IdCarga, ModoDM, Rea, NoRea, NoReaSup, ReaSup } from "../unlogged/tipos";
+import { IdUnidadAnalisis, UnidadAnalisis, EstadoAccion, IdEnc, IdTarea, RespuestasRaiz, IdOperativo, IdCarga, ModoDM, Rea, NoRea, NoReaSup, ReaSup, ResultadoResumen } from "../unlogged/tipos";
 
 import { OperativoGenerator } from "procesamiento";
 
@@ -21,7 +21,7 @@ import { error } from "console";
 import { Context } from "vm";
 import { expected, unexpected } from "cast-error";
 import { getModoByPolicy } from "./app-dmencu";
-import { getSettersAndParametersForReaNoReaResumenEstado } from "./setters-rea-no-rea";
+import { getSettersAndParametersForReaNoReaResumenEstado, ParametroSql } from "./setters-rea-no-rea";
 
 var Path = require('path');
 var sqlTools = require('sql-tools');
@@ -192,7 +192,10 @@ function createStructure(context: ProcedureContext, tableName: string) {
 type AnyObject = { [k: string]: any }
 
 
-var guardarEncuestaEnTem = async (context: ProcedureContext, operativo: IdOperativo, idEnc: string, respuestasUAPrincipal: RespuestasRaiz, tarea: IdTarea) => {
+export type ConsultaSql = { sql: string, params: ParametroSql[] };
+
+// graba en la TEM la encuesta y el resultado calculado (resumen, rea y no rea; o sus versiones _sup si la tarea es supe)
+export function consultaUpdateTem<R extends ResultadoResumen>(operativo: IdOperativo, idEnc: string, respuestasUAPrincipal: R, tarea: IdTarea): ConsultaSql {
     var { params, setters } = getSettersAndParametersForReaNoReaResumenEstado({
         tarea,
         respuestasUAPrincipal,
@@ -200,14 +203,51 @@ var guardarEncuestaEnTem = async (context: ProcedureContext, operativo: IdOperat
         params: [operativo, idEnc, respuestasUAPrincipal],
         destino: 'tem'
     })
-    return await context.client.query(
-        `update tem
+    return {
+        sql: `update tem
             set ${setters.join(',')}
             where operativo= $1 and enc = $2
-            returning 'ok'`
-        ,
+            returning 'ok'`,
         params
-    ).fetchUniqueRow();
+    };
+}
+
+// cuando el dispositivo devuelve la encuesta: pasa la tarea a descargada y guarda el resultado calculado en el dispositivo (dm_*);
+// sólo si la encuesta sigue cargada con el token del dispositivo
+export function consultaUpdateTareasTemPorDescarga<R extends ResultadoResumen>(opts: {
+    operativo: IdOperativo, idEnc: string, tarea: IdTarea, token: string,
+    respuestasUAPrincipal: R, pasaADescargar: boolean
+}): ConsultaSql {
+    var { params, setters } = getSettersAndParametersForReaNoReaResumenEstado({
+        tarea: opts.tarea,
+        respuestasUAPrincipal: opts.respuestasUAPrincipal,
+        setters: [
+            `estado = '${ESTADO_POSTERIOR_DESCARGA}'`,
+            `cargado_dm=null`
+        ],
+        params: [opts.operativo, opts.idEnc, opts.tarea, opts.token],
+        destino: 'tareas_tem'
+    })
+    if (opts.pasaADescargar) {
+        setters.push(`operacion = '${OPERACION_PREPARAR_DESCARGA}'`);
+    }
+    return {
+        sql: `update tareas_tem
+                set ${setters.join(',')}
+                where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm = $4
+                returning 'ok'`,
+        params
+    };
+}
+
+// lo que guardarEncuestaEnTem usa del cliente de base (el Client de pg-promise-strict lo cumple)
+export type ClienteParaTem = {
+    query(sql: string, params: ParametroSql[]): { fetchUniqueRow(): Promise<{ rowCount: number | null }> }
+}
+
+export var guardarEncuestaEnTem = async <R extends ResultadoResumen>(context: { client: ClienteParaTem }, operativo: IdOperativo, idEnc: string, respuestasUAPrincipal: R, tarea: IdTarea) => {
+    var { sql, params } = consultaUpdateTem(operativo, idEnc, respuestasUAPrincipal, tarea);
+    return await context.client.query(sql, params).fetchUniqueRow();
 }
 
 async function registrarPaseTabla(
@@ -266,6 +306,19 @@ var simularGuardadoDeEncuestaDesdeAppEscritorio = async (context: ProcedureConte
             }
         }
     )
+}
+
+// cada elemento de "cargas" que arma getHdrQuery (fecha llega como texto iso desde el json)
+type CargaHdrDb = {
+    carga: number // area
+    observaciones: string | null
+    fecha: string | null
+    recepcionista: string | null
+    puede_autogenerar: boolean
+}
+
+function cargasHdrConFechaDmy(cargas: CargaHdrDb[]) {
+    return cargas.map(carga => ({ ...carga, fecha: carga.fecha ? date.iso(carga.fecha).toDmy() : null }));
 }
 
 var getHdrQuery = function getHdrQuery(quotedCondViv: string, context: ProcedureContext, unidadAnalisisPrincipal: IdUnidadAnalisis, permiteGenerarMuestra: boolean, idper:string) {
@@ -375,6 +428,23 @@ function compilarExpresion(expresion: string) {
             .replace(/!!/gi, ' ')
     )).replace(/helpers\.funs\.blanco\(helpers.null2zero\(/g, 'helpers.funs.blanco((')
         .replace(/helpers\.funs\.informado\(helpers.null2zero\(/g, 'helpers.funs.informado((');
+}
+
+// rea/no rea (y sus versiones _sup) del operativo, tomadas de las caches, para la estructura que se manda al dispositivo.
+// Las condiciones de rea se compilan a js (condicion_js) para evaluarlas en el dispositivo.
+export function reasNoReasDelOperativo(tableContent: AppBackend['caches']['tableContent'], operativo: IdOperativo) {
+    var noReasCache: NoRea[] = tableContent.no_rea || [];
+    var noReasSupCache: NoReaSup[] = tableContent.no_rea_sup || [];
+    var reasCache: Omit<Rea, 'condicion_js'>[] = tableContent.rea || [];
+    var reasSupCache: Omit<ReaSup, 'condicion_js'>[] = tableContent.rea_sup || [];
+    return {
+        noReas: noReasCache.filter(noRea => noRea.operativo == operativo),
+        noReasSup: noReasSupCache.filter(noReaSup => noReaSup.operativo == operativo),
+        reas: reasCache.filter(rea => rea.operativo == operativo)
+            .map((rea): Rea => ({ ...rea, condicion_js: compilarExpresion(rea.condicion) })),
+        reasSup: reasSupCache.filter(reaSup => reaSup.operativo == operativo)
+            .map((reaSup): ReaSup => ({ ...reaSup, condicion_js: compilarExpresion(reaSup.condicion) })),
+    };
 }
 
 function compilarExpresiones(casillero: CasilleroDeAca) {
@@ -575,10 +645,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 conReaHogar,
                 configSorteo,
                 habilitacionBotonFormulario,
-                noReas: (be.caches.tableContent.no_rea || []).filter((noRea:NoRea) => noRea.operativo==parameters.operativo),
-                noReasSup: (be.caches.tableContent.no_rea_sup || []).filter((noReaSup:NoReaSup) => noReaSup.operativo==parameters.operativo),
-                reas: (be.caches.tableContent.rea || []).filter((rea:Rea) => rea.operativo==parameters.operativo).map((rea:Rea)=>({ ...rea, condicion_js: compilarExpresion(rea.condicion) })), 
-                reasSup: (be.caches.tableContent.rea_sup || []).filter((reaSup:ReaSup) => reaSup.operativo==parameters.operativo).map((reaSup:ReaSup)=>({ ...reaSup, condicion_js: compilarExpresion(reaSup.condicion) })),
+                ...reasNoReasDelOperativo(be.caches.tableContent, parameters.operativo),
                 defaultInformacionHdr,
                 uaPpal: unidad_analisis,
                 semanas,
@@ -904,7 +971,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 operativo,
                 soloLectura,
                 idper: context.user.idper,
-                cargas: likeAr.createIndex(row.cargas.map((carga: any) => ({ ...carga, fecha: carga.fecha ? date.iso(carga.fecha).toDmy() : null })), 'carga'),
+                cargas: likeAr.createIndex(cargasHdrConFechaDmy(row.cargas), 'carga'),
                 timestampEstructura: be.caches.timestampEstructura,
                 permiteBorrarElementosUA: !!(tareaPermiteBorrarUA && getModoByPolicy(be) === 'GABINETE' && context.puede?.encuestas?.borrar_ua)
             };
@@ -987,30 +1054,15 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                             throw Error(`no se definió un recepcionista para el operativo ${OPERATIVO}, tarea ${tarea}, área ${carga.carga}, por favor comuniquesé con GABINETE para que carguen un recepcionista`)
                         }
                         if (Number(idEnc) < 0) {
-                            idEnc = await persistirEncuestaAutogeneradaEnDM(context, OPERATIVO, carga.carga, idEnc, token, respuestasUAPrincipal, carga.recepcionista || cargaTareasAreas, persistentes.idper, modo_dm as ModoDM, cambia_modo_dm);
+                            // idEnc es la clave (texto) de persistentes.respuestas; las funciones que siguen lo reciben como texto
+                            idEnc = String(await persistirEncuestaAutogeneradaEnDM(context, OPERATIVO, carga.carga, idEnc, token, respuestasUAPrincipal, carga.recepcionista || cargaTareasAreas, persistentes.idper, modo_dm as ModoDM, cambia_modo_dm));
                         }
                         var puedoGuardarEnTEM = true;
-                        var { params, setters } = getSettersAndParametersForReaNoReaResumenEstado({
-                            tarea,
-                            respuestasUAPrincipal,
-                            setters: [
-                                `estado = ${context.be.db.quoteLiteral(ESTADO_POSTERIOR_DESCARGA)}`,
-                                `cargado_dm=null`
-                            ],
-                            params: [OPERATIVO, idEnc, tarea, token],
-                            destino: 'tareas_tem'
-                        })
-                        if (cambia_modo_dm || persistentes.idper != idper_logueado_tablet) {
-                            setters.push(`operacion = 'descargar'`);
-                        }
-                        var queryTareasTem = await context.client.query(
-                            `update tareas_tem
-                                set ${setters.join(',')}
-                                where operativo= $1 and enc = $2 and tarea = $3 and cargado_dm = $4
-                                returning 'ok'`
-                            ,
-                            params
-                        ).fetchOneRowIfExists();
+                        var consultaTareasTem = consultaUpdateTareasTemPorDescarga({
+                            operativo: OPERATIVO, idEnc, tarea, token, respuestasUAPrincipal,
+                            pasaADescargar: cambia_modo_dm || persistentes.idper != idper_logueado_tablet
+                        });
+                        var queryTareasTem = await context.client.query(consultaTareasTem.sql, consultaTareasTem.params).fetchOneRowIfExists();
                         puedoGuardarEnTEM = queryTareasTem.rowCount == 1;
                         if (puedoGuardarEnTEM) {
                             await guardarEncuestaEnTem(context, OPERATIVO, idEnc, respuestasUAPrincipal, tarea);
@@ -1037,7 +1089,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 token,
                 num_sincro,
                 idper: idper_logueado_tablet,
-                cargas: likeAr.createIndex(row.cargas.map(carga => ({ ...carga, fecha: carga.fecha ? date.iso(carga.fecha).toDmy() : null, estado_carga: 'relevamiento' })), 'carga')
+                cargas: likeAr.createIndex(cargasHdrConFechaDmy(row.cargas).map(carga => ({ ...carga, estado_carga: 'relevamiento' })), 'carga')
             };
 
         }
@@ -1198,7 +1250,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             { name: 'cant_encuestas', typeName: 'integer' },
             { name: 'tarea_actual', typeName: 'text', references: 'tareas' },
         ],
-        coreFunction: async function (context: ProcedureContext, params: CoreFunctionParameters<{ operativo: IdOperativo, area: number, dominio: number, cant_encuestas: number, tarea_actual: string }>) {
+        coreFunction: async function (context: ProcedureContext, params: CoreFunctionParameters<{ operativo: IdOperativo, area: number, dominio: number, cant_encuestas: number, tarea_actual: IdTarea }>) {
             const be = context.be;
             var permiteGenerarMuestra = await getOperativoPermiteGenerarMuestra(context.client, params.operativo);
             if (permiteGenerarMuestra) {

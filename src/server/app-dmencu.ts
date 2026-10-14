@@ -9,6 +9,7 @@ import * as miniTools from "mini-tools";
 import {
     Client, Context, CoreFunctionParameters,
     MenuInfoBase,
+    Puede,
     Request, Response,
     SufijosAmbiente,
 } from "./types-dmencu";
@@ -17,7 +18,6 @@ import { expected, unexpected } from "cast-error";
 
 import * as yazl from "yazl";
 import { NextFunction } from "express-serve-static-core";
-import * as likeAr from "like-ar";
 import * as express from "express";
 
 import { promises as fs } from "fs";
@@ -115,6 +115,62 @@ export function getModoByPolicy(be: AppBackend) {
     return be.config.server.policy == 'web' ? 'RELEVAMIENTO' : 'GABINETE';
 }
 
+// permisos que getContext agrega al contexto según el usuario logueado (o la falta de usuario)
+export function permisosSegunUsuario(
+    caches: Pick<AppBackend['caches'], 'permisosRol' | 'permisosSuperuser' | 'permisosParaNadie'>,
+    user: Context['user'] | undefined
+): { superuser?: true, puede?: Puede } {
+    if (user == null) {
+        return { puede: caches.permisosParaNadie };
+    }
+    var rol = user.rol;
+    var permisosDelRol = rol != null ? caches.permisosRol[rol] : undefined;
+    if (permisosDelRol?.superuser) {
+        return { superuser: true, puede: caches.permisosSuperuser };
+    }
+    return { puede: permisosDelRol?.puede };
+}
+
+// lo que usan refreshCaches y refrescarEstructuraAlModificarTabla del cliente de base (el Client de pg-promise-strict lo cumple)
+export type ConsultaDb = {
+    fetchAll(): Promise<pg.ResultRows>
+    fetchUniqueRow(): Promise<pg.ResultOneRow>
+}
+export type ClienteDb = {
+    query(sql: string): ConsultaDb
+}
+
+// tablas cuya modificación cambia la estructura que se manda a los dispositivos (ver operativo_estructura_completa)
+export const TABLAS_ESTRUCTURA = ['casilleros', 'semanas'];
+// tablas de rea/no rea, que además se guardan en be.caches.tableContent (ver refreshCaches)
+export const TABLAS_REA_NO_REA = ['rea', 'no_rea', 'rea_sup', 'no_rea_sup'];
+
+export type RefrescadorEstructura = {
+    caches: { timestampEstructura: number }
+    refreshCaches(client: ClienteDb): Promise<void>
+}
+
+// envuelve table_record_save/table_record_delete para que al modificar esas tablas los dispositivos
+// reciban la estructura nueva (timestampEstructura) y, si son de rea/no rea, se recarguen las caches
+// con el mismo cliente (dentro de la misma transacción)
+export function refrescarEstructuraAlModificarTabla<C extends { client: ClienteDb }, P extends { table: string }, R, Resto extends (object | undefined)[]>(
+    be: RefrescadorEstructura,
+    coreFunction: (context: C, parameters: P, ...resto: Resto) => Promise<R>
+): (context: C, parameters: P, ...resto: Resto) => Promise<R> {
+    return async function (context: C, parameters: P, ...resto: Resto) {
+        var result = await coreFunction(context, parameters, ...resto);
+        if (TABLAS_ESTRUCTURA.includes(parameters.table)) {
+            be.caches.timestampEstructura = new Date().getTime();
+            console.log('se tocó la estructura', be.caches.timestampEstructura)
+        }
+        if (TABLAS_REA_NO_REA.includes(parameters.table)) {
+            be.caches.timestampEstructura = new Date().getTime();
+            await be.refreshCaches(context.client);
+        }
+        return result;
+    }
+}
+
 const registrarCronJobPasarAProie = async (be: AppBackend) => {
     const ejecutarPasaje = async () => {
         const log = (msg: string, data: any = '') =>
@@ -200,11 +256,16 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             )).value as string);
         }
 
-        override async canChangePass(reqOrContext?: any, userToChangePass: string | null): Promise<boolean> {
+        // backend-plus lo declara sin parámetros pero lo llama con (context, usuario), por eso son opcionales
+        override async canChangePass(reqOrContext?: Request | Context, userToChangePass?: string | null): Promise<boolean> {
             var be = this;
+            var usuarioLogueado = reqOrContext?.user;
+            if (reqOrContext == null || usuarioLogueado == null) {
+                return false;
+            }
+            var rol = usuarioLogueado.rol;
             var result = await be.inDbClient(null, async (client) => {
                 var q = be.db.quoteLiteral;
-                var rol = reqOrContext.user.rol;
                 return (await client.query(`
                 select * 
                   from usuarios 
@@ -222,19 +283,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             parentProc = parentProc.filter((procedure: any) => !procedimientoAReemplazar.includes(procedure.action));
             parentProc = parentProc.map(procDef => {
                 if (procDef.action == 'table_record_save' || procDef.action == 'table_record_delete') {
-                    var coreFunctionInterno = procDef.coreFunction;
-                    procDef.coreFunction = async function (...args:any[]) {
-                        var result = await (coreFunctionInterno as Function)(...args)
-                        if (args[1].table == 'casilleros' || args[1].table == 'semanas') {
-                            be.caches.timestampEstructura = new Date().getTime();
-                            console.log('se tocó la estructura', be.caches.timestampEstructura)
-                        }
-                        if (args[1].table == 'rea' || args[1].table == 'no_rea' || args[1].table == 'rea_sup' || args[1].table == 'no_rea_sup') {
-                            be.caches.timestampEstructura = new Date().getTime();
-                            await be.refreshCaches(args[0].client);
-                        }
-                        return result;
-                    }
+                    procDef.coreFunction = refrescarEstructuraAlModificarTabla(be, procDef.coreFunction);
                 }
                 return procDef;
             })
@@ -388,12 +437,20 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                           WHERE pa.permiso=p.permiso
                       ))
                       FROM permisos p
+                `).fetchUniqueValue(),
+                    await client.query(`
+                    SELECT jsonb_object_agg(permiso,(
+                        SELECT jsonb_object_agg(accion,false)
+                          FROM permisos pa
+                          WHERE pa.permiso=p.permiso
+                      ))
+                      FROM permisos p
                 `).fetchUniqueValue()
                 ];
                 be.caches.permisosRol = results[0].value;
                 be.caches.permisosRolSoloTrue = results[1].value;
                 be.caches.permisosSuperuser = results[2].value;
-                be.caches.permisosParaNadie = likeAr(be.caches.permisosSuperuser).map(p => likeAr(p).map(_ => false).plain()).plain()
+                be.caches.permisosParaNadie = results[3].value;
                 //console.dir(be.caches.permisosRolSoloTrue,{depth:9});
                 //console.dir(be.caches.permisosSuperuser,{depth:9});
                 //console.dir(be.caches.permisosParaNadie,{depth:9});
@@ -457,11 +514,11 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             // .map(m=>({...m, file:m.fileDevelopment||m.file}));
         }
         
-        async refreshCaches(client: Client | null = null) {
+        async refreshCaches(client: ClienteDb | null = null) {
             this.caches.tableContent = this.caches.tableContent || {};
 
             // Función auxiliar para ejecutar las queries con el cliente provisto o uno nuevo
-            const executeQueries = async (dbClient:Client) => {
+            const executeQueries = async (dbClient:ClienteDb) => {
                 this.caches.tableContent.no_rea = (await dbClient.query(`select * from no_rea order by operativo, orden, no_rea`).fetchAll()).rows;
                 this.caches.tableContent.rea = (await dbClient.query(`select * from rea order by operativo, orden, rea`).fetchAll()).rows;
 
@@ -506,16 +563,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
         //    ).join('')} WHEN TRUE THEN NULL END`
         //}    
         override getContext(req: Request): Context {
-            var be = this;
             var fatherContext = super.getContext(req);
-            if (fatherContext.user) {
-                if (req.user?.rol != null && be.caches.permisosRol[req.user.rol]?.superuser) {
-                    return { superuser: true, puede: be.caches.permisosSuperuser, ...fatherContext }
-                } else {
-                    return { puede: be.caches.permisosRol[req.user.rol]?.puede, ...fatherContext }
-                }
-            }
-            return { puede: be.caches.permisosParaNadie, ...fatherContext };
+            return { ...permisosSegunUsuario(this.caches, fatherContext.user), ...fatherContext };
         }
         override getContextForDump(): Context {
             var fatherContext = super.getContextForDump();
@@ -646,7 +695,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             }
             return jsonResult
         }
-        getMenuControles(_context: Context) {
+        getMenuControles(_context: Context): MenuInfoBase[] {
             return [
                 { menuType: 'proc', name: 'encuestas_procesamiento_pasar', label: 'pasar encuestas a procesamiento' },
                 { menuType: 'table', name: 'resumen', table: 'control_resumen', selectedByDefault: true },
@@ -656,7 +705,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 { menuType: 'table', name: 'área', table: 'control_campo_area' },
             ]
         };
-        getMenuVarios(context: Context) {
+        getMenuVarios(context: Context): MenuInfoBase {
             let submenuVarios: MenuInfoBase[] = [{ menuType: 'abrir_encuesta', name: 'abrir_encuesta' }]
             if (context.puede?.campo?.editar) {
                 submenuVarios.push({ menuType: 'table', name: 'hoja_ruta', table: 'grilla_hoja_ruta', label: 'hoja de ruta' })
@@ -674,7 +723,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             }
             return { menuType: 'menu', name: 'varios', menuContent: submenuVarios }
         }
-        getMenuAsignacion(context: Context) {
+        getMenuAsignacion(context: Context): MenuInfoBase {
             let filtroRecepcionista = context.user.rol == 'recepcionista' ? { recepcionista: context.user.idper } : {};
             let submenuAsignacion: MenuInfoBase[] = [];
             if (context.puede?.campo?.administrar) {
@@ -692,7 +741,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             };
             return { menuType: 'menu', name: 'asignacion', label: 'asignación', menuContent: submenuAsignacion }
         }
-        getMenuRecepcion(context: Context) {
+        getMenuRecepcion(context: Context): MenuInfoBase {
             let submenuRecepcion: MenuInfoBase[] = []
             submenuRecepcion.push(
                 { menuType: 'table', name: 'encuestador', table: 'encuestadores_asignados' },
@@ -708,7 +757,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             return { menuType: 'menu', name: 'recepcion', label: 'recepción', menuContent: submenuRecepcion }
         }
 
-        getMenuCarto(context: Context) {
+        getMenuCarto(context: Context): MenuInfoBase | null {
             let submenuCarto: MenuInfoBase[] = []
             if (context.puede?.campo?.administrar) {
                 submenuCarto.push(
@@ -798,7 +847,15 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             return menuConfigurar;
         }
 
-        override getMenu(context: Context) {
+        // los mixins (meta-enc, procesamiento) lo declaran sin parámetros, pero backend-plus siempre lo llama con context.
+        // El tipo de retorno que declara operativos (MenuInfo[]) no admite formas que backend-plus sí acepta y dmencu usa
+        // (ff como objeto, fc con column); se devuelve MenuInfoBase[], que es lo que declara backend-plus.
+        // Quitar esta línea cuando se corrijan los tipos de menú en operativos/backend-plus (el compilador avisa si deja de hacer falta).
+        // @ts-expect-error MenuDefinition de operativos más estricto que el de backend-plus
+        override getMenu(context?: Context) {
+            if (context == null) {
+                throw new Error('getMenu de dmencu requiere el context para armar el menú según los permisos');
+            }
             let menu: MenuInfoBase[] = [];
             if (getModoByPolicy(context.be) === 'RELEVAMIENTO') {
                 if (context.puede?.encuestas?.relevar) {
@@ -958,7 +1015,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 , area_enc_proximas
             }
             be.appendToTableDefinition('consistencias', function (tableDef, context) {
-                tableDef.editable = tableDef.editable || context.puede?.encuestas?.procesar;
+                tableDef.editable = tableDef.editable || context?.puede?.encuestas?.procesar;
                 tableDef.fields.forEach(function (field) {
                     if (field.name == 'error_compilacion') {
                         if (field.visible) {
@@ -976,13 +1033,13 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     { name: 'persona', typeName: 'bigint', editable: false },
                     { name: 'visita', typeName: 'bigint', editable: false },
                 );
-                tableDef.editable = tableDef.editable || context.puede?.encuestas.justificar;
+                tableDef.editable = tableDef.editable || context?.puede?.encuestas?.justificar;
                 tableDef.fields.forEach(function (field) {
                     if (field.name == 'pk_integrada') {
                         field.visible = false;
                     }
                     if (field.name == 'justificacion') {
-                        field.editable = context?.forDump || context?.puede?.encuestas.justificar;
+                        field.editable = context?.forDump || context?.puede?.encuestas?.justificar;
                     }
                 })
                 tableDef.fields = tableDef.fields.concat(['tarea_actual', 'tarea_anterior'].map(fn => {
@@ -1021,7 +1078,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     name: 'disform_cerrado',
                     typeName: 'boolean',
                     defaultValue: false,
-                    editable: context?.forDump || ['admin', 'dis_conceptual'].includes(context.user.rol)
+                    editable: context?.forDump || context != null && ['admin', 'dis_conceptual'].includes(context.user.rol)
                 }, {
                     name: 'con_rea_hogar',
                     typeName: 'boolean',
