@@ -65,7 +65,7 @@ describe('dmencu - helpersCasilleros', () => {
     describe('funs.nsnc y funs.par', () => {
         it('nsnc solo es verdadero para -9 (número o texto)', () => {
             assert.strictEqual(funs.nsnc(-9), true);
-            assert.strictEqual(funs.nsnc('-9' as any), true);
+            assert.strictEqual(funs.nsnc('-9'), true);
             assert.strictEqual(funs.nsnc(9), false);
             assert.strictEqual(funs.nsnc(null), false);
         });

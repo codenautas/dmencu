@@ -3,22 +3,22 @@ import { describe, it } from 'mocha';
 import assert = require('node:assert');
 
 import { getSettersAndParametersForReaNoReaResumenEstado } from '../server/setters-rea-no-rea';
-import type { IdTarea, RespuestasRaiz } from '../unlogged/tipos';
+import type { ResultadoResumen } from '../unlogged/tipos';
 
-const respuestas = {
+const respuestas: ResultadoResumen = {
     resumenEstado: 'ok',
     codNoRea: null,
     codRea: 1,
     resumenEstadoSup: 'no rea',
     codNoReaSup: 71,
     codReaSup: null,
-} as unknown as RespuestasRaiz;
+};
 
 describe('dmencu - getSettersAndParametersForReaNoReaResumenEstado', () => {
 
     it('para tareas_tem usa prefijo dm_ y numera los parámetros a continuación de los recibidos', () => {
         const { setters, params } = getSettersAndParametersForReaNoReaResumenEstado({
-            tarea: 'encu' as IdTarea,
+            tarea: 'encu',
             respuestasUAPrincipal: respuestas,
             setters: [`estado = 'D'`, `cargado_dm=null`],
             params: ['op1', 1001, 'encu', 'token-x'],
@@ -36,7 +36,7 @@ describe('dmencu - getSettersAndParametersForReaNoReaResumenEstado', () => {
 
     it('para tem no usa prefijo', () => {
         const { setters } = getSettersAndParametersForReaNoReaResumenEstado({
-            tarea: 'encu' as IdTarea,
+            tarea: 'encu',
             respuestasUAPrincipal: respuestas,
             setters: [],
             params: ['op1', 1001],
@@ -47,7 +47,7 @@ describe('dmencu - getSettersAndParametersForReaNoReaResumenEstado', () => {
 
     it('para la tarea supe usa las columnas y los valores _sup', () => {
         const { setters, params } = getSettersAndParametersForReaNoReaResumenEstado({
-            tarea: 'supe' as IdTarea,
+            tarea: 'supe',
             respuestasUAPrincipal: respuestas,
             setters: ['json_encuesta = $3'],
             params: ['op1', 1001, '{}'],
@@ -64,7 +64,7 @@ describe('dmencu - getSettersAndParametersForReaNoReaResumenEstado', () => {
 
     it('cada $n de los setters apunta al valor correcto en params', () => {
         const { setters, params } = getSettersAndParametersForReaNoReaResumenEstado({
-            tarea: 'encu' as IdTarea,
+            tarea: 'encu',
             respuestasUAPrincipal: respuestas,
             setters: [],
             params: ['a', 'b', 'c'],
@@ -80,7 +80,7 @@ describe('dmencu - getSettersAndParametersForReaNoReaResumenEstado', () => {
         const settersEntrada = ['x = $1'];
         const paramsEntrada = ['v'];
         getSettersAndParametersForReaNoReaResumenEstado({
-            tarea: 'encu' as IdTarea,
+            tarea: 'encu',
             respuestasUAPrincipal: respuestas,
             setters: settersEntrada,
             params: paramsEntrada,
