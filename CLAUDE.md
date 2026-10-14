@@ -56,3 +56,7 @@ Muchas reglas de negocio críticas están implementadas como **funciones almacen
 Ejemplos de lógica que vive en la base de datos:
 
 > ⚠️ Si Claude Code necesita entender o modificar una regla de negocio importante, debe buscar primero si existe una función o trigger en PostgreSQL que la implemente — no asumir que toda la lógica está en TypeScript. Reimplementar en el backend lógica que ya existe en la base de datos introduce duplicación y riesgo de inconsistencia.
+>
+> ## Documentacion
+>
+> Mantener actualizada la documentación en la medida que se agreguen o modifiquen las funcionalidades 
