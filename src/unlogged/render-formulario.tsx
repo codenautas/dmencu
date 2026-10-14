@@ -13,6 +13,15 @@ import {
     obtenerTextoParentesco,
 } from "./render-general";
 import {
+    REGEX_SPLIT_COMODINES,
+    IS_TEM_PATTERN,
+    IS_VARIABLE_HASH_PATTERN,
+    IS_COMODIN_REDUX_PATTERN,
+    extraerComodinesRedux,
+    extraerVariablesInteres,
+    getBFVarNames,
+} from "./helpers-formulario";
+import {
     Bloque, BotonFormulario,
     CasilleroBase, CasoState, ConjuntoPreguntas, Consistencia,
     EstadoCarga, Filtro, ForPk, ForPkRaiz, Formulario,
@@ -85,8 +94,8 @@ import {
     getEstructura,
     defOperativo,
     volcadoInicialElementosRegistrados,
-    numberOrStringIncIfArray,
     calcularElementoEnfocado,
+    numberOrStringIncIfArray,
     accion_registrar_respuesta,
     accion_registrar_respuestas,
     accion_id_pregunta,
@@ -166,43 +175,7 @@ export function formatearResultadoComodin(valor: string): string {
 // 1. HELPERS PUROS Y EXPRESIONES REGULARES
 // ==========================================
 
-// RegEx principal para dividir el texto conservando los tokens delimitados por @...@
-const REGEX_SPLIT_COMODINES = /(@(?:#?[\w-]+|\$[tT][eE][mM][^@]*)@)/g;
-
-// Sub-RegExs para identificar el tipo de comodín
-const IS_TEM_PATTERN = /^@\$(tem[^@]*)@$/i;
-const IS_VARIABLE_HASH_PATTERN = /^@#([\w-]+)@$/;
-const IS_COMODIN_REDUX_PATTERN = /^@([\w-]+)@$/;
-
-/** Extrae nombres de comodines estándar (@comodin@) */
-function extraerComodinesRedux(text: string): IdComodin[] {
-    if (!text || !text.includes('@')) return [];
-    const matches = text.match(/@([a-zA-Z0-9_-]+)@/g);
-    if (!matches) return [];
-
-    const ids: IdComodin[] = [];
-    for (const m of matches) {
-        if (!m.startsWith('@#') && !m.startsWith('@$')) {
-            const id = m.slice(1, -1) as IdComodin;
-            if (!ids.includes(id)) ids.push(id);
-        }
-    }
-    return ids;
-}
-
-/** Extrae nombres de variables dinámicas (@#variable@) */
-function extraerVariablesInteres(text: string): string[] {
-    if (!text) return [];
-    const matches = text.match(/@#([\w-]+)@/g);
-    if (!matches) return [];
-
-    const vars: string[] = [];
-    for (const m of matches) {
-        const varName = m.slice(2, -1); // Remueve '@#' y '@'
-        if (!vars.includes(varName)) vars.push(varName);
-    }
-    return vars;
-}
+// (definidos en helpers-formulario.ts para poder testearlos sin React)
 
 // ==========================================
 // 2. HOOK PERSONALIZADO PARA BINDING DINÁMICO
@@ -345,14 +318,7 @@ export const BreakeableText = React.memo(function BreakeableText(props: {
     return <span className={className} style={style}>{contenido}</span>;
 });
 
-export function getBFVarNames(salto: string | null) {
-    const armoNomSalto = salto?.substring(0, 2) == 'F:' ? salto.slice(2) : salto;
-    return {
-        listo: '$B.F:' + armoNomSalto as IdVariable,
-        agregar: '$B.F:' + armoNomSalto + '_agregar' as IdVariable,
-        idFormulario: 'F:' + armoNomSalto as IdFormulario
-    };
-}
+export { getBFVarNames };
 
 export function registrarRespuestasBotonFormulario(opts: {
     forPkPadre: ForPk,

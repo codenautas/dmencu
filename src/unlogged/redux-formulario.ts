@@ -348,21 +348,7 @@ function generarEstructuraRowValidator(casillero: CasillerosImplementados, idFor
     return rellenarDestinos(estructuraIncompleta, destinos);
 }
 
-export function replaceSpecialWords(text: string, nombre: string, apellido: string, resultado: string): string {
-    function capitalizeFirstLetter(text: string) {
-        return text.charAt(0).toUpperCase() + text.slice(1);
-    }
-    var simplificatedChars: { [k: string]: string } = {
-        "#nombre": capitalizeFirstLetter(nombre),
-        "#apellido": capitalizeFirstLetter(apellido),
-        "#resultado": resultado,
-    };
-    var re = new RegExp(Object.keys(simplificatedChars).join("|"), "gi");
-
-    return text.replace(re, function (matched) {
-        return simplificatedChars[matched.toLowerCase()];
-    });
-}
+export { replaceSpecialWords } from "./helpers-formulario";
 
 export function gotoConsistir(operativo: IdOperativo, tarea: IdTarea, enc: IdEnc) {
     // TODO-2023-03: probar con esto:

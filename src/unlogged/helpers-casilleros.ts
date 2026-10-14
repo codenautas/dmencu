@@ -23,19 +23,14 @@ export const helpersCasilleros = {
         },
         fecha_valida(x: string) {
             var formato_valido = /^([1-9]|0[1-9]|[12]\d|3[01])\/([1-9]|0[1-9]|1[012])\/20\d\d$/.test(x)
-            var xDate: Date;
-            var conversionOk: boolean;
-            conversionOk = true;
-            if (formato_valido) {
-                const [d, m, y] = x.split('/');
-                try {
-                    xDate = new Date(`${y}/${m}/${d}`);
-                } catch (err) {
-                    conversionOk = false;
-                }
-            };
+            if (!formato_valido) {
+                return false;
+            }
+            const [d, m, y] = x.split('/').map(Number);
+            // new Date no falla con fechas inexistentes (31/02 pasa a 03/03), hay que verificar que no se corra
+            var xDate = new Date(y, m - 1, d);
             //faltaria validar que no sea una fecha futura y que sea una fecha en el rango del operativo
-            return formato_valido && conversionOk
+            return xDate.getFullYear() == y && xDate.getMonth() == m - 1 && xDate.getDate() == d
         },
         mesanio_valido(x: string) {
             var formato_valido = /^([1-9]|0[1-9]|1[012])\/(19|20)\d\d$/.test(x)

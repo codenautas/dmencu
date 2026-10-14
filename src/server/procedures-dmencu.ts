@@ -21,6 +21,7 @@ import { error } from "console";
 import { Context } from "vm";
 import { expected, unexpected } from "cast-error";
 import { getModoByPolicy } from "./app-dmencu";
+import { getSettersAndParametersForReaNoReaResumenEstado } from "./setters-rea-no-rea";
 
 var Path = require('path');
 var sqlTools = require('sql-tools');
@@ -190,44 +191,6 @@ function createStructure(context: ProcedureContext, tableName: string) {
 
 type AnyObject = { [k: string]: any }
 
-type FunParams = {
-    tarea: IdTarea;
-    respuestasUAPrincipal: RespuestasRaiz;
-    setters: string[];
-    params: any[];
-    destino: 'tem' | 'tareas_tem';
-};
-
-const getSettersAndParametersForReaNoReaResumenEstado = ({
-    tarea,
-    respuestasUAPrincipal: r,
-    setters: settersEntrada,
-    params: paramsEntrada,
-    destino
-}: FunParams) => {
-    const isSupe = tarea === 'supe';
-    const sufijoSupe = isSupe ? '_sup' : '';
-    const prefijoDm = destino === 'tareas_tem' ? 'dm_' : '';
-
-    const offset = paramsEntrada.length + 1;
-
-    const nuevosValores = isSupe
-        ? [r.resumenEstadoSup, r.codNoReaSup, r.codReaSup]
-        : [r.resumenEstado, r.codNoRea, r.codRea];
-
-    const campos = [
-        `${prefijoDm}resumen_estado${sufijoSupe}`,
-        `${prefijoDm}norea${sufijoSupe}`,
-        `${prefijoDm}rea${sufijoSupe}`
-    ];
-
-    const nuevosSetters = campos.map((campo, i) => `${campo}=$${offset + i}`);
-
-    const setters = [...settersEntrada, ...nuevosSetters];
-    const params = [...paramsEntrada, ...nuevosValores];
-
-    return { setters, params };
-};
 
 var guardarEncuestaEnTem = async (context: ProcedureContext, operativo: IdOperativo, idEnc: string, respuestasUAPrincipal: RespuestasRaiz, tarea: IdTarea) => {
     var { params, setters } = getSettersAndParametersForReaNoReaResumenEstado({

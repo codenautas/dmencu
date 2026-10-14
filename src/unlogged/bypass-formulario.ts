@@ -39,6 +39,7 @@ import {
     EvaluadorExpresion
 } from "./calculos-encuesta";
 import { helpersCasilleros } from "./helpers-casilleros";
+import { numberOrStringIncIfArray } from "./helpers-formulario";
 
 var comodines = {} as {
     calcularComodines?: (forPk: ForPk) => void
@@ -1152,13 +1153,7 @@ export function calcularFeedbackUnidadAnalisis(
     }
 }
 
-export function numberOrStringIncIfArray(numberOrString: number | string, object: object | any[]): (number | string) {
-    // @ts-expect-error estoy usando isNaN para ver si es o no un número sumable
-    if (isNaN(numberOrString)) {
-        return numberOrString;
-    }
-    return Number(numberOrString) + (object instanceof Array ? 1 : 0);
-}
+export { numberOrStringIncIfArray };
 
 export var getMainFormForVivienda = (valuePkRaiz: ValuePkRaiz): IdFormulario => {
     return datosByPass.informacionHdr[valuePkRaiz].tarea.main_form
