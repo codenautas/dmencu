@@ -1,7 +1,7 @@
 "use strict";
 import {html}  from 'js-to-html';
 import { desplegarFormularioActual } from './render-formulario';
-import { DatosByPassPersistibles, ModoDM } from './tipos';
+import { DatosByPassPersistibles, ModoDM, AyudaParaUsuario } from './tipos';
 import { expected } from "cast-error";
 import ServiceWorkerAdmin = require("service-worker-admin");
 import { createLocalStorageFormRenderer } from "./render-init";
@@ -35,7 +35,18 @@ async function sincronizarDatos(persistentes: DatosByPassPersistibles | null, ca
     var estructura = await myOwn.ajax.operativo_estructura_completa({ operativo: datos.operativo, idper_logueado_tablet });
     await formRenderer.persistirEstructura(estructura);
     my.removeLocalVar(BACKUPS);
+    await descargarAyuda();
     return datos;
+}
+
+// guarda la ayuda del usuario para verla sin conexión; si falla no se interrumpe la sincronización
+async function descargarAyuda() {
+    try {
+        var ayuda: AyudaParaUsuario = await my.ajax.ayuda_traer({});
+        getFormRenderer().persistirAyuda(ayuda);
+    } catch (err) {
+        console.log('no se pudo descargar la ayuda', err);
+    }
 }
 
 window.addEventListener('load', async function(){

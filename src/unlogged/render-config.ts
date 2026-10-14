@@ -1,4 +1,4 @@
-import { CasoState, DatosByPassPersistibles, ModoDM, Estructura, ForPkRaiz } from './tipos';
+import { CasoState, DatosByPassPersistibles, ModoDM, Estructura, ForPkRaiz, AyudaParaUsuario } from './tipos';
 
 export interface FormularioConfig {
     getCasoState(): CasoState;
@@ -27,6 +27,11 @@ export interface FormularioConfig {
     persistirEstructura(
         estructura: Estructura
     ): Promise<void>;
+
+    // ayuda en línea del usuario, que se guarda al sincronizar para verla sin conexión (ver docs/ayuda-online.md)
+    leerAyuda(): AyudaParaUsuario | null;
+
+    persistirAyuda(ayuda: AyudaParaUsuario): void;
 
     onSincronizar(persistentes: DatosByPassPersistibles | null, cambiaModoDM: boolean): Promise<DatosByPassPersistibles>;
     
@@ -122,6 +127,14 @@ export class FormRenderer implements FormularioConfig {
         return this.config.persistirEstructura(estructura);
     }
 
+    leerAyuda(): AyudaParaUsuario | null {
+        return this.config.leerAyuda();
+    }
+
+    persistirAyuda(ayuda: AyudaParaUsuario): void {
+        this.config.persistirAyuda(ayuda);
+    }
+
     onSincronizar(persistentes: DatosByPassPersistibles | null, cambiaModoDM: boolean): Promise<DatosByPassPersistibles> {
         return this.config.onSincronizar(persistentes, cambiaModoDM);
     }
@@ -189,6 +202,13 @@ const defaultThrowConfig: FormularioConfig = {
     },
     persistirEstructura(_estructura: Estructura): Promise<void> {
         throw new Error('persistirEstructura no implementado');
+    },
+    leerAyuda(): AyudaParaUsuario | null {
+        // la ayuda es opcional: sin implementación no hay ayuda en el dispositivo
+        return null;
+    },
+    persistirAyuda(_ayuda: AyudaParaUsuario) {
+        throw new Error('persistirAyuda no implementado');
     },
     onSincronizar(_persistentes: DatosByPassPersistibles | null, _cambiaModoDM: boolean): Promise<DatosByPassPersistibles> {
         throw new Error('onSincronizar no implementado. Debe proveerse una implementación al llamar createFormRenderer({ sincronizar: ... })');

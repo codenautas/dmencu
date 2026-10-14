@@ -9,6 +9,7 @@
 | [sincronizacion-offline.md](sincronizacion-offline.md) | Funcionamiento offline-first: carga, descarga, backups, sincronización con el dispositivo (diagramas de secuencia) |
 | [rea-no-rea.md](rea-no-rea.md) | Cómo se calculan REA / no REA y el resumen de estado de una encuesta |
 | [roles-y-permisos.md](roles-y-permisos.md) | Roles, permisos y menús según rol y modo (policy) |
+| [ayuda-online.md](ayuda-online.md) | Ayuda en línea para usuarios según rol, permisos y modo; cómo la extienden las apps finales |
 | [testing.md](testing.md) | Cómo se prueba el proyecto y qué cubre cada archivo de tests |
 | [resumen-estados.md](resumen-estados.md) | Colores y significado de los estados de resumen del formulario |
 | [funcionamiento-comodines.md](funcionamiento-comodines.md) | Guía de comodines (`@...@`) para redactar textos del formulario |

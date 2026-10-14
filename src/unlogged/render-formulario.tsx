@@ -40,6 +40,7 @@ import {
     IdComodin,
     IdSemana,
     UnidadAnalisis,
+    AyudaTemaParaUsuario,
 } from "./tipos";
 import {
     accion_abrir_formulario,
@@ -2677,6 +2678,17 @@ export function BotoneraNavegacion(props: { disabled?: boolean }): JSX.Element {
             >
                 <ICON.CloudSync /> Sincronización
             </Button>
+            {getFormRenderer().leerAyuda()?.temas.length ? (
+                <Button
+                    onClick={() =>
+                        dispatch(dispatchers.SET_OPCION({ opcion: 'pantallaActual', valor: 'ayuda' }))
+                    }
+                    disabled={pantallaActual === 'ayuda' || props.disabled}
+                    style={pantallaActual === 'ayuda' ? { backgroundColor: 'rgba(255,255,255,0.1)' } : undefined}
+                >
+                    <ICON.HelpOutline /> Ayuda
+                </Button>
+            ) : null}
         </ButtonGroup>
     );
 }
@@ -2965,6 +2977,63 @@ export function PantallaSincronizacion(props: PantallaSincronizacionProps): JSX.
     );
 }
 
+// ayuda en línea guardada en la última sincronización: funciona sin conexión (ver docs/ayuda-online.md)
+export function PantallaAyuda(): JSX.Element {
+    const modoDM: ModoDM = getFormRenderer().getModoDM();
+    const temas: AyudaTemaParaUsuario[] = getFormRenderer().leerAyuda()?.temas ?? [];
+    const [idTema, setIdTema] = useState<string | null>(temas.length ? temas[0].id : null);
+    useEffect(() => {
+        scrollToTop();
+    }, [idTema]);
+    const tema = temas.find(tema => tema.id == idTema);
+    // los enlaces "ayuda:id" llevan a otro tema; los demás se abren aparte para no salir de la aplicación
+    const onClickContenido = (event: React.MouseEvent<HTMLDivElement>): void => {
+        const enlace = event.target instanceof Element ? event.target.closest('a') : null;
+        const destino = enlace?.getAttribute('href');
+        if (destino != null) {
+            event.preventDefault();
+            if (destino.startsWith('ayuda:')) {
+                setIdTema(destino.slice('ayuda:'.length));
+            } else {
+                window.open(destino, '_blank');
+            }
+        }
+    };
+    return (
+        <>
+            <AppBarPrincipal
+                modoDM={modoDM}
+                titulo="AYUDA"
+            />
+            <div className="hoja-de-ruta">
+                <Paper style={{ padding: '20px', margin: 'auto', marginBottom: '10px' }}>
+                    {temas.length == 0 ? (
+                        <Typography>La ayuda se descarga al sincronizar el dispositivo.</Typography>
+                    ) : (
+                        <>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+                                {temas.map(tema =>
+                                    <Button key={tema.id} size="small"
+                                        variant={tema.id == idTema ? 'contained' : 'outlined'}
+                                        onClick={() => setIdTema(tema.id)}
+                                    >{tema.titulo}</Button>
+                                )}
+                            </div>
+                            {tema ? (
+                                <>
+                                    <Typography variant="h5">{tema.titulo}</Typography>
+                                    {/* html generado en el servidor a partir del markdown de la ayuda (sin html crudo) */}
+                                    <div className="ayuda-contenido" onClick={onClickContenido} dangerouslySetInnerHTML={{ __html: tema.html }} />
+                                </>
+                            ) : null}
+                        </>
+                    )}
+                </Paper>
+            </div>
+        </>
+    );
+}
+
 export function PantallaCambioModo(): JSX.Element {
     const [loading, setLoading] = useState<boolean>(false);
     const [aviso, setAviso] = useState<{ tipo: 'info' | 'success' | 'error', mensaje: string } | null>(null);
@@ -3177,6 +3246,8 @@ export function AppDmEncu() {
             return <PantallaSincronizacion />
         } else if (pantallaActual === 'modo') {
             return <PantallaCambioModo />
+        } else if (pantallaActual === 'ayuda') {
+            return <PantallaAyuda />
         }
         return <HojaDeRutaDespliegue />
     } else {

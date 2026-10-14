@@ -11,6 +11,7 @@ El dispositivo trabaja sin conexión: lleva consigo la **estructura** del formul
 | Datos (`DatosByPassPersistibles`) | Respuestas por unidad de análisis, `cargas` (áreas), `informacionHdr` (datos de la encuesta y tarea), token, número de sincronización | `localStorage` |
 | Backups | Cola de encuestas modificadas que aún no se enviaron | `localStorage`, clave `backups` |
 | Modo DM | `produc` o `capa` | `localStorage` |
+| Ayuda | Temas de ayuda del usuario, que se descargan al sincronizar (ver [ayuda-online.md](ayuda-online.md)) | `localStorage`, clave `ayuda` |
 | Último login válido (`idper`, usuario) | Para seguir operando si se pierde la cookie de sesión | `localStorage` |
 
 ## Sincronización

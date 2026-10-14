@@ -2,7 +2,7 @@
 "use strict";
 
 import * as bePlus from "backend-plus";
-import type { NoRea } from "../unlogged/tipos";
+import type { ModoApp, NoRea } from "../unlogged/tipos";
 
 export * from 'procesamiento'; //expose Procesamiento types
 export { emergeAppMetaEnc, emergeAppRelEnc } from 'meta-enc'; //expose types only in meta-enc stack
@@ -43,6 +43,27 @@ export type Permisos = {
 }
 export type PermisosRol = Record<string, Permisos>
 
+// ayuda en línea para usuarios (ver docs/ayuda-online.md)
+// una carpeta con archivos .md de ayuda; las apps finales agregan las suyas en getAyudaFuentes
+export type AyudaFuente = {
+    origen: string // nombre de la app o paquete, para los mensajes de error
+    carpeta: string
+}
+// un archivo de ayuda ya leído: encabezado + contenido convertido a html
+export type AyudaTema = {
+    id: string
+    titulo: string
+    orden: number
+    permisos: string[] // "permiso.accion"; alcanza con tener alguno
+    roles: string[] // alcanza con tener alguno
+    modo: ModoApp | null // null: en ambos modos
+    menu: string[] // rutas de las opciones del menú que explica, por ejemplo "asignacion/encuestador"
+    ocultar: boolean // quita un tema de otra fuente con el mismo id
+    origen: string
+    archivo: string
+    html: string
+}
+
 // campo por rol que se agrega para cada tarea en areas_asignacion_general
 export type RolFieldTarea = {
     name: string
@@ -79,6 +100,7 @@ declare module "backend-plus" {
         permisosRolSoloTrue: PermisosRol
         permisosSuperuser: Puede
         permisosParaNadie: Puede
+        ayuda: AyudaTema[]
     }
 
     export interface Context {
@@ -91,6 +113,7 @@ declare module "backend-plus" {
         abrir_encuesta: true
         sincronizar_dm: true
         cambiar_modo_dm: true
+        ayuda: true
     }
 
     // backend-plus usa config['client-setup'].skin pero no lo declara

@@ -22,6 +22,7 @@ Compila `src/test` (`tsc -p src/test`) y ejecuta Mocha sobre `dist/test/test.js`
 | `test-helpers-casilleros.ts` | Funciones que se usan en las expresiones de los casilleros (`null2zero`, `div0err`, `blanco`, `informado`, `fecha_valida`, `mesanio_valido`, etc.) |
 | `test-helpers-formulario.ts` | Extracción de comodines y variables de interés, `getBFVarNames`, `replaceSpecialWords` (ver [funcionamiento-comodines.md](funcionamiento-comodines.md)) |
 | `test-ejemplo.ts` | Ejemplos mínimos de cómo escribir un test |
+| `test-ayuda.ts` | Ayuda en línea: formato de los temas, combinación de fuentes (reemplazar/ocultar), qué temas ve cada rol en cada modo y que los temas de dmencu no mencionen permisos, roles ni opciones de menú inexistentes (ver [ayuda-online.md](ayuda-online.md)) |
 | `app-para-tests.ts` | Utilidades (no contiene tests): app compuesta sin base, permisos leídos de `install/*.tab` y contexto de un usuario con cierto rol |
 
 ## Utilidades de `app-para-tests.ts`

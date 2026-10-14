@@ -20,7 +20,9 @@ import { getDiasAPasarQuery } from "./table-tareas_tem";
 import { error } from "console";
 import { Context } from "vm";
 import { expected, unexpected } from "cast-error";
-import { getModoByPolicy } from "./app-dmencu";
+import { getModoByPolicy, quienConsultaAyuda } from "./app-dmencu";
+import { menuConAyuda, temasVisibles } from "./ayuda";
+import type { AyudaParaUsuario } from "../unlogged/tipos";
 import { getSettersAndParametersForReaNoReaResumenEstado, ParametroSql } from "./setters-rea-no-rea";
 
 var Path = require('path');
@@ -2180,6 +2182,21 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         coreFunction: async function (context: ProcedureContext, _parameters: CoreFunctionParameters<{}>) {
             const { be } = context;
             return getModoByPolicy(be);
+        }
+    }, {
+        // la ayuda en línea que le corresponde al usuario según su rol, sus permisos y el modo (ver docs/ayuda-online.md)
+        action: 'ayuda_traer',
+        parameters: [],
+        coreFunction: async function (context: ProcedureContext, _parameters: CoreFunctionParameters<{}>): Promise<AyudaParaUsuario> {
+            const { be } = context;
+            const quien = quienConsultaAyuda(context);
+            const temas = temasVisibles(be.caches.ayuda, quien);
+            return {
+                rol: quien.rol,
+                modo: quien.modo,
+                temas: temas.map(tema => ({ id: tema.id, titulo: tema.titulo, html: tema.html })),
+                menu: menuConAyuda(be.getMenu(context).menu, temas),
+            };
         }
     },
     {

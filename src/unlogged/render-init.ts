@@ -1,6 +1,6 @@
 import { gotoConsistir } from "./redux-formulario";
 import { createFormRenderer, FormRenderer } from "./render-config";
-import { DatosByPassPersistibles, ModoDM, Estructura, ModoAlmacenamiento } from "./tipos";
+import { DatosByPassPersistibles, ModoDM, Estructura, ModoAlmacenamiento, AyudaParaUsuario } from "./tipos";
 
 
 const LOCAL_STORAGE_STATE_NAME = 'hdr-state';
@@ -10,6 +10,7 @@ const MODO_DM_LOCALSTORAGE_KEY = 'modo_dm';
 export const GLOVAR_DATOSBYPASS = 'datosbypass';
 export const GLOVAR_MODOBYPASS = 'modobypass';
 export const GLOVAR_ESTRUCTURA = 'estructura';
+export const GLOVAR_AYUDA = 'ayuda';
 export const SETUP = 'setup';
 export const LAST_LOGGED_SETUP = 'last_logged_setup';
 
@@ -85,6 +86,14 @@ const localStorageConfig = {
     persistirEstructura(estructura: Estructura): Promise<void> {
         myOwn.setLocalVar(GLOVAR_ESTRUCTURA, estructura);
         return Promise.resolve();
+    },
+
+    leerAyuda(): AyudaParaUsuario | null {
+        return myOwn.getLocalVar(GLOVAR_AYUDA);
+    },
+
+    persistirAyuda(ayuda: AyudaParaUsuario): void {
+        myOwn.setLocalVar(GLOVAR_AYUDA, ayuda);
     },
 
     leerDatos(): Promise<DatosByPassPersistibles | null> {

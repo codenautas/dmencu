@@ -8,3 +8,4 @@ import './test-menu-segun-rol';
 import './test-caches-rea';
 import './test-impacto-rea-no-rea-en-bd';
 import './test-ejemplo';
+import './test-ayuda';

@@ -365,7 +365,7 @@ export type EstructuraRowValidator = Structure<IdVariable, Valor, IdFin>;
 
 export type ModoDespliegue = 'metadatos' | 'relevamiento' | 'PDF'
 
-export type PantallaNavegacion = 'hdr' | 'sincronizacion' | 'sincronizacion_requerida' | 'modo';
+export type PantallaNavegacion = 'hdr' | 'sincronizacion' | 'sincronizacion_requerida' | 'modo' | 'ayuda';
 
 export type InfoFormulario = {
     casilleros: Formulario, // casilleros aplanados
@@ -627,3 +627,23 @@ export type EstadoAccion = {
     confirma: boolean
 }
 export type ModoDM = 'produc' | 'capa';
+// ayuda en línea para usuarios: lo que devuelve el procedimiento ayuda_traer (ver docs/ayuda-online.md)
+export type ModoApp = 'RELEVAMIENTO' | 'GABINETE'
+export type AyudaTemaParaUsuario = {
+    id: string
+    titulo: string
+    html: string
+}
+// una opción del menú del usuario, con el tema de ayuda que la explica (si hay alguno)
+export type AyudaOpcionMenu = {
+    ruta: string // nombres de las opciones separados por "/", por ejemplo "asignacion/encuestador"
+    label: string
+    tema: string | null
+    opciones: AyudaOpcionMenu[]
+}
+export type AyudaParaUsuario = {
+    rol: string | null
+    modo: ModoApp
+    temas: AyudaTemaParaUsuario[]
+    menu: AyudaOpcionMenu[]
+}

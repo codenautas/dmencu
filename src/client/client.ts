@@ -6,7 +6,8 @@ import {
     IdFormulario, DatosByPassPersistibles, IdEnc, IdOperativo, IdTarea, EstadoAccion, DireccionAccion,
     CampoPkRaiz, ModoDM,
     Estructura,
-    ForPkRaiz
+    ForPkRaiz,
+    AyudaOpcionMenu, AyudaParaUsuario
 } from "../unlogged/tipos";
 import likeAr = require("like-ar");
 import { BACKUPS, cargarEstructura } from "../unlogged/abrir-formulario"
@@ -729,3 +730,95 @@ myOwn.wScreens.cambiar_modo_dm = async function () {
 };
 
 /* FIN sincronizar y cambio de modo LEGACY */
+
+/* ayuda en línea para usuarios (ver docs/ayuda-online.md) */
+
+// trae la ayuda del usuario y la guarda donde la lee el dispositivo; si no puede, usa la última que se guardó
+async function traerAyuda(): Promise<AyudaParaUsuario> {
+    try {
+        var ayuda: AyudaParaUsuario = await myOwn.ajax.ayuda_traer({});
+        getFormRenderer().persistirAyuda(ayuda);
+        return ayuda;
+    } catch (err) {
+        var guardada = getFormRenderer().leerAyuda();
+        if (guardada == null) {
+            throw err;
+        }
+        return guardada;
+    }
+}
+
+function opcionesDelMenuConAyuda(opciones: AyudaOpcionMenu[], mostrarTema: (id: string) => void): HTMLUListElement {
+    var lista = html.ul({ class: 'ayuda-menu' }).create();
+    opciones.forEach(opcion => {
+        var item = html.li([html.span({ class: 'ayuda-menu-label' }, opcion.label)]).create();
+        if (opcion.tema != null) {
+            var tema = opcion.tema;
+            var enlace = html.a({ href: '#', class: 'ayuda-menu-tema' }, 'ver ayuda').create();
+            enlace.onclick = (event) => { event.preventDefault(); mostrarTema(tema); };
+            item.appendChild(enlace);
+        }
+        if (opcion.opciones.length) {
+            item.appendChild(opcionesDelMenuConAyuda(opcion.opciones, mostrarTema));
+        }
+        lista.appendChild(item);
+    });
+    return lista;
+}
+
+myOwn.wScreens.ayuda = async function () {
+    var mainLayout = document.getElementById('main_layout')!;
+    var ayuda: AyudaParaUsuario;
+    try {
+        ayuda = await traerAyuda();
+    } catch (err) {
+        mainLayout.appendChild(html.div({ class: 'ayuda' }, 'No se pudo obtener la ayuda: ' + unexpected(err).message).create());
+        return;
+    }
+    var indice = html.ul({ class: 'ayuda-indice' }).create();
+    var contenido = html.div({ class: 'ayuda-contenido' }).create();
+    var enlacesDelIndice: Map<string, HTMLAnchorElement> = new Map();
+    const MI_MENU = '';
+    var marcarEnIndice = (id: string) => enlacesDelIndice.forEach((enlace, idEnlace) => {
+        enlace.classList.toggle('ayuda-seleccionado', idEnlace == id);
+    });
+    var mostrarMiMenu = () => {
+        contenido.innerHTML = '';
+        contenido.appendChild(html.h2('Qué puedo hacer').create());
+        contenido.appendChild(html.p(`Estas son las opciones del menú que tiene habilitadas${ayuda.rol ? ` el rol ${ayuda.rol}` : ''} en esta aplicación (modo ${ayuda.modo.toLowerCase()}).`).create());
+        contenido.appendChild(opcionesDelMenuConAyuda(ayuda.menu, mostrarTema));
+        marcarEnIndice(MI_MENU);
+    };
+    var mostrarTema = (id: string) => {
+        var tema = ayuda.temas.find(tema => tema.id == id);
+        if (tema == null) {
+            mostrarMiMenu();
+            return;
+        }
+        contenido.innerHTML = tema.html; // html generado en el servidor a partir del markdown de la ayuda (sin html crudo)
+        contenido.querySelectorAll('a').forEach(enlace => {
+            var destino = enlace.getAttribute('href') ?? '';
+            if (destino.startsWith('ayuda:')) {
+                enlace.onclick = (event) => { event.preventDefault(); mostrarTema(destino.slice('ayuda:'.length)); };
+            } else {
+                enlace.target = '_blank';
+            }
+        });
+        marcarEnIndice(id);
+        contenido.scrollTop = 0;
+    };
+    var agregarAlIndice = (id: string, titulo: string, mostrar: () => void) => {
+        var enlace = html.a({ href: '#' }, titulo).create();
+        enlace.onclick = (event) => { event.preventDefault(); mostrar(); };
+        enlacesDelIndice.set(id, enlace);
+        indice.appendChild(html.li([enlace]).create());
+    };
+    agregarAlIndice(MI_MENU, 'Qué puedo hacer', mostrarMiMenu);
+    ayuda.temas.forEach(tema => agregarAlIndice(tema.id, tema.titulo, () => mostrarTema(tema.id)));
+    mainLayout.appendChild(html.div({ class: 'ayuda' }, [indice, contenido]).create());
+    if (ayuda.temas.length) {
+        mostrarTema(ayuda.temas[0].id);
+    } else {
+        mostrarMiMenu();
+    }
+};

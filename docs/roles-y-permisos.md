@@ -102,6 +102,10 @@ flowchart TD
 
 Quien tiene `encuestas.relevar` (encuestador, recuperador, supervisor) ve **relevamiento**, **sincronizar** y **cambiar modo**. Los demás roles no ven nada aunque tengan permisos de gabinete.
 
+### Ayuda
+
+Al final del menú, en ambos modos, aparece **ayuda** si el usuario tiene algún tema de ayuda visible según sus permisos, su rol y el modo (ver [ayuda-online.md](ayuda-online.md)).
+
 ### Filtros por usuario
 
 - Al **recepcionista** las grillas de asignación se le filtran por `recepcionista = su idper`, de modo que sólo ve y asigna encuestas de sus áreas.

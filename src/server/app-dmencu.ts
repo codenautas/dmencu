@@ -3,10 +3,12 @@
 import * as procesamiento from "procesamiento";
 import { emergeAppProcesamiento, emergeAppConsistencias, emergeAppVarCal, emergeAppDatosExt, emergeAppOperativos, AppBackend, ClientModuleDefinition, OptsClientPage } from "procesamiento";
 import { pasarEncuestasAProie, ProceduresDmEncu } from "./procedures-dmencu";
+import { cargarAyuda, carpetaDelPaquete, problemasDeAyuda, QuienConsultaAyuda, rutasDelMenu, temasVisibles } from "./ayuda";
 
 import * as pg from "pg-promise-strict";
 import * as miniTools from "mini-tools";
 import {
+    AyudaFuente,
     Client, Context, CoreFunctionParameters,
     MenuInfoBase,
     Puede,
@@ -21,6 +23,7 @@ import { NextFunction } from "express-serve-static-core";
 import * as express from "express";
 
 import { promises as fs } from "fs";
+import * as path from "path";
 
 import { roles } from "./table-roles";
 import { personal } from "./table-personal";
@@ -101,6 +104,7 @@ import { manzanas } from "./table-manzanas";
 import { area_enc_proximas } from "./table-area_enc_proximas";
 
 export * from "./types-dmencu";
+export * from "./ayuda";
 import { defConfig } from "./def-config"
 import { ProcedureDef } from "backend-plus";
 import { table } from "console";
@@ -129,6 +133,16 @@ export function permisosSegunUsuario(
         return { superuser: true, puede: caches.permisosSuperuser };
     }
     return { puede: permisosDelRol?.puede };
+}
+
+// lo que decide qué temas de ayuda ve el usuario: su rol, sus permisos y el modo de la instancia
+export function quienConsultaAyuda(context: Context): QuienConsultaAyuda {
+    return {
+        rol: context.user?.rol ?? null,
+        superuser: !!context.superuser,
+        puede: context.puede,
+        modo: getModoByPolicy(context.be),
+    };
 }
 
 // lo que usan refreshCaches y refrescarEstructuraAlModificarTabla del cliente de base (el Client de pg-promise-strict lo cumple)
@@ -244,6 +258,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             this.caches.metaEncIncluirCasillerosSaltoREL = false;
             this.caches.timestampEstructura = new Date().getTime();
             this.caches.tableContent.conReaHogar = {};
+            this.caches.ayuda = [];
         }
         getSufijoFrombaseUrl = (baseUrl: string) =>
             baseUrl.includes('test') || baseUrl.includes('/pr') ? '_test' :
@@ -455,8 +470,32 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 //console.dir(be.caches.permisosSuperuser,{depth:9});
                 //console.dir(be.caches.permisosParaNadie,{depth:9});
             });
+            be.caches.ayuda = cargarAyuda(be.getAyudaFuentes());
+            be.problemasDeAyuda().forEach(problema => console.error(problema));
             await this.refreshCaches();
             await registrarCronJobPasarAProie(be);
+        }
+        // carpetas con la ayuda para usuarios, en orden: un tema de una fuente posterior reemplaza u oculta
+        // al de una anterior con el mismo id. Las apps finales agregan la suya (ver docs/ayuda-online.md)
+        getAyudaFuentes(): AyudaFuente[] {
+            return [{ origen: 'dmencu', carpeta: path.join(carpetaDelPaquete(__dirname), 'ayuda') }];
+        }
+        // temas de ayuda del modo actual con permisos, roles u opciones de menú que no existen
+        problemasDeAyuda(): string[] {
+            var be = this;
+            var modo = getModoByPolicy(be);
+            var rutas: string[] = [];
+            Object.keys(be.caches.permisosRol).forEach(rol => {
+                var user = { rol, idper: '', usuario: '' };
+                var context: Context = { ...permisosSegunUsuario(be.caches, user), be, user, session: {}, username: '', machineId: '', navigator: '' };
+                rutas = rutas.concat(rutasDelMenu(be.getMenu(context).menu));
+            });
+            return problemasDeAyuda(
+                be.caches.ayuda.filter(tema => tema.modo == null || tema.modo == modo),
+                be.caches.permisosSuperuser,
+                Object.keys(be.caches.permisosRol),
+                rutas
+            );
         }
         override configStaticConfig() {
             super.configStaticConfig();
@@ -916,6 +955,9 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 if (menuCarto) {
                     menu.push(menuCarto);
                 }
+            }
+            if (temasVisibles(this.caches.ayuda, quienConsultaAyuda(context)).length) {
+                menu.push({ menuType: 'ayuda', name: 'ayuda' });
             }
             return { menu };
         }
