@@ -4,6 +4,15 @@ App que corre sobre Backend-Plus y PostgreSQL para crear operativos de campo y d
 
 ---
 
+## Nombres de operativos
+
+- El número del operativo (por ejemplo `274`) identifica la onda: en `274`, `27` es el año y `4` es el trimestre.
+- Al hablar del operativo en general (documentación, explicaciones, mensajes, nombres de funciones o textos de interfaz), **no usar el código numérico**. Usar la descripción, por ejemplo "la encuesta trimestral", "el operativo vigente" o "la onda actual".
+- El código sólo aparece cuando es un identificador técnico que el sistema exige (por ejemplo, valores de la columna `operativo`) o cuando se habla de una onda concreta.
+- Esta regla aplica a cualquier operativo, no sólo a una app en particular.
+
+---
+
 ## Estructura de archivos
 
 Las tablas están definidas siguiendo la convención de `backend-plus`: cada tabla tiene su propio archivo con el prefijo `tabla-`, ubicado en `src/server/`. El frontend en `src/client` y en `src/common` lo que sea común a ambos.
