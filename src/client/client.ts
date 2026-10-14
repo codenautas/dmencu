@@ -8,7 +8,7 @@ import {
     Estructura,
     ForPkRaiz
 } from "../unlogged/tipos";
-import * as likeAr from "like-ar";
+import likeAr = require("like-ar");
 import { BACKUPS, cargarEstructura } from "../unlogged/abrir-formulario"
 import { createLocalStorageFormRenderer } from "../unlogged/render-init";
 import { getFormRenderer } from "../unlogged/render-config";
@@ -161,7 +161,7 @@ var crearBotonVerAbrirEncuesta = (operativo: IdOperativo, tarea: IdTarea, encues
     return ver
 }
 
-var crearBotonesVerAbrirTareas = async (depot: myOwn.Depot, fieldName: string, label: 'abrir' | 'ver') => {
+var crearBotonesVerAbrirTareas = async (depot: myOwn.Depot, fieldName: string, _label: 'abrir' | 'ver') => {
     tareas = tareas ? tareas : (await myOwn.ajax.table_data({ table: `tareas`, fixedFields: [] }));
     var misTareas = tareas.filter((tarea:any) =>
         //@ts-ignore def existe en manager y muestraAbrirEnTodasLasTareas tambien (en esa grilla)
@@ -621,7 +621,7 @@ const mostrarInfoLocal = async (divAvisoSincro: HTMLDivElement, titulo: string, 
             nroSincro ? html.p(["Número de sincronización: ", html.b("" + nroSincro.toString())]) : null,
             html.h4(titulo),
             html.p([htmlNumero(likeAr(datos.cargas).array().length), ' areas: ', likeAr(datos.cargas).keys().join(', ')]),
-            html.p([htmlNumero(likeAr(datos.respuestas[estructura.uaPpal]).array().length), ' ' + estructura.uaPpal]),
+            estructura ? html.p([htmlNumero(likeAr(datos.respuestas[estructura.uaPpal]).array().length), ' ' + estructura.uaPpal]) : null,
             
             mostrarLinkHdr ? html.a({ href: './campo' }, [html.b('IR A LA HOJA DE RUTA')]) : null
         ]).create());

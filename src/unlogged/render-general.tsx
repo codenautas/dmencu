@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { Provider, useDispatch } from "react-redux";
-import * as likeAr from "like-ar";
+import likeAr = require("like-ar");
 
 import { expected } from "cast-error";
 

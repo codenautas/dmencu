@@ -14,9 +14,13 @@ import {
     ModoDM,
     PantallaNavegacion,
     IdComodin,
+    IdCasillero,
+    IdBotonFormulario,
+    IdConsistencia,
+    IdTexto,
 } from "./tipos";
 import { createReducer, createDispatchers, ActionsFrom } from "redux-typed-reducer";
-import * as likeAr from "like-ar";
+import likeAr = require("like-ar");
 import * as bestGlobals from "best-globals";
 import * as JSON4all from "json4all";
 
@@ -226,7 +230,7 @@ type CaracerizacionEstadoRowValidator = {
     conValor: boolean | null, // null = unknown
 }
 
-function aplanarLaCurva<T extends { tipoc: string, despliegue?: string }>(casillerosData: IDataSeparada<T>): IDataConCasilleros<T | Opcion> {
+function aplanarLaCurva<T extends { tipoc: string, despliegue?: string | null }>(casillerosData: IDataSeparada<T>): IDataConCasilleros<T | Opcion> {
     var data = casillerosData.data
     return {
         ...data,
@@ -241,27 +245,36 @@ function aplanarLaCurva<T extends { tipoc: string, despliegue?: string }>(casill
 
 // type AnyRef<T extends {}>=[T, keyof T];
 
+// Variable de un botón de formulario: no es libre (así el rowValidator la ve) y cualquier valor cargado es válido.
+// Antes se definía como {tipovar:'opciones', casilleros:[...]}, pero el rowValidator ignora esos campos
+// (sólo mira tipo/opciones) y la validaba como texto; se deja explícito ese mismo comportamiento.
+function variableBotonFormulario(): EstructuraRowValidator['variables'][IdVariable] {
+    return { tipo: 'texto' };
+}
+
 function rellenarVariablesYOpciones(idFormulario: IdFormulario, estructura: EstructuraRowValidator, casillero: CasillerosImplementados, unidadAnalisis?: string | null,
     subordinadaVar?: IdVariable, subordinadaValor?: any
 ) {
-    if (casillero.var_name != null || casillero.tipoc == 'FILTRO') {
+    var varNameCasillero = casillero.var_name;
+    if (varNameCasillero != null || casillero.tipoc == 'FILTRO') {
         var var_name: IdVariable
-        if (casillero.tipoc == 'FILTRO') {
+        if (varNameCasillero == null) {
+            // es un FILTRO (los filtros no tienen var_name)
             // @ts-ignore pongo como nombre de variable el filtro;
             var_name = casillero.casillero;
-        } else if (casillero.var_name.endsWith('!')) {
+        } else if (varNameCasillero.endsWith('!')) {
             // @ts-ignore las variables espejo son las que terminan en !
             var_name = casillero.var_name_especial.replace(/!+$/, '');
             casillero.var_name = var_name;
         } else {
-            var_name = casillero.var_name
+            var_name = varNameCasillero
         }
         let variableDef = {
             tipo: casillero.tipoc == 'FILTRO' ? 'filtro' : casillero.tipoc == 'OM' || casillero.tipovar == 'si_no' ? 'opciones' : casillero.tipovar,
             // @ts-ignore optativo podría no existir, quedará null.
             optativa: casillero.optativo!,
             opciones: (casillero.tipoc == 'OM' || casillero.tipovar == 'opciones' || casillero.tipovar == 'si_no' ?
-                likeAr.createIndex(casillero.casilleros, 'casillero') : {}) as unknown as { [key: string]: RowValidatorOpcion<IdVariable> },
+                likeAr.createIndex(casillero.casilleros ?? [], 'casillero') : {}) as unknown as { [key: string]: RowValidatorOpcion<IdVariable> },
             salto: casillero.salto as IdVariable,
             saltoNsNr: casillero.salto_ns_nc as IdVariable || null,
             funcionHabilitar: casillero.expresion_habilitar_js,
@@ -286,18 +299,12 @@ function rellenarVariablesYOpciones(idFormulario: IdFormulario, estructura: Estr
         if (requiereAgregar) {
             var newVarNameAgregar = '$B.F:' + saltoNombre + '_agregar' as IdVariable;
             casillero.var_names_BF.push(newVarNameAgregar);
-            estructura.variables[newVarNameAgregar] = {
-                tipovar: 'opciones',
-                casilleros: [{ tipoc: 'O', casillero: 1, nombre: 'si' }] as Opcion[], // se usa para que no sea libre y el rowValidator la vea
-            } as Variable;
+            estructura.variables[newVarNameAgregar] = variableBotonFormulario();
             casillero.primera_variable = newVarNameAgregar;
         }
         var newVarName = '$B.F:' + saltoNombre as IdVariable;
         casillero.var_names_BF.push(newVarName)
-        estructura.variables[newVarName] = {
-            tipovar: 'opciones',
-            casilleros: [{ tipoc: 'O', casillero: 1, nombre: 'si' }] as Opcion[], // se usa para que no sea libre y el rowValidator la vea
-        } as Variable;
+        estructura.variables[newVarName] = variableBotonFormulario();
         casillero.primera_variable = casillero.primera_variable || newVarName;
 
     }
@@ -308,10 +315,11 @@ function rellenarVariablesYOpciones(idFormulario: IdFormulario, estructura: Estr
     }
 }
 
-type RegistroDestinos = { [destino in IdDestino]: IdVariable | null };
+// se registra el destino de todo casillero que pueda ser apuntado por un salto
+type RegistroDestinos = Partial<Record<IdCasillero | IdDestino | IdBotonFormulario | IdConsistencia | IdTexto, IdVariable | null>>;
 
 function obtenerDestinosCasilleros(casillero: CasillerosImplementados, destinos?: RegistroDestinos): RegistroDestinos {
-    if (destinos == null) return obtenerDestinosCasilleros(casillero, {} as RegistroDestinos);
+    if (destinos == null) return obtenerDestinosCasilleros(casillero, {});
     if (casillero.tipoc == 'FILTRO') {
         destinos[casillero.casillero] = casillero.casillero as IdVariable;
     } else if (casillero.tipoc != 'F' && casillero.tipoc != 'O' && casillero.tipoc != 'OM') {

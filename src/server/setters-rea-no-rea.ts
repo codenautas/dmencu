@@ -1,10 +1,13 @@
-import type { IdTarea, RespuestasRaiz } from "../unlogged/tipos";
+import type { IdTarea, ResultadoResumen } from "../unlogged/tipos";
+
+// valor que se pasa como parámetro $n a una consulta (los objetos van como json)
+export type ParametroSql = string | number | boolean | null | object;
 
 export type FunParams = {
     tarea: IdTarea;
-    respuestasUAPrincipal: RespuestasRaiz;
+    respuestasUAPrincipal: ResultadoResumen; // de las respuestas sólo se usan el resumen y los códigos de rea/no rea
     setters: string[];
-    params: any[];
+    params: ParametroSql[];
     destino: 'tem' | 'tareas_tem';
 };
 

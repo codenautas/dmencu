@@ -12,7 +12,7 @@ import {
     ModoDM
 } from "./tipos";
 
-import * as likeAr from "like-ar";
+import likeAr = require("like-ar");
 import { expected } from "cast-error";
 
 import {

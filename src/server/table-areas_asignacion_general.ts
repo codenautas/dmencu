@@ -1,6 +1,6 @@
 "use strict";
 
-import {TableDefinition, TableContext, FieldDefinition, OtherTableDefs} from "./types-dmencu";
+import {TableDefinition, TableContext, FieldDefinition, OtherTableDefs, RolFieldTarea} from "./types-dmencu";
 
 import { areas } from "./table-areas";
 import { IdTarea } from "../unlogged/tipos";
@@ -15,7 +15,7 @@ export function areas_asignacion_general(context:TableContext):TableDefinition {
         { tarea: 'recu', muestraDispositivo: true },
         { tarea: 'supe', muestraDispositivo: true },
     ]
-    var rolesFields = [
+    var rolesFields: RolFieldTarea[] = [
         { name: 'recepcionista', prefijo: 'r', editable: true, references: 'recepcionistas', muestraDispositivo:false },
         { name: 'asignado'     , prefijo: ''     , editable: true, references: 'personal'      , muestraDispositivo:true },
     ];

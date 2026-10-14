@@ -1,6 +1,6 @@
 "use strict";
 
-import { TableDefinition, TableContext } from "./types-dmencu";
+import { TableDefinition, TableContext, GrupoNoRea } from "./types-dmencu";
 
 export const cuentasSql = (be: any, filter: string) => `
 select 
@@ -17,7 +17,7 @@ select
     string_agg(distinct clase,', ' order by clase desc) as clases,
     string_agg(distinct nrocomuna::text,'-' order by nrocomuna::text)::text as comuna
     , string_agg(distinct cluster::text,', ' order by cluster::text desc) as clusters
-    ${be.caches.tableContent.no_rea_groups.map(x =>
+    ${be.caches.tableContent.no_rea_groups.map((x: GrupoNoRea) =>
     `, sum(CASE WHEN gru_no_rea=${be.db.quoteLiteral(x.grupo)} THEN 1 ELSE NULL END) as ${be.db.quoteIdent(x.grupo.replace(/ /g, '_'))}`
 ).join('')}
 from ( select t.operativo, enc, cluster, nrocomuna, clase, 
@@ -41,7 +41,7 @@ export const cuentasFields = (be: any) => [
     { name: 'vacias', typeName: 'integer', editable: false, aggregate: 'sum', inTable: false },
     { name: 'inhabilitadas', typeName: 'integer', editable: false, aggregate: 'sum', inTable: false },
     { name: 'comuna', typeName: 'text', title: 'comuna', inTable: false },
-    ...be.caches.tableContent.no_rea_groups.map(x => (
+    ...be.caches.tableContent.no_rea_groups.map((x: GrupoNoRea) => (
         { name: x.grupo.replace(/ /g, '_'), typeName: 'integer', editable: false }
     ))
 ];

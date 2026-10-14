@@ -69,7 +69,7 @@ export type CasilleroBase = {
     optativo?: boolean | null
     libre?: boolean | null
     valor_ns_nc?: any
-    despliegue?: string
+    despliegue?: string | null
     longitud?: string
 }
 

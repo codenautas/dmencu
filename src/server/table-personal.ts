@@ -2,7 +2,7 @@
 
 import {TableDefinition, TableContext} from "./types-dmencu";
 import {FieldDefinition} from "./types-dmencu";
-import * as likeAr from "like-ar";
+import likeAr = require("like-ar");
 
 export function personal(context:TableContext, opts?:{rol:string, name:string}|null):TableDefinition {
     var esEditable = context.user.rol === 'admin'||context.puede?.configurar?.editar;

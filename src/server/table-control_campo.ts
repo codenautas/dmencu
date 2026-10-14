@@ -1,11 +1,14 @@
 "use strict";
 
 import { stringify } from "querystring";
-import {TableDefinition, TableContext, FieldDefinition} from "./types-dmencu";
+import {TableDefinition, TableContext, FieldDefinition, GrupoNoRea} from "./types-dmencu";
+
+// los campos con condicion se cuentan en el sql (ver klase); tasa_efectividad indica si suman al denominador de la tasa
+type CampoCalculado = FieldDefinition & {condicion?:string, tasa_efectividad?:boolean};
 
 export type controlCamposOpts={
     nombre:string, 
-    agrupador?:string, 
+    agrupador?:string,
     agrupado?:boolean,
     camposCorte?:FieldDefinition[],
     filtroWhere?:string
@@ -26,7 +29,7 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
         opts.camposCorte ||[]
     )];
     var tieneSeleccionado=context.be.caches.tableContent.conReaHogar.config_sorteo;
-    var camposCalculados:(FieldDefinition & {condicion:string, tasa_efectividad:boolean})[]=[
+    var camposCalculados:CampoCalculado[]=[
         {name:'no_salieron'  , typeName:'bigint', aggregate:'sum', title:'no salieron a campo', condicion:`resumen_estado is null`},
         {name:'salieron'     , typeName:'bigint', aggregate:'sum', title:'salieron a campo'},
         {name:'sin_novedad'  , typeName:'bigint', aggregate:'sum', visible:opts.agrupado},
@@ -39,7 +42,7 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
         {name:'asuente_viv'  , typeName:'bigint', title:'ausente de vivienda', condicion:`cod_no_rea=7`},
         {name:'asuente_mie'  , typeName:'bigint', title:'ausente de miembro seleccionado', condicion:`cod_no_rea=75`},
         */
-        ...(be.caches.tableContent[opts.agrupador]||[]).map(g=>({
+        ...(be.caches.tableContent[opts.agrupador]||[]).map((g:GrupoNoRea):CampoCalculado=>({
             name:g.grupo.replace(/ /g,'_'),
             typeName:'bigint',
             inTable:false,
@@ -59,8 +62,8 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
             ...camposCalculados.map(f=>{var {condicion, ...fieldDef}=f; return fieldDef}),
             {name:'otros'                    , typeName:'bigint', aggregate:'sum'},
             {name:'tasa_efectividad'         , typeName:'decimal'},
-            {name:'incompleto'               , typeName:'bigint', aggregate:'sum', visible:!opts.agrupado, condicion:`resumen_estado in ('incompleto','con problemas')`},
-            {name:'verif_encu_pendiente'     , typeName:'bigint', aggregate:'sum', visible:!opts.agrupado, condicion:`resumen_estado in ('incompleto','con problemas')`},
+            {name:'incompleto'               , typeName:'bigint', aggregate:'sum', visible:!opts.agrupado},
+            {name:'verif_encu_pendiente'     , typeName:'bigint', aggregate:'sum', visible:!opts.agrupado},
             {name:'en_curso'                 , typeName:'bigint', aggregate:'sum', visible:!!opts.gabinete, title:'En_curso'     },
             {name:'otras_causas_gabinete'    , typeName:'bigint', aggregate:'sum', visible:!!opts.gabinete, title: 'Otras_causas'},
         ],

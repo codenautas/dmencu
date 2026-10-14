@@ -3,7 +3,7 @@ import {html}  from 'js-to-html';
 import { desplegarFormularioActual } from './render-formulario';
 import { DatosByPassPersistibles, ModoDM } from './tipos';
 import { expected } from "cast-error";
-const ServiceWorkerAdmin = require("service-worker-admin");
+import ServiceWorkerAdmin = require("service-worker-admin");
 import { createLocalStorageFormRenderer } from "./render-init";
 import { BACKUPS } from './abrir-formulario';
 import { getFormRenderer } from "./render-config";
@@ -253,7 +253,7 @@ window.addEventListener('load', async function(){
                         archivosContenedor.scrollTop = archivosContenedor.scrollHeight;
                     }
                 },
-                onInfoMessage: (m: string)=>console.log('message: ', m),
+                onInfoMessage: (m?: string)=>console.log('message: ', m),
                 onError: async (err: Error, context: string) => {
                     var error = expected(err);
                     console.log('error: ' + (context ? ` en (${context})` : ''), error);
