@@ -1,8 +1,9 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
+import * as pg from 'pg-promise-strict';
 import { AppBackend, emergeAppMetaEnc, emergeAppOperativos, emergeAppRelEnc } from 'meta-enc';
-import { emergeAppConsistencias, emergeAppDatosExt, emergeAppProcesamiento, emergeAppVarCal } from 'procesamiento';
+import { emergeAppConsistencias, emergeAppDatosExt, emergeAppProcesamiento, emergeAppVarCal, OperativoGenerator } from 'procesamiento';
 
 import { emergeAppDmEncu, permisosSegunUsuario } from '../server/app-dmencu';
 import type { Context, PermisosRol, Puede } from '../server/types-dmencu';
@@ -44,6 +45,11 @@ export function crearAppParaTests(policy: string = ''): AppParaTests {
         allowedHosts: [],
         policy,
     };
+    // start() asigna el motor de base; las definiciones de tablas lo usan para citar identificadores
+    be.db = pg;
+    // igual que en server-dmencu.ts
+    OperativoGenerator.mainTD = 'viviendas';
+    OperativoGenerator.mainTDPK = 'vivienda';
     var permisos = permisosDeInstalacion();
     be.caches.permisosRol = permisos.permisosRol;
     be.caches.permisosRolSoloTrue = permisos.permisosRol;

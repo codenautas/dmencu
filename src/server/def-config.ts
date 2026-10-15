@@ -59,6 +59,7 @@ install:
       - agregar_historial_tem_trg.sql
       - carga_inicial_tareas_tem.sql
       - validar_tareas_tem_trg.sql
+      - validar_manzana_casa_tem_trg.sql
       - asignar_desasignar_tareas_tem_trg.sql
       - desverificar_tarea_trg.sql
       - inicial_update_varcal_por_encuesta.sql

@@ -23,11 +23,12 @@ Compila `src/test` (`tsc -p src/test`) y ejecuta Mocha sobre `dist/test/test.js`
 | `test-helpers-formulario.ts` | Extracción de comodines y variables de interés, `getBFVarNames`, `replaceSpecialWords` (ver [funcionamiento-comodines.md](funcionamiento-comodines.md)) |
 | `test-ejemplo.ts` | Ejemplos mínimos de cómo escribir un test |
 | `test-ayuda.ts` | Ayuda en línea: formato de los temas, combinación de fuentes (reemplazar/ocultar), qué temas ve cada rol en cada modo y que los temas de dmencu no mencionen permisos, roles ni opciones de menú inexistentes (ver [ayuda-online.md](ayuda-online.md)) |
+| `test-tem-edicion.ts` | Que en la grilla `tem` sólo sea editable `habilitada` y `casa` esté visible después de `nrolado`; los campos, el orden, la persistencia en `tem` (`table:'tem'`) y los permisos por rol de `tem_edicion`, y que esté al lado de TEM en el menú. El trigger de dominio 5 (`validar_manzana_casa_tem_trg.sql`) no se prueba acá |
 | `app-para-tests.ts` | Utilidades (no contiene tests): app compuesta sin base, permisos leídos de `install/*.tab` y contexto de un usuario con cierto rol |
 
 ## Utilidades de `app-para-tests.ts`
 
-- `crearAppParaTests(policy)`: instancia la misma app que `server-dmencu.ts` (con `emergeAppDmEncu` y los mixins de `meta-enc` y `procesamiento`) **sin llamar a `start()`**, de modo que no se conecta a la base. La policy `'web'` equivale al modo RELEVAMIENTO; cualquier otra, a GABINETE.
+- `crearAppParaTests(policy)`: instancia la misma app que `server-dmencu.ts` (con `emergeAppDmEncu` y los mixins de `meta-enc` y `procesamiento`) **sin llamar a `start()`**, de modo que no se conecta a la base. Asigna `be.db` (para citar identificadores) y `OperativoGenerator.mainTD`/`mainTDPK` como `server-dmencu.ts`, así se pueden armar definiciones de tablas. La policy `'web'` equivale al modo RELEVAMIENTO; cualquier otra, a GABINETE.
 - `permisosDeInstalacion()`: construye `permisosRol`, `permisosSuperuser` y `permisosParaNadie` leyendo `install/roles.tab`, `roles_permisos.tab` y `permisos.tab`, con el mismo resultado que obtiene `postConfig` de la base. Así los tests de menú usan los permisos reales y fallan si alguien cambia la matriz sin revisar el menú.
 - `contextoDelRol(be, rol, idper)`: contexto equivalente al de `getContext` para un usuario con ese rol.
 

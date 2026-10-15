@@ -111,6 +111,16 @@ Al final del menú, en ambos modos, aparece **ayuda** si el usuario tiene algún
 - Al **recepcionista** las grillas de asignación se le filtran por `recepcionista = su idper`, de modo que sólo ve y asigna encuestas de sus áreas.
 - La grilla de **supervisión** muestra las encuestas de tarea `supe` asignadas al `idper` del usuario.
 
+### Edición de la TEM
+
+En *configurar → muestra*, la grilla **TEM** sólo permite cambiar `habilitada` (`campo.administrar` o recepcionista). Lo demás se edita en **edición TEM** (`tem_edicion`):
+
+| Campo | Quién lo edita |
+| :-- | :-- |
+| `cita`, `proie` | `campo.administrar`, recepcionista o `encuestas.procesar` |
+| `result_sup`, `fin_campo` | `campo.administrar` o recepcionista |
+| `nromanzana`, `casa` | `campo.administrar` (subcoor_campo, coor_campo, coor_proc, admin), y sólo en encuestas de dominio 5 (lo controla el trigger `validar_manzana_casa_tem_trg`) |
+
 Estas reglas están cubiertas por los tests de `src/test/test-menu-segun-rol.ts` (ver [testing.md](testing.md)).
 
 ## Cambiar permisos

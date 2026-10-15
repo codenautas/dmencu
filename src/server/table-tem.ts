@@ -18,6 +18,16 @@ export var getDomicilioFields = ():FieldDefinition[] => [
     {name:'barrio'               , typeName:'text'    , editable: false  },
 ]
 
+// muestra las encuestas de producción o de capacitación según lo que tenga habilitado el usuario (tem t)
+export var filtroTemSegunUsuario = (context:ContextForDump):string => `
+                            join usuarios usu_con on usu_con.usuario = ${sqlTools.quoteLiteral(context.user.usuario)}
+                            where
+                                usu_con.muestra_encuestas_prod and t.enc_autogenerado_dm is not null
+                                    or
+                                usu_con.muestra_encuestas_capa and t.enc_autogenerado_dm_capa is not null
+                                    or
+                                t.enc_autogenerado_dm is null and t.enc_autogenerado_dm_capa is null`
+
 export function tem(context:ContextForDump, opts?:any):TableDefinition {
     var opts=opts||{};
     var recepcion=opts.recepcion?'_recepcion':'';
@@ -44,7 +54,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
         },
         editable: puedeEditarCampo||puedeEditarProc,
         hiddenColumns:[
-            'seleccionado_ant','cita','notas', 'cluster', 'codviviendaparticular', 'casa', 'obsdatosdomicilio', 'obsconjunto', 'reserva', 'rotacion_etoi', 'rotacion_eah'
+            'seleccionado_ant','cita','notas', 'cluster', 'codviviendaparticular', 'obsdatosdomicilio', 'obsconjunto', 'reserva', 'rotacion_etoi', 'rotacion_eah'
             , 'trimestre'   , 'procedencia', 'sel_etoi_villa'   , 'marco'      , 'semana' , 'periodicidad' 
             , 'cargado_dm', 'estados__permite_editar_encuesta'
         ],
@@ -62,7 +72,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {name:'enc_ant'              , typeName:'text'    , editable: false  },
             {name:'area_ant'             , typeName:'integer' , editable: false  },
             {name:'seleccionado_ant'     , typeName:'jsonb'   , editable: false  },
-            {name:'cita'                 , typeName:'text'    , editable: true   },
+            {name:'cita'                 , typeName:'text'    , editable: false  },
             {name:'rea'                  , typeName:'integer' , editable: false  },
             {name:'norea'                , typeName:'integer' , editable: false  },
             {name:'cant_h'               , typeName:'integer' , editable: false  },
@@ -77,18 +87,18 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             //{name:'encu_habilitada'      , typeName:'boolean' , editable: false , inTable: false  },
             //{name:'encu_cargado'         , typeName:'boolean' , editable: false , inTable: false  },
             {name:'encuestador'          , typeName:'text'    , editable: false , inTable: false  },
-            {name:'nombre_enc'           , typeName:'text'    , inTable: false  },
-            {name:'apellido_enc'         , typeName:'text'    , inTable: false  },
+            {name:'nombre_enc'           , typeName:'text'    , editable: false , inTable: false  },
+            {name:'apellido_enc'         , typeName:'text'    , editable: false , inTable: false  },
             //{name:'recu_habilitada'      , typeName:'boolean' , editable: false , inTable: false  },
             //{name:'recu_cargado'         , typeName:'boolean' , editable: false , inTable: false  },
             {name:'recuperador'          , typeName:'text'    , editable: false , inTable: false  },
-            {name:'nombre_rec'           , typeName:'text'    , inTable: false  },
-            {name:'apellido_rec'         , typeName:'text'    , inTable: false  },
+            {name:'nombre_rec'           , typeName:'text'    , editable: false , inTable: false  },
+            {name:'apellido_rec'         , typeName:'text'    , editable: false , inTable: false  },
             //{name:'supe_habilitada'      , typeName:'boolean' , editable: false , inTable: false  },
             //{name:'supe_cargado'         , typeName:'boolean' , editable: false , inTable: false  },
             {name:'supervisor'           , typeName:'text'    , editable: false , inTable: false  },
-            {name:'nombre_sup'           , typeName:'text'    , inTable: false  },
-            {name:'apellido_sup'         , typeName:'text'    , inTable: false  },
+            {name:'nombre_sup'           , typeName:'text'    , editable: false , inTable: false  },
+            {name:'apellido_sup'         , typeName:'text'    , editable: false , inTable: false  },
             {name:'rea_sup'              , typeName:'integer'     , editable: false},
             {name:'norea_sup'            , typeName:'integer'     , editable: false},
             {name:'resumen_estado_sup'   , typeName:'text'        , editable: false},
@@ -96,9 +106,9 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {name:'supervision_aleatoria', typeName:'integer'     , editable: false},
             {name:'supervision_dirigida' , typeName:'integer'     , editable: false},
             {name:'supervision'          , typeName:'integer'     , editable: false},
-            {name:'result_sup'           , typeName:'integer'     , editable: puedeEditarCampo},
-            {name:'fin_campo'            , typeName:'text'    , editable: puedeEditarCampo  },
-            {name:'proie'                , typeName:'text'    , editable: puedeEditarCampo||puedeEditarProc  },
+            {name:'result_sup'           , typeName:'integer'     , editable: false},
+            {name:'fin_campo'            , typeName:'text'    , editable: false  },
+            {name:'proie'                , typeName:'text'    , editable: false  },
             {name:'pase_tabla'           , typeName:'text'    , editable: false  },
             ...getDomicilioFields(),
             //{name: "verificar"       , typeName:'boolean', editable:true, inTable:false, clientSide:'verificarCaso'},
@@ -116,6 +126,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {name:'nroradio'             , typeName:'integer' , editable: false  },
             {name:'nromanzana'           , typeName:'integer' , editable: false  },
             {name:'nrolado'              , typeName:'integer' , editable: false  },
+            {name:'casa'                 , typeName:'text'    , editable: false  },
             {name:'usodomicilio'         , typeName:'integer' , editable: false  },
             {name:'orden_relevamiento'   , typeName:'integer' , editable: false  },
             {name:'mapa'                 , typeName:'integer' , editable: false  },
@@ -127,7 +138,6 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {name:'panel'                , typeName:'integer' , editable: false  ,visible: true  },
             //vacios o poco interesantes
             {name:'codviviendaparticular', typeName:'text'    , editable: false  },
-            {name:'casa'                 , typeName:'text'    , editable: false  },
             {name:'obsdatosdomicilio'    , typeName:'text'    , editable: false  },
             {name:'obsconjunto'          , typeName:'text'    , editable: false  },
             {name:'reserva'              , typeName:'integer' , editable: false  },
@@ -220,13 +230,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
                             left join usuarios usu_enc on usu_enc.idper = tt.etareas->'encu'->>'asignado'
                             left join usuarios usu_rec on usu_rec.idper = tt.etareas->'recu'->>'asignado'
                             left join usuarios usu_sup on usu_sup.idper = tt.etareas->'supe'->>'asignado'
-                            join usuarios usu_con on usu_con.usuario = ${sqlTools.quoteLiteral(context.user.usuario)}
-                            where 
-                                usu_con.muestra_encuestas_prod and t.enc_autogenerado_dm is not null
-                                    or 
-                                usu_con.muestra_encuestas_capa and t.enc_autogenerado_dm_capa is not null
-                                    or 
-                                t.enc_autogenerado_dm is null and t.enc_autogenerado_dm_capa is null
+                            ${filtroTemSegunUsuario(context)}
                 )
             `     
         };

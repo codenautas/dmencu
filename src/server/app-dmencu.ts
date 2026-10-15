@@ -70,6 +70,7 @@ import { t_supe_areas } from './table-tareas_areas';
 import { t_ingr_areas } from './table-tareas_areas';
 import { mis_tareas } from './table-mis_tareas';
 import { tem_asignacion } from './table-tem_asignacion';
+import { tem_edicion } from './table-tem_edicion';
 import { tareas_tem_recepcion } from './table-tareas_tem_recepcion';
 import { tareas_tem_ingreso } from './table-tareas_tem_ingreso';
 import { tareas_tem_fin_campo } from './table-tareas_tem_fin_campo';
@@ -817,6 +818,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             if (context.puede?.campo?.administrar || context.puede?.encuestas?.procesar) {
                 const submenuMuestra: MenuInfoBase[] = [
                     { menuType: 'table', name: 'tem', label: 'TEM' },
+                    { menuType: 'table', name: 'tem_edicion', label: 'edición TEM' },
                     { menuType: 'proc', name: 'muestra_generar', label: 'generar muestra' },
                     { menuType: 'table', name: 'semanas' },
                     { menuType: 'table', name: 'area_enc_proximas' },
@@ -992,6 +994,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 , estados_acciones
                 , tareas_proximas
                 , tem
+                , tem_edicion
                 , historial_tem
                 , modos_dm
                 , parametros
