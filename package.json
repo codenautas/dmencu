@@ -10,7 +10,8 @@
   "files": [
     "dist",
     "install",
-    "ayuda"
+    "ayuda",
+    "CLAUDE.md"
   ],
   "dependencies": {
     "@mui/material": "^5.16.7",

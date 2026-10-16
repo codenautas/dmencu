@@ -68,7 +68,6 @@ Los tests cubren funcionalidades críticas del sistema. Es necesario definir una
 - **Framework**: Mocha
 - **Comando**: `npm run test`
 - **Archivo principal**: `test.ts`
-### Helpers disponibles
 
 ### Lógica de negocio en PostgreSQL
 
@@ -77,10 +76,12 @@ Muchas reglas de negocio críticas están implementadas como **funciones almacen
 Ejemplos de lógica que vive en la base de datos:
 
 > ⚠️ Si Claude Code necesita entender o modificar una regla de negocio importante, debe buscar primero si existe una función o trigger en PostgreSQL que la implemente — no asumir que toda la lógica está en TypeScript. Reimplementar en el backend lógica que ya existe en la base de datos introduce duplicación y riesgo de inconsistencia.
->
-> ## Documentacion
->
-> Mantener actualizada la documentación en la medida que se agreguen o modifiquen las funcionalidades 
->
-> - `docs/` es la documentación para desarrolladores.
-> - `ayuda/` es la ayuda en línea para usuarios que se ve en el menú según rol, permisos y modo (ver `docs/ayuda-online.md`). Al agregar o cambiar una opción de menú o una funcionalidad que usan las personas, agregar o actualizar su tema en `ayuda/`.
+
+---
+
+## Documentación
+
+Mantener actualizada la documentación en la medida que se agreguen o modifiquen las funcionalidades.
+
+- `docs/` es la documentación para desarrolladores.
+- `ayuda/` es la ayuda en línea para usuarios que se ve en el menú según rol, permisos y modo (ver `docs/ayuda-online.md`). Al agregar o cambiar una opción de menú o una funcionalidad que usan las personas, agregar o actualizar su tema en `ayuda/`.
