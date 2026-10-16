@@ -36,15 +36,23 @@ Las tablas están definidas siguiendo la convención de `backend-plus`: cada tab
 ## Convenciones de código
 
 - **Todos los tipos deben ser explícitos**. Prohibido usar `any`, casts vía `unknown`, o cualquier magia sin justificación. 
+  - Si un callback recibe un parámetro sin tipo, tiparlo (por ejemplo `(item:MenuInfoBase) => ...`), no dejarlo implícito.
 - Si existe código de bajo nivel inevitablemente sin tipado estricto, debe estar estrictamente encapsulado en ubicaciones muy delimitadas y tratado como excepción, no como norma.
 - **Preservar el estilo existente** al modificar archivos: incluyendo el uso de `var` donde ya se usa.
 - **No tocar el formato de lo que ya existe**: el diff de un cambio debe mostrar sólo las líneas que cambian de verdad.
   - No reindentar, no reformatear, no quitar ni agregar espacios al final de las líneas, y no agregar ni quitar el salto de línea final del archivo.
-  - Respetar el fin de línea de cada archivo: hay archivos con CRLF y otros con LF. Las líneas nuevas van con el mismo fin de línea que el resto del archivo.
+  - Respetar el fin de línea de cada archivo: hay archivos con CRLF y otros con LF. Las líneas nuevas van con el mismo fin de línea que el resto del archivo. Revisar con `git ls-files --eol <archivo>`.
   - En Windows no editar con `sed -i` ni herramientas que reescriban el archivo completo, porque pueden convertir CRLF a LF.
   - Antes de commitear, revisar `git diff --stat` contra `git diff --ignore-all-space --ignore-cr-at-eol --stat`. Si dan distinto, hay cambios de formato que hay que revertir.
 - Los nombres de tablas, columnas y variables de dominio van **en castellano**, consistente con el esquema de base de datos.
 - El código sigue las convenciones de `backend-plus` para definición de tablas, procedimientos y endpoints.
+
+---
+
+## Compilación
+
+- **Compilación sin fallbacks**: el build no tolera errores. No agregar `|| echo "continue w/error"` a los scripts de `package.json`. Un error de compilación se corrige en el código.
+- Si `mixin-patch` se cuelga sin salida, casi seguro hay un `.d.ts` viejo en `dist/` que dispara la regex de `mixin-patch` (catastrophic backtracking). Solución: borrar `dist/` y volver a compilar.
 
 ---
 
