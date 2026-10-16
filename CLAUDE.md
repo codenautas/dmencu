@@ -15,10 +15,10 @@ App que corre sobre Backend-Plus y PostgreSQL para crear operativos de campo y d
 
 ## Estructura de archivos
 
-Las tablas están definidas siguiendo la convención de `backend-plus`: cada tabla tiene su propio archivo con el prefijo `tabla-`, ubicado en `src/server/`. El frontend en `src/client` y en `src/common` lo que sea común a ambos.
+Las tablas están definidas siguiendo la convención de `backend-plus`: cada tabla tiene su propio archivo con el prefijo `table-`, ubicado en `src/server/`. El frontend en `src/client` y en `src/common` lo que sea común a ambos.
 
 
-> 📝 Antes de trabajar con cualquier tabla, leer su archivo `tabla-*.ts` correspondiente. Ahí están los nombres exactos de columnas, labels, descripciones y cualquier lógica de validación definida a nivel de tabla.
+> 📝 Antes de trabajar con cualquier tabla, leer su archivo `table-*.ts` correspondiente. Ahí están los nombres exactos de columnas, labels, descripciones y cualquier lógica de validación definida a nivel de tabla.
 
 ---
 
