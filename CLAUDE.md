@@ -85,3 +85,12 @@ Mantener actualizada la documentación en la medida que se agreguen o modifiquen
 
 - `docs/` es la documentación para desarrolladores.
 - `ayuda/` es la ayuda en línea para usuarios que se ve en el menú según rol, permisos y modo (ver `docs/ayuda-online.md`). Al agregar o cambiar una opción de menú o una funcionalidad que usan las personas, agregar o actualizar su tema en `ayuda/`.
+
+---
+
+## Publicación
+
+- `dmencu` se publica en npm **sólo desde GitHub Actions** (`.github/workflows/publish.yml`). No hacer `npm publish` local.
+- Para publicar: `npm version patch` (o `minor`/`major`), que sube `package.json`, hace el commit y crea el tag `vX.Y.Z`; después `git push --follow-tags`. El push del tag dispara el workflow.
+- Un tag por versión. No crear ni pushear el tag antes de subir la versión en `package.json`.
+- Detalle, requisitos (Trusted publisher) y diagnóstico de errores: `docs/publicacion.md`.
