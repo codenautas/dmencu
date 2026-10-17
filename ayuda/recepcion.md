@@ -4,9 +4,11 @@ titulo: Recepción
 orden: 30
 modo: GABINETE
 permisos: [campo.editar]
-menu: [recepcion, recepcion/encuestador, recepcion/recuperador, recepcion/ingresador, recepcion/supervisor, recepcion/mis_supervisores]
+menu: [recepcion, recepcion/encuestador, recepcion/recuperador, recepcion/ingresador, recepcion/supervisor, recepcion/mis_supervisores, recepcion/recibir_por_persona]
 ---
 En **recepción** se sigue el trabajo de cada persona y se reciben sus encuestas. Hay una grilla por tarea, con las personas asignadas. Desplegando una persona se ven sus encuestas y el estado de cada una.
+
+En **por persona (nueva)** elegís la tarea, ves la lista de personas con cuántas encuestas tienen en cada estado y, al elegir una, sus encuestas con los botones de las acciones que se pueden hacer. Seleccionando varias encuestas se puede hacer la misma acción en todas a la vez (sólo las acciones disponibles en todas las seleccionadas). El número de encuesta abre el formulario.
 
 Las acciones que se pueden hacer sobre una encuesta dependen de su estado. Las más comunes son:
 

@@ -104,8 +104,8 @@ describe('dmencu - menú según rol y policy', () => {
                 'varios', 'control', 'procesar', 'configurar', 'carto'
             ]);
             assert.deepStrictEqual(nombres(submenu(menu, 'configurar')), ['muestra', 'usuarios']);
-            assert.deepStrictEqual(nombres(submenu(menu, 'asignacion')), ['general', 'encuestador', 'ingresador', 'recuperador', 'supervisor']);
-            assert.deepStrictEqual(nombres(submenu(menu, 'recepcion')), ['encuestador', 'recuperador', 'ingresador', 'supervisor', 'mis_supervisores']);
+            assert.deepStrictEqual(nombres(submenu(menu, 'asignacion')), ['general', 'encuestador', 'ingresador', 'recuperador', 'supervisor', 'asignar_por_area', 'asignar_por_tarea']);
+            assert.deepStrictEqual(nombres(submenu(menu, 'recepcion')), ['encuestador', 'recuperador', 'ingresador', 'supervisor', 'mis_supervisores', 'recibir_por_persona']);
             assert.ok(nombres(submenu(menu, 'varios')).includes('operativo_migrar'));
             assert.ok(nombres(submenu(menu, 'varios')).includes('intercambiar_encuestas'));
         });
@@ -125,8 +125,8 @@ describe('dmencu - menú según rol y policy', () => {
         it('el ingresador edita campo sin administrar: asignación y recepción reducidas, sin control ni configuración', () => {
             var menu = menuDelRol(GABINETE, 'ingresador');
             assert.deepStrictEqual(nombres(menu), ['tablero', 'asignacion', 'recepcion', 'supervision', 'varios']);
-            assert.deepStrictEqual(nombres(submenu(menu, 'asignacion')), ['encuestador', 'ingresador', 'recuperador']);
-            assert.deepStrictEqual(nombres(submenu(menu, 'recepcion')), ['encuestador', 'recuperador', 'ingresador']);
+            assert.deepStrictEqual(nombres(submenu(menu, 'asignacion')), ['encuestador', 'ingresador', 'recuperador', 'asignar_por_tarea']);
+            assert.deepStrictEqual(nombres(submenu(menu, 'recepcion')), ['encuestador', 'recuperador', 'ingresador', 'recibir_por_persona']);
             assert.deepStrictEqual(nombres(submenu(menu, 'varios')), ['abrir_encuesta', 'hoja_ruta']);
         });
         it('diseño conceptual sólo edita metadatos (incluidas las tablas de rea/no rea)', () => {
@@ -137,7 +137,7 @@ describe('dmencu - menú según rol y policy', () => {
         });
         it('al recepcionista la asignación le filtra sus propias áreas', () => {
             var asignacion = submenu(menuDelRol(GABINETE, 'recepcionista', 'REC7'), 'asignacion');
-            assert.deepStrictEqual(asignacion.map(item => item.ff), [
+            assert.deepStrictEqual(asignacion.filter(item => item.menuType == 'table').map(item => item.ff), [
                 { tarea: 'encu', recepcionista: 'REC7' },
                 { tarea: 'ingr', recepcionista: 'REC7' },
                 { tarea_actual: 'recu', tarea: 'recu', recepcionista: 'REC7' },
@@ -145,7 +145,7 @@ describe('dmencu - menú según rol y policy', () => {
         });
         it('a los demás roles la asignación no les filtra por recepcionista', () => {
             var asignacion = submenu(menuDelRol(GABINETE, 'ingresador'), 'asignacion');
-            assert.deepStrictEqual(asignacion.map(item => item.ff), [
+            assert.deepStrictEqual(asignacion.filter(item => item.menuType == 'table').map(item => item.ff), [
                 { tarea: 'encu' },
                 { tarea: 'ingr' },
                 { tarea_actual: 'recu', tarea: 'recu' },

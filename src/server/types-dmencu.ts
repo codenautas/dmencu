@@ -115,6 +115,9 @@ declare module "backend-plus" {
         cambiar_modo_dm: true
         ayuda: true
         tablero: true
+        asignacion_general: true
+        asignacion_tarea: true
+        recepcion_tarea: true
     }
 
     // backend-plus usa config['client-setup'].skin pero no lo declara

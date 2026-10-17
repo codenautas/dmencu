@@ -117,8 +117,8 @@ describe('dmencu - tablero de inicio', () => {
             var be = crearAppParaTests(GABINETE);
             var accesos = accesosDelMenu(be.getMenu(contextoDelRol(be, 'ingresador')).menu);
             assert.deepStrictEqual(accesos.map(acceso => acceso.ruta.join('/')), [
-                'asignacion/encuestador', 'asignacion/ingresador', 'asignacion/recuperador',
-                'recepcion/encuestador', 'recepcion/recuperador', 'recepcion/ingresador',
+                'asignacion/encuestador', 'asignacion/ingresador', 'asignacion/recuperador', 'asignacion/asignar_por_tarea',
+                'recepcion/encuestador', 'recepcion/recuperador', 'recepcion/ingresador', 'recepcion/recibir_por_persona',
                 'supervision/supervisar',
                 'varios/abrir_encuesta', 'varios/hoja_ruta',
             ]);

@@ -178,6 +178,7 @@ describe('dmencu - ayuda en línea', () => {
                 ['asignacion/encuestador', 'asignacion'],
                 ['asignacion/ingresador', 'asignacion'],
                 ['asignacion/recuperador', 'asignacion'],
+                ['asignacion/asignar_por_tarea', 'asignacion'],
             ]);
         });
     });

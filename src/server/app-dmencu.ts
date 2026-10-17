@@ -9,6 +9,7 @@ import {
     perfilSegunRol, QuienConsultaTablero, SECCIONES_TABLERO, texto
 } from "./tablero";
 import type { PerfilTablero, TableroParaUsuario } from "../unlogged/tipos-tablero";
+import { proceduresAsignacion } from "./asignacion";
 
 import * as pg from "pg-promise-strict";
 import * as miniTools from "mini-tools";
@@ -112,6 +113,7 @@ import { area_enc_proximas } from "./table-area_enc_proximas";
 export * from "./types-dmencu";
 export * from "./ayuda";
 export * from "./tablero";
+export * from "./asignacion";
 import { defConfig } from "./def-config"
 import { ProcedureDef } from "backend-plus";
 import { table } from "console";
@@ -327,7 +329,12 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     return be.tableroParaUsuario(context);
                 }
             };
-            return parentProc.concat(ProceduresDmEncu, [procedureTablero]);
+            var procedimientosAsignacion = proceduresAsignacion({
+                perfilDelUsuario: (context) => be.perfilDelUsuario(context),
+                // la misma acción que ejecutan los botones de las grillas de recepción
+                ejecutarAccion: (context, parametros) => be.procedure.accion_tareas_tem_ejecutar.coreFunction(context, parametros),
+            });
+            return parentProc.concat(ProceduresDmEncu, [procedureTablero], procedimientosAsignacion);
         }
         // secciones del tablero de inicio. Las apps finales las extienden sobreescribiendo este método, por ejemplo
         // combinarSecciones(super.getSeccionesTablero(), [miSeccion]) o filtrando por id (ver docs/tablero.md)
@@ -570,6 +577,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 rutas
             );
         }
+        // perfil visual (colores) del usuario, el mismo del tablero de inicio
+        perfilDelUsuario(context: Context): PerfilTablero {
+            return buscarPerfil(this.getPerfilesTablero(), this.getPerfilTablero(context));
+        }
         override configStaticConfig() {
             super.configStaticConfig();
             this.setStaticConfig(defConfig);
@@ -581,6 +592,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'unlogged.js', path: 'dmencu' },
             ] : [
                 { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'render-tablero.js', path: 'dmencu' },
+                { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'render-asignacion.js', path: 'dmencu' },
                 { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'client.js', path: 'dmencu' },
             ];
             if (opts && opts.extraFiles) {
@@ -852,6 +864,11 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     { menuType: 'table', name: 'supervisor', table: 'tareas_tem_asignacion_supe', ff: { tarea_actual: 'supe', tarea: 'supe', ...filtroRecepcionista } },
                 );
             };
+            // pantallas nuevas en React (ver docs/asignacion-recepcion.md)
+            if (context.puede?.campo?.administrar) {
+                submenuAsignacion.push({ menuType: 'asignacion_general', name: 'asignar_por_area', label: 'general (nueva)' });
+            }
+            submenuAsignacion.push({ menuType: 'asignacion_tarea', name: 'asignar_por_tarea', label: 'por tarea (nueva)' });
             return { menuType: 'menu', name: 'asignacion', label: 'asignación', menuContent: submenuAsignacion }
         }
         getMenuRecepcion(context: Context): MenuInfoBase {
@@ -867,6 +884,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     { menuType: 'table', name: 'mis_supervisores', table: 'mis_supervisores_asignados' }
                 );
             }
+            // pantalla nueva en React (ver docs/asignacion-recepcion.md)
+            submenuRecepcion.push({ menuType: 'recepcion_tarea', name: 'recibir_por_persona', label: 'por persona (nueva)' });
             return { menuType: 'menu', name: 'recepcion', label: 'recepción', menuContent: submenuRecepcion }
         }
 

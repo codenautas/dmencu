@@ -10,6 +10,7 @@
 | [rea-no-rea.md](rea-no-rea.md) | Cómo se calculan REA / no REA y el resumen de estado de una encuesta |
 | [roles-y-permisos.md](roles-y-permisos.md) | Roles, permisos y menús según rol y modo (policy) |
 | [tablero.md](tablero.md) | Tablero de inicio del modo GABINETE: perfiles y colores, secciones según rol y permisos; cómo lo extienden las apps finales |
+| [asignacion-recepcion.md](asignacion-recepcion.md) | Pantallas nuevas de asignación (general y por tarea) y recepción por persona: qué hacen, reglas y procedimientos |
 | [ayuda-online.md](ayuda-online.md) | Ayuda en línea para usuarios según rol, permisos y modo; cómo la extienden las apps finales |
 | [testing.md](testing.md) | Cómo se prueba el proyecto y qué cubre cada archivo de tests |
 | [resumen-estados.md](resumen-estados.md) | Colores y significado de los estados de resumen del formulario |
