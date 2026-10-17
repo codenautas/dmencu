@@ -102,6 +102,10 @@ flowchart TD
 
 Quien tiene `encuestas.relevar` (encuestador, recuperador, supervisor) ve **relevamiento**, **sincronizar** y **cambiar modo**. Los demás roles no ven nada aunque tengan permisos de gabinete.
 
+### Inicio (tablero)
+
+En GABINETE, si el usuario tiene alguna opción de menú, se agrega al principio **inicio**: el tablero con el panorama del operativo, que es la pantalla que se abre al entrar. Sus secciones y colores dependen del rol y los permisos (ver [tablero.md](tablero.md)).
+
 ### Ayuda
 
 Al final del menú, en ambos modos, aparece **ayuda** si el usuario tiene algún tema de ayuda visible según sus permisos, su rol y el modo (ver [ayuda-online.md](ayuda-online.md)).

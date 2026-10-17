@@ -114,6 +114,7 @@ declare module "backend-plus" {
         sincronizar_dm: true
         cambiar_modo_dm: true
         ayuda: true
+        tablero: true
     }
 
     // backend-plus usa config['client-setup'].skin pero no lo declara

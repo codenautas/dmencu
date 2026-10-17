@@ -90,7 +90,7 @@ describe('dmencu - menú según rol y policy', () => {
         it('admin (superuser) ve todos los menús', () => {
             var menu = menuDelRol(GABINETE, 'admin');
             assert.deepStrictEqual(nombres(menu), [
-                'asignacion', 'recepcion', 'tareas_tem_fin_campo', 'tareas_tem_analisis_campo', 'supervision',
+                'tablero', 'asignacion', 'recepcion', 'tareas_tem_fin_campo', 'tareas_tem_analisis_campo', 'supervision',
                 'varios', 'control', 'procesar', 'configurar', 'carto'
             ]);
             assert.deepStrictEqual(nombres(submenu(menu, 'configurar')), [
@@ -100,7 +100,7 @@ describe('dmencu - menú según rol y policy', () => {
         it('el coordinador de campo administra campo y procesa, pero no edita metadatos ni ve lo de superuser', () => {
             var menu = menuDelRol(GABINETE, 'coor_campo');
             assert.deepStrictEqual(nombres(menu), [
-                'asignacion', 'recepcion', 'tareas_tem_fin_campo', 'tareas_tem_analisis_campo', 'supervision',
+                'tablero', 'asignacion', 'recepcion', 'tareas_tem_fin_campo', 'tareas_tem_analisis_campo', 'supervision',
                 'varios', 'control', 'procesar', 'configurar', 'carto'
             ]);
             assert.deepStrictEqual(nombres(submenu(menu, 'configurar')), ['muestra', 'usuarios']);
@@ -112,26 +112,26 @@ describe('dmencu - menú según rol y policy', () => {
         it('el subcoordinador administra campo pero no procesa', () => {
             var menu = menuDelRol(GABINETE, 'subcoor_campo');
             assert.deepStrictEqual(nombres(menu), [
-                'asignacion', 'recepcion', 'tareas_tem_fin_campo', 'tareas_tem_analisis_campo', 'supervision',
+                'tablero', 'asignacion', 'recepcion', 'tareas_tem_fin_campo', 'tareas_tem_analisis_campo', 'supervision',
                 'varios', 'control', 'configurar', 'carto'
             ]);
             assert.ok(!nombres(submenu(menu, 'varios')).includes('intercambiar_encuestas'));
         });
         it('procesamiento procesa pero no edita campo', () => {
             var menu = menuDelRol(GABINETE, 'procesamiento');
-            assert.deepStrictEqual(nombres(menu), ['varios', 'control', 'procesar', 'configurar']);
+            assert.deepStrictEqual(nombres(menu), ['tablero', 'varios', 'control', 'procesar', 'configurar']);
             assert.deepStrictEqual(nombres(submenu(menu, 'varios')), ['abrir_encuesta', 'intercambiar_encuestas']);
         });
         it('el ingresador edita campo sin administrar: asignación y recepción reducidas, sin control ni configuración', () => {
             var menu = menuDelRol(GABINETE, 'ingresador');
-            assert.deepStrictEqual(nombres(menu), ['asignacion', 'recepcion', 'supervision', 'varios']);
+            assert.deepStrictEqual(nombres(menu), ['tablero', 'asignacion', 'recepcion', 'supervision', 'varios']);
             assert.deepStrictEqual(nombres(submenu(menu, 'asignacion')), ['encuestador', 'ingresador', 'recuperador']);
             assert.deepStrictEqual(nombres(submenu(menu, 'recepcion')), ['encuestador', 'recuperador', 'ingresador']);
             assert.deepStrictEqual(nombres(submenu(menu, 'varios')), ['abrir_encuesta', 'hoja_ruta']);
         });
         it('diseño conceptual sólo edita metadatos (incluidas las tablas de rea/no rea)', () => {
             var menu = menuDelRol(GABINETE, 'dis_conceptual');
-            assert.deepStrictEqual(nombres(menu), ['configurar']);
+            assert.deepStrictEqual(nombres(menu), ['tablero', 'configurar']);
             var metadatos = submenu(submenu(menu, 'configurar'), 'metadatos');
             assert.deepStrictEqual(nombres(submenu(metadatos, 'rea/norea')), ['rea', 'no_rea', 'rea_sup', 'no_rea_sup']);
         });

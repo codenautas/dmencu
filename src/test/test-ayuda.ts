@@ -133,11 +133,11 @@ describe('dmencu - ayuda en línea', () => {
         });
         it('en GABINETE el ingresador ve lo de campo pero no lo de administración ni procesamiento', () => {
             var ids = idsVisibles(appConAyuda(GABINETE), 'ingresador');
-            assert.deepStrictEqual(ids, ['circuito-encuesta', 'asignacion', 'recepcion', 'supervision', 'varios']);
+            assert.deepStrictEqual(ids, ['tablero', 'circuito-encuesta', 'asignacion', 'recepcion', 'supervision', 'varios']);
         });
         it('diseño conceptual ve la ayuda de metadatos', () => {
             var ids = idsVisibles(appConAyuda(GABINETE), 'dis_conceptual');
-            assert.deepStrictEqual(ids, ['circuito-encuesta', 'metadatos']);
+            assert.deepStrictEqual(ids, ['tablero', 'circuito-encuesta', 'metadatos']);
         });
         it('admin (superuser) ve todos los temas del modo', () => {
             var be = appConAyuda(GABINETE);

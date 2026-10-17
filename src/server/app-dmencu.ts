@@ -4,6 +4,11 @@ import * as procesamiento from "procesamiento";
 import { emergeAppProcesamiento, emergeAppConsistencias, emergeAppVarCal, emergeAppDatosExt, emergeAppOperativos, AppBackend, ClientModuleDefinition, OptsClientPage } from "procesamiento";
 import { pasarEncuestasAProie, ProceduresDmEncu } from "./procedures-dmencu";
 import { cargarAyuda, carpetaDelPaquete, problemasDeAyuda, QuienConsultaAyuda, rutasDelMenu, temasVisibles } from "./ayuda";
+import {
+    armarSecciones, buscarPerfil, ClienteTablero, DefinicionSeccionTablero, PERFIL_POR_ROL, PERFILES_TABLERO,
+    perfilSegunRol, QuienConsultaTablero, SECCIONES_TABLERO, texto
+} from "./tablero";
+import type { PerfilTablero, TableroParaUsuario } from "../unlogged/tipos-tablero";
 
 import * as pg from "pg-promise-strict";
 import * as miniTools from "mini-tools";
@@ -106,6 +111,7 @@ import { area_enc_proximas } from "./table-area_enc_proximas";
 
 export * from "./types-dmencu";
 export * from "./ayuda";
+export * from "./tablero";
 import { defConfig } from "./def-config"
 import { ProcedureDef } from "backend-plus";
 import { table } from "console";
@@ -143,6 +149,16 @@ export function quienConsultaAyuda(context: Context): QuienConsultaAyuda {
         superuser: !!context.superuser,
         puede: context.puede,
         modo: getModoByPolicy(context.be),
+    };
+}
+
+// lo que decide qué secciones del tablero ve el usuario: lo mismo que para la ayuda más su persona y su perfil
+export function quienConsultaTablero(context: Context, perfil: string): QuienConsultaTablero {
+    return {
+        ...quienConsultaAyuda(context),
+        usuario: context.user?.usuario ?? '',
+        idper: context.user?.idper ?? null,
+        perfil,
     };
 }
 
@@ -303,7 +319,63 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 }
                 return procDef;
             })
-            return parentProc.concat(ProceduresDmEncu);
+            var procedureTablero: ProcedureDef = {
+                // el tablero de inicio del modo GABINETE según el perfil, el rol y los permisos del usuario (ver docs/tablero.md)
+                action: 'tablero_traer',
+                parameters: [],
+                coreFunction: async function (context: ProcedureContext): Promise<TableroParaUsuario> {
+                    return be.tableroParaUsuario(context);
+                }
+            };
+            return parentProc.concat(ProceduresDmEncu, [procedureTablero]);
+        }
+        // secciones del tablero de inicio. Las apps finales las extienden sobreescribiendo este método, por ejemplo
+        // combinarSecciones(super.getSeccionesTablero(), [miSeccion]) o filtrando por id (ver docs/tablero.md)
+        getSeccionesTablero(): DefinicionSeccionTablero[] {
+            return SECCIONES_TABLERO;
+        }
+        // perfiles visuales del tablero (nombre, descripción y colores)
+        getPerfilesTablero(): PerfilTablero[] {
+            return PERFILES_TABLERO;
+        }
+        // el perfil (uno de getPerfilesTablero) con que se muestra el tablero al usuario
+        getPerfilTablero(context: Context): string {
+            return perfilSegunRol(quienConsultaAyuda(context), PERFIL_POR_ROL);
+        }
+        async tableroParaUsuario(context: ProcedureContext): Promise<TableroParaUsuario> {
+            var be = this;
+            var client: ClienteTablero = context.client;
+            var usuario = context.user?.usuario ?? '';
+            var [datos] = (await client.query(`
+                select p.operativo, u.nombre, u.apellido, r.nombre as nombre_rol, current_timestamp as generado
+                    from parametros p
+                        left join usuarios u on u.usuario = $1
+                        left join roles r on r.rol = u.rol
+                    where p.unico_registro`, [usuario]).fetchAll()).rows;
+            var perfil = buscarPerfil(be.getPerfilesTablero(), be.getPerfilTablero(context));
+            var quien = quienConsultaTablero(context, perfil.perfil);
+            var operativo = texto(datos, 'operativo');
+            var nombre = [texto(datos, 'nombre'), texto(datos, 'apellido')].filter(parte => parte != null).join(' ');
+            var { secciones, errores } = await armarSecciones(be.getSeccionesTablero(), {
+                client,
+                quien,
+                operativo: operativo ?? '',
+                menu: be.getMenu(context).menu,
+            });
+            errores.forEach(error => console.error(`tablero: la sección ${error.seccion} falló para ${usuario}: ${error.mensaje}`));
+            var generado = datos?.generado;
+            return {
+                operativo,
+                modo: quien.modo,
+                usuario,
+                nombre: nombre || null,
+                rol: quien.rol,
+                nombreRol: texto(datos, 'nombre_rol'),
+                perfil,
+                generado: (generado instanceof Date ? generado : new Date()).toISOString(),
+                secciones,
+                errores,
+            };
         }
         override async checkDatabaseStructure(_client: Client) {
         }
@@ -508,6 +580,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             var menuedResources: ClientModuleDefinition[] = unlogged ? [
                 { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'unlogged.js', path: 'dmencu' },
             ] : [
+                { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'render-tablero.js', path: 'dmencu' },
                 { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'client.js', path: 'dmencu' },
             ];
             if (opts && opts.extraFiles) {
@@ -956,6 +1029,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 const menuCarto = this.getMenuCarto(context);
                 if (menuCarto) {
                     menu.push(menuCarto);
+                }
+                // la pantalla de entrada: el tablero con el panorama del operativo según el perfil (ver docs/tablero.md)
+                if (menu.length) {
+                    menu.unshift({ menuType: 'tablero', name: 'tablero', label: 'inicio', selectedByDefault: true });
                 }
             }
             if (temasVisibles(this.caches.ayuda, quienConsultaAyuda(context)).length) {
