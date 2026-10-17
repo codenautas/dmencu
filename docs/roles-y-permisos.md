@@ -129,4 +129,21 @@ Estas reglas están cubiertas por los tests de `src/test/test-menu-segun-rol.ts`
 
 ## Cambiar permisos
 
-Los permisos se cargan desde la base en `postConfig`, al iniciar el servidor; si se modifica `roles_permisos`, reiniciar el servidor para que rija. `install/roles_permisos_ini.sql` completa en `roles_permisos` los pares rol/permiso/acción que falten con el valor predeterminado.
+Los permisos se cargan en las caches con `refrescarPermisos(client)`: al iniciar (`postConfig`), al cambiarlos desde la pantalla **roles y permisos** y al guardar en las grillas `roles`, `permisos` o `roles_permisos` (`refrescarPermisosAlModificarTabla`). Ya no hace falta reiniciar el servidor: los procedimientos usan los permisos nuevos enseguida y cada usuario ve su menú nuevo al recargar la página. Si se modifica `roles_permisos` directamente en la base, sí hay que reiniciar. `install/roles_permisos_ini.sql` completa en `roles_permisos` los pares rol/permiso/acción que falten con el valor predeterminado.
+
+## Pantalla de roles y permisos
+
+En *configurar → usuarios → roles y permisos* (la ven quienes tienen `campo.administrar` o `encuestas.procesar`, o el superuser):
+
+- **Matriz rol × permiso**: una fila por rol (con cuántos usuarios activos tiene) y una columna por `permiso.acción` (con su descripción al pasar el mouse). El admin habilita o quita con un clic; el superuser figura con todo.
+- **Panel del rol** (clic en el nombre): permisos habilitados, **roles que administra** (`roles_subordinados`, el admin los agrega o quita con un clic) y **qué ve en el menú**: el menú que arma `getMenu` para un usuario de ese rol en el modo de la instancia (`menuDelRol`).
+
+| Qué | Dónde |
+| :-- | :-- |
+| Procedimientos `roles_permisos_traer`, `rol_permiso_cambiar`, `rol_subordinado_cambiar` (sólo `admin`) y `rol_menu_previsualizar`; descripciones de los permisos (`DESCRIPCION_PERMISOS`) | `src/server/roles-permisos.ts` |
+| `refrescarPermisos`, `menuDelRol`, opción de menú | `src/server/app-dmencu.ts` |
+| Tipos | `src/unlogged/tipos-roles-permisos.ts` |
+| Pantalla (`myOwn.wScreens.roles_permisos`) | `src/client/render-roles-permisos.tsx` |
+| Tests | `src/test/test-roles-permisos.ts` |
+
+Las apps finales que agregan permisos pueden sumar su descripción con `DESCRIPCION_PERMISOS['permiso.accion'] = '...'` al iniciar.

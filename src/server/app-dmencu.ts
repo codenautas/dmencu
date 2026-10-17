@@ -9,6 +9,8 @@ import {
     perfilSegunRol, QuienConsultaTablero, SECCIONES_TABLERO, texto
 } from "./tablero";
 import type { PerfilTablero, TableroParaUsuario } from "../unlogged/tipos-tablero";
+import type { ModoApp } from "../unlogged/tipos";
+import { proceduresRolesYPermisos, refrescarPermisosAlModificarTabla } from "./roles-permisos";
 
 import * as pg from "pg-promise-strict";
 import * as miniTools from "mini-tools";
@@ -112,6 +114,7 @@ import { area_enc_proximas } from "./table-area_enc_proximas";
 export * from "./types-dmencu";
 export * from "./ayuda";
 export * from "./tablero";
+export * from "./roles-permisos";
 import { defConfig } from "./def-config"
 import { ProcedureDef } from "backend-plus";
 import { table } from "console";
@@ -316,6 +319,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             parentProc = parentProc.map(procDef => {
                 if (procDef.action == 'table_record_save' || procDef.action == 'table_record_delete') {
                     procDef.coreFunction = refrescarEstructuraAlModificarTabla(be, procDef.coreFunction);
+                    procDef.coreFunction = refrescarPermisosAlModificarTabla(be, procDef.coreFunction);
                 }
                 return procDef;
             })
@@ -327,7 +331,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     return be.tableroParaUsuario(context);
                 }
             };
-            return parentProc.concat(ProceduresDmEncu, [procedureTablero]);
+            return parentProc.concat(ProceduresDmEncu, [procedureTablero], proceduresRolesYPermisos(be));
         }
         // secciones del tablero de inicio. Las apps finales las extienden sobreescribiendo este método, por ejemplo
         // combinarSecciones(super.getSeccionesTablero(), [miSeccion]) o filtrando por id (ver docs/tablero.md)
@@ -503,6 +507,17 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             var be = this;
             be.caches.metaEncIncluirCasillerosSaltoREL = false;
             await be.inTransaction(null, async function (client: pg.Client) {
+                await be.refrescarPermisos(client);
+            });
+            be.caches.ayuda = cargarAyuda(be.getAyudaFuentes());
+            be.problemasDeAyuda().forEach(problema => console.error(problema));
+            await this.refreshCaches();
+            await registrarCronJobPasarAProie(be);
+        }
+        // carga en las caches los permisos de cada rol; se llama al iniciar y al cambiar permisos desde la pantalla de roles
+        async refrescarPermisos(client: ClienteDb) {
+            var be = this;
+            {
                 var qPermisos = `
             SELECT jsonb_object_agg(r.rol,jsonb_build_object('superuser',r.superuser,'puede',(
                   SELECT jsonb_object_agg(rp.permiso,(
@@ -516,8 +531,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
               FROM roles r
             `;
                 var results = [
-                    await client.query(qPermisos.replace('#condHabilitado#', '')).fetchUniqueValue(),
-                    await client.query(qPermisos.replace('#condHabilitado#', ` and rp.${pg.quoteIdent('habilitado')}`)).fetchUniqueValue(),
+                    await client.query(qPermisos.replace('#condHabilitado#', '')).fetchUniqueRow(),
+                    await client.query(qPermisos.replace('#condHabilitado#', ` and rp.${pg.quoteIdent('habilitado')}`)).fetchUniqueRow(),
                     await client.query(`
                     SELECT jsonb_object_agg(permiso,(
                         SELECT jsonb_object_agg(accion,true)
@@ -525,7 +540,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                           WHERE pa.permiso=p.permiso
                       ))
                       FROM permisos p
-                `).fetchUniqueValue(),
+                `).fetchUniqueRow(),
                     await client.query(`
                     SELECT jsonb_object_agg(permiso,(
                         SELECT jsonb_object_agg(accion,false)
@@ -533,20 +548,16 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                           WHERE pa.permiso=p.permiso
                       ))
                       FROM permisos p
-                `).fetchUniqueValue()
+                `).fetchUniqueRow()
                 ];
-                be.caches.permisosRol = results[0].value;
-                be.caches.permisosRolSoloTrue = results[1].value;
-                be.caches.permisosSuperuser = results[2].value;
-                be.caches.permisosParaNadie = results[3].value;
+                be.caches.permisosRol = results[0].row.jsonb_object_agg;
+                be.caches.permisosRolSoloTrue = results[1].row.jsonb_object_agg;
+                be.caches.permisosSuperuser = results[2].row.jsonb_object_agg;
+                be.caches.permisosParaNadie = results[3].row.jsonb_object_agg;
                 //console.dir(be.caches.permisosRolSoloTrue,{depth:9});
                 //console.dir(be.caches.permisosSuperuser,{depth:9});
                 //console.dir(be.caches.permisosParaNadie,{depth:9});
-            });
-            be.caches.ayuda = cargarAyuda(be.getAyudaFuentes());
-            be.problemasDeAyuda().forEach(problema => console.error(problema));
-            await this.refreshCaches();
-            await registrarCronJobPasarAProie(be);
+            }
         }
         // carpetas con la ayuda para usuarios, en orden: un tema de una fuente posterior reemplaza u oculta
         // al de una anterior con el mismo id. Las apps finales agregan la suya (ver docs/ayuda-online.md)
@@ -559,9 +570,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             var modo = getModoByPolicy(be);
             var rutas: string[] = [];
             Object.keys(be.caches.permisosRol).forEach(rol => {
-                var user = { rol, idper: '', usuario: '' };
-                var context: Context = { ...permisosSegunUsuario(be.caches, user), be, user, session: {}, username: '', machineId: '', navigator: '' };
-                rutas = rutas.concat(rutasDelMenu(be.getMenu(context).menu));
+                rutas = rutas.concat(rutasDelMenu(be.menuDelRol(rol)));
             });
             return problemasDeAyuda(
                 be.caches.ayuda.filter(tema => tema.modo == null || tema.modo == modo),
@@ -569,6 +578,20 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 Object.keys(be.caches.permisosRol),
                 rutas
             );
+        }
+        // el menú que vería un usuario con ese rol (con los permisos que hoy tiene el rol en las caches)
+        menuDelRol(rol: string): MenuInfoBase[] {
+            var be = this;
+            var user = { rol, idper: '', usuario: '' };
+            var context: Context = { ...permisosSegunUsuario(be.caches, user), be, user, session: {}, username: '', machineId: '', navigator: '' };
+            return be.getMenu(context).menu;
+        }
+        modo(): ModoApp {
+            return getModoByPolicy(this);
+        }
+        // perfil visual (colores) del usuario, el mismo del tablero de inicio
+        perfilDelUsuario(context: Context): PerfilTablero {
+            return buscarPerfil(this.getPerfilesTablero(), this.getPerfilTablero(context));
         }
         override configStaticConfig() {
             super.configStaticConfig();
@@ -581,6 +604,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'unlogged.js', path: 'dmencu' },
             ] : [
                 { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'render-tablero.js', path: 'dmencu' },
+                { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'render-roles-permisos.js', path: 'dmencu' },
                 { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'client.js', path: 'dmencu' },
             ];
             if (opts && opts.extraFiles) {
@@ -951,6 +975,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     name: 'usuarios',
                     menuContent: [
                         { menuType: 'table', name: 'usuarios', selectedByDefault: true },
+                        { menuType: 'roles_permisos', name: 'roles_y_permisos', label: 'roles y permisos' },
                         { menuType: 'table', name: 'roles' },
                         { menuType: 'table', name: 'permisos' },
                         { menuType: 'table', name: 'roles_permisos' },
