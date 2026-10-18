@@ -83,7 +83,9 @@ export async function traerContextoAsignacion(client: ClienteTablero, quien: Qui
         select ta.tarea, ta.nombre, ta.es_inicial, (select r.rol from roles r where r.rol = ta.nombre) as rol_sugerido
             from tareas ta
             where ta.operativo = $1
-                and (ta.tarea in (select tarea from tareas_areas where operativo = $1) or ta.main_form is not null)
+                -- sólo las tareas con formulario (encu, recu, supe...): son las que se asignan a una persona, como en las grillas;
+                -- anac, finc y proc tienen filas en tareas_areas pero no se asignan por área
+                and ta.main_form is not null
             order by ta.es_inicial is true desc, ta.tarea`, [operativo])).map(fila => ({
         tarea: texto(fila, 'tarea') ?? '',
         nombre: texto(fila, 'nombre') ?? texto(fila, 'tarea') ?? '',
