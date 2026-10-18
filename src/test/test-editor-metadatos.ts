@@ -3,9 +3,10 @@ import { describe, it } from 'mocha';
 import assert = require('node:assert');
 
 import {
-    CasilleroEditable, ContextoValidacion, idQueTendria, Inclusion, problemasDelCasillero, proximoCodigo, TipoCasillero, validarOperacion
+    aplicarOperacionLocal, CasilleroEditable, ContextoValidacion, hijosDe, idQueTendria, Inclusion, inversaDeOperacion, OperacionMetadatos, operacionesInversas, problemasDelCasillero, proximoCodigo, TipoCasillero,
+    validarOperacion, variablesDeExpresion, variablesDesconocidas, varNameDerivado
 } from '../unlogged/editor-metadatos-comun';
-import { aplicarOperaciones, idsConInsertado, permisosEditor } from '../server/editor-metadatos';
+import { aplicarOperaciones, guardarVersion, idsConInsertado, permisosEditor, proceduresEditorMetadatos } from '../server/editor-metadatos';
 import type { ClienteTablero, FilaSql, ValorSql } from '../server/tablero';
 import type { MenuInfoBase } from '../server/types-dmencu';
 import { contextoDelRol, crearAppParaTests } from './app-para-tests';
@@ -16,9 +17,12 @@ const TIPOS: TipoCasillero[] = [
     { tipoc: 'P', denominacion: 'pregunta', irrepetible: true, puedeSerVar: null, despHijos: 'tabla' },
     { tipoc: 'O', denominacion: 'opción', irrepetible: false, puedeSerVar: false, despHijos: 'nueva_fila' },
     { tipoc: 'TEXTO', denominacion: 'texto aclaratorio', irrepetible: false, puedeSerVar: false, despHijos: null },
+    { tipoc: 'FILTRO', denominacion: 'filtro', irrepetible: true, puedeSerVar: false, despHijos: null },
+    { tipoc: 'BF', denominacion: 'botón para formulario', irrepetible: true, puedeSerVar: null, despHijos: null },
 ];
 const INCLUSIONES: Inclusion[] = [
     { padre: 'F', hijo: 'B' }, { padre: 'F', hijo: 'P' }, { padre: 'B', hijo: 'P' }, { padre: 'B', hijo: 'TEXTO' }, { padre: 'P', hijo: 'O' }, { padre: 'O', hijo: 'P' },
+    { padre: 'F', hijo: 'BF' }, { padre: 'B', hijo: 'FILTRO' },
 ];
 
 function casillero(id: string, padre: string | null, tipoc: string, codigo: string, otros: Partial<CasilleroEditable> = {}): CasilleroEditable {
@@ -33,13 +37,13 @@ function casillero(id: string, padre: string | null, tipoc: string, codigo: stri
 // F:F1 > B1 > P1 (si_no, opciones 1 y 2) y P2; la opción P1/2 tiene adentro la pregunta P3
 function arbol(): CasilleroEditable[] {
     return [
-        casillero('F:F1', null, 'F', 'F1'),
-        casillero('B1', 'F:F1', 'B', 'B1', { orden: 10 }),
-        casillero('P1', 'B1', 'P', 'P1', { orden: 10, tipovar: 'si_no', nombre: '¿...?' }),
+        casillero('F:F1', null, 'F', 'F1', { nombre: 'Formulario 1', unidad_analisis: 'viviendas' }),
+        casillero('B1', 'F:F1', 'B', 'B1', { orden: 10, nombre: 'Bloque 1' }),
+        casillero('P1', 'B1', 'P', 'P1', { orden: 10, tipovar: 'si_no', nombre: '¿...?', var_name: 'p1' }),
         casillero('P1/1', 'P1', 'O', '1', { orden: 10, nombre: 'Sí' }),
         casillero('P1/2', 'P1', 'O', '2', { orden: 20, nombre: 'No' }),
-        casillero('P3', 'P1/2', 'P', 'P3', { tipovar: 'texto' }),
-        casillero('P2', 'B1', 'P', 'P2', { orden: 20, tipovar: 'numero' }),
+        casillero('P3', 'P1/2', 'P', 'P3', { tipovar: 'texto', nombre: '¿Por qué?', var_name: 'p3' }),
+        casillero('P2', 'B1', 'P', 'P2', { orden: 20, tipovar: 'numero', nombre: '¿Cuántos?', var_name: 'p2' }),
     ];
 }
 
@@ -58,14 +62,15 @@ describe('dmencu - editor visual de metadatos', () => {
             arbol().forEach(c => assert.deepStrictEqual(problemas(arbol(), c.id_casillero), [], c.id_casillero));
         });
         it('inclusión inválida', () => {
-            var lista = [...arbol(), casillero('B9', 'P2', 'B', 'B9')];
-            assert.deepStrictEqual(problemas(lista, 'B9'), ['un/a bloque no puede estar dentro de un/a pregunta']);
+            var lista = [...arbol(), casillero('B9', 'P2', 'B', 'B9', { nombre: 'Bloque 9' })];
+            assert.deepStrictEqual(problemas(lista, 'B9').filter(m => !/vacío/.test(m)), ['un/a bloque no puede estar dentro de un/a pregunta']);
         });
         it('sólo los formularios van sueltos', () => {
-            assert.deepStrictEqual(problemas([casillero('P9', null, 'P', 'P9', { tipovar: 'texto' })], 'P9'), ['sólo los formularios pueden estar fuera de otro casillero']);
+            assert.deepStrictEqual(problemas([casillero('P9', null, 'P', 'P9', { tipovar: 'texto', nombre: '¿...?' })], 'P9'), ['sólo los formularios pueden estar fuera de otro casillero']);
         });
         it('tipo de variable que sobra o falta', () => {
-            assert.deepStrictEqual(problemas([...arbol(), casillero('B2', 'F:F1', 'B', 'B2', { tipovar: 'texto' })], 'B2'), ['este tipo de casillero no lleva tipo de variable']);
+            assert.deepStrictEqual(problemas([...arbol(), casillero('B2', 'F:F1', 'B', 'B2', { tipovar: 'texto', nombre: 'Bloque 2' })], 'B2').filter(m => !/vacío/.test(m)),
+                ['este tipo de casillero no lleva tipo de variable']);
         });
         it('opciones y tipo de variable', () => {
             var conOpcionesSinTipo = arbol().map(c => c.id_casillero == 'P1' ? { ...c, tipovar: 'numero' } : c);
@@ -74,12 +79,167 @@ describe('dmencu - editor visual de metadatos', () => {
             assert.deepStrictEqual(problemas(siNoComoOpciones, 'P1'), ['tiene opciones Sí y No: el tipo de variable debería ser si_no']);
             var siSinTilde = arbol().map(c => c.id_casillero == 'P1/1' ? { ...c, nombre: 'Si' } : c);
             assert.deepStrictEqual(problemas(siSinTilde, 'P1'), ['la opción "Si" va con tilde: "Sí"']);
-            assert.deepStrictEqual(problemas([...arbol(), casillero('P5', 'B1', 'P', 'P5', { tipovar: 'opciones' })], 'P5'), ['faltan las opciones']);
+            assert.deepStrictEqual(problemas([...arbol(), casillero('P5', 'B1', 'P', 'P5', { tipovar: 'opciones', nombre: '¿...?' })], 'P5'), ['faltan las opciones']);
         });
         it('salto a un casillero que no existe (aviso)', () => {
             var lista = arbol().map(c => c.id_casillero == 'P2' ? { ...c, salto: 'P99' } : c);
             assert.deepStrictEqual(problemasDelCasillero(lista.find(c => c.id_casillero == 'P2')!, lista, TIPOS, INCLUSIONES),
-                [{ id_casillero: 'P2', gravedad: 'aviso', mensaje: 'el salto apunta a P99, que no está en el operativo' }]);
+                [{ id_casillero: 'P2', gravedad: 'aviso', mensaje: 'el salto apunta a P99, que no está en el operativo', campo: 'salto' }]);
+        });
+    });
+
+    describe('datos que faltan según el tipo (aunque la base los deje vacíos)', () => {
+        function faltas(lista: CasilleroEditable[], id: string) {
+            return problemasDelCasillero(lista.find(c => c.id_casillero == id)!, lista, TIPOS, INCLUSIONES).filter(p => p.gravedad == 'falta');
+        }
+        it('una pregunta sin texto', () => {
+            var lista = arbol().map(c => c.id_casillero == 'P2' ? { ...c, nombre: null } : c);
+            assert.deepStrictEqual(faltas(lista, 'P2').map(p => [p.mensaje, p.campo]), [['falta el texto de la pregunta', 'nombre']]);
+        });
+        it('un formulario sin título ni unidad de análisis ni contenido', () => {
+            var lista = [casillero('F:F2', null, 'F', 'F2')];
+            assert.deepStrictEqual(faltas(lista, 'F:F2').map(p => p.mensaje),
+                ['falta el título del formulario', 'falta la unidad de análisis', 'está vacío: arrastrá casilleros adentro']);
+        });
+        it('un bloque vacío', () => {
+            var lista = [...arbol(), casillero('B7', 'F:F1', 'B', 'B7', { nombre: 'Vacío' })];
+            assert.deepStrictEqual(faltas(lista, 'B7').map(p => p.mensaje), ['está vacío: arrastrá casilleros adentro']);
+        });
+        it('un filtro sin texto ni salto, y un botón sin formulario', () => {
+            var lista = [...arbol(), casillero('FIL', 'B1', 'FILTRO', 'FIL'), casillero('BF_X', 'F:F1', 'BF', 'BF_X')];
+            assert.deepStrictEqual(faltas(lista, 'FIL').map(p => p.campo), ['nombre', 'salto']);
+            assert.deepStrictEqual(faltas(lista, 'BF_X').map(p => p.campo), ['salto']);
+        });
+        it('el texto del filtro puede estar en la aclaración', () => {
+            var lista = [...arbol(), casillero('FIL', 'B1', 'FILTRO', 'FIL', { aclaracion: 'Si no trabaja, pase a...', salto: 'P2' })];
+            assert.deepStrictEqual(faltas(lista, 'FIL'), []);
+        });
+        it('un botón que abre algo que no es un formulario es un error', () => {
+            var lista = [...arbol(), casillero('BF_X', 'F:F1', 'BF', 'BF_X', { salto: 'P2' })];
+            var errores = problemasDelCasillero(lista.find(c => c.id_casillero == 'BF_X')!, lista, TIPOS, INCLUSIONES).filter(p => p.gravedad == 'error');
+            assert.deepStrictEqual(errores.map(p => p.mensaje), ['el botón abre P2, que no es un formulario del operativo']);
+        });
+        it('el salto a "fin" no es un salto roto', () => {
+            var lista = arbol().map(c => c.id_casillero == 'P2' ? { ...c, salto: 'fin' } : c);
+            assert.deepStrictEqual(problemas(lista, 'P2'), []);
+        });
+    });
+
+    describe('expresiones', () => {
+        it('variablesDeExpresion deja afuera funciones, palabras y textos', () => {
+            assert.deepStrictEqual(variablesDeExpresion("p1 = 1 and not blanco(p2) or v_x is null and nombre = 'juan perez'"), ['p1', 'p2', 'v_x', 'nombre']);
+            assert.deepStrictEqual(variablesDeExpresion('$B.salto > 0'), ['$B', 'salto']);
+        });
+        it('avisa las variables que no están en el operativo', () => {
+            var lista = arbol().map(c => c.id_casillero == 'P2' ? { ...c, expresion_habilitar: 'p1 = 1 and p99 > 2' } : c);
+            var avisos = problemasDelCasillero(lista.find(c => c.id_casillero == 'P2')!, lista, TIPOS, INCLUSIONES).filter(p => p.gravedad == 'aviso');
+            assert.deepStrictEqual(avisos.map(p => [p.mensaje, p.campo]), [['la condición usa variables que no están en el operativo: p99', 'expresion_habilitar']]);
+        });
+        it('variablesDesconocidas no distingue mayúsculas y acepta las variables internas con $', () => {
+            assert.deepStrictEqual(variablesDesconocidas('P1 = 1 and $x = 2', ['p1']), []);
+        });
+    });
+
+    describe('simulación local (modo borrador)', () => {
+        it('crear una pregunta con opciones calcula los ids y el orden', () => {
+            var resultado = aplicarOperacionLocal(arbol(), TIPOS, 'OPE', { tipo: 'crear', posicion: 1, nuevo: {
+                padre: 'B1', tipoc: 'P', casillero: 'P9', nombre: 'x', tipovar: 'si_no', opciones: [{ casillero: '1', nombre: 'Sí' }, { casillero: '2', nombre: 'No' }],
+            } });
+            assert.deepStrictEqual(resultado.filter(c => c.padre == 'B1').sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0)).map(c => c.id_casillero), ['P1', 'P9', 'P2']);
+            assert.deepStrictEqual(resultado.filter(c => c.padre == 'P9').map(c => c.id_casillero), ['P9/1', 'P9/2']);
+            assert.strictEqual(resultado.find(c => c.id_casillero == 'P9')!.var_name, 'p9');
+        });
+        it('mover una opción cambia su id y el de lo que tiene adentro, como el servidor', () => {
+            var resultado = aplicarOperacionLocal(arbol(), TIPOS, 'OPE', { tipo: 'mover', id_casillero: 'P1/2', padre: 'P2', posicion: 0 });
+            assert.strictEqual(resultado.find(c => c.casillero == '2' && c.tipoc == 'O')!.id_casillero, 'P2/2');
+            assert.strictEqual(resultado.find(c => c.id_casillero == 'P3')!.padre, 'P2/2');
+        });
+        it('cambiar el código de una opción lleva a sus hijos al id nuevo', () => {
+            var resultado = aplicarOperacionLocal(arbol(), TIPOS, 'OPE', { tipo: 'modificar', id_casillero: 'P1/2', cambios: { casillero: '9' } });
+            assert.ok(resultado.some(c => c.id_casillero == 'P1/9'));
+            assert.strictEqual(resultado.find(c => c.id_casillero == 'P3')!.padre, 'P1/9');
+        });
+        it('el var_name se calcula como irrepetible_trg', () => {
+            assert.strictEqual(varNameDerivado({ id_casillero: '1A/x', tipovar: 'texto', var_name_especial: null }, 'ETOI274'), 'etoi1a_x');
+            assert.strictEqual(varNameDerivado({ id_casillero: 'Pañal', tipovar: 'texto', var_name_especial: null }, 'ope'), 'pannial');
+            assert.strictEqual(varNameDerivado({ id_casillero: 'P1', tipovar: 'texto', var_name_especial: 'mi_var' }, 'ope'), 'mi_var');
+            assert.strictEqual(varNameDerivado({ id_casillero: 'B1', tipovar: null, var_name_especial: null }, 'ope'), null);
+        });
+        it('eliminar saca todo el subárbol', () => {
+            assert.deepStrictEqual(aplicarOperacionLocal(arbol(), TIPOS, 'OPE', { tipo: 'eliminar', id_casillero: 'P1' }).map(c => c.id_casillero).sort(), ['B1', 'F:F1', 'P2']);
+        });
+        it('las operaciones inversas dejan el formulario como estaba (deshacer) y como quedó (rehacer)', () => {
+            var antes = arbol();
+            var despues = aplicarOperacionLocal(antes, TIPOS, 'OPE', { tipo: 'eliminar', id_casillero: 'P1' });
+            var inversas = operacionesInversas(antes, despues, 'F:F1', 'F:F1');
+            var vuelto = inversas.deshacer.reduce((c, op) => aplicarOperacionLocal(c, TIPOS, 'OPE', op), despues);
+            assert.deepStrictEqual(vuelto.map(c => c.id_casillero).sort(), antes.map(c => c.id_casillero).sort());
+            var rehecho = inversas.rehacer.reduce((c, op) => aplicarOperacionLocal(c, TIPOS, 'OPE', op), vuelto);
+            assert.deepStrictEqual(rehecho.map(c => c.id_casillero).sort(), despues.map(c => c.id_casillero).sort());
+        });
+        // aplica la operación, su inversa (deshacer) y otra vez la operación (rehacer): tiene que dar lo mismo que la primera vez
+        function ciclo(operacion: OperacionMetadatos) {
+            var antes = arbol();
+            var inversa = inversaDeOperacion(antes, TIPOS, operacion)!;
+            assert.ok(inversa, 'tiene que haber una inversa');
+            var despues = aplicarOperacionLocal(antes, TIPOS, 'OPE', operacion);
+            var deshecho = inversa.deshacer.reduce((c, op) => aplicarOperacionLocal(c, TIPOS, 'OPE', op), despues);
+            var rehecho = inversa.rehacer.reduce((c, op) => aplicarOperacionLocal(c, TIPOS, 'OPE', op), deshecho);
+            // el número de orden puede cambiar (se renumera de 10 en 10); lo que importa es el lugar entre los hermanos
+            var resumen = (lista: CasilleroEditable[]) => lista.map(c => `${c.id_casillero}<${c.padre}>#${hijosDe(lista, c.padre).findIndex(h => h.id_casillero == c.id_casillero)}:${c.nombre}:${c.salto}`).sort();
+            assert.deepStrictEqual(resumen(deshecho), resumen(antes), 'deshacer');
+            assert.deepStrictEqual(resumen(rehecho), resumen(despues), 'rehacer');
+            return inversa;
+        }
+        it('inversas precisas: crear, modificar, mover y eliminar vuelven atrás y adelante', () => {
+            ciclo({ tipo: 'crear', posicion: 1, nuevo: { padre: 'B1', tipoc: 'P', casillero: 'P9', nombre: 'x', tipovar: 'si_no', opciones: [{ casillero: '1', nombre: 'Sí' }] } });
+            ciclo({ tipo: 'modificar', id_casillero: 'P2', cambios: { nombre: 'otro texto', salto: 'P3' } });
+            ciclo({ tipo: 'modificar', id_casillero: 'P1/2', cambios: { casillero: '9' } });
+            ciclo({ tipo: 'mover', id_casillero: 'P2', padre: 'B1', posicion: 0 });
+            ciclo({ tipo: 'mover', id_casillero: 'P1/2', padre: 'P2', posicion: 0 });
+            ciclo({ tipo: 'eliminar', id_casillero: 'P1' });
+        });
+        it('la inversa de modificar guarda sólo los campos que se cambiaron, con sus valores anteriores', () => {
+            var inversa = inversaDeOperacion(arbol(), TIPOS, { tipo: 'modificar', id_casillero: 'P2', cambios: { nombre: 'nuevo' } })!;
+            assert.deepStrictEqual(inversa.deshacer, [{ tipo: 'modificar', id_casillero: 'P2', cambios: { nombre: '¿Cuántos?' } }]);
+        });
+        it('deshacer un borrado restaura el subárbol sin tocar el resto (reemplazar de lo que se borró)', () => {
+            var inversa = inversaDeOperacion(arbol(), TIPOS, { tipo: 'eliminar', id_casillero: 'P1' })!;
+            var op = inversa.deshacer[0];
+            assert.strictEqual(op.tipo, 'reemplazar');
+            assert.deepStrictEqual(op.tipo == 'reemplazar' && op.casilleros.map(c => c.id_casillero).sort(), ['P1', 'P1/1', 'P1/2', 'P3']);
+            assert.strictEqual(validarOperacion(contexto({ casilleros: aplicarOperacionLocal(arbol(), TIPOS, 'OPE', { tipo: 'eliminar', id_casillero: 'P1' }) }), op), null);
+        });
+        it('una operación reemplazar no tiene inversa precisa (se usa la copia del formulario)', () => {
+            assert.strictEqual(inversaDeOperacion(arbol(), TIPOS, { tipo: 'reemplazar', raiz: 'F:F1', casilleros: arbol() }), null);
+        });
+        it('deshacer la creación de un formulario nuevo lo elimina', () => {
+            var antes = arbol();
+            var despues = aplicarOperacionLocal(antes, TIPOS, 'OPE', { tipo: 'crear', posicion: null, nuevo: { padre: null, tipoc: 'F', casillero: 'F2', nombre: 'Otro', tipovar: null, unidad_analisis: 'hogares' } });
+            var inversas = operacionesInversas(antes, despues, null, 'F:F2');
+            assert.deepStrictEqual(inversas.deshacer, [{ tipo: 'eliminar', id_casillero: 'F:F2' }]);
+        });
+    });
+
+    describe('formularios nuevos y reemplazar (restaurar versiones)', () => {
+        it('un formulario nuevo necesita unidad de análisis y es el único tipo que va suelto', () => {
+            var nuevo = { padre: null, tipoc: 'F', casillero: 'F2', nombre: 'Otro', tipovar: null };
+            assert.match(validarOperacion(contexto(), { tipo: 'crear', nuevo, posicion: null })!, /unidad de análisis/);
+            assert.strictEqual(validarOperacion(contexto(), { tipo: 'crear', nuevo: { ...nuevo, unidad_analisis: 'hogares' }, posicion: null }), null);
+            assert.match(validarOperacion(contexto(), { tipo: 'crear', nuevo: { ...nuevo, tipoc: 'B', unidad_analisis: 'hogares' }, posicion: null })!, /sólo los formularios/);
+            assert.match(validarOperacion(contexto(), { tipo: 'crear', nuevo: { ...nuevo, casillero: 'F1', unidad_analisis: 'hogares' }, posicion: null })!, /ya existe el casillero F:F1/);
+        });
+        it('reemplazar acepta una copia consistente', () => {
+            assert.strictEqual(validarOperacion(contexto(), { tipo: 'reemplazar', raiz: 'F:F1', casilleros: arbol() }), null);
+        });
+        it('reemplazar rechaza copias rotas, repetidas o que chocan con otros formularios', () => {
+            assert.match(validarOperacion(contexto(), { tipo: 'reemplazar', raiz: 'F:F1', casilleros: [...arbol(), arbol()[1]] })!, /repetidos/);
+            assert.match(validarOperacion(contexto(), { tipo: 'reemplazar', raiz: 'F:F1', casilleros: [arbol()[0], arbol()[1], casillero('X', 'NOEXISTE', 'P', 'X')] })!, /único casillero de arriba/);
+            var conOtro = contexto({ casilleros: [...arbol(), casillero('F:F2', null, 'F', 'F2'), casillero('B1b', 'F:F2', 'B', 'B1b')] });
+            assert.match(validarOperacion(conOtro, { tipo: 'reemplazar', raiz: 'F:F1', casilleros: [arbol()[0], casillero('B1b', 'F:F1', 'B', 'B1b')] })!, /ya existe el casillero B1b/);
+        });
+        it('sin permiso de estructura no se restaura', () => {
+            assert.match(validarOperacion(contexto({ permisos: { textos: true, estructura: false } }), { tipo: 'reemplazar', raiz: 'F:F1', casilleros: arbol() })!, /no tiene permiso/);
         });
     });
 
@@ -166,7 +326,7 @@ describe('dmencu - editor visual de metadatos', () => {
                         if (/^select c\.id_casillero/.test(limpio)) return tabla.map(c => ({ ...c }));
                         if (/^insert into casilleros/.test(limpio)) {
                             var tipoc = /'O'/.test(limpio) ? 'O' : String(params[2]);
-                            var padre = String(params[1]);
+                            var padre = params[1] == null ? null : String(params[1]);
                             var codigo = String(/'O'/.test(limpio) ? params[2] : params[3]);
                             var nuevo = casillero(idQueTendria(tipoDe(tipoc), padre, codigo), padre, tipoc, codigo);
                             tabla.push(nuevo);
@@ -221,6 +381,38 @@ describe('dmencu - editor visual de metadatos', () => {
             var base = baseSimulada(arbol());
             var resultado = await aplicarOperaciones(base.client, admin, 'OPE', [{ tipo: 'eliminar', id_casillero: 'P1' }]);
             assert.deepStrictEqual(resultado.map(c => c.id_casillero).sort(), ['B1', 'F:F1', 'P2']);
+        });
+        it('reemplazar vuelve el formulario a una copia: borra lo actual e inserta la copia con los mismos ids', async () => {
+            var copia = arbol();
+            var base = baseSimulada([...arbol().filter(c => c.id_casillero != 'P2'), casillero('PX', 'B1', 'P', 'PX', { tipovar: 'texto', nombre: 'de más' })]);
+            var resultado = await aplicarOperaciones(base.client, admin, 'OPE', [{ tipo: 'reemplazar', raiz: 'F:F1', casilleros: copia }]);
+            assert.deepStrictEqual(resultado.map(c => c.id_casillero).sort(), copia.map(c => c.id_casillero).sort());
+            assert.ok(!resultado.some(c => c.id_casillero == 'PX'));
+        });
+        it('los procedimientos del editor y quién puede cada uno', () => {
+            var app = { perfilDelUsuario: () => { throw new Error('no se usa'); }, estructuraModificada: () => { }, estructuraDelOperativo: async () => ({}) };
+            assert.deepStrictEqual(proceduresEditorMetadatos(app).map(p => p.action), [
+                'editor_metadatos_traer', 'editor_metadatos_aplicar', 'editor_metadatos_previsualizar',
+                'editor_metadatos_versiones_traer', 'editor_metadatos_version_guardar', 'editor_metadatos_version_restaurar',
+            ]);
+        });
+        it('guardar una versión copia el formulario con todo lo que tiene adentro', async () => {
+            var guardado: ValorSql[] = [];
+            var client: ClienteTablero = {
+                query(sql: string, params: ValorSql[] = []) {
+                    var limpio = sql.replace(/\s+/g, ' ').trim();
+                    var filas = (): FilaSql[] => {
+                        if (/^select c\.id_casillero/.test(limpio)) return arbol().map(c => ({ ...c }));
+                        if (/^insert into casilleros_versiones/.test(limpio)) { guardado = params; return [{ version: 7 }]; }
+                        return [];
+                    };
+                    return { fetchAll: async () => ({ rows: filas() }), execute: async () => { filas(); return {}; } };
+                }
+            };
+            assert.strictEqual(await guardarVersion(client, admin, 'OPE', 'F:F1', 'antes de cambiar el bloque 1'), 7);
+            assert.deepStrictEqual(guardado.slice(0, 4), ['OPE', 'F:F1', 'usu_admin', 'antes de cambiar el bloque 1']);
+            assert.strictEqual(JSON.parse(String(guardado[4])).length, arbol().length);
+            await assert.rejects(guardarVersion(client, admin, 'OPE', 'F:NO', null), /no existe el formulario/);
         });
         it('una operación inválida no se aplica y dice por qué', async () => {
             var base = baseSimulada(arbol());

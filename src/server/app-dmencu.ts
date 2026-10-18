@@ -109,6 +109,7 @@ import { fracciones } from "./table-fracciones";
 import { radios } from "./table-radios";
 import { manzanas } from "./table-manzanas";
 import { area_enc_proximas } from "./table-area_enc_proximas";
+import { casilleros_versiones } from "./table-casilleros_versiones";
 
 export * from "./types-dmencu";
 export * from "./ayuda";
@@ -333,6 +334,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 perfilDelUsuario: (context) => be.perfilDelUsuario(context),
                 // así los dispositivos y la vista previa vuelven a pedir la estructura
                 estructuraModificada: () => { be.caches.timestampEstructura = new Date().getTime(); },
+                estructuraDelOperativo: (context, operativo) => be.procedure.operativo_estructura_completa.coreFunction(context, { operativo, idper_logueado_tablet: null }),
             });
             return parentProc.concat(ProceduresDmEncu, [procedureTablero], procedimientosEditor);
         }
@@ -1149,6 +1151,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 , radios
                 , manzanas
                 , area_enc_proximas
+                , casilleros_versiones
             }
             be.appendToTableDefinition('consistencias', function (tableDef, context) {
                 tableDef.editable = tableDef.editable || context?.puede?.encuestas?.procesar;

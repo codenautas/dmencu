@@ -14,6 +14,48 @@ En *configurar → metadatos → **editor visual*** (`menuType: 'editor_metadato
 
 Al soltar algo de la paleta se pide el código (se sugiere el siguiente con `proximoCodigo`), el texto y el tipo de variable; se muestra el `id_casillero` que va a tener y si la operación no es válida, el motivo.
 
+## Íconos y colores
+
+Cada tipo de casillero tiene su color e ícono (`COLOR_DEL_TIPO`, `ICONO_DEL_TIPO` en `render-editor-metadatos.tsx`) en la paleta, en las tarjetas de la cancha y en los diálogos; las plantillas tienen el suyo (`ICONO_DE_PLANTILLA`). Un tipo nuevo (de la tabla `tipoc`) sin ícono propio usa uno genérico.
+
+## Datos que faltan según el tipo
+
+Aunque la base los deje vacíos, cada tipo necesita ciertos datos para desplegarse bien (`DATOS_REQUERIDOS`, `datosFaltantes`). Se marcan como **datos faltantes** (naranja, lápiz) distintos de los **errores** (rojo) y los **avisos** (amarillo); en el panel el campo a completar se pinta en rojo con el mensaje:
+
+| Tipo | Necesita |
+| :-- | :-- |
+| `F` | título, unidad de análisis y contenido |
+| `B`, `CP`, `MATRIZ`, `PMATRIZ` | título y contenido (que no estén vacíos) |
+| `P`, `PMATRIZ` | texto; la pregunta además necesita tipo de variable o preguntas adentro |
+| `O`, `OM` | texto; `OM` además necesita opciones |
+| `TEXTO` | texto o aclaración |
+| `FILTRO` | texto (o aclaración) y a dónde salta |
+| `CONS` | mensaje y condición |
+| `BF` | el formulario que abre (`salto`); si no es un formulario del operativo, error |
+
+Para sumar o cambiar lo que pide un tipo se edita `DATOS_REQUERIDOS` (también sirve para tipos de la app final, por ejemplo `LIBRE`).
+
+## Saltos
+
+Cada casillero (menos el botón de formulario) tiene una flecha a la derecha: se arrastra hasta el casillero destino y queda guardado en `salto`. Los saltos se dibujan sobre la cancha (violeta si van hacia adelante, naranja punteado si vuelven; se pueden ocultar con el interruptor *saltos*). En el panel, el campo `salto` es un buscador de casilleros del formulario (o `fin`); un salto a algo que no existe es un aviso.
+
+## Expresiones
+
+El campo *se habilita si* tiene ayuda: un buscador para insertar variables del operativo (`var_name` con su texto), un selector de funciones (`FUNCIONES_DE_EXPRESIONES`, las de `helpers-casilleros`) y un aviso si la expresión usa variables que no están en el operativo (`variablesDesconocidas`; las que empiezan con `$` son internas y se aceptan).
+
+## Formularios nuevos
+
+El botón **+ formulario** crea la raíz (`F`) con código, título, unidad de análisis y si es el principal; después se llena arrastrando.
+
+## Deshacer, rehacer y borrador
+
+- **Deshacer / rehacer** (botones o Ctrl+Z / Ctrl+Y, hasta 50 pasos). Cada operación tiene una inversa precisa (`inversaDeOperacion`): crear ↔ eliminar, modificar ↔ valores anteriores, mover ↔ mover de vuelta, eliminar ↔ restaurar lo que se borró (`reemplazar` sólo de ese subárbol). Si no hay una inversa precisa se vuelve el formulario a su copia anterior (`operacionesInversas`).
+- **Borrador**: el interruptor deja los cambios en el navegador (se simulan con `aplicarOperacionLocal`, que repite lo que hacen el servidor y los triggers) hasta **publicar**, que los manda todos juntos en una transacción (todos o ninguno). La **vista previa** del borrador le pide al servidor la estructura con los cambios aplicados dentro de un savepoint que se descarta (`editor_metadatos_previsualizar`), así se ve el resultado con el renderizador sin guardar nada. No se puede cambiar de operativo ni guardar versiones con cambios pendientes.
+
+## Versiones
+
+El botón de historial guarda y lista copias del formulario con todo lo que tiene adentro (tabla `casilleros_versiones`; script `operaciones/2026-10-18-actualizar_casilleros_versiones.sql` para bases ya instaladas). **Restaurar** (sólo superuser) primero guarda cómo está y después reemplaza el formulario por la copia (`reemplazar`: borra el formulario e inserta la copia con los mismos ids).
+
 ## Reglas
 
 Están en `src/unlogged/editor-metadatos-comun.ts`, que usan el cliente (para avisar antes de mandar) y el servidor (que las vuelve a controlar):
@@ -50,15 +92,16 @@ Los `var_name` los recalcula el trigger. Las respuestas ya cargadas no se tocan:
 | Qué | Dónde |
 | :-- | :-- |
 | Tipos, reglas, plantillas | `src/unlogged/editor-metadatos-comun.ts` |
-| Lectura, aplicación de operaciones, permisos y procedimientos `editor_metadatos_traer` / `editor_metadatos_aplicar` | `src/server/editor-metadatos.ts` |
+| Lectura, aplicación de operaciones, versiones, permisos y procedimientos `editor_metadatos_traer`, `_aplicar`, `_previsualizar`, `_versiones_traer`, `_version_guardar` y `_version_restaurar` | `src/server/editor-metadatos.ts` |
+| Tabla de versiones | `src/server/table-casilleros_versiones.ts` |
 | Registro de procedimientos y opción de menú | `src/server/app-dmencu.ts` |
 | Pantallas `editor_metadatos` y `formulario_previsualizar` | `src/client/render-editor-metadatos.tsx` |
 | Tests | `src/test/test-editor-metadatos.ts` |
 
 ## Pendiente / ideas
 
-- Crear formularios nuevos (raíz `F` con su unidad de análisis) desde el editor; hoy se crean en la grilla y después se editan acá.
-- Deshacer / rehacer y un historial de versiones del formulario.
-- Saltos dibujados como flechas en la cancha y elegidos arrastrando.
-- Previsualizar sin guardar (aplicar los cambios en una transacción que se descarta).
-- Editor de consistencias y de la expresión de habilitación con ayuda de variables.
+- Editor de consistencias (`CONS`) con la condición probada contra datos de ejemplo.
+- Mostrar en el panel qué casilleros saltan *hacia* el seleccionado.
+- Comparar dos versiones de un formulario antes de restaurar.
+- Arrastrar varios casilleros juntos y copiar y pegar casilleros entre formularios.
+- La vista previa abre sólo formularios de la unidad de análisis principal; los demás se navegan desde el principal.

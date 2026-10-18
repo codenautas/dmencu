@@ -7,8 +7,9 @@
 import type { ProcedureContext } from "backend-plus";
 import type { PerfilTablero } from "../unlogged/tipos-tablero";
 import {
-    CAMPOS_EDITABLES, CasilleroEditable, DatosEditorMetadatos, hijosDe, OperacionMetadatos, PermisosEditor, validarOperacion
+    CAMPOS_EDITABLES, CasilleroEditable, DatosEditorMetadatos, hijosDe, idsConInsertado, OperacionMetadatos, PermisosEditor, subarbol, validarOperacion
 } from "../unlogged/editor-metadatos-comun";
+export { idsConInsertado };
 import type { Context, ProcedureDef } from "./types-dmencu";
 import { tienePermiso } from "./ayuda";
 import { ClienteTablero, FilaSql, numero, texto, ValorSql } from "./tablero";
@@ -141,14 +142,6 @@ export async function numerarHermanos(client: ClienteTablero, operativo: string,
     }
 }
 
-// el orden de los hermanos con el casillero ubicado en la posición pedida
-export function idsConInsertado(hermanos: CasilleroEditable[], id: string, posicion: number | null): string[] {
-    var ids = hermanos.map(h => h.id_casillero).filter(otro => otro != id);
-    var lugar = posicion == null ? ids.length : Math.max(0, Math.min(posicion, ids.length));
-    ids.splice(lugar, 0, id);
-    return ids;
-}
-
 function valorSql(valor: CasilleroEditable[keyof CasilleroEditable] | undefined): ValorSql {
     return valor === undefined ? null : valor;
 }
@@ -158,10 +151,10 @@ async function aplicarOperacion(client: ClienteTablero, operativo: string, casil
         case 'crear': {
             var { nuevo } = operacion;
             var [creado] = await filas(client, `
-                insert into casilleros (operativo, padre, tipoc, casillero, nombre, tipovar, orden)
-                    values ($1, $2, $3, $4, $5, $6, 0)
+                insert into casilleros (operativo, padre, tipoc, casillero, nombre, tipovar, orden, unidad_analisis, formulario_principal)
+                    values ($1, $2, $3, $4, $5, $6, 0, $7, $8)
                     returning id_casillero`,
-                [operativo, nuevo.padre, nuevo.tipoc, nuevo.casillero, nuevo.nombre, nuevo.tipovar]);
+                [operativo, nuevo.padre, nuevo.tipoc, nuevo.casillero, nuevo.nombre, nuevo.tipovar, nuevo.unidad_analisis ?? null, nuevo.formulario_principal ?? null]);
             var idCreado = texto(creado, 'id_casillero') ?? '';
             await numerarHermanos(client, operativo, idsConInsertado(hijosDe(casilleros, nuevo.padre), idCreado, operacion.posicion));
             for (var [i, opcion] of (nuevo.opciones ?? []).entries()) {
@@ -202,7 +195,78 @@ async function aplicarOperacion(client: ClienteTablero, operativo: string, casil
                 [operativo, operacion.id_casillero]).execute();
             return;
         }
+        case 'reemplazar': {
+            await aplicarOperacion(client, operativo, casilleros, { tipo: 'eliminar', id_casillero: operacion.raiz });
+            await insertarCopia(client, operativo, operacion.casilleros);
+            return;
+        }
     }
+}
+
+const CAMPOS_DE_LA_COPIA = ['padre', 'tipoc', 'casillero', 'orden', ...CAMPOS_EDITABLES];
+
+// inserta casilleros con todos sus campos, los padres antes que los hijos; el trigger tiene que dar los mismos ids
+export async function insertarCopia(client: ClienteTablero, operativo: string, copia: CasilleroEditable[]): Promise<void> {
+    var insertados = new Set<string>();
+    var pendientes = [...copia];
+    while (pendientes.length) {
+        var listos = pendientes.filter(c => c.padre == null || insertados.has(c.padre) || !copia.some(otro => otro.id_casillero == c.padre));
+        if (listos.length == 0) {
+            throw new Error('la copia tiene casilleros que no cuelgan de ninguno');
+        }
+        for (var casillero of listos) {
+            var [fila] = await filas(client, `
+                insert into casilleros (operativo, ${CAMPOS_DE_LA_COPIA.join(', ')})
+                    values ($1, ${CAMPOS_DE_LA_COPIA.map((campo, i) => `$${i + 2}${campo == 'especial' ? '::jsonb' : ''}`).join(', ')})
+                    returning id_casillero`,
+                [operativo, ...CAMPOS_DE_LA_COPIA.map(campo => valorSql(casillero[campo as keyof CasilleroEditable]))]);
+            if (texto(fila, 'id_casillero') != casillero.id_casillero) {
+                throw new Error(`al restaurar, ${casillero.id_casillero} quedó como ${texto(fila, 'id_casillero')}`);
+            }
+            insertados.add(casillero.id_casillero);
+        }
+        pendientes = pendientes.filter(c => !insertados.has(c.id_casillero));
+    }
+}
+
+/* versiones: copias de un formulario (con todo lo que tiene adentro) que se pueden restaurar */
+
+export type VersionFormulario = { version: number, cuando: string, usuario: string | null, descripcion: string | null, cantidad: number };
+
+export async function guardarVersion(client: ClienteTablero, context: Context, operativo: string, idFormulario: string, descripcion: string | null): Promise<number> {
+    var copia = subarbol(await leerCasilleros(client, operativo), idFormulario);
+    if (copia.length == 0) {
+        throw new Error(`no existe el formulario ${idFormulario}`);
+    }
+    var [fila] = await filas(client, `
+        insert into casilleros_versiones (operativo, id_formulario, usuario, descripcion, casilleros)
+            values ($1, $2, $3, $4, $5::jsonb)
+            returning version`,
+        [operativo, idFormulario, context.user?.usuario ?? null, descripcion, JSON.stringify(copia)]);
+    return numero(fila, 'version');
+}
+
+export async function traerVersiones(client: ClienteTablero, operativo: string, idFormulario: string): Promise<VersionFormulario[]> {
+    return (await filas(client, `
+        select version, to_char(cuando, 'DD/MM/YYYY HH24:MI') as cuando, usuario, descripcion, jsonb_array_length(casilleros) as cantidad
+            from casilleros_versiones
+            where operativo = $1 and id_formulario = $2
+            order by version desc`, [operativo, idFormulario])).map(f => ({
+        version: numero(f, 'version'), cuando: texto(f, 'cuando') ?? '', usuario: texto(f, 'usuario'), descripcion: texto(f, 'descripcion'), cantidad: numero(f, 'cantidad'),
+    }));
+}
+
+export async function copiaDeVersion(client: ClienteTablero, operativo: string, version: number): Promise<{ idFormulario: string, casilleros: CasilleroEditable[] }> {
+    var [fila] = await filas(client, `select id_formulario, casilleros from casilleros_versiones where operativo = $1 and version = $2`, [operativo, version]);
+    if (fila == null) {
+        throw new Error(`no existe la versión ${version}`);
+    }
+    var casilleros = fila.casilleros;
+    var lista: unknown[] = Array.isArray(casilleros) ? casilleros : typeof casilleros == 'string' ? JSON.parse(casilleros) : [];
+    return {
+        idFormulario: texto(fila, 'id_formulario') ?? '',
+        casilleros: lista.filter((c): c is FilaSql => c != null && typeof c == 'object').map(casilleroDesdeFila),
+    };
 }
 
 // aplica las operaciones en orden, todas o ninguna (corre en la transacción del procedimiento); devuelve los casilleros como quedaron
@@ -244,6 +308,14 @@ export type AppEditorMetadatos = {
     perfilDelUsuario(context: ProcedureContext): PerfilTablero
     // avisa que cambió la estructura (los dispositivos y la vista previa la vuelven a pedir)
     estructuraModificada(): void
+    // la estructura que recibe el renderizador (procedimiento operativo_estructura_completa)
+    estructuraDelOperativo(context: ProcedureContext, operativo: string): Promise<unknown>
+}
+
+function exigirPermiso(context: Context, que: 'ver' | 'estructura'): void {
+    if (!permisosEditor(context)[que]) {
+        throw new Error(que == 'ver' ? 'no tiene permiso para editar metadatos' : 'no tiene permiso para cambiar la estructura de los formularios');
+    }
 }
 
 export function proceduresEditorMetadatos(app: AppEditorMetadatos): ProcedureDef[] {
@@ -261,6 +333,53 @@ export function proceduresEditorMetadatos(app: AppEditorMetadatos): ProcedureDef
                 var casilleros = await aplicarOperaciones(context.client, context, parametros.operativo, parametros.operaciones);
                 app.estructuraModificada();
                 return casilleros;
+            }
+        },
+        {
+            // la estructura como quedaría con esas operaciones, sin guardarlas: se aplican en un savepoint que se descarta
+            action: 'editor_metadatos_previsualizar',
+            parameters: [{ name: 'operativo', typeName: 'text' }, { name: 'operaciones', typeName: 'jsonb' }],
+            coreFunction: async (context: ProcedureContext, parametros: { operativo: string, operaciones: OperacionMetadatos[] }) => {
+                exigirPermiso(context, 'ver');
+                await context.client.query(`savepoint editor_previsualizar`, []).execute();
+                try {
+                    await aplicarOperaciones(context.client, context, parametros.operativo, parametros.operaciones);
+                    return await app.estructuraDelOperativo(context, parametros.operativo);
+                } finally {
+                    await context.client.query(`rollback to savepoint editor_previsualizar`, []).execute();
+                }
+            }
+        },
+        {
+            action: 'editor_metadatos_versiones_traer',
+            parameters: [{ name: 'operativo', typeName: 'text' }, { name: 'id_formulario', typeName: 'text' }],
+            coreFunction: async (context: ProcedureContext, parametros: { operativo: string, id_formulario: string }) => {
+                exigirPermiso(context, 'ver');
+                return traerVersiones(context.client, parametros.operativo, parametros.id_formulario);
+            }
+        },
+        {
+            action: 'editor_metadatos_version_guardar',
+            parameters: [{ name: 'operativo', typeName: 'text' }, { name: 'id_formulario', typeName: 'text' }, { name: 'descripcion', typeName: 'text' }],
+            coreFunction: async (context: ProcedureContext, parametros: { operativo: string, id_formulario: string, descripcion: string | null }) => {
+                exigirPermiso(context, 'ver');
+                return guardarVersion(context.client, context, parametros.operativo, parametros.id_formulario, parametros.descripcion);
+            }
+        },
+        {
+            // vuelve el formulario a una versión guardada; antes guarda cómo está, para poder volver
+            action: 'editor_metadatos_version_restaurar',
+            parameters: [{ name: 'operativo', typeName: 'text' }, { name: 'version', typeName: 'integer' }],
+            coreFunction: async (context: ProcedureContext, parametros: { operativo: string, version: number }) => {
+                exigirPermiso(context, 'estructura');
+                var { idFormulario, casilleros } = await copiaDeVersion(context.client, parametros.operativo, parametros.version);
+                var actuales = await leerCasilleros(context.client, parametros.operativo);
+                if (actuales.some(c => c.id_casillero == idFormulario)) {
+                    await guardarVersion(context.client, context, parametros.operativo, idFormulario, `antes de restaurar la versión ${parametros.version}`);
+                }
+                var resultado = await aplicarOperaciones(context.client, context, parametros.operativo, [{ tipo: 'reemplazar', raiz: idFormulario, casilleros }]);
+                app.estructuraModificada();
+                return resultado;
             }
         },
     ];
