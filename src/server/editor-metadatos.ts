@@ -7,7 +7,7 @@
 import type { ProcedureContext } from "backend-plus";
 import type { PerfilTablero } from "../unlogged/tipos-tablero";
 import {
-    CAMPOS_EDITABLES, CasilleroEditable, DatosEditorMetadatos, hijosDe, idsConInsertado, OperacionMetadatos, PermisosEditor, subarbol, validarOperacion
+    CAMPOS_EDITABLES, CasilleroEditable, DatosEditorMetadatos, hijosDe, idsConInsertado, OperacionMetadatos, ordenParaInsertar, PermisosEditor, subarbol, validarOperacion
 } from "../unlogged/editor-metadatos-comun";
 export { idsConInsertado };
 import type { Context, ProcedureDef } from "./types-dmencu";
@@ -143,6 +143,16 @@ export async function numerarHermanos(client: ClienteTablero, operativo: string,
     }
 }
 
+// deja al casillero en la posición pedida entre sus hermanos usando el hueco entre sus vecinos; sólo renumera si no hay lugar (ver ordenParaInsertar)
+async function ubicarHermano(client: ClienteTablero, operativo: string, hermanos: CasilleroEditable[], id: string, posicion: number | null): Promise<void> {
+    var otros = hermanos.filter(h => h.id_casillero != id);
+    var { orden, renumerar } = ordenParaInsertar(otros, posicion);
+    if (renumerar) {
+        await numerarHermanos(client, operativo, idsConInsertado(otros, id, posicion));
+    } else {
+        await client.query(`update casilleros set orden = $3 where operativo = $1 and id_casillero = $2`, [operativo, id, orden]).execute();
+    }
+}
 function valorSql(valor: CasilleroEditable[keyof CasilleroEditable] | undefined): ValorSql {
     return valor === undefined ? null : valor;
 }
@@ -157,7 +167,7 @@ async function aplicarOperacion(client: ClienteTablero, operativo: string, casil
                     returning id_casillero`,
                 [operativo, nuevo.padre, nuevo.tipoc, nuevo.casillero, nuevo.nombre, nuevo.tipovar, nuevo.unidad_analisis ?? null, nuevo.formulario_principal ?? null]);
             var idCreado = texto(creado, 'id_casillero') ?? '';
-            await numerarHermanos(client, operativo, idsConInsertado(hijosDe(casilleros, nuevo.padre), idCreado, operacion.posicion));
+            await ubicarHermano(client, operativo, hijosDe(casilleros, nuevo.padre), idCreado, operacion.posicion);
             for (var [i, opcion] of (nuevo.opciones ?? []).entries()) {
                 await client.query(`insert into casilleros (operativo, padre, tipoc, casillero, nombre, orden) values ($1, $2, 'O', $3, $4, $5)`,
                     [operativo, idCreado, opcion.casillero, opcion.nombre, (i + 1) * 10]).execute();
@@ -182,7 +192,11 @@ async function aplicarOperacion(client: ClienteTablero, operativo: string, casil
                 [operativo, operacion.id_casillero, operacion.padre]);
             var idMovido = texto(movido, 'id_casillero') ?? operacion.id_casillero;
             await llevarHijosAlIdNuevo(client, operativo, operacion.id_casillero, idMovido);
-            await numerarHermanos(client, operativo, idsConInsertado(hijosDe(casilleros, operacion.padre), idMovido, operacion.posicion));
+            if (operacion.orden !== undefined) {
+                await client.query(`update casilleros set orden = $3 where operativo = $1 and id_casillero = $2`, [operativo, idMovido, operacion.orden]).execute();
+            } else {
+                await ubicarHermano(client, operativo, hijosDe(casilleros, operacion.padre), idMovido, operacion.posicion);
+            }
             return;
         }
         case 'eliminar': {

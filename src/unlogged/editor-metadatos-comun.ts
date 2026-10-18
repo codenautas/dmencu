@@ -94,7 +94,7 @@ export type NuevoCasillero = {
 export type OperacionMetadatos =
     | { tipo: 'crear', nuevo: NuevoCasillero, posicion: number | null } // posicion entre los hermanos; null: al final
     | { tipo: 'modificar', id_casillero: string, cambios: CambiosDeCasillero }
-    | { tipo: 'mover', id_casillero: string, padre: string, posicion: number }
+    | { tipo: 'mover', id_casillero: string, padre: string, posicion: number, orden?: number | null } // orden: número exacto (al deshacer); si no, el hueco que corresponda
     | { tipo: 'eliminar', id_casillero: string }
     // vuelve un formulario (o cualquier casillero con lo que tiene adentro) a como estaba: deshacer y restaurar versiones
     | { tipo: 'reemplazar', raiz: string, casilleros: CasilleroEditable[] };
@@ -477,6 +477,21 @@ export function idsConInsertado(hermanos: CasilleroEditable[], id: string, posic
     return ids;
 }
 
+// el orden que le toca a un casillero que se inserta entre sus hermanos (sin él, en el orden en que se muestran) en la posición dada,
+// tocando lo menos posible: ocupa el hueco entre sus vecinos. Los órdenes de la base suelen tener huecos irregulares (1,2,4,10,20 o 15,17,19)
+// y hay que respetarlos; sólo si no hay lugar se renumera a los hermanos de 10 en 10
+export function ordenParaInsertar(hermanos: CasilleroEditable[], posicion: number | null): { orden: number, renumerar: boolean } {
+    var n = hermanos.length;
+    if (n == 0) return { orden: 10, renumerar: false };
+    var lugar = posicion == null ? n : Math.max(0, Math.min(posicion, n));
+    var antes = lugar > 0 ? hermanos[lugar - 1].orden : null;
+    var despues = lugar < n ? hermanos[lugar].orden : null;
+    var sinLugar = { orden: (lugar + 1) * 10, renumerar: true };
+    if (lugar == n) return antes != null ? { orden: antes + 10, renumerar: false } : sinLugar;
+    if (lugar == 0) return despues != null && despues >= 2 ? { orden: Math.floor(despues / 2), renumerar: false } : sinLugar;
+    if (antes != null && despues != null && despues - antes >= 2) return { orden: Math.floor((antes + despues) / 2), renumerar: false };
+    return sinLugar;
+}
 export function casilleroVacio(id_casillero: string, padre: string | null, tipoc: string, casillero: string): CasilleroEditable {
     return {
         id_casillero, padre, tipoc, casillero, orden: null, irrepetible: null, nombre: null, aclaracion: null, tipovar: null,
@@ -486,6 +501,15 @@ export function casilleroVacio(id_casillero: string, padre: string | null, tipoc
     };
 }
 
+// deja al casillero en la posición pedida entre sus hermanos tocando lo mínimo (ver ordenParaInsertar); orden: número exacto (deshacer)
+function ubicar(casilleros: CasilleroEditable[], idPadre: string | null, id: string, posicion: number | null, ordenExacto?: number | null): CasilleroEditable[] {
+    if (ordenExacto !== undefined) return casilleros.map(c => c.id_casillero == id ? { ...c, orden: ordenExacto } : c);
+    var hermanos = hijosDe(casilleros, idPadre).filter(h => h.id_casillero != id);
+    var { orden, renumerar } = ordenParaInsertar(hermanos, posicion);
+    return renumerar
+        ? numerar(casilleros, idsConInsertado(hermanos, id, posicion))
+        : casilleros.map(c => c.id_casillero == id ? { ...c, orden } : c);
+}
 // los casilleros como quedarían después de la operación (no valida: llamar antes a validarOperacion)
 export function aplicarOperacionLocal(casilleros: CasilleroEditable[], tipos: TipoCasillero[], operativo: string, operacion: OperacionMetadatos): CasilleroEditable[] {
     switch (operacion.tipo) {
@@ -498,7 +522,7 @@ export function aplicarOperacionLocal(casilleros: CasilleroEditable[], tipos: Ti
             var opciones = (nuevo.opciones ?? []).map((opcion, i) => conIdRecalculado({
                 ...casilleroVacio('', creado.id_casillero, 'O', opcion.casillero), nombre: opcion.nombre, orden: (i + 1) * 10,
             }, tipos, operativo));
-            return numerar([...casilleros, creado, ...opciones], idsConInsertado(hijosDe(casilleros, nuevo.padre), creado.id_casillero, operacion.posicion));
+            return ubicar([...casilleros, creado, ...opciones], nuevo.padre, creado.id_casillero, operacion.posicion);
         }
         case 'modificar': {
             var actual = casilleros.find(c => c.id_casillero == operacion.id_casillero);
@@ -507,10 +531,9 @@ export function aplicarOperacionLocal(casilleros: CasilleroEditable[], tipos: Ti
         case 'mover': {
             var movido = casilleros.find(c => c.id_casillero == operacion.id_casillero);
             if (movido == null) return casilleros;
-            var hermanosAntes = hijosDe(casilleros, operacion.padre);
             var conMovido = renombrar(casilleros, movido.id_casillero, { ...movido, padre: operacion.padre }, tipos, operativo);
             var idMovido = idQueTendria(buscarTipo(tipos, movido.tipoc), operacion.padre, movido.casillero);
-            return numerar(conMovido, idsConInsertado(hermanosAntes, idMovido, operacion.posicion));
+            return ubicar(conMovido, operacion.padre, idMovido, operacion.posicion, operacion.orden);
         }
         case 'eliminar': {
             var borrar = new Set([operacion.id_casillero, ...descendientes(casilleros, operacion.id_casillero)]);
@@ -543,7 +566,7 @@ export function inversaDeOperacion(antes: CasilleroEditable[], tipos: TipoCasill
             if (movido == null || movido.padre == null) return null;
             var lugar = hijosDe(antes, movido.padre).findIndex(h => h.id_casillero == movido!.id_casillero);
             var idMovido = idQueTendria(buscarTipo(tipos, movido.tipoc), operacion.padre, movido.casillero);
-            return { deshacer: [{ tipo: 'mover', id_casillero: idMovido, padre: movido.padre, posicion: Math.max(0, lugar) }], rehacer: [operacion] };
+            return { deshacer: [{ tipo: 'mover', id_casillero: idMovido, padre: movido.padre, posicion: Math.max(0, lugar), orden: movido.orden }], rehacer: [operacion] };
         }
         case 'eliminar': {
             var copia = subarbol(antes, operacion.id_casillero);

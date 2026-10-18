@@ -81,7 +81,7 @@ Están en `src/unlogged/editor-metadatos-comun.ts`, que usan el cliente (para av
 1. `set constraints all deferred`: al cambiar un id quedan por un momento hijos apuntando al id viejo.
 2. Valida cada operación con `validarOperacion` contra los casilleros como están en ese momento.
 3. **Mover** o **cambiar el código** de un casillero no irrepetible le cambia el id: `llevarHijosAlIdNuevo` actualiza el `padre` de sus hijos (el trigger recalcula sus ids) y sigue hacia abajo.
-4. El orden se renumera de 10 en 10 entre los hermanos (`numerarHermanos`).
+4. El casillero ocupa el hueco entre sus vecinos (`ordenParaInsertar`): los órdenes de la base tienen huecos irregulares y se respetan; sólo si no hay lugar se renumeran los hermanos de 10 en 10 (`numerarHermanos`). `mover` acepta un `orden` exacto, que usa el deshacer para volver al número original.
 5. **Borrar** borra el casillero y todo lo que tiene adentro.
 6. Avisa que cambió la estructura (`timestampEstructura`): los dispositivos y la vista previa la vuelven a pedir.
 

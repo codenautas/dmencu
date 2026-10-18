@@ -3,7 +3,7 @@ import { describe, it } from 'mocha';
 import assert = require('node:assert');
 
 import {
-    aplicarOperacionLocal, CasilleroEditable, ContextoValidacion, hijosDe, idQueTendria, Inclusion, inversaDeOperacion, OperacionMetadatos, operacionesInversas, problemasDelCasillero, proximoCodigo, TipoCasillero,
+    aplicarOperacionLocal, CasilleroEditable, ContextoValidacion, hijosDe, idQueTendria, Inclusion, inversaDeOperacion, OperacionMetadatos, operacionesInversas, ordenParaInsertar, problemasDelCasillero, proximoCodigo, TipoCasillero,
     validarOperacion, variablesDeExpresion, variablesDesconocidas, varNameDerivado
 } from '../unlogged/editor-metadatos-comun';
 import { aplicarOperaciones, CAMPOS_DE_LA_COPIA, guardarVersion, idsConInsertado, permisosEditor, proceduresEditorMetadatos } from '../server/editor-metadatos';
@@ -202,6 +202,27 @@ describe('dmencu - editor visual de metadatos', () => {
             assert.deepStrictEqual(vuelto.map(c => c.id_casillero).sort(), antes.map(c => c.id_casillero).sort());
             var rehecho = inversas.rehacer.reduce((c, op) => aplicarOperacionLocal(c, TIPOS, 'OPE', op), vuelto);
             assert.deepStrictEqual(rehecho.map(c => c.id_casillero).sort(), despues.map(c => c.id_casillero).sort());
+        });
+        it('crear y mover respetan los órdenes irregulares: sólo ocupan un hueco, no renumeran a los hermanos', () => {
+            var irregular = arbol().map(c => c.id_casillero == 'P1' ? { ...c, orden: 2 } : c.id_casillero == 'P2' ? { ...c, orden: 7 } : c);
+            var ordenes = (lista: CasilleroEditable[]) => Object.fromEntries(hijosDe(lista, 'B1').map(c => [c.id_casillero, c.orden]));
+            var creado = aplicarOperacionLocal(irregular, TIPOS, 'OPE', { tipo: 'crear', posicion: 1, nuevo: { padre: 'B1', tipoc: 'P', casillero: 'P9', nombre: 'x', tipovar: 'numero' } });
+            assert.deepStrictEqual(ordenes(creado), { P1: 2, P9: 4, P2: 7 });
+            var movido = aplicarOperacionLocal(irregular, TIPOS, 'OPE', { tipo: 'mover', id_casillero: 'P2', padre: 'B1', posicion: 0 });
+            assert.deepStrictEqual(ordenes(movido), { P2: 1, P1: 2 });
+            var exacto = aplicarOperacionLocal(movido, TIPOS, 'OPE', { tipo: 'mover', id_casillero: 'P2', padre: 'B1', posicion: 1, orden: 7 });
+            assert.deepStrictEqual(ordenes(exacto), { P1: 2, P2: 7 });
+        });
+        it('ordenParaInsertar: huecos y renumerado', () => {
+            var h = (...ordenes: (number | null)[]) => ordenes.map((orden, i) => casillero('X' + i, 'B1', 'P', 'X' + i, { orden }));
+            assert.deepStrictEqual(ordenParaInsertar([], 0), { orden: 10, renumerar: false });
+            assert.deepStrictEqual(ordenParaInsertar(h(10, 20), null), { orden: 30, renumerar: false });
+            assert.deepStrictEqual(ordenParaInsertar(h(10, 20), 1), { orden: 15, renumerar: false });
+            assert.deepStrictEqual(ordenParaInsertar(h(10, 20), 0), { orden: 5, renumerar: false });
+            assert.deepStrictEqual(ordenParaInsertar(h(1, 2), 1), { orden: 20, renumerar: true });
+            assert.deepStrictEqual(ordenParaInsertar(h(1, 2), 0), { orden: 10, renumerar: true });
+            assert.deepStrictEqual(ordenParaInsertar(h(5, 5), 1), { orden: 20, renumerar: true });
+            assert.deepStrictEqual(ordenParaInsertar(h(null, null), 1), { orden: 20, renumerar: true });
         });
         // aplica la operación, su inversa (deshacer) y otra vez la operación (rehacer): tiene que dar lo mismo que la primera vez
         function ciclo(operacion: OperacionMetadatos) {
