@@ -115,6 +115,8 @@ declare module "backend-plus" {
         cambiar_modo_dm: true
         ayuda: true
         tablero: true
+        editor_metadatos: true
+        formulario_previsualizar: true
     }
 
     // backend-plus usa config['client-setup'].skin pero no lo declara

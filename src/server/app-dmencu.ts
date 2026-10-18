@@ -9,6 +9,7 @@ import {
     perfilSegunRol, QuienConsultaTablero, SECCIONES_TABLERO, texto
 } from "./tablero";
 import type { PerfilTablero, TableroParaUsuario } from "../unlogged/tipos-tablero";
+import { proceduresEditorMetadatos } from "./editor-metadatos";
 
 import * as pg from "pg-promise-strict";
 import * as miniTools from "mini-tools";
@@ -112,6 +113,7 @@ import { area_enc_proximas } from "./table-area_enc_proximas";
 export * from "./types-dmencu";
 export * from "./ayuda";
 export * from "./tablero";
+export * from "./editor-metadatos";
 import { defConfig } from "./def-config"
 import { ProcedureDef } from "backend-plus";
 import { table } from "console";
@@ -327,7 +329,12 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                     return be.tableroParaUsuario(context);
                 }
             };
-            return parentProc.concat(ProceduresDmEncu, [procedureTablero]);
+            var procedimientosEditor = proceduresEditorMetadatos({
+                perfilDelUsuario: (context) => be.perfilDelUsuario(context),
+                // así los dispositivos y la vista previa vuelven a pedir la estructura
+                estructuraModificada: () => { be.caches.timestampEstructura = new Date().getTime(); },
+            });
+            return parentProc.concat(ProceduresDmEncu, [procedureTablero], procedimientosEditor);
         }
         // secciones del tablero de inicio. Las apps finales las extienden sobreescribiendo este método, por ejemplo
         // combinarSecciones(super.getSeccionesTablero(), [miSeccion]) o filtrando por id (ver docs/tablero.md)
@@ -570,6 +577,10 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 rutas
             );
         }
+        // perfil visual (colores) del usuario, el mismo del tablero de inicio
+        perfilDelUsuario(context: Context): PerfilTablero {
+            return buscarPerfil(this.getPerfilesTablero(), this.getPerfilTablero(context));
+        }
         override configStaticConfig() {
             super.configStaticConfig();
             this.setStaticConfig(defConfig);
@@ -581,6 +592,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'unlogged.js', path: 'dmencu' },
             ] : [
                 { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'render-tablero.js', path: 'dmencu' },
+                { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'editor-metadatos-comun.js', path: 'dmencu' },
+                { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'render-editor-metadatos.js', path: 'dmencu' },
                 { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'client.js', path: 'dmencu' },
             ];
             if (opts && opts.extraFiles) {
@@ -917,6 +930,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                             { menuType: 'table', name: 'no_rea_sup' },
                         ]},
                         { menuType: 'table', name: 'formularios', table: 'casilleros_principales' },
+                        { menuType: 'editor_metadatos', name: 'editor_visual', label: 'editor visual' },
                         { menuType: 'table', name: 'plano', table: 'casilleros' },
                         { menuType: 'table', name: 'variables', table: 'casilleros', fc: [{ column: 'var_name', operator: '!=\u2205', value: null }] },
                         { menuType: 'table', name: 'tipoc', label: 'tipos de celdas' },
