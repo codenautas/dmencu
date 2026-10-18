@@ -6,7 +6,7 @@ import {
     aplicarOperacionLocal, CasilleroEditable, ContextoValidacion, hijosDe, idQueTendria, Inclusion, inversaDeOperacion, OperacionMetadatos, operacionesInversas, problemasDelCasillero, proximoCodigo, TipoCasillero,
     validarOperacion, variablesDeExpresion, variablesDesconocidas, varNameDerivado
 } from '../unlogged/editor-metadatos-comun';
-import { aplicarOperaciones, guardarVersion, idsConInsertado, permisosEditor, proceduresEditorMetadatos } from '../server/editor-metadatos';
+import { aplicarOperaciones, CAMPOS_DE_LA_COPIA, guardarVersion, idsConInsertado, permisosEditor, proceduresEditorMetadatos } from '../server/editor-metadatos';
 import type { ClienteTablero, FilaSql, ValorSql } from '../server/tablero';
 import type { MenuInfoBase } from '../server/types-dmencu';
 import { contextoDelRol, crearAppParaTests } from './app-para-tests';
@@ -101,9 +101,25 @@ describe('dmencu - editor visual de metadatos', () => {
             assert.deepStrictEqual(faltas(lista, 'F:F2').map(p => p.mensaje),
                 ['falta el título del formulario', 'falta la unidad de análisis', 'está vacío: arrastrá casilleros adentro']);
         });
-        it('un bloque vacío', () => {
+        it('un bloque vacío es un aviso (puede ser a propósito); un formulario vacío es un dato faltante', () => {
             var lista = [...arbol(), casillero('B7', 'F:F1', 'B', 'B7', { nombre: 'Vacío' })];
-            assert.deepStrictEqual(faltas(lista, 'B7').map(p => p.mensaje), ['está vacío: arrastrá casilleros adentro']);
+            assert.deepStrictEqual(faltas(lista, 'B7'), []);
+            var avisos = problemasDelCasillero(lista.find(c => c.id_casillero == 'B7')!, lista, TIPOS, INCLUSIONES).filter(p => p.gravedad == 'aviso');
+            assert.deepStrictEqual(avisos.map(p => p.mensaje), ['está vacío: arrastrá casilleros adentro']);
+        });
+        // casos de la base real de etoi (ver la prueba con datos reales)
+        it('un título de un solo espacio es un título en blanco a propósito, no un dato faltante', () => {
+            var lista = [...arbol(), casillero('S1.2', 'F:F1', 'B', 'S1.2', { nombre: ' ' }), casillero('P8', 'S1.2', 'P', 'P8', { nombre: '¿...?', tipovar: 'texto' })];
+            assert.deepStrictEqual(faltas(lista, 'S1.2'), []);
+            lista = lista.map(c => c.id_casillero == 'S1.2' ? { ...c, nombre: '' } : c);
+            assert.deepStrictEqual(faltas(lista, 'S1.2').map(p => p.mensaje), ['falta el título del bloque']);
+        });
+        it('una pregunta de opciones sin texto es un aviso; una pregunta de otro tipo sin texto es un dato faltante', () => {
+            var lista = arbol().map(c => c.id_casillero == 'P1' ? { ...c, nombre: null } : c);
+            assert.deepStrictEqual(faltas(lista, 'P1'), []);
+            var avisos = problemasDelCasillero(lista.find(c => c.id_casillero == 'P1')!, lista, TIPOS, INCLUSIONES).filter(p => p.gravedad == 'aviso');
+            assert.deepStrictEqual(avisos.map(p => p.mensaje), ['falta el texto de la pregunta']);
+            assert.strictEqual(faltas(arbol().map(c => c.id_casillero == 'P2' ? { ...c, nombre: null } : c), 'P2').length, 1);
         });
         it('un filtro sin texto ni salto, y un botón sin formulario', () => {
             var lista = [...arbol(), casillero('FIL', 'B1', 'FILTRO', 'FIL'), casillero('BF_X', 'F:F1', 'BF', 'BF_X')];
@@ -128,12 +144,22 @@ describe('dmencu - editor visual de metadatos', () => {
     describe('expresiones', () => {
         it('variablesDeExpresion deja afuera funciones, palabras y textos', () => {
             assert.deepStrictEqual(variablesDeExpresion("p1 = 1 and not blanco(p2) or v_x is null and nombre = 'juan perez'"), ['p1', 'p2', 'v_x', 'nombre']);
-            assert.deepStrictEqual(variablesDeExpresion('$B.salto > 0'), ['$B', 'salto']);
+            assert.deepStrictEqual(variablesDeExpresion('$B.salto > 0'), []);
         });
         it('avisa las variables que no están en el operativo', () => {
             var lista = arbol().map(c => c.id_casillero == 'P2' ? { ...c, expresion_habilitar: 'p1 = 1 and p99 > 2' } : c);
             var avisos = problemasDelCasillero(lista.find(c => c.id_casillero == 'P2')!, lista, TIPOS, INCLUSIONES).filter(p => p.gravedad == 'aviso');
             assert.deepStrictEqual(avisos.map(p => [p.mensaje, p.campo]), [['la condición usa variables que no están en el operativo: p99', 'expresion_habilitar']]);
+        });
+        it('un esquema.función (dbo.fun(...)) no cuenta como variable', () => {
+            assert.deepStrictEqual(variablesDeExpresion('dbo.f_hijos(vivienda, hogar) > 2 and p1 = 1'), ['vivienda', 'hogar', 'p1']);
+            assert.deepStrictEqual(variablesDeExpresion('t.col = 1 and p2 = 2'), ['p2']);
+        });
+        it('las claves de las unidades de análisis (vivienda, hogar, persona) son variables válidas', () => {
+            var lista = arbol().map(c => c.id_casillero == 'P2' ? { ...c, expresion_habilitar: 'hogar = 1 and p1 = 1' } : c);
+            var avisosCon = (extra: string[]) => problemasDelCasillero(lista.find(c => c.id_casillero == 'P2')!, lista, TIPOS, INCLUSIONES, extra).filter(p => p.gravedad == 'aviso');
+            assert.deepStrictEqual(avisosCon([]).map(p => p.mensaje), ['la condición usa variables que no están en el operativo: hogar']);
+            assert.deepStrictEqual(avisosCon(['vivienda', 'hogar', 'persona']), []);
         });
         it('variablesDesconocidas no distingue mayúsculas y acepta las variables internas con $', () => {
             assert.deepStrictEqual(variablesDesconocidas('P1 = 1 and $x = 2', ['p1']), []);
@@ -388,6 +414,20 @@ describe('dmencu - editor visual de metadatos', () => {
             var resultado = await aplicarOperaciones(base.client, admin, 'OPE', [{ tipo: 'reemplazar', raiz: 'F:F1', casilleros: copia }]);
             assert.deepStrictEqual(resultado.map(c => c.id_casillero).sort(), copia.map(c => c.id_casillero).sort());
             assert.ok(!resultado.some(c => c.id_casillero == 'PX'));
+        });
+        it('el insert de la copia no repite columnas (la base real rechaza una columna repetida) y no incluye las que calcula el trigger', () => {
+            assert.strictEqual(new Set(CAMPOS_DE_LA_COPIA).size, CAMPOS_DE_LA_COPIA.length);
+            ['id_casillero', 'irrepetible', 'var_name', 'operativo'].forEach(calculada => assert.ok(!CAMPOS_DE_LA_COPIA.includes(calculada), calculada));
+        });
+        it('reemplazar manda un solo insert por casillero, con las columnas sin repetir', async () => {
+            var base = baseSimulada(arbol());
+            await aplicarOperaciones(base.client, admin, 'OPE', [{ tipo: 'reemplazar', raiz: 'P1', casilleros: arbol().filter(c => ['P1', 'P1/1', 'P1/2', 'P3'].includes(c.id_casillero)) }]);
+            var inserts = base.consultas.filter(c => /^insert into casilleros \(operativo, padre/.test(c));
+            assert.strictEqual(inserts.length, 4);
+            inserts.forEach(sql => {
+                var columnas = sql.slice(sql.indexOf('(') + 1, sql.indexOf(')')).split(',').map(c => c.trim());
+                assert.strictEqual(new Set(columnas).size, columnas.length, sql);
+            });
         });
         it('los procedimientos del editor y quién puede cada uno', () => {
             var app = { perfilDelUsuario: () => { throw new Error('no se usa'); }, estructuraModificada: () => { }, estructuraDelOperativo: async () => ({}) };

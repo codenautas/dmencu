@@ -76,6 +76,7 @@ export type DatosEditorMetadatos = {
     inclusiones: Inclusion[]
     tipovars: string[]
     unidadesAnalisis: string[]
+    clavesUA: string[] // pk_agregada de cada unidad de análisis (vivienda, hogar, persona...): variables válidas en las condiciones
     casilleros: CasilleroEditable[]
 }
 
@@ -171,16 +172,20 @@ export const DATOS_REQUERIDOS: { [tipoc: string]: DatoRequerido[] } = {
 export const TIPOS_CON_CONTENIDO = ['F', 'B', 'CP', 'MATRIZ', 'PMATRIZ'];
 
 function vacio(valor: CasilleroEditable[keyof CasilleroEditable]): boolean {
-    return valor == null || typeof valor == 'string' && valor.trim() == '';
+    // un solo espacio es un título en blanco a propósito (por ejemplo el bloque S1.2 de etoi): no cuenta como faltante
+    return valor == null || valor === '';
 }
 
 export function datosFaltantes(casillero: CasilleroEditable, casilleros: CasilleroEditable[]): Problema[] {
+    var hijos = casilleros.filter(c => c.padre == casillero.id_casillero);
+    // una pregunta de opciones sin texto es habitual (filas de una tabla de razones, por ejemplo): se avisa pero no se cuenta como dato faltante
+    var conOpciones = casillero.tipoc == 'P' && hijos.some(h => h.tipoc == 'O');
     var faltantes: Problema[] = (DATOS_REQUERIDOS[casillero.tipoc] ?? [])
         .filter(dato => dato.campos.every(campo => vacio(casillero[campo])))
-        .map(dato => ({ id_casillero: casillero.id_casillero, gravedad: 'falta', mensaje: dato.mensaje, campo: dato.campos[0] }));
-    var hijos = casilleros.filter(c => c.padre == casillero.id_casillero);
+        .map((dato): Problema => ({ id_casillero: casillero.id_casillero, gravedad: conOpciones && dato.campos[0] == 'nombre' ? 'aviso' : 'falta', mensaje: dato.mensaje, campo: dato.campos[0] }));
     if (TIPOS_CON_CONTENIDO.includes(casillero.tipoc) && hijos.length == 0) {
-        faltantes.push({ id_casillero: casillero.id_casillero, gravedad: 'falta', mensaje: 'está vacío: arrastrá casilleros adentro' });
+        // un bloque vacío puede ser a propósito (el formulario de la TEM se completa desde código): sólo el formulario vacío es un dato faltante
+        faltantes.push({ id_casillero: casillero.id_casillero, gravedad: casillero.tipoc == 'F' ? 'falta' : 'aviso', mensaje: 'está vacío: arrastrá casilleros adentro' });
     }
     if (casillero.tipoc == 'P' && casillero.tipovar == null && hijos.length == 0) {
         faltantes.push({ id_casillero: casillero.id_casillero, gravedad: 'falta', mensaje: 'la pregunta no tiene tipo de variable ni preguntas adentro', campo: 'tipovar' });
@@ -204,7 +209,7 @@ function nombreDeTipo(tipos: TipoCasillero[], tipoc: string): string {
     return buscarTipo(tipos, tipoc)?.denominacion ?? tipoc;
 }
 
-export function problemasDelCasillero(casillero: CasilleroEditable, casilleros: CasilleroEditable[], tipos: TipoCasillero[], inclusiones: Inclusion[]): Problema[] {
+export function problemasDelCasillero(casillero: CasilleroEditable, casilleros: CasilleroEditable[], tipos: TipoCasillero[], inclusiones: Inclusion[], variablesExtra: string[] = []): Problema[] {
     var problemas: Problema[] = [];
     var problema = (gravedad: Problema['gravedad'], mensaje: string, campo?: CampoEditable) =>
         problemas.push({ id_casillero: casillero.id_casillero, gravedad, mensaje, ...(campo ? { campo } : {}) });
@@ -251,7 +256,7 @@ export function problemasDelCasillero(casillero: CasilleroEditable, casilleros: 
         problemas.push({ id_casillero: casillero.id_casillero, gravedad: 'aviso', mensaje: `el salto apunta a ${casillero.salto}, que no está en el operativo`, campo: 'salto' });
     }
     if (casillero.expresion_habilitar) {
-        var desconocidas = variablesDesconocidas(casillero.expresion_habilitar, variablesDelOperativo(casilleros));
+        var desconocidas = variablesDesconocidas(casillero.expresion_habilitar, [...variablesDelOperativo(casilleros), ...variablesExtra]);
         if (desconocidas.length) {
             problema('aviso', `la condición usa variables que no están en el operativo: ${desconocidas.join(', ')}`, 'expresion_habilitar');
         }
@@ -259,8 +264,8 @@ export function problemasDelCasillero(casillero: CasilleroEditable, casilleros: 
     return problemas.concat(datosFaltantes(casillero, casilleros));
 }
 
-export function problemasDelOperativo(casilleros: CasilleroEditable[], tipos: TipoCasillero[], inclusiones: Inclusion[]): Problema[] {
-    return casilleros.reduce((problemas: Problema[], casillero) => problemas.concat(problemasDelCasillero(casillero, casilleros, tipos, inclusiones)), []);
+export function problemasDelOperativo(casilleros: CasilleroEditable[], tipos: TipoCasillero[], inclusiones: Inclusion[], variablesExtra: string[] = []): Problema[] {
+    return casilleros.reduce((problemas: Problema[], casillero) => problemas.concat(problemasDelCasillero(casillero, casilleros, tipos, inclusiones, variablesExtra)), []);
 }
 
 /* validación de una operación antes de aplicarla (el servidor la repite) */
@@ -409,7 +414,9 @@ export function variablesDeExpresion(expresion: string): string[] {
     while ((encontrado = identificador.exec(sinTextos)) != null) {
         var nombre = encontrado[0];
         var despues = sinTextos.slice(identificador.lastIndex).replace(/^\s+/, '');
-        if (despues.startsWith('(') || PALABRAS_DE_EXPRESIONES.includes(nombre.toLowerCase())) continue;
+        var antes = sinTextos.slice(0, encontrado.index);
+        // seguido de ( es una función; con . es un esquema o tabla (dbo.fun(...)); precedido de . es un miembro de ellos
+        if (despues.startsWith('(') || despues.startsWith('.') || /\.\s*$/.test(antes) || PALABRAS_DE_EXPRESIONES.includes(nombre.toLowerCase())) continue;
         if (!variables.includes(nombre)) variables.push(nombre);
     }
     return variables;

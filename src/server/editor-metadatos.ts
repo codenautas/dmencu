@@ -114,6 +114,7 @@ export async function traerDatosEditor(client: ClienteTablero, context: Context,
         tipovars: (await filas(client, `select tipovar from tipovar order by tipovar`, [])).map(f => texto(f, 'tipovar') ?? ''),
         unidadesAnalisis: (await filas(client, `select unidad_analisis from unidad_analisis where operativo = $1 order by unidad_analisis`, [operativo]))
             .map(f => texto(f, 'unidad_analisis') ?? ''),
+        clavesUA: (await filas(client, `select pk_agregada from unidad_analisis where operativo = $1 and pk_agregada is not null`, [operativo])).map(f => texto(f, 'pk_agregada') ?? ''),
         casilleros: await leerCasilleros(client, operativo),
     };
 }
@@ -203,7 +204,8 @@ async function aplicarOperacion(client: ClienteTablero, operativo: string, casil
     }
 }
 
-const CAMPOS_DE_LA_COPIA = ['padre', 'tipoc', 'casillero', 'orden', ...CAMPOS_EDITABLES];
+// sin repetir: CAMPOS_EDITABLES ya incluye casillero y la base rechaza una columna repetida
+export const CAMPOS_DE_LA_COPIA: string[] = Array.from(new Set(['padre', 'tipoc', 'casillero', 'orden', ...CAMPOS_EDITABLES]));
 
 // inserta casilleros con todos sus campos, los padres antes que los hijos; el trigger tiene que dar los mismos ids
 export async function insertarCopia(client: ClienteTablero, operativo: string, copia: CasilleroEditable[]): Promise<void> {

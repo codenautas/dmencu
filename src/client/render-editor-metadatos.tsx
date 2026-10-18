@@ -794,7 +794,7 @@ export function EditorMetadatos() {
     var casilleros = borrador?.casilleros ?? datos?.casilleros ?? [];
     var perfil = datos?.perfil ?? PERFIL_INICIAL;
     var tema = useMemo(() => temaDelPerfil(perfil), [perfil]);
-    var problemas = useMemo(() => datos ? problemasDelOperativo(casilleros, datos.tipos, datos.inclusiones) : [], [datos, casilleros]);
+    var problemas = useMemo(() => datos ? problemasDelOperativo(casilleros, datos.tipos, datos.inclusiones, datos.clavesUA) : [], [datos, casilleros]);
     var problemasPorId = useMemo(() => {
         var mapa: Map<string, Problema[]> = new Map();
         problemas.forEach(p => mapa.set(p.id_casillero, [...(mapa.get(p.id_casillero) ?? []), p]));
