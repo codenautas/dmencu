@@ -3,11 +3,14 @@ import { describe, it } from 'mocha';
 import assert = require('node:assert');
 
 import { quienConsultaTablero } from '../server/app-dmencu';
+import { CampoCalculado } from '../server/table-control_campo';
 import {
-    accesosDelMenu, armarSecciones, buscarEnMenu, buscarPerfil, ClienteTablero, combinarSecciones, ConsultaTablero,
-    DefinicionSeccionTablero, FilaSql, PERFIL_GENERAL, PERFILES_TABLERO, perfilSegunRol, SECCIONES_TABLERO,
-    seccionAvance, seccionCalendario, seccionesVisibles, seccionMiTrabajo, seccionResumen, ValorSql
+    accesosDelMenu, armarSecciones, buscarEnMenu, ClienteTablero, combinarSecciones, ConsultaTablero,
+    CORTES_DESGLOSE, DefinicionSeccionTablero, FilaSql, ordenarTareas, partesDeControl, SECCIONES_TABLERO, seccionAvance,
+    seccionCalendario, seccionCircuito, seccionDesglose, seccionEstados, seccionesVisibles, seccionMiAvance, seccionParaAsignar, seccionParaRecibir, seccionRecepcionistas,
+    seccionNoRespuesta, seccionResumen, ValorSql
 } from '../server/tablero';
+import type { TableDefinition } from '../server/types-dmencu';
 import type { ContenidoTablero } from '../unlogged/tipos-tablero';
 import { AppParaTests, contextoDelRol, crearAppParaTests } from './app-para-tests';
 
@@ -25,9 +28,20 @@ function clienteSimulado(responder: (sql: string, params: ValorSql[]) => FilaSql
             consultas.push({ sql, params });
             return {
                 fetchAll: async () => ({ rows: responder(sql, params) }),
-                execute: async () => ({}),
             };
         }
+    };
+}
+
+// las tablas control_* se simulan: lo que importa es que el tablero use el sql de su definición y los campos de grupos de no respuesta
+function tablaSimulada(nombre: string): TableDefinition {
+    var grupoEncuestable: CampoCalculado = { name: 'ausentes', typeName: 'bigint', inTable: false, title: 'ausentes', tasa_efectividad: true };
+    var grupoNoEncuestable: CampoCalculado = { name: 'no_encuestables', typeName: 'bigint', inTable: false, title: 'no encuestables', tasa_efectividad: false };
+    return {
+        name: nombre,
+        fields: [{ name: 'total', typeName: 'bigint' }, grupoEncuestable, grupoNoEncuestable],
+        primaryKey: [],
+        sql: { from: `(select '${nombre}' as tabla_simulada)` },
     };
 }
 
@@ -35,9 +49,10 @@ function consultaDelRol(be: AppParaTests, rol: string, client: ClienteTablero, i
     var context = contextoDelRol(be, rol, idper);
     return {
         client,
-        quien: quienConsultaTablero(context, be.getPerfilTablero(context)),
+        quien: quienConsultaTablero(context),
         operativo: 'OPE1',
         menu: be.getMenu(context).menu,
+        tabla: tablaSimulada,
     };
 }
 
@@ -52,46 +67,6 @@ function seccionDePrueba(id: string, orden: number, obtener: DefinicionSeccionTa
 }
 
 describe('dmencu - tablero de inicio', () => {
-
-    describe('perfiles', () => {
-        it('cada rol instalado tiene su perfil', () => {
-            var be = crearAppParaTests(GABINETE);
-            var perfilDe = (rol: string) => be.getPerfilTablero(contextoDelRol(be, rol));
-            assert.strictEqual(perfilDe('admin'), 'administracion');
-            assert.strictEqual(perfilDe('direccion'), 'direccion');
-            assert.strictEqual(perfilDe('coor_campo'), 'coordinacion');
-            assert.strictEqual(perfilDe('subcoor_campo'), 'coordinacion');
-            assert.strictEqual(perfilDe('coor_proc'), 'coordinacion');
-            assert.strictEqual(perfilDe('recepcionista'), 'recepcion');
-            assert.strictEqual(perfilDe('ingresador'), 'recepcion');
-            assert.strictEqual(perfilDe('procesamiento'), 'procesamiento');
-            assert.strictEqual(perfilDe('dis_conceptual'), 'diseno');
-            assert.strictEqual(perfilDe('auxiliar'), PERFIL_GENERAL);
-        });
-        it('un rol que no está en la tabla de perfiles toma el de sus permisos', () => {
-            assert.strictEqual(perfilSegunRol({ rol: 'nuevo', superuser: false, puede: { campo: { administrar: true } } }), 'coordinacion');
-            assert.strictEqual(perfilSegunRol({ rol: 'nuevo', superuser: false, puede: { encuestas: { procesar: true } } }), 'procesamiento');
-            assert.strictEqual(perfilSegunRol({ rol: 'nuevo', superuser: false, puede: { campo: { editar: true } } }), 'recepcion');
-            assert.strictEqual(perfilSegunRol({ rol: 'nuevo', superuser: true, puede: {} }), 'administracion');
-            assert.strictEqual(perfilSegunRol({ rol: null, superuser: false, puede: undefined }), PERFIL_GENERAL);
-        });
-        it('la app puede pasar su propia tabla de perfiles por rol', () => {
-            assert.strictEqual(perfilSegunRol({ rol: 'coor_campo', superuser: false, puede: {} }, { coor_campo: 'direccion' }), 'direccion');
-        });
-        it('buscarPerfil usa el general si el perfil no existe', () => {
-            assert.strictEqual(buscarPerfil(PERFILES_TABLERO, 'coordinacion').perfil, 'coordinacion');
-            assert.strictEqual(buscarPerfil(PERFILES_TABLERO, 'inexistente').perfil, PERFIL_GENERAL);
-            assert.throws(() => buscarPerfil([], 'x'), /no hay perfiles/);
-        });
-        it('los perfiles tienen ids únicos y colores en hexadecimal', () => {
-            var ids = PERFILES_TABLERO.map(perfil => perfil.perfil);
-            assert.strictEqual(new Set(ids).size, ids.length);
-            PERFILES_TABLERO.forEach(perfil => {
-                assert.match(perfil.colores.primario, /^#[0-9A-F]{6}$/i);
-                assert.match(perfil.colores.secundario, /^#[0-9A-F]{6}$/i);
-            });
-        });
-    });
 
     describe('menú', () => {
         it('en GABINETE el tablero es la primera opción y la que se abre al entrar', () => {
@@ -138,31 +113,38 @@ describe('dmencu - tablero de inicio', () => {
         it('admin (superuser) ve todas las secciones', () => {
             assert.deepStrictEqual(idsVisibles('admin').sort(), SECCIONES_TABLERO.map(seccion => seccion.id).sort());
         });
-        it('coordinación ve el campo, los dispositivos y el procesamiento', () => {
+        it('coordinación ve el campo, la gestión y los dispositivos', () => {
             assert.deepStrictEqual(idsVisibles('coor_campo'), [
-                'resumen', 'mi_trabajo', 'avance', 'circuito', 'estados', 'comunas', 'no_respuesta', 'calendario', 'dispositivos', 'procesamiento', 'accesos'
+                'resumen', 'para_asignar', 'para_recibir', 'mi_avance', 'recepcionistas', 'avance', 'no_respuesta', 'desglose', 'circuito', 'estados', 'calendario', 'dispositivos', 'accesos'
             ]);
         });
-        it('el subcoordinador no ve procesamiento', () => {
-            assert.ok(!idsVisibles('subcoor_campo').includes('procesamiento'));
+        it('el subcoordinador ve los dispositivos', () => {
             assert.ok(idsVisibles('subcoor_campo').includes('dispositivos'));
         });
-        it('recepción ve su trabajo y el campo, pero no lo de gestión', () => {
-            assert.deepStrictEqual(idsVisibles('recepcionista'), ['resumen', 'mi_trabajo', 'avance', 'circuito', 'estados', 'calendario', 'accesos']);
-            assert.deepStrictEqual(idsVisibles('ingresador'), ['resumen', 'mi_trabajo', 'avance', 'circuito', 'estados', 'calendario', 'accesos']);
+        it('recepción ve lo suyo, el calendario y sus accesos, pero no el panorama del operativo', () => {
+            assert.deepStrictEqual(idsVisibles('recepcionista'), ['para_asignar', 'para_recibir', 'mi_avance', 'calendario', 'accesos']);
+            assert.deepStrictEqual(idsVisibles('ingresador'), ['para_asignar', 'para_recibir', 'mi_avance', 'calendario', 'accesos']);
         });
-        it('procesamiento ve el avance y su sección, sin dispositivos', () => {
+        it('el panorama es de coordinación para arriba: admin, dirección, coordinación y procesamiento', () => {
+            ['direccion', 'coor_campo', 'subcoor_campo', 'coor_proc', 'procesamiento'].forEach(rol => {
+                assert.ok(idsVisibles(rol).includes('resumen'), `${rol} debería ver el panorama`);
+            });
+            ['recepcionista', 'ingresador', 'dis_conceptual'].forEach(rol => {
+                assert.ok(!idsVisibles(rol).includes('resumen'), `${rol} no debería ver el panorama`);
+            });
+        });
+        it('procesamiento ve la gestión, sin dispositivos', () => {
             var ids = idsVisibles('procesamiento');
-            assert.ok(ids.includes('procesamiento'));
-            assert.ok(ids.includes('comunas'));
+            assert.ok(ids.includes('desglose'));
+            assert.ok(ids.includes('no_respuesta'));
             assert.ok(!ids.includes('dispositivos'));
         });
-        it('diseño conceptual ve el panorama y sus accesos', () => {
-            assert.deepStrictEqual(idsVisibles('dis_conceptual'), ['resumen', 'avance', 'circuito', 'estados', 'calendario', 'accesos']);
+        it('diseño conceptual ve el calendario y sus accesos', () => {
+            assert.deepStrictEqual(idsVisibles('dis_conceptual'), ['calendario', 'accesos']);
         });
-        it('perfiles restringe la sección aunque tenga los permisos', () => {
+        it('el rol de la sección restringe aunque no pida permisos', () => {
             var be = crearAppParaTests(GABINETE);
-            var soloDireccion = seccionDePrueba('solo_direccion', 1, async () => null, { perfiles: ['direccion'] });
+            var soloDireccion = seccionDePrueba('solo_direccion', 1, async () => null, { roles: ['direccion'] });
             var quienCoordina = consultaDelRol(be, 'coor_campo', clienteSimulado(() => [])).quien;
             var quienDirige = consultaDelRol(be, 'direccion', clienteSimulado(() => [])).quien;
             assert.deepStrictEqual(seccionesVisibles([soloDireccion], quienCoordina), []);
@@ -192,7 +174,31 @@ describe('dmencu - tablero de inicio', () => {
                 { id: 'segunda', titulo: 'segunda', ancho: 'mitad', contenido: { tipo: 'mensaje', texto: 'b' } },
             ]);
         });
-        it('si una sección falla se informa, se vuelve al savepoint y se muestran las demás', async () => {
+        it('los accesos de los indicadores y de los cortes sólo quedan si el usuario tiene la grilla', async () => {
+            var be = crearAppParaTests(GABINETE);
+            var consulta = consultaDelRol(be, 'recepcionista', clienteSimulado(() => []));
+            var { secciones } = await armarSecciones([
+                seccionDePrueba('indicadores', 1, async () => ({
+                    tipo: 'indicadores',
+                    indicadores: [
+                        { id: 'con', titulo: 'con', valor: 1, acceso: { titulo: 'ver', ruta: ['recepcion', 'encuestador'] } },
+                        { id: 'sin', titulo: 'sin', valor: 0, acceso: { titulo: 'ver', ruta: ['procesar', 'tareas_tem_procesamiento'] } },
+                    ]
+                })),
+                seccionDePrueba('desglose', 2, async () => ({
+                    tipo: 'desglose',
+                    cortes: [
+                        { id: 'con', titulo: 'con', filas: [], acceso: { titulo: 'ver', ruta: ['recepcion', 'recuperador'] } },
+                        { id: 'sin', titulo: 'sin', filas: [], acceso: { titulo: 'ver', ruta: ['control', 'zona'] } },
+                    ]
+                })),
+            ], consulta);
+            var [indicadores, desglose] = secciones.map(seccion => seccion.contenido);
+            assert.ok(indicadores.tipo == 'indicadores' && desglose.tipo == 'desglose');
+            assert.deepStrictEqual(indicadores.indicadores.map(i => i.acceso?.ruta), [['recepcion', 'encuestador'], undefined]);
+            assert.deepStrictEqual(desglose.cortes.map(c => c.acceso?.ruta), [['recepcion', 'recuperador'], undefined]);
+        });
+        it('si una sección falla se informa y se muestran las demás (sólo son consultas: sin savepoints)', async () => {
             var be = crearAppParaTests(GABINETE);
             var client = clienteSimulado(() => []);
             var { secciones, errores } = await armarSecciones([
@@ -201,77 +207,221 @@ describe('dmencu - tablero de inicio', () => {
             ], consultaDelRol(be, 'admin', client));
             assert.deepStrictEqual(errores, [{ seccion: 'rota', mensaje: 'columna inexistente' }]);
             assert.deepStrictEqual(secciones.map(seccion => seccion.id), ['sana']);
-            assert.deepStrictEqual(client.consultas.map(consulta => consulta.sql), [
-                'savepoint tablero_rota', 'rollback to savepoint tablero_rota',
-                'savepoint tablero_sana', 'release savepoint tablero_sana',
-            ]);
+            assert.deepStrictEqual(client.consultas, []);
         });
     });
 
     describe('secciones de dmencu', () => {
-        async function obtener(seccion: DefinicionSeccionTablero, filas: FilaSql[], rol: string = 'coor_campo'): Promise<{ contenido: ContenidoTablero | null, consultas: ConsultaHecha[] }> {
+        async function obtener(seccion: DefinicionSeccionTablero, responder: (sql: string, params: ValorSql[]) => FilaSql[], rol: string = 'coor_campo'): Promise<{ contenido: ContenidoTablero | null, consultas: ConsultaHecha[] }> {
             var be = crearAppParaTests(GABINETE);
-            var client = clienteSimulado(() => filas);
+            var client = clienteSimulado(responder);
             var contenido = await seccion.obtener(consultaDelRol(be, rol, client, 'REC7'));
             return { contenido, consultas: client.consultas };
         }
-        it('resumen: calcula los indicadores y la tasa de respuesta (los count llegan como texto)', async () => {
-            var { contenido, consultas } = await obtener(seccionResumen, [{
-                total: '200', habilitadas: '190', salieron: '120', efectivas: '80', en_curso: '25', no_respuesta_encuestable: '20'
-            }]);
-            assert.deepStrictEqual(consultas[0].params, ['OPE1', 'usu_coor_campo']);
+        const control = { total: '200', salieron: '120', no_salieron: '80', rea: '80', en_curso: '25', grupo_0: '10', grupo_1: '5' };
+
+        it('resumen: usa el sql de control_resumen y calcula la tasa como control de campo (los count llegan como texto)', async () => {
+            var { contenido, consultas } = await obtener(seccionResumen, () => [control]);
+            assert.ok(consultas[0].sql.includes(`'control_resumen' as tabla_simulada`));
             assert.ok(contenido?.tipo == 'indicadores');
             var porId = new Map(contenido.indicadores.map(indicador => [indicador.id, indicador]));
             assert.strictEqual(porId.get('muestra')?.valor, 200);
-            assert.strictEqual(porId.get('muestra')?.detalle, '190 habilitadas');
+            assert.strictEqual(porId.get('salieron')?.valor, 120);
             assert.strictEqual(porId.get('salieron')?.total, 200);
             assert.strictEqual(porId.get('efectivas')?.valor, 80);
             assert.strictEqual(porId.get('efectivas')?.total, 120);
-            assert.strictEqual(porId.get('tasa_respuesta')?.valor, 80);
+            // 80 efectivas sobre 80 + 10 ausentes (los no encuestables no cuentan)
+            assert.strictEqual(porId.get('tasa_respuesta')?.valor, 88.9);
             assert.strictEqual(porId.get('tasa_respuesta')?.formato, 'porcentaje');
         });
-        it('resumen: sin muestra muestra un mensaje', async () => {
-            var { contenido } = await obtener(seccionResumen, [{ total: '0' }]);
-            assert.deepStrictEqual(contenido, { tipo: 'mensaje', texto: 'Todavía no hay encuestas en la muestra del operativo.', tono: 'info' });
+        it('resumen: sin muestra no se muestra', async () => {
+            var { contenido } = await obtener(seccionResumen, () => [{ total: '0' }]);
+            assert.strictEqual(contenido, null);
         });
         it('resumen: la tasa queda vacía si todavía no hay resultados', async () => {
-            var { contenido } = await obtener(seccionResumen, [{ total: '10', salieron: '0', efectivas: '0', no_respuesta_encuestable: '0' }]);
+            var { contenido } = await obtener(seccionResumen, () => [{ total: '10', no_salieron: '10' }]);
             assert.ok(contenido?.tipo == 'indicadores');
             assert.strictEqual(contenido.indicadores.find(indicador => indicador.id == 'tasa_respuesta')?.valor, null);
         });
-        it('avance: una parte por categoría, en cero las que no vienen', async () => {
-            var { contenido } = await obtener(seccionAvance, [{ categoria: 'efectiva', cantidad: '7' }, { categoria: 'sin_salir', cantidad: '3' }]);
+        it('avance: efectivas, en curso, no respuesta (lo que sobra de las que salieron) y no salieron', async () => {
+            var { contenido } = await obtener(seccionAvance, () => [control]);
             assert.ok(contenido?.tipo == 'avance');
-            assert.deepStrictEqual(contenido.partes.map(parte => [parte.id, parte.valor]), [['efectiva', 7], ['en_curso', 0], ['no_respuesta', 0], ['sin_salir', 3]]);
+            assert.deepStrictEqual(contenido.partes.map(parte => [parte.id, parte.valor]), [['efectiva', 80], ['en_curso', 25], ['no_respuesta', 15], ['sin_salir', 80]]);
         });
-        it('avance: sin encuestas no se muestra', async () => {
-            var { contenido } = await obtener(seccionAvance, []);
+        it('avance: la no respuesta nunca es negativa y sin encuestas no se muestra', async () => {
+            assert.strictEqual(partesDeControl({ total: 5, salieron: 3, no_salieron: 2, rea: 3, en_curso: 1 })[2].valor, 0);
+            var { contenido } = await obtener(seccionAvance, () => [{}]);
             assert.strictEqual(contenido, null);
         });
-        it('mi trabajo: filtra por la persona del usuario y no se muestra si no tiene nada', async () => {
-            var { contenido, consultas } = await obtener(seccionMiTrabajo, [], 'recepcionista');
-            assert.strictEqual(contenido, null);
+        it('no respuesta: los grupos con casos, de mayor a menor', async () => {
+            var { contenido } = await obtener(seccionNoRespuesta, () => [{ grupo_0: '4', grupo_1: '9' }]);
+            assert.ok(contenido?.tipo == 'barras');
+            assert.deepStrictEqual(contenido.filas.map(fila => [fila.etiqueta, fila.valor]), [['no encuestables', 9], ['ausentes', 4]]);
+            var vacio = await obtener(seccionNoRespuesta, () => [{ grupo_0: '0', grupo_1: '0' }]);
+            assert.strictEqual(vacio.contenido, null);
+        });
+        it('desglose: un corte por tabla de control_campo, con sus partes, y se omiten los que no tienen filas', async () => {
+            var { contenido, consultas } = await obtener(seccionDesglose, sql => sql.includes(`'control_campo_zona'`) ? [] : [{ etiqueta: '3', ...control }]);
+            assert.deepStrictEqual(consultas.map(c => CORTES_DESGLOSE.find(corte => c.sql.includes(`'${corte.tabla}'`))?.id), ['dominio', 'zona', 'comuna', 'area']);
+            assert.ok(contenido?.tipo == 'desglose');
+            assert.deepStrictEqual(contenido.cortes.map(corte => corte.id), ['dominio', 'comuna', 'area']);
+            assert.strictEqual(contenido.cortes[0].filas[0].etiqueta, 'dominio 3');
+            assert.strictEqual(contenido.cortes[2].filas[0].etiqueta, 'área 3');
+            assert.deepStrictEqual(contenido.cortes[0].filas[0].partes.map(parte => parte.valor), [80, 25, 15, 80]);
+            assert.deepStrictEqual(contenido.cortes[1].acceso, { titulo: 'control por comuna', ruta: ['control', 'comuna'] });
+        });
+        it('desglose: las filas sin encuestas no se muestran', async () => {
+            var { contenido } = await obtener(seccionDesglose, () => [{ etiqueta: '1', ...control }, { etiqueta: '2', total: '0' }]);
+            assert.ok(contenido?.tipo == 'desglose');
+            assert.deepStrictEqual(contenido.cortes[0].filas.map(fila => fila.etiqueta), ['dominio 1']);
+        });
+        it('desglose: los accesos apuntan a opciones del menú de control', () => {
+            var be = crearAppParaTests(GABINETE);
+            var menu = be.getMenu(contextoDelRol(be, 'coor_campo')).menu;
+            CORTES_DESGLOSE.forEach(corte => assert.ok(buscarEnMenu(menu, corte.ruta) != null, `falta ${corte.ruta.join('/')} en el menú`));
+        });
+        it('ordenarTareas: sigue los pases, las que no tienen pases después y la final al último', () => {
+            var tareas = ['anac', 'encu', 'finc', 'proc', 'recu', 'supe'].map(tarea => ({ tarea, es_inicial: tarea == 'encu', es_final: tarea == 'proc' }));
+            var pases = [
+                { origen: 'encu', destino: 'supe' }, { origen: 'encu', destino: 'finc' },
+                { origen: 'recu', destino: 'supe' }, { origen: 'recu', destino: 'finc' }, { origen: 'supe', destino: 'finc' },
+            ];
+            assert.deepStrictEqual(ordenarTareas(tareas, pases), ['encu', 'recu', 'supe', 'finc', 'anac', 'proc']);
+        });
+        it('ordenarTareas: un pase hacia atrás no altera el orden', () => {
+            var tareas = ['a', 'b', 'c'].map(tarea => ({ tarea, es_inicial: tarea == 'a', es_final: false }));
+            var pases = [{ origen: 'a', destino: 'b' }, { origen: 'b', destino: 'c' }, { origen: 'c', destino: 'a' }, { origen: 'b', destino: 'b' }];
+            assert.deepStrictEqual(ordenarTareas(tareas, pases), ['a', 'b', 'c']);
+        });
+        it('circuito: todas las tareas en el orden del circuito, también las que tienen cero, con link a su grilla', async () => {
+            var tareasDelOperativo: FilaSql[] = ['proc', 'recu', 'otra', 'encu'].map(tarea => ({ tarea, es_inicial: tarea == 'encu', es_final: tarea == 'proc' }));
+            var { contenido, consultas } = await obtener(seccionCircuito, sql =>
+                sql.includes('from tareas_proximas') ? [{ tarea: 'encu', tarea_destino: 'recu' }] :
+                sql.includes('select tarea, es_inicial') ? tareasDelOperativo : [
+                    { tarea: 'proc', nombre: 'procesamiento', cantidad: '10' },
+                    { tarea: 'recu', nombre: 'recuperador', cantidad: '0' },
+                    { tarea: 'otra', nombre: 'otra', cantidad: '0' },
+                    { tarea: 'encu', nombre: 'encuestador', cantidad: '30' },
+                    { tarea: null, nombre: null, cantidad: '5' },
+                ]);
+            assert.deepStrictEqual(consultas[0].params, ['OPE1', 'usu_coor_campo']);
+            assert.ok(contenido?.tipo == 'indicadores');
+            // el total del pie es la suma de todas, con las sin asignar
+            assert.strictEqual(contenido.total, 45);
+            // las sin asignar (tarea_actual nula) van primero y llevan a la tem con tarea_actual vacía
+            assert.deepStrictEqual(contenido.indicadores.map(i => [i.id, i.valor, i.total, i.tono, i.acceso?.ruta, i.acceso?.filtro]), [
+                ['sin_asignar', 5, 45, 'info', ['configurar', 'muestra', 'tem'], { tarea_actual: null }],
+                ['encu', 30, 45, 'info', ['recepcion', 'encuestador'], undefined],
+                ['recu', 0, 45, 'neutro', ['recepcion', 'recuperador'], undefined],
+                ['otra', 0, 45, 'neutro', undefined, undefined],
+                ['proc', 10, 45, 'info', ['procesar', 'tareas_tem_procesamiento'], undefined],
+            ]);
+        });
+        it('estados por tarea: por tarea y estado (código y descripción), en el orden del circuito; sin estado si no tiene', async () => {
+            var { contenido, consultas } = await obtener(seccionEstados, sql =>
+                sql.includes('select tarea, es_inicial') ? [{ tarea: 'recu', es_inicial: false, es_final: false }, { tarea: 'encu', es_inicial: true, es_final: false }] :
+                sql.includes('from tareas_proximas') ? [{ tarea: 'encu', tarea_destino: 'recu' }] : [
+                    { tarea: 'recu', nombre_tarea: 'recuperador', estado: '0D', desc_estado: 'A verificar', cantidad: '1' },
+                    { tarea: 'encu', nombre_tarea: 'encuestador', estado: 'A', desc_estado: 'Asignada', cantidad: '4' },
+                    { tarea: 'encu', nombre_tarea: 'encuestador', estado: null, desc_estado: null, cantidad: '2' },
+                    { tarea: null, nombre_tarea: 'sin tarea', estado: null, desc_estado: null, cantidad: '3' },
+                ]);
+            assert.ok(consultas[0].sql.includes('left join tareas_tem'));
+            assert.ok(contenido?.tipo == 'barras');
+            assert.deepStrictEqual(contenido.filas.map(fila => [fila.etiqueta, fila.valor]), [
+                ['Tarea: encuestador Estado: A (Asignada)', 4], ['Tarea: encuestador Estado: sin estado', 2], ['Tarea: recuperador Estado: 0D (A verificar)', 1],
+                ['Tarea: sin tarea Estado: sin estado', 3],
+            ]);
+            assert.strictEqual(contenido.total, 10);
+            // el link abre tareas_tem con ff por tarea y estado (sin estado: sólo por tarea)
+            assert.deepStrictEqual(contenido.filas.map(fila => [fila.acceso?.ruta, fila.acceso?.filtro]), [
+                [['configurar', 'muestra', 'tareas_tem'], { tarea: 'encu', estado: 'A' }],
+                [['configurar', 'muestra', 'tareas_tem'], { tarea: 'encu' }],
+                [['configurar', 'muestra', 'tareas_tem'], { tarea: 'recu', estado: '0D' }],
+                // sin tarea: a la tem con tarea_actual vacía
+                [['configurar', 'muestra', 'tem'], { tarea_actual: null }],
+            ]);
+        });
+        // estados: 0D disponible (se asigna, no se ve en recepción), A asignada (se ve en las dos) y C cargada (sólo recepción)
+        const encuestasDeRecepcion = (sql: string): FilaSql[] =>
+            sql.includes('select tarea, es_inicial') ? [{ tarea: 'recu', es_inicial: false, es_final: false }, { tarea: 'encu', es_inicial: true, es_final: false }] :
+            !sql.includes('tt.recepcionista') ? [] : [
+                { tarea: 'recu', nombre: 'recuperador', estado: 'Disponible', permite_asignar: true, visible_en_recepcion: false, cantidad: '3' },
+                { tarea: 'encu', nombre: 'encuestador', estado: 'Disponible', permite_asignar: true, visible_en_recepcion: false, cantidad: '9' },
+                { tarea: 'encu', nombre: 'encuestador', estado: 'Asignada', permite_asignar: true, visible_en_recepcion: true, cantidad: '7' },
+                { tarea: 'encu', nombre: 'encuestador', estado: 'Cargada', permite_asignar: false, visible_en_recepcion: true, cantidad: '5' },
+                { tarea: 'recu', nombre: 'recuperador', estado: 'Cargada', permite_asignar: false, visible_en_recepcion: true, cantidad: '1' },
+            ];
+        it('para asignar: mis encuestas que se asignan y no se ven en recepción, con link a la asignación', async () => {
+            var { contenido, consultas } = await obtener(seccionParaAsignar, encuestasDeRecepcion, 'recepcionista');
             assert.deepStrictEqual(consultas[0].params, ['OPE1', 'usu_recepcionista', 'REC7']);
-            var conFilas = await obtener(seccionMiTrabajo, [{ tarea: 'encuestador', estado: 'Asignada', asignadas: '0', recibe: '12' }], 'recepcionista');
-            assert.ok(conFilas.contenido?.tipo == 'tabla');
-            assert.deepStrictEqual(conFilas.contenido.filas, [{ tarea: 'encuestador', estado: 'Asignada', asignadas: 0, recibe: 12 }]);
+            assert.ok(consultas[0].sql.includes('tt.recepcionista = $3'));
+            // las disponibles todavía no tienen tarea_actual: están en la tarea inicial, como en los triggers
+            assert.ok(consultas[0].sql.includes('tt.tarea = t.tarea_vigente'));
+            assert.ok(consultas[0].sql.includes('ti.es_inicial'));
+            assert.ok(contenido?.tipo == 'indicadores');
+            assert.deepStrictEqual(contenido.indicadores.map(i => [i.id, i.valor, i.detalle, i.acceso?.ruta]), [
+                ['encu', 9, 'Disponible: 9', ['asignacion', 'encuestador']],
+                ['recu', 3, 'Disponible: 3', ['asignacion', 'recuperador']],
+            ]);
+        });
+        it('en recepción: mis encuestas que se ven en recepción, por tarea y estado, con link a la recepción', async () => {
+            var { contenido } = await obtener(seccionParaRecibir, encuestasDeRecepcion, 'recepcionista');
+            assert.ok(contenido?.tipo == 'indicadores');
+            assert.deepStrictEqual(contenido.indicadores.map(i => [i.id, i.valor, i.detalle, i.acceso?.ruta]), [
+                ['encu', 12, 'Asignada: 7 · Cargada: 5', ['recepcion', 'encuestador']],
+                ['recu', 1, 'Cargada: 1', ['recepcion', 'recuperador']],
+            ]);
+        });
+        it('recepcionistas: cada uno con lo que falta asignar y lo que está en recepción, las sin recepcionista al final y el total', async () => {
+            var { contenido, consultas } = await obtener(seccionRecepcionistas, sql => !sql.includes('tt.recepcionista') ? [] : [
+                { tarea: 'encu', nombre: 'encuestador', estado: 'Disponible', permite_asignar: true, visible_en_recepcion: false, recepcionista: null, persona_recepcionista: null, cantidad: '4' },
+                { tarea: 'encu', nombre: 'encuestador', estado: 'Disponible', permite_asignar: true, visible_en_recepcion: false, recepcionista: '102', persona_recepcionista: 'Rita Rece', cantidad: '10' },
+                { tarea: 'encu', nombre: 'encuestador', estado: 'Asignada', permite_asignar: true, visible_en_recepcion: true, recepcionista: '102', persona_recepcionista: 'Rita Rece', cantidad: '20' },
+                { tarea: 'encu', nombre: 'encuestador', estado: 'Cargada', permite_asignar: false, visible_en_recepcion: true, recepcionista: '101', persona_recepcionista: 'Ana Alva', cantidad: '6' },
+            ]);
+            // sin filtrar por la persona del usuario
+            assert.deepStrictEqual(consultas[0].params, ['OPE1', 'usu_coor_campo', null]);
+            assert.ok(contenido?.tipo == 'tabla');
+            assert.deepStrictEqual(contenido.filas.map(fila => [fila.recepcionista, fila.para_asignar, fila.en_recepcion]), [
+                ['Ana Alva', 0, 6], ['Rita Rece', 10, 20], ['sin recepcionista', 4, 0], ['Total', 14, 26],
+            ]);
+        });
+        it('para asignar y en recepción: sin encuestas no se muestran', async () => {
+            assert.strictEqual((await obtener(seccionParaAsignar, () => [], 'recepcionista')).contenido, null);
+            assert.strictEqual((await obtener(seccionParaRecibir, () => [], 'recepcionista')).contenido, null);
+        });
+        it('recepción: sin persona asociada al usuario no se muestra nada y no consulta', async () => {
+            var be = crearAppParaTests(GABINETE);
+            var context = contextoDelRol(be, 'recepcionista');
+            var client = clienteSimulado(() => []);
+            var consulta: ConsultaTablero = { ...consultaDelRol(be, 'recepcionista', client), quien: { ...quienConsultaTablero(context), idper: null } };
+            assert.strictEqual(await seccionParaAsignar.obtener(consulta), null);
+            assert.strictEqual(await seccionParaRecibir.obtener(consulta), null);
+            assert.strictEqual(await seccionMiAvance.obtener(consulta), null);
+            assert.deepStrictEqual(client.consultas, []);
+        });
+        it('mi avance: el avance de control sobre las encuestas del usuario (control_resumen_recepcion)', async () => {
+            var { contenido, consultas } = await obtener(seccionMiAvance, () => [control], 'recepcionista');
+            assert.ok(consultas[0].sql.includes(`'control_resumen_recepcion' as tabla_simulada`));
+            assert.ok(contenido?.tipo == 'avance');
+            assert.deepStrictEqual(contenido.partes.map(parte => parte.valor), [80, 25, 15, 80]);
         });
         it('calendario: semana actual, aviso fuera de las semanas y nada si no hay semanas', async () => {
-            var enSemana = await obtener(seccionCalendario, [{ semanas: '12', semana: 3, desde: '06/10', hasta: '19/10', dias_restantes: 2 }]);
+            var enSemana = await obtener(seccionCalendario, () => [{ semanas: '12', semana: 3, desde: '06/10', hasta: '19/10', dias_restantes: 2 }]);
             assert.ok(enSemana.contenido?.tipo == 'indicadores');
             assert.deepStrictEqual(enSemana.contenido.indicadores[0], { id: 'semana', titulo: 'Semana de carga', valor: 3, total: 12, detalle: 'del 06/10 al 19/10', tono: 'info' });
-            var fuera = await obtener(seccionCalendario, [{ semanas: '12', semana: null }]);
+            var fuera = await obtener(seccionCalendario, () => [{ semanas: '12', semana: null }]);
             assert.strictEqual(fuera.contenido?.tipo, 'mensaje');
-            var sinSemanas = await obtener(seccionCalendario, [{ semanas: '0', semana: null }]);
+            var sinSemanas = await obtener(seccionCalendario, () => [{ semanas: '0', semana: null }]);
             assert.strictEqual(sinSemanas.contenido, null);
         });
-        it('todas las secciones de dmencu tienen id único y las consultas filtran por operativo', async () => {
+        it('todas las secciones de dmencu tienen id único y corren con la base vacía', async () => {
             var ids = SECCIONES_TABLERO.map(seccion => seccion.id);
             assert.strictEqual(new Set(ids).size, ids.length);
-            for (var seccion of SECCIONES_TABLERO.filter(s => !['accesos', 'dispositivos'].includes(s.id))) {
-                var { consultas } = await obtener(seccion, []);
-                assert.ok(consultas.length > 0, `la sección ${seccion.id} no consultó la base`);
-                consultas.forEach(consulta => assert.strictEqual(consulta.params[0], 'OPE1', `la sección ${seccion.id} no filtra por operativo`));
+            for (var seccion of SECCIONES_TABLERO.filter(s => s.id != 'accesos')) {
+                var { consultas } = await obtener(seccion, () => []);
+                assert.ok(consultas.length > 0 || ['para_asignar', 'para_recibir'].includes(seccion.id), `la sección ${seccion.id} no consultó la base`);
             }
         });
     });

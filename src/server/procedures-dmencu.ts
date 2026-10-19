@@ -20,9 +20,11 @@ import { getDiasAPasarQuery } from "./table-tareas_tem";
 import { error } from "console";
 import { Context } from "vm";
 import { expected, unexpected } from "cast-error";
-import { getModoByPolicy, quienConsultaAyuda } from "./app-dmencu";
+import { getModoByPolicy, quienConsultaAyuda, quienConsultaTablero } from "./app-dmencu";
 import { menuConAyuda, temasVisibles } from "./ayuda";
 import type { AyudaParaUsuario } from "../unlogged/tipos";
+import { armarSecciones, ClienteTablero, texto } from "./tablero";
+import type { TableroParaUsuario } from "../unlogged/tipos-tablero";
 import { getSettersAndParametersForReaNoReaResumenEstado, ParametroSql } from "./setters-rea-no-rea";
 
 var Path = require('path');
@@ -530,6 +532,49 @@ export async function pasarEncuestasAProie(client: Client) {
             returning *`,
         [parametros.operativo, 'finc']).fetchAll();
     return 'ok';
+}
+
+// el tablero de inicio del modo GABINETE según el rol y los permisos del usuario (ver docs/tablero.md).
+// Está acá y no en la app para poder usarlo desde otro frontend
+export async function tableroParaUsuario(context: ProcedureContext): Promise<TableroParaUsuario> {
+    const { be } = context;
+    var client: ClienteTablero = context.client;
+    var usuario = context.user?.usuario ?? '';
+    var [datos] = (await client.query(`
+        select p.operativo, u.nombre, u.apellido, r.nombre as nombre_rol, current_timestamp as generado
+            from parametros p
+                left join usuarios u on u.usuario = $1
+                left join roles r on r.rol = u.rol
+            where p.unico_registro`, [usuario]).fetchAll()).rows;
+    var quien = quienConsultaTablero(context);
+    var operativo = texto(datos, 'operativo');
+    var nombre = [texto(datos, 'nombre'), texto(datos, 'apellido')].filter(parte => parte != null).join(' ');
+    var { secciones, errores } = await armarSecciones(be.getSeccionesTablero(), {
+        client,
+        quien,
+        operativo: operativo ?? '',
+        menu: be.getMenu(context).menu,
+        tabla: (nombreTabla: string) => {
+            var definicion = be.tableStructures[nombreTabla];
+            if (definicion == null) {
+                throw new Error(`tablero: no existe la tabla ${nombreTabla}`);
+            }
+            return definicion(context);
+        },
+    });
+    errores.forEach(error => console.error(`tablero: la sección ${error.seccion} falló para ${usuario}: ${error.mensaje}`));
+    var generado = datos?.generado;
+    return {
+        operativo,
+        modo: quien.modo,
+        usuario,
+        nombre: nombre || null,
+        rol: quien.rol,
+        nombreRol: texto(datos, 'nombre_rol'),
+        generado: (generado instanceof Date ? generado : new Date()).toISOString(),
+        secciones,
+        errores,
+    };
 }
 
 export const ProceduresDmEncu: ProcedureDef[] = [
@@ -2197,6 +2242,14 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 temas: temas.map(tema => ({ id: tema.id, titulo: tema.titulo, html: tema.html })),
                 menu: menuConAyuda(be.getMenu(context).menu, temas),
             };
+        }
+    },
+    {
+        // el tablero de inicio (ver tableroParaUsuario)
+        action: 'tablero_traer',
+        parameters: [],
+        coreFunction: async function (context: ProcedureContext, _parameters: CoreFunctionParameters<{}>): Promise<TableroParaUsuario> {
+            return tableroParaUsuario(context);
         }
     },
     {
