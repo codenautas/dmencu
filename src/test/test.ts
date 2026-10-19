@@ -11,3 +11,4 @@ import './test-ejemplo';
 import './test-ayuda';
 import './test-tablero';
 import './test-tem-edicion';
+import './test-desverificables';

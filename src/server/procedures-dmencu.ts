@@ -17,6 +17,7 @@ import * as ExpresionParser from 'expre-parser';
 import { tareas } from "./table-tareas";
 import { prependListener } from "process";
 import { getDiasAPasarQuery } from "./table-tareas_tem";
+import { sqlDesverificables } from "./table-desverificables";
 import { error } from "console";
 import { Context } from "vm";
 import { expected, unexpected } from "cast-error";
@@ -575,6 +576,64 @@ export async function tableroParaUsuario(context: ProcedureContext): Promise<Tab
         secciones,
         errores,
     };
+}
+
+// Vuelve la encuesta a la última tarea verificada aunque la tarea actual ya esté asignada (por ejemplo la que se asigna sola al pasar a fin de campo).
+// No saltea los triggers: primero deja la tarea actual sin asignar, después mueve tem.tarea_actual (el trigger guarda la foto en historial_tem)
+// y recién entonces desverifica, con lo cual desverificar_tarea_trg ve a la tarea desverificada como la actual.
+export async function encuestaDesverificarExcepcional(context: ProcedureContext, params: { operativo: IdOperativo, enc: string, motivo: string }): Promise<'ok'> {
+    var be = context.be;
+    var { operativo, enc } = params;
+    var motivo = (params.motivo ?? '').trim();
+    if (!motivo) {
+        throw new Error('hay que indicar el motivo de la desverificación');
+    }
+    var desverificable = (await context.client.query(
+        `select * from (${sqlDesverificables}) d where operativo = $1 and enc = $2`,
+        [operativo, enc]
+    ).fetchOneRowIfExists()).row;
+    if (!desverificable) {
+        throw new Error(`la encuesta ${enc} no se puede desverificar: su última tarea no está verificada o la tarea actual ya está verificada`);
+    }
+    if (!desverificable.estado_destino) {
+        throw new Error('no hay una acción en estados_acciones que ejecute encuesta_no_verificar desde el estado de la tarea verificada');
+    }
+    var tareaActual: { [key: string]: string | null } = (await context.client.query(
+        `select estado, asignado from tareas_tem where operativo = $1 and enc = $2 and tarea = $3`,
+        [operativo, enc, desverificable.tarea_actual]
+    ).fetchUniqueRow()).row;
+    await context.client.query(
+        `update tareas_tem
+            set estado = '0D', asignado = null
+            where operativo = $1 and enc = $2 and tarea = $3
+            returning *`,
+        [operativo, enc, desverificable.tarea_actual]
+    ).fetchUniqueRow();
+    await context.client.query(
+        `update tem
+            set tarea_actual = $4
+            where operativo = $1 and enc = $2 and tarea_actual = $3
+            returning *`,
+        [operativo, enc, desverificable.tarea_actual, desverificable.tarea]
+    ).fetchUniqueRow();
+    // la foto de historial_tem se sacó con la tarea ya sin asignar: se restituye lo que tenía y se deja quién lo hizo y por qué
+    await context.client.query(
+        `update historial_tem
+            set estado = $4, asignado = $5, usuario_accion = $6, motivo = $7
+            where operativo = $1 and enc = $2 and tarea = $3
+                and orden = (select max(orden) from historial_tem where operativo = $1 and enc = $2)
+            returning *`,
+        [operativo, enc, desverificable.tarea_actual, tareaActual.estado, tareaActual.asignado, context.user.usuario, motivo]
+    ).fetchUniqueRow();
+    await be.procedure.encuesta_no_verificar.coreFunction(context, { operativo, tarea: desverificable.tarea, enc });
+    await context.client.query(
+        `update tareas_tem
+            set estado = $4
+            where operativo = $1 and enc = $2 and tarea = $3
+            returning *`,
+        [operativo, enc, desverificable.tarea, desverificable.estado_destino]
+    ).fetchUniqueRow();
+    return 'ok';
 }
 
 export const ProceduresDmEncu: ProcedureDef[] = [
@@ -1782,6 +1841,18 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 [params.operativo, params.tarea, params.enc, context.user.idper])
                 .fetchUniqueRow();
             return 'ok';
+        }
+    },
+    {
+        action: 'encuesta_desverificar_excepcional',
+        parameters: [
+            { name: 'operativo', typeName: 'text' },
+            { name: 'enc', typeName: 'text' },
+            { name: 'motivo', typeName: 'text' },
+        ],
+        roles: ['subcoor_campo', 'coor_campo', 'coor_proc', 'procesamiento', 'admin'],
+        coreFunction: async function (context: ProcedureContext, params: CoreFunctionParameters<{ operativo: IdOperativo, enc: string, motivo: string }>) {
+            return await encuestaDesverificarExcepcional(context, params);
         }
     },
     {
