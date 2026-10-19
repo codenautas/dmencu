@@ -608,6 +608,10 @@ declare global {
             state_forPk: string
             state_pilaForPk: string
         }
+        // backend-plus lo define en my-tables.js pero no está en types.d.ts: vuelve a leer y dibujar toda la grilla
+        interface TableGrid {
+            refresh: () => Promise<void>
+        }
     }
 }
 

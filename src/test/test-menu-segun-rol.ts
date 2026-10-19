@@ -120,7 +120,7 @@ describe('dmencu - menú según rol y policy', () => {
         it('procesamiento procesa pero no edita campo', () => {
             var menu = menuDelRol(GABINETE, 'procesamiento');
             assert.deepStrictEqual(nombres(menu), ['varios', 'control', 'procesar', 'configurar']);
-            assert.deepStrictEqual(nombres(submenu(menu, 'varios')), ['abrir_encuesta', 'intercambiar_encuestas']);
+            assert.deepStrictEqual(nombres(submenu(menu, 'varios')), ['abrir_encuesta', 'intercambiar_encuestas', 'desverificables']);
         });
         it('el ingresador edita campo sin administrar: asignación y recepción reducidas, sin control ni configuración', () => {
             var menu = menuDelRol(GABINETE, 'ingresador');

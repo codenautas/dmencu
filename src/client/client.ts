@@ -366,6 +366,52 @@ myOwn.clientSides.accionesBlanqueo = {
     }
 };
 
+myOwn.clientSides.desverificar = {
+    prepare: (depot, fieldName) => {
+        var td = depot.rowControls[fieldName];
+        var boton = html.button('desverificar').create();
+        td.innerHTML = "";
+        td.appendChild(boton);
+        boton.onclick = async () => {
+            if (!depot.row.estado_destino) {
+                alertPromise('No hay una acción en estados_acciones que ejecute encuesta_no_verificar desde el estado de la tarea verificada.');
+                return;
+            }
+            var destino = depot.row.destino__desc_estado ? `${depot.row.estado_destino} - ${depot.row.destino__desc_estado}` : depot.row.estado_destino;
+            var inputMotivo = html.input({ class: 'input-motivo-desverificar', style: 'width:100%' }).create();
+            var mainDiv = html.div([
+                html.div({ class: 'danger' }, [`Está por desverificar la tarea ${depot.row.tarea} de la encuesta ${depot.row.enc} y volverla desde ${depot.row.tarea_actual}.`]),
+                html.div([`Estado al que vuelve la tarea ${depot.row.tarea}: `, html.b(destino)]),
+                html.div(['Motivo: ', inputMotivo]),
+            ]).create();
+            var confirma = await confirmPromise(mainDiv, {
+                withCloseButton: false,
+                reject: false,
+                buttonsDef: [
+                    { label: 'desverificar', value: true },
+                    { label: 'cancelar', value: false }
+                ]
+            });
+            if (!confirma) return;
+            try {
+                boton.disabled = true;
+                await my.ajax.encuesta_desverificar_excepcional({
+                    operativo: depot.row.operativo,
+                    enc: depot.row.enc,
+                    motivo: inputMotivo.value
+                });
+                await depot.manager.refresh();
+            } catch (err) {
+                alertPromise(unexpected(err).message);
+                throw err;
+            } finally {
+                boton.disabled = false;
+            }
+        }
+    },
+    update: (_depot, _fieldName) => { }
+};
+
 function
     botonClientSideEnGrilla(opts: { nombreBoton: string, llamada: (depot: myOwn.Depot) => Promise<any> }) {
     return {

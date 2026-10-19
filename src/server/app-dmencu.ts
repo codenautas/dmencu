@@ -96,6 +96,7 @@ import { acciones } from './table-acciones';
 import { estados_acciones } from './table-estados_acciones';
 import { tareas_proximas } from './table-tareas_proximas';
 import { historial_tem } from './table-historial_tem';
+import { desverificables, ROLES_DESVERIFICAN } from './table-desverificables';
 import { inconsistencias_cumplen_condicion } from './table-inconsistencias_cumplen_condicion';
 import { tem_borradas } from './table-tem_borradas';
 import { barrios } from "./table-barrios";
@@ -761,6 +762,9 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             if (context.puede?.encuestas?.procesar) {
                 submenuVarios.push({ menuType: 'proc', name: 'intercambiar_encuestas' });
             }
+            if (ROLES_DESVERIFICAN.includes(context.user.rol)) {
+                submenuVarios.push({ menuType: 'table', name: 'desverificables', label: 'desverificar encuestas' });
+            }
             return { menuType: 'menu', name: 'varios', menuContent: submenuVarios }
         }
         getMenuAsignacion(context: Context): MenuInfoBase {
@@ -996,6 +1000,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 , tem
                 , tem_edicion
                 , historial_tem
+                , desverificables
                 , modos_dm
                 , parametros
                 , operaciones
