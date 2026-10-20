@@ -26,7 +26,7 @@ export type ClienteTablero = {
     query(sql: string, params?: ValorSql[]): SentenciaTablero
 }
 
-// el cliente que además escribe (lo usa el editor de metadatos; el tablero sólo consulta)
+// el cliente que además ejecuta sentencias (el tablero sólo lo usa para los savepoints que aíslan cada sección; también lo usa el editor de metadatos)
 export type SentenciaEscribible = SentenciaTablero & { execute(): Promise<unknown> }
 export type ClienteEscribible = {
     query(sql: string, params?: ValorSql[]): SentenciaEscribible
@@ -45,6 +45,8 @@ export type ConsultaTablero = {
     menu: MenuInfoBase[] // el menú del usuario (el que arma getMenu)
     variosOperativos: boolean // la instancia define varios operativos (se usa para modelarlos): ve el tablero de diseño
     tabla(nombre: string): TableDefinition // la definición de una tabla de la app, para reutilizar su sql (por ejemplo control_campo_zona)
+    // ejecuta la obtención de una sección aislada: si falla no deja abortada la transacción para las demás (savepoint)
+    aislar?(obtener: () => Promise<ContenidoTablero | null>): Promise<ContenidoTablero | null>
 }
 
 export type AmbitoSeccionTablero = 'campo' | 'diseno' | 'todos';
@@ -200,7 +202,7 @@ export async function armarSecciones(
     var errores: TableroParaUsuario['errores'] = [];
     for (var definicion of seccionesVisibles(definiciones, consulta.quien).filter(seccion => seccionDelAmbito(seccion, consulta.variosOperativos))) {
         try {
-            var contenido = await definicion.obtener(consulta);
+            var contenido = await (consulta.aislar ? consulta.aislar(() => definicion.obtener(consulta)) : definicion.obtener(consulta));
             if (contenido != null) {
                 var acceso = definicion.acceso != null ? conAccesoVisible({ acceso: definicion.acceso }, consulta.menu).acceso : undefined;
                 secciones.push({
@@ -507,7 +509,7 @@ export const seccionDesglose: DefinicionSeccionTablero = {
         var cortes: CorteDesglose[] = [];
         for (var corte of CORTES_DESGLOSE) {
             var resultado = await corteDeControl(consulta, corte);
-            if (resultado.filas.length) {
+            if (resultado.filas.length > 1) { // con una sola fila repite el total del avance
                 cortes.push(resultado);
             }
         }

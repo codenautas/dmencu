@@ -3,14 +3,14 @@ import { describe, it } from 'mocha';
 import assert = require('node:assert');
 
 import { quienConsultaTablero } from '../server/app-dmencu';
-import { CampoCalculado } from '../server/table-control_campo';
+import { CampoCalculado, control_campo, controlCamposOpts } from '../server/table-control_campo';
 import {
     acomodarCalendario, accesosDelMenu, armarSecciones, buscarEnMenu, ClienteTablero, combinarSecciones, ConsultaTablero,
     CORTES_DESGLOSE, DefinicionSeccionTablero, FilaSql, ordenarTareas, partesDeControl, SECCIONES_TABLERO, seccionAvance,
     seccionCalendario, seccionCircuito, seccionDelAmbito, seccionDesglose, seccionesVisibles, seccionMiAvance, seccionMiDetalle, seccionOperativos, seccionParaAsignar, seccionParaRecibir, seccionRecepcionistas,
     seccionNoRespuesta, ValorSql
 } from '../server/tablero';
-import type { TableDefinition } from '../server/types-dmencu';
+import type { GrupoNoRea, TableDefinition } from '../server/types-dmencu';
 import type { ContenidoTablero, SeccionTablero } from '../unlogged/tipos-tablero';
 import { AppParaTests, contextoDelRol, crearAppParaTests } from './app-para-tests';
 
@@ -171,6 +171,37 @@ describe('dmencu - tablero de inicio', () => {
         });
     });
 
+    describe('control_campo: otras causas según no_rea', () => {
+        function grupo(nombre: string, grupo0: string): GrupoNoRea {
+            return { grupo: nombre, codigos: [{ operativo: 'OPE1', no_rea: 1, descripcion: nombre, grupo: nombre, variable: 'v', valor: '1', grupo0, orden: 1 }] };
+        }
+        function sqlDeControl(grupos: GrupoNoRea[], opts: Partial<controlCamposOpts>): string {
+            var be = crearAppParaTests(GABINETE);
+            be.caches.tableContent = { conReaHogar: { con_rea_hogar: false, operativo: 'OPE1', config_sorteo: null }, no_rea_groups: grupos, no_rea_groups0: grupos };
+            var sql = control_campo(contextoDelRol(be, 'admin'), { nombre: 'control_campo', ...opts }).sql?.from;
+            assert.ok(sql != null);
+            return sql;
+        }
+        const sumaDe = (sql: string): string | undefined => /coalesce\(otros,0\) \+ (.*?)\s+as otras_causas_gabinete/.exec(sql)?.[1];
+
+        it('suma los grupos cuyo grupo0 es "otras causas", sin pedir los que la base no tiene (como ggs, que no tiene seleccionado)', () => {
+            var sql = sqlDeControl([
+                grupo('otras causas vivienda', 'otras causas'), grupo('Otras causas telefonica', 'noreatel'), grupo('rechazos', 'rechazos')
+            ], { sinhogfin: true });
+            assert.strictEqual(sumaDe(sql), 'coalesce(otras_causas_vivienda,0)');
+        });
+        it('suma todos los grupos de otras causas que tenga la base (hogar, vivienda, seleccionado)', () => {
+            var sql = sqlDeControl([
+                grupo('otras causas hogar', 'otras causas'), grupo('otras causas seleccionado', 'otras causas'), grupo('otras causas vivienda', 'otras causas')
+            ], {});
+            assert.strictEqual(sumaDe(sql), 'coalesce(otras_causas_hogar,0)+coalesce(otras_causas_seleccionado,0)+coalesce(otras_causas_vivienda,0)');
+        });
+        it('en gabinete (agrupado por grupo0) suma el grupo "otras causas"; sin ninguno suma 0', () => {
+            assert.strictEqual(sumaDe(sqlDeControl([grupo('otras causas', 'otras causas')], { gabinete: true, agrupador: 'no_rea_groups0' })), 'coalesce(otras_causas,0)');
+            assert.strictEqual(sumaDe(sqlDeControl([grupo('rechazos', 'rechazos')], {})), '0');
+        });
+    });
+
     describe('armarSecciones', () => {
         it('arma las visibles en orden, omite las vacías y quita el acceso si el usuario no tiene esa opción', async () => {
             var be = crearAppParaTests(GABINETE);
@@ -257,6 +288,29 @@ describe('dmencu - tablero de inicio', () => {
             assert.deepStrictEqual(secciones.map(seccion => seccion.id), ['sana']);
             assert.deepStrictEqual(client.consultas, []);
         });
+        it('con aislar, cada sección se ejecuta aislada (savepoint) para que una que falla no aborte la transacción de las demás', async () => {
+            var be = crearAppParaTests(GABINETE);
+            var consulta = consultaDelRol(be, 'admin', clienteSimulado(() => []));
+            var eventos: string[] = [];
+            consulta.aislar = async (obtener: () => Promise<ContenidoTablero | null>): Promise<ContenidoTablero | null> => {
+                eventos.push('savepoint');
+                try {
+                    var contenido = await obtener();
+                    eventos.push('release');
+                    return contenido;
+                } catch (err) {
+                    eventos.push('rollback');
+                    throw err;
+                }
+            };
+            var { secciones, errores } = await armarSecciones([
+                seccionDePrueba('rota', 1, async () => { throw new Error('columna inexistente'); }),
+                seccionDePrueba('sana', 2, async () => ({ tipo: 'mensaje', texto: 'ok' })),
+            ], consulta);
+            assert.deepStrictEqual(eventos, ['savepoint', 'rollback', 'savepoint', 'release']);
+            assert.deepStrictEqual(errores, [{ seccion: 'rota', mensaje: 'columna inexistente' }]);
+            assert.deepStrictEqual(secciones.map(seccion => seccion.id), ['sana']);
+        });
     });
 
     describe('secciones de dmencu', () => {
@@ -306,7 +360,7 @@ describe('dmencu - tablero de inicio', () => {
             assert.strictEqual(vacio.contenido, null);
         });
         it('desglose: un corte por tabla de control_campo, con sus partes, y se omiten los que no tienen filas', async () => {
-            var { contenido, consultas } = await obtener(seccionDesglose, sql => sql.includes(`'control_campo_zona'`) ? [] : [{ etiqueta: '3', ...control }]);
+            var { contenido, consultas } = await obtener(seccionDesglose, sql => sql.includes(`'control_campo_zona'`) ? [] : [{ etiqueta: '3', ...control }, { etiqueta: '4', ...control }]);
             assert.deepStrictEqual(consultas.map(c => CORTES_DESGLOSE.find(corte => c.sql.includes(`'${corte.tabla}'`))?.id), ['area', 'dominio', 'zona', 'comuna']);
             assert.ok(contenido?.tipo == 'desglose');
             assert.deepStrictEqual(contenido.cortes.map(corte => corte.id), ['area', 'dominio', 'comuna']);
@@ -316,9 +370,16 @@ describe('dmencu - tablero de inicio', () => {
             assert.deepStrictEqual(contenido.cortes[2].acceso, { titulo: 'control por comuna', ruta: ['control', 'comuna'] });
         });
         it('desglose: las filas sin encuestas no se muestran', async () => {
-            var { contenido } = await obtener(seccionDesglose, () => [{ etiqueta: '1', ...control }, { etiqueta: '2', total: '0' }]);
+            var { contenido } = await obtener(seccionDesglose, () => [{ etiqueta: '1', ...control }, { etiqueta: '2', total: '0' }, { etiqueta: '3', ...control }]);
             assert.ok(contenido?.tipo == 'desglose');
-            assert.deepStrictEqual(contenido.cortes[0].filas.map(fila => fila.etiqueta), ['área 1']);
+            assert.deepStrictEqual(contenido.cortes[0].filas.map(fila => fila.etiqueta), ['área 1', 'área 3']);
+        });
+        it('desglose: los cortes con una sola fila no se muestran, y si no queda ninguno se omite la sección', async () => {
+            var { contenido } = await obtener(seccionDesglose, sql => sql.includes(`'control_campo_area'`) ? [{ etiqueta: '1', ...control }, { etiqueta: '2', ...control }] : [{ etiqueta: '3', ...control }]);
+            assert.ok(contenido?.tipo == 'desglose');
+            assert.deepStrictEqual(contenido.cortes.map(corte => corte.id), ['area']);
+            var sinCortes = await obtener(seccionDesglose, () => [{ etiqueta: '1', ...control }]);
+            assert.strictEqual(sinCortes.contenido, null);
         });
         it('desglose: los accesos apuntan a opciones del menú de control', () => {
             var be = crearAppParaTests(GABINETE);
