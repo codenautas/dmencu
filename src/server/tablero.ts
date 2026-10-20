@@ -497,7 +497,7 @@ export const seccionDesglose: DefinicionSeccionTablero = {
         var cortes: CorteDesglose[] = [];
         for (var corte of CORTES_DESGLOSE) {
             var resultado = await corteDeControl(consulta, corte);
-            if (resultado.filas.length) {
+            if (resultado.filas.length > 1) { // con una sola fila repite el total del avance
                 cortes.push(resultado);
             }
         }

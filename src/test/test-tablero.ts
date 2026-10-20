@@ -348,7 +348,7 @@ describe('dmencu - tablero de inicio', () => {
             assert.strictEqual(vacio.contenido, null);
         });
         it('desglose: un corte por tabla de control_campo, con sus partes, y se omiten los que no tienen filas', async () => {
-            var { contenido, consultas } = await obtener(seccionDesglose, sql => sql.includes(`'control_campo_zona'`) ? [] : [{ etiqueta: '3', ...control }]);
+            var { contenido, consultas } = await obtener(seccionDesglose, sql => sql.includes(`'control_campo_zona'`) ? [] : [{ etiqueta: '3', ...control }, { etiqueta: '4', ...control }]);
             assert.deepStrictEqual(consultas.map(c => CORTES_DESGLOSE.find(corte => c.sql.includes(`'${corte.tabla}'`))?.id), ['area', 'dominio', 'zona', 'comuna']);
             assert.ok(contenido?.tipo == 'desglose');
             assert.deepStrictEqual(contenido.cortes.map(corte => corte.id), ['area', 'dominio', 'comuna']);
@@ -358,9 +358,16 @@ describe('dmencu - tablero de inicio', () => {
             assert.deepStrictEqual(contenido.cortes[2].acceso, { titulo: 'control por comuna', ruta: ['control', 'comuna'] });
         });
         it('desglose: las filas sin encuestas no se muestran', async () => {
-            var { contenido } = await obtener(seccionDesglose, () => [{ etiqueta: '1', ...control }, { etiqueta: '2', total: '0' }]);
+            var { contenido } = await obtener(seccionDesglose, () => [{ etiqueta: '1', ...control }, { etiqueta: '2', total: '0' }, { etiqueta: '3', ...control }]);
             assert.ok(contenido?.tipo == 'desglose');
-            assert.deepStrictEqual(contenido.cortes[0].filas.map(fila => fila.etiqueta), ['área 1']);
+            assert.deepStrictEqual(contenido.cortes[0].filas.map(fila => fila.etiqueta), ['área 1', 'área 3']);
+        });
+        it('desglose: los cortes con una sola fila no se muestran, y si no queda ninguno se omite la sección', async () => {
+            var { contenido } = await obtener(seccionDesglose, sql => sql.includes(`'control_campo_area'`) ? [{ etiqueta: '1', ...control }, { etiqueta: '2', ...control }] : [{ etiqueta: '3', ...control }]);
+            assert.ok(contenido?.tipo == 'desglose');
+            assert.deepStrictEqual(contenido.cortes.map(corte => corte.id), ['area']);
+            var sinCortes = await obtener(seccionDesglose, () => [{ etiqueta: '1', ...control }]);
+            assert.strictEqual(sinCortes.contenido, null);
         });
         it('desglose: los accesos apuntan a opciones del menú de control', () => {
             var be = crearAppParaTests(GABINETE);
