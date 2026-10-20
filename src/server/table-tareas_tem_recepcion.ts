@@ -54,5 +54,9 @@ export function tareas_tem_recepcion(context:TableContext, opts?:OptsTareasTem):
     tableDef.sql!.isTable = false;
     tableDef.sql!.from=getSqlFrom(tableDef,{desde:"recepciona"});
     tableDef.sql!.where = `"tem".tarea_actual="tareas_tem".tarea`;
+    if (context.user.rol==='recepcionista') {
+        // igual que la lista de encuestadores asignados: el recepcionista sólo ve las encuestas de las que es recepcionista
+        tableDef.sql!.where += ` and "tareas_tem".recepcionista = ${context.be.db.quoteNullable(context.user.idper)}`;
+    }
     return tableDef
 }

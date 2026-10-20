@@ -80,7 +80,7 @@ import { tareas_tem_procesamiento } from './table-tareas_tem_procesamiento';
 import { tareas_tem_analisis_campo } from './table-tareas_tem_analisis_campo';
 import { mis_tareas_areas } from './table-mis_tareas_areas';
 import { control_campo } from './table-control_campo';
-import { control_resumen, control_resumen_recepcion } from './table-control_resumen';
+import { control_resumen, control_resumen_recepcion, control_resumen_recepcionistas } from './table-control_resumen';
 import { control_dias_carga } from './table-control_dias_carga';
 import { viviendas } from './table-viviendas';
 import { visitas } from './table-visitas';
@@ -1064,6 +1064,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 , control_campo
                 , control_resumen
                 , control_resumen_recepcion
+                , control_resumen_recepcionistas
                 , control_campo_zona: context => control_campo(context,
                     { nombre: 'control_campo_comuna', title: 'control campo x zona solo cemento', camposCorte: [{ name: 'zona', typeName: 'text' }], sinhogfin: !context.be.caches.tableContent.conReaHogar.con_rea_hogar, filtroWhere: 'dominio=3' }
                 )

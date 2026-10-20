@@ -26,6 +26,19 @@ export type AccesoTablero = {
     filtro?: FiltroTablero
 }
 
+// una fila del detalle de un indicador (por ejemplo un estado dentro de una tarea)
+export type FilaDetalleIndicador = {
+    etiqueta: string
+    valor: number
+    acceso?: AccesoTablero // la etiqueta lleva a esa opción del menú
+}
+
+// cómo se reparte el valor de un indicador; se muestra en una ventana que abre el botón "ver más" de la tarjeta
+export type DetalleIndicador = {
+    boton: string // texto del botón que lo abre
+    filas: FilaDetalleIndicador[]
+}
+
 export type IndicadorTablero = {
     id: string
     titulo: string
@@ -35,6 +48,7 @@ export type IndicadorTablero = {
     detalle?: string
     tono?: TonoTablero
     acceso?: AccesoTablero
+    desagregado?: DetalleIndicador
 }
 
 export type ParteAvance = {
@@ -71,22 +85,25 @@ export type ColumnaTabla = {
     campo: string
     titulo: string
     numerica?: boolean
+    formato?: 'numero' | 'porcentaje' // de las numéricas: el valor ya viene como porcentaje (0 a 100)
 }
 
 export type FilaTabla = { [campo: string]: string | number | null };
 
 export type ContenidoTablero =
     | { tipo: 'indicadores', indicadores: IndicadorTablero[], total?: number } // total: si está, se muestra al pie ("Total: N encuestas")
-    | { tipo: 'avance', partes: ParteAvance[] }
+    | { tipo: 'avance', partes: ParteAvance[], indicadores?: IndicadorTablero[] } // indicadores: cifras que van arriba de la barra
     | { tipo: 'desglose', cortes: CorteDesglose[] }
     | { tipo: 'barras', filas: FilaBarras[], formato?: 'numero' | 'porcentaje', total?: number }
-    | { tipo: 'tabla', columnas: ColumnaTabla[], filas: FilaTabla[] }
+    | { tipo: 'tabla', columnas: ColumnaTabla[], filas: FilaTabla[], ultimaFilaTotal?: boolean } // ultimaFilaTotal: la última fila es el total y va en negrita
     | { tipo: 'accesos', accesos: AccesoTablero[] }
     | { tipo: 'mensaje', texto: string, tono?: TonoTablero }
+    | { tipo: 'titulo' } // sólo el título de la sección, sin tarjeta: separa grupos de secciones
     // lo dibuja un componente que la app final registra en el cliente con registrarComponenteTablero
     | { tipo: 'personalizado', componente: string, datos: DatoJson };
 
-export type AnchoSeccionTablero = 'completo' | 'mitad' | 'tercio';
+// tresCuartos y cuarto van juntos en una fila (una tabla ancha con una sección chica a la derecha)
+export type AnchoSeccionTablero = 'completo' | 'mitad' | 'tercio' | 'tresCuartos' | 'cuarto';
 
 export type SeccionTablero = {
     id: string
