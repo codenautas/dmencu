@@ -37,6 +37,16 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "discon Fast Launch",
+            "env": {"BACKEND_PLUS_LOCAL_CONFIG":"local-config-discon.yaml"},
+            "program": "${workspaceFolder}/dist/server/server/server-dmencu.js",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "dumpDb",
             "preLaunchTask": "build-all",
             "program": "${workspaceFolder}/dist/server/server/server-dmencu.js",
