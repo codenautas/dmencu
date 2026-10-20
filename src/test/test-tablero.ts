@@ -245,6 +245,29 @@ describe('dmencu - tablero de inicio', () => {
             assert.deepStrictEqual(secciones.map(seccion => seccion.id), ['sana']);
             assert.deepStrictEqual(client.consultas, []);
         });
+        it('con aislar, cada sección se ejecuta aislada (savepoint) para que una que falla no aborte la transacción de las demás', async () => {
+            var be = crearAppParaTests(GABINETE);
+            var consulta = consultaDelRol(be, 'admin', clienteSimulado(() => []));
+            var eventos: string[] = [];
+            consulta.aislar = async (obtener: () => Promise<ContenidoTablero | null>): Promise<ContenidoTablero | null> => {
+                eventos.push('savepoint');
+                try {
+                    var contenido = await obtener();
+                    eventos.push('release');
+                    return contenido;
+                } catch (err) {
+                    eventos.push('rollback');
+                    throw err;
+                }
+            };
+            var { secciones, errores } = await armarSecciones([
+                seccionDePrueba('rota', 1, async () => { throw new Error('columna inexistente'); }),
+                seccionDePrueba('sana', 2, async () => ({ tipo: 'mensaje', texto: 'ok' })),
+            ], consulta);
+            assert.deepStrictEqual(eventos, ['savepoint', 'rollback', 'savepoint', 'release']);
+            assert.deepStrictEqual(errores, [{ seccion: 'rota', mensaje: 'columna inexistente' }]);
+            assert.deepStrictEqual(secciones.map(seccion => seccion.id), ['sana']);
+        });
     });
 
     describe('secciones de dmencu', () => {

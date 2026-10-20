@@ -25,6 +25,12 @@ export type ClienteTablero = {
     query(sql: string, params?: ValorSql[]): SentenciaTablero
 }
 
+// el cliente que además ejecuta sentencias (el tablero sólo lo usa para los savepoints que aíslan cada sección; también lo usa el editor de metadatos)
+export type SentenciaEscribible = SentenciaTablero & { execute(): Promise<unknown> }
+export type ClienteEscribible = {
+    query(sql: string, params?: ValorSql[]): SentenciaEscribible
+}
+
 // quien consulta el tablero: lo mismo que para la ayuda más su usuario y su persona
 export type QuienConsultaTablero = QuienConsultaAyuda & {
     usuario: string
@@ -37,6 +43,8 @@ export type ConsultaTablero = {
     operativo: string
     menu: MenuInfoBase[] // el menú del usuario (el que arma getMenu)
     tabla(nombre: string): TableDefinition // la definición de una tabla de la app, para reutilizar su sql (por ejemplo control_campo_zona)
+    // ejecuta la obtención de una sección aislada: si falla no deja abortada la transacción para las demás (savepoint)
+    aislar?(obtener: () => Promise<ContenidoTablero | null>): Promise<ContenidoTablero | null>
 }
 
 export type DefinicionSeccionTablero = {
@@ -182,7 +190,7 @@ export async function armarSecciones(
     var errores: TableroParaUsuario['errores'] = [];
     for (var definicion of seccionesVisibles(definiciones, consulta.quien)) {
         try {
-            var contenido = await definicion.obtener(consulta);
+            var contenido = await (consulta.aislar ? consulta.aislar(() => definicion.obtener(consulta)) : definicion.obtener(consulta));
             if (contenido != null) {
                 var acceso = definicion.acceso != null ? conAccesoVisible({ acceso: definicion.acceso }, consulta.menu).acceso : undefined;
                 secciones.push({
