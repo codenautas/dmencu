@@ -18,15 +18,22 @@ export var getDomicilioFields = ():FieldDefinition[] => [
     {name:'barrio'               , typeName:'text'    , editable: false  },
 ]
 
-// muestra las encuestas de producción o de capacitación según lo que tenga habilitado el usuario (tem t)
-export var filtroTemSegunUsuario = (context:ContextForDump):string => `
-                            join usuarios usu_con on usu_con.usuario = ${sqlTools.quoteLiteral(context.user.usuario)}
-                            where
+// la condición de producción o de capacitación según lo que tenga habilitado el usuario (tem t, usuarios usu_con)
+export const condicionTemSegunUsuario = `
                                 usu_con.muestra_encuestas_prod and t.enc_autogenerado_dm is not null
                                     or
                                 usu_con.muestra_encuestas_capa and t.enc_autogenerado_dm_capa is not null
                                     or
                                 t.enc_autogenerado_dm is null and t.enc_autogenerado_dm_capa is null`
+
+// la tarea en que está la encuesta como lo entienden los triggers (asignar_desasignar_tareas_tem_trg y validar_tareas_tem_trg):
+// sin tarea_actual (todavía sin asignar, estado disponible) está en la tarea inicial (tem t)
+export const sqlTareaVigente = `coalesce(t.tarea_actual, (select ti.tarea from tareas ti where ti.operativo = t.operativo and ti.es_inicial))`
+
+// muestra las encuestas de producción o de capacitación según lo que tenga habilitado el usuario (tem t)
+export var filtroTemSegunUsuario = (context:ContextForDump):string => `
+                            join usuarios usu_con on usu_con.usuario = ${sqlTools.quoteLiteral(context.user.usuario)}
+                            where${condicionTemSegunUsuario}`
 
 export function tem(context:ContextForDump, opts?:any):TableDefinition {
     var opts=opts||{};

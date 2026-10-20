@@ -8,11 +8,13 @@ import type {
     AccionDisponible, AreaAsignacion, CambioDeArea, CambioDeEncuestas, ContextoAsignacion, EncuestaAsignacion,
     EncuestaRecepcion, EstadoDeTarea, PersonaAsignable, PersonaRecepcion, ResultadoDeCambio, TareaAsignable
 } from "../unlogged/tipos-asignacion";
-import type { PerfilTablero } from "../unlogged/tipos-tablero";
 import type { ProcedureContext } from "backend-plus";
 import type { Context, ProcedureDef } from "./types-dmencu";
 import { tienePermiso } from "./ayuda";
-import { ClienteTablero, FilaSql, numero, TEM_DEL_USUARIO, texto, ValorSql } from "./tablero";
+import { FilaSql, numero, SentenciaTablero, TEM_DEL_USUARIO, texto, ValorSql } from "./tablero";
+
+// el cliente de base también escribe (el Client de pg-promise-strict lo cumple)
+export type ClienteAsignacion = { query(sql: string, params?: ValorSql[]): SentenciaTablero & { execute(): Promise<unknown> } };
 
 /* permisos: los mismos que las grillas y el menú de asignación y recepción */
 
@@ -53,7 +55,7 @@ function numeroONull(fila: FilaSql, campo: string): number | null {
     return fila[campo] == null ? null : numero(fila, campo);
 }
 
-async function filas(client: ClienteTablero, sql: string, params: ValorSql[]): Promise<FilaSql[]> {
+async function filas(client: ClienteAsignacion, sql: string, params: ValorSql[]): Promise<FilaSql[]> {
     return (await client.query(sql, params).fetchAll()).rows;
 }
 
@@ -75,7 +77,7 @@ export function personaDesdeFila(fila: FilaSql): PersonaAsignable {
 
 /* contexto */
 
-export async function traerContextoAsignacion(client: ClienteTablero, quien: QuienAsigna, perfil: PerfilTablero): Promise<ContextoAsignacion> {
+export async function traerContextoAsignacion(client: ClienteAsignacion, quien: QuienAsigna): Promise<ContextoAsignacion> {
     exigir(quien.puedeVer, 'no tiene permiso para ver la asignación');
     var [parametros] = await filas(client, `select operativo from parametros where unico_registro`, []);
     var operativo = texto(parametros, 'operativo') ?? '';
@@ -107,7 +109,6 @@ export async function traerContextoAsignacion(client: ClienteTablero, quien: Qui
             order by u.apellido, u.nombre, u.usuario`, []));
     return {
         operativo,
-        perfil,
         puedeEditar: quien.puedeEditar,
         puedeAsignarGeneral: quien.puedeAsignarGeneral,
         soloComoRecepcionista: quien.soloComoRecepcionista,
@@ -141,7 +142,7 @@ export function armarAreas(filasAreas: FilaSql[], filasTareasAreas: FilaSql[]): 
     return areas;
 }
 
-export async function traerAreas(client: ClienteTablero, quien: QuienAsigna, operativo: string): Promise<AreaAsignacion[]> {
+export async function traerAreas(client: ClienteAsignacion, quien: QuienAsigna, operativo: string): Promise<AreaAsignacion[]> {
     exigir(quien.puedeAsignarGeneral, 'no tiene permiso para la asignación general');
     var filasAreas = await filas(client, `
         select a.area, count(t.enc) as encuestas,
@@ -188,7 +189,7 @@ function mensajeDeError(err: unknown): string {
 }
 
 // aplica un cambio por clave, cada uno en su savepoint: el error de uno (por ejemplo de un trigger) no deshace los demás
-export async function aplicarConSavepoints(client: ClienteTablero, claves: string[], aplicar: (clave: string) => Promise<void>): Promise<ResultadoDeCambio[]> {
+export async function aplicarConSavepoints(client: ClienteAsignacion, claves: string[], aplicar: (clave: string) => Promise<void>): Promise<ResultadoDeCambio[]> {
     var resultados: ResultadoDeCambio[] = [];
     for (var clave of claves) {
         try {
@@ -204,7 +205,7 @@ export async function aplicarConSavepoints(client: ClienteTablero, claves: strin
     return resultados;
 }
 
-export async function cambiarAreas(client: ClienteTablero, quien: QuienAsigna, operativo: string, cambios: CambioDeArea[]): Promise<ResultadoDeCambio[]> {
+export async function cambiarAreas(client: ClienteAsignacion, quien: QuienAsigna, operativo: string, cambios: CambioDeArea[]): Promise<ResultadoDeCambio[]> {
     exigir(quien.puedeAsignarGeneral, 'no tiene permiso para la asignación general');
     exigir(Array.isArray(cambios), 'cambios debe ser una lista');
     var porClave: Map<string, CambioDeArea> = new Map(cambios.map(cambio => [`${cambio.area}/${cambio.tarea}`, cambio]));
@@ -236,7 +237,7 @@ function parametroDeRecepcionista(quien: QuienAsigna): ValorSql[] {
     return quien.soloComoRecepcionista != null ? [quien.soloComoRecepcionista] : [];
 }
 
-export async function traerEncuestasDeTarea(client: ClienteTablero, quien: QuienAsigna, operativo: string, tarea: string): Promise<EncuestaAsignacion[]> {
+export async function traerEncuestasDeTarea(client: ClienteAsignacion, quien: QuienAsigna, operativo: string, tarea: string): Promise<EncuestaAsignacion[]> {
     exigir(quien.puedeVer, 'no tiene permiso para ver la asignación');
     return (await filas(client, `
         select t.enc, t.area, ${DIRECCION} as direccion, tt.estado, t.habilitada, t.tarea_actual,
@@ -256,7 +257,7 @@ export async function traerEncuestasDeTarea(client: ClienteTablero, quien: Quien
     }));
 }
 
-export async function cambiarEncuestas(client: ClienteTablero, quien: QuienAsigna, operativo: string, cambio: CambioDeEncuestas): Promise<ResultadoDeCambio[]> {
+export async function cambiarEncuestas(client: ClienteAsignacion, quien: QuienAsigna, operativo: string, cambio: CambioDeEncuestas): Promise<ResultadoDeCambio[]> {
     exigir(quien.puedeEditar, 'no tiene permiso para asignar');
     exigir(Array.isArray(cambio.encs), 'encs debe ser una lista');
     var { set, params } = setDelCambio(cambio, 4);
@@ -313,7 +314,7 @@ export function armarPersonasRecepcion(filasPorEstado: FilaSql[]): PersonaRecepc
     return personas.sort((a, b) => a.nombre.localeCompare(b.nombre));
 }
 
-export async function traerPersonasRecepcion(client: ClienteTablero, quien: QuienAsigna, operativo: string, tarea: string): Promise<PersonaRecepcion[]> {
+export async function traerPersonasRecepcion(client: ClienteAsignacion, quien: QuienAsigna, operativo: string, tarea: string): Promise<PersonaRecepcion[]> {
     exigir(quien.puedeVer, 'no tiene permiso para ver la recepción');
     return armarPersonasRecepcion(await filas(client, `
         select tt.asignado as idper, ${NOMBRE_DE_PERSONA} as nombre, u.dispositivo, tt.estado,
@@ -336,7 +337,7 @@ export function accionDesdeJson(valor: unknown): AccionDisponible[] {
 
 // encuestas de una persona (o de una lista de encuestas) en recepción, con las acciones que hoy se pueden hacer en cada una
 export async function traerEncuestasRecepcion(
-    client: ClienteTablero, quien: QuienAsigna, operativo: string, tarea: string, filtro: { asignado: string } | { encs: string[] }
+    client: ClienteAsignacion, quien: QuienAsigna, operativo: string, tarea: string, filtro: { asignado: string } | { encs: string[] }
 ): Promise<EncuestaRecepcion[]> {
     exigir(quien.puedeVer, 'no tiene permiso para ver la recepción');
     var porAsignado = 'asignado' in filtro;
@@ -368,12 +369,11 @@ export type ParametrosAccion = { operativo: string, tarea: string, enc: string, 
 
 // lo que estos procedimientos necesitan de la app (AppDmEncu lo cumple)
 export type AppAsignacion = {
-    perfilDelUsuario(context: ProcedureContext): PerfilTablero
     // ejecuta una acción como el botón de la grilla (procedimiento accion_tareas_tem_ejecutar)
     ejecutarAccion(context: ProcedureContext, parametros: ParametrosAccion): Promise<unknown>
 }
 
-async function operativoActual(client: ClienteTablero): Promise<string> {
+async function operativoActual(client: ClienteAsignacion): Promise<string> {
     var [fila] = await filas(client, `select operativo from parametros where unico_registro`, []);
     var operativo = texto(fila, 'operativo');
     exigir(operativo != null, 'no se configuró un operativo en la tabla parámetros');
@@ -385,7 +385,7 @@ export function proceduresAsignacion(app: AppAsignacion): ProcedureDef[] {
         {
             action: 'asignacion_contexto_traer',
             parameters: [],
-            coreFunction: async (context: ProcedureContext) => traerContextoAsignacion(context.client, quienAsigna(context), app.perfilDelUsuario(context))
+            coreFunction: async (context: ProcedureContext) => traerContextoAsignacion(context.client, quienAsigna(context))
         },
         {
             action: 'asignacion_areas_traer',

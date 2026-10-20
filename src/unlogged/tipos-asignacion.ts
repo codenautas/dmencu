@@ -4,7 +4,6 @@
 // Sólo tipos: se importan con "import type".
 
 import type { EstadoAccion } from "./tipos";
-import type { PerfilTablero } from "./tipos-tablero";
 
 export type PersonaAsignable = {
     idper: string
@@ -31,7 +30,6 @@ export type EstadoDeTarea = {
 // lo que las tres pantallas necesitan para empezar
 export type ContextoAsignacion = {
     operativo: string
-    perfil: PerfilTablero
     puedeEditar: boolean // campo.administrar o recepcionista (como las grillas de asignación y recepción)
     puedeAsignarGeneral: boolean // campo.administrar (como asignación → general)
     soloComoRecepcionista: string | null // idper del recepcionista si el usuario sólo ve lo suyo

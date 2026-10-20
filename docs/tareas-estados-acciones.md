@@ -97,3 +97,19 @@ Puntos a tener en cuenta:
 ## Operaciones especiales de gabinete
 
 Fuera del circuito normal existen procedimientos para casos excepcionales: `encuesta_forzar_tarea` (mueve la encuesta a otra tarea dejando la actual como `V` y la nueva como `0D`), `encuesta_habilitar_deshabilitar` (alterna `tem.habilitada`), `encuesta_pasar_a_anac` y sus inversas (pase a análisis de campo), `encuesta_blanquear`, `encuesta_borrar`, `intercambiar_encuestas` y `encuesta_capa_a_prod_pasar`. Se ofrecen según los permisos del rol; ver [roles-y-permisos.md](roles-y-permisos.md).
+
+## Desverificación excepcional
+
+La transición `V → P` (`encuesta_no_verificar`) sólo funciona mientras la encuesta sigue en la tarea verificada. Cuando ya pasó a la tarea siguiente y ésta quedó asignada (por ejemplo `finc`, que se asigna sola), el trigger `desverificar_tarea_trg` la rechaza. Para esos casos está el procedimiento `encuesta_desverificar_excepcional` (`encuestaDesverificarExcepcional` en `procedures-dmencu.ts`) y la grilla **desverificables** (menú *varios → desverificar encuestas*, `table-desverificables.ts`).
+
+- **Quién**: `subcoor_campo`, `coor_campo`, `coor_proc`, `procesamiento` y `admin` (`ROLES_DESVERIFICAN`). El recepcionista no la ve.
+- **Qué lista**: encuestas cuya última tarea en `historial_tem` está verificada y cuya tarea actual no. La grilla se arma sólo con `sqlDesverificables` (`sql.from`, sin `where`), la misma consulta que usa el procedimiento, e incluye el estado destino.
+- **No saltea los triggers**. En una sola transacción:
+  1. deja la tarea actual en `0D` y sin asignar (con la tarea actual todavía vigente, así `validar_tareas_tem_trg` lo acepta);
+  2. mueve `tem.tarea_actual` a la tarea verificada: `agregar_historial_tem_trg` guarda la foto de la tarea que se deja;
+  3. completa esa foto de `historial_tem` con el estado y el asignado que tenía antes de limpiarla, y con `usuario_accion` y `motivo` (obligatorio);
+  4. llama a `encuesta_no_verificar`: como la tarea verificada ya es la actual, `desverificar_tarea_trg` lo acepta;
+  5. pone la tarea desverificada en el estado destino.
+- **Estado destino**: se infiere de `estados_acciones` (dentro de `sqlDesverificables`): las transiciones desde el estado de la tarea verificada cuyo `nombre_procedure` es `encuesta_no_verificar`. Si hay una sola se usa; si hay varias se toma la inmediatamente anterior al estado verificado según `estados.orden_estado` (por ejemplo `V` tiene `no_verificar → P` y `no_cerrar → A`: vuelve a `P`); si no hay ninguna, falla. La grilla muestra la descripción de los estados de origen y destino con `softForeignKeys` a `estados` (las trae backend-plus, no el sql) y el destino se confirma junto con el motivo.
+- **Bases ya instaladas**: `operaciones/2026-10-19-actualizar_desverificar_excepcional.sql` agrega `usuario_accion` y `motivo` a `historial_tem` (las bases nuevas las toman de `table-historial_tem.ts`).
+- El estado `0D` es el inicial que el código ya conoce (ver arriba). Esta operación no está en el tablero de inicio porque no es un control de seguimiento sino una herramienta de corrección.

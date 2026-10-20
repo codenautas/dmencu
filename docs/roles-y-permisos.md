@@ -104,7 +104,7 @@ Quien tiene `encuestas.relevar` (encuestador, recuperador, supervisor) ve **rele
 
 ### Inicio (tablero)
 
-En GABINETE, si el usuario tiene alguna opción de menú, se agrega al principio **inicio**: el tablero con el panorama del operativo, que es la pantalla que se abre al entrar. Sus secciones y colores dependen del rol y los permisos (ver [tablero.md](tablero.md)).
+En GABINETE, si el usuario tiene alguna opción de menú, se agrega al principio **inicio**: el tablero con el panorama del operativo, que es la pantalla que se abre al entrar. Sus secciones dependen del rol y los permisos (ver [tablero.md](tablero.md)).
 
 ### Ayuda
 

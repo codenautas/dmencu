@@ -6,7 +6,8 @@ import {
     accionDesdeJson, aplicarConSavepoints, armarAreas, armarPersonasRecepcion, cambiarAreas, cambiarEncuestas,
     proceduresAsignacion, QuienAsigna, quienAsigna, setDelCambio, traerContextoAsignacion, traerEncuestasRecepcion
 } from '../server/asignacion';
-import type { ClienteTablero, FilaSql, ValorSql } from '../server/tablero';
+import type { FilaSql, ValorSql } from '../server/tablero';
+import type { ClienteAsignacion } from '../server/asignacion';
 import type { MenuInfoBase } from '../server/types-dmencu';
 import { contextoDelRol, crearAppParaTests } from './app-para-tests';
 
@@ -15,7 +16,7 @@ const GABINETE = '';
 type ConsultaHecha = { sql: string, params: ValorSql[] };
 
 // cliente simulado: "responder" decide las filas (o tira un error, como un trigger) y se anotan las consultas
-function clienteSimulado(responder: (sql: string, params: ValorSql[]) => FilaSql[] = () => []): ClienteTablero & { consultas: ConsultaHecha[] } {
+function clienteSimulado(responder: (sql: string, params: ValorSql[]) => FilaSql[] = () => []): ClienteAsignacion & { consultas: ConsultaHecha[] } {
     var consultas: ConsultaHecha[] = [];
     return {
         consultas,
@@ -71,7 +72,7 @@ describe('dmencu - asignación y recepción', () => {
             assert.deepStrictEqual(submenu('ingresador', 'asignacion'), ['encuestador', 'ingresador', 'recuperador', 'asignar_por_tarea']);
         });
         it('los procedimientos', () => {
-            var nombres = proceduresAsignacion({ perfilDelUsuario: () => { throw new Error('no se usa'); }, ejecutarAccion: async () => null }).map(p => p.action);
+            var nombres = proceduresAsignacion({ ejecutarAccion: async () => null }).map(p => p.action);
             assert.deepStrictEqual(nombres, [
                 'asignacion_contexto_traer', 'asignacion_areas_traer', 'asignacion_areas_cambiar', 'asignacion_encuestas_traer',
                 'asignacion_encuestas_cambiar', 'recepcion_personas_traer', 'recepcion_encuestas_traer', 'recepcion_acciones_ejecutar',
@@ -83,7 +84,7 @@ describe('dmencu - asignación y recepción', () => {
         it('sólo ofrece las tareas con formulario (anac, finc y proc tienen filas en tareas_areas pero no se asignan por área)', async () => {
             var client = clienteSimulado((sql) => /from tareas ta/.test(sql) ? [{ tarea: 'encu', nombre: 'encuestador', es_inicial: true, rol_sugerido: 'encuestador' }]
                 : /from parametros/.test(sql) ? [{ operativo: 'OPE1' }] : []);
-            var contexto = await traerContextoAsignacion(client, quienDelRol('coor_campo'), { perfil: 'coordinacion', nombre: 'Coordinación', descripcion: '', colores: { primario: '#000000', secundario: '#FFFFFF' } });
+            var contexto = await traerContextoAsignacion(client, quienDelRol('coor_campo'));
             assert.deepStrictEqual(contexto.tareas.map(t => t.tarea), ['encu']);
             var consulta = client.consultas.find(c => /from tareas ta/.test(c.sql))!;
             assert.match(consulta.sql, /ta\.main_form is not null/);

@@ -23,6 +23,8 @@ export function historial_tem(context:TableContext):TableDefinition {
         {name:'rea_sup'             , typeName:'integer'  },
         {name:'norea_sup'           , typeName:'integer'  },
         {name:'resumen_estado_sup'  , typeName:'text'     },
+        {name:'usuario_accion'      , typeName:'text'     },
+        {name:'motivo'              , typeName:'text'     },
     ];
         //{name:'abrir'                       , typeName:'text'        , editable:false   , inTable:false, clientSide:'abrirRecepcion'};
         //{name:'fecha_asignacion'            , typeName:'date'},

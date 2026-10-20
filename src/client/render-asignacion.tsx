@@ -16,14 +16,9 @@ import type {
     AccionDisponible, AreaAsignacion, CambioDeArea, CambioDeEncuestas, ContextoAsignacion, EncuestaAsignacion,
     EncuestaRecepcion, PersonaAsignable, PersonaRecepcion, ResultadoDeCambio, TareaAsignable
 } from "../unlogged/tipos-asignacion";
-import type { PerfilTablero } from "../unlogged/tipos-tablero";
-import { temaDelPerfil } from "./render-tablero";
+import { crearTema } from "./render-tablero";
 
 /* comunes */
-
-const PERFIL_INICIAL: PerfilTablero = {
-    perfil: 'general', nombre: 'Gabinete', descripcion: '', colores: { primario: '#3F51B5', secundario: '#009688' }
-};
 
 const ICONO_BUSCAR = "M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z";
 const ICONO_DISPOSITIVO = "M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z";
@@ -128,7 +123,7 @@ function avisoDeResultados(resultados: ResultadoDeCambio[], que: string): Aviso 
         : { tipo: ok ? 'info' : 'error', texto: `${que}: se aplicó en ${ok} de ${resultados.length}` };
 }
 
-// marco común: trae el contexto, arma el tema del perfil y muestra el encabezado
+// marco común: trae el contexto, arma el tema y muestra el encabezado
 function Pantalla(props: { titulo: string, descripcion: string, children: (contexto: ContextoAsignacion) => React.ReactNode }) {
     var [contexto, setContexto] = useState<ContextoAsignacion | null>(null);
     var [error, setError] = useState<string | null>(null);
@@ -138,8 +133,7 @@ function Pantalla(props: { titulo: string, descripcion: string, children: (conte
             (err: unknown) => setError(mensajeDeError(err))
         );
     }, []);
-    var perfil = contexto?.perfil ?? PERFIL_INICIAL;
-    var tema = useMemo(() => temaDelPerfil(perfil), [perfil]);
+    var tema = useMemo(() => crearTema(), []);
     return <ThemeProvider theme={tema}>
         <ScopedCssBaseline sx={{ bgcolor: 'background.default', minHeight: '100%' }}>
             <Box sx={{ p: { xs: 1.5, md: 3 }, maxWidth: 1600, mx: 'auto' }}>
