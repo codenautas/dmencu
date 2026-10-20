@@ -2358,7 +2358,8 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             baseTablesResult.forEach((_, i) => baseTablesResult[i].result.rows.forEach(row => row.operativo = params.operativo_destino));
 
             //Chequeo y consulta de tablas reas (rea, no_rea, rea_sup, no_rea_sup)
-            const optionalTables = ['rea', 'no_rea', 'rea_sup', 'no_rea_sup'];
+            // no_rea_grupo0 va antes que no_rea, que lo referencia
+            const optionalTables = ['rea', 'no_rea_grupo0', 'no_rea', 'rea_sup', 'no_rea_sup'];
             const tablesExistResult = await context.client.query(
                 `select table_name 
                  from information_schema.tables 
@@ -2367,7 +2368,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 [optionalTables]
             ).fetchAll();
 
-            const existingOptionalTables = tablesExistResult.rows.map(r => r.table_name);
+            const existingOptionalTables = optionalTables.filter(t => tablesExistResult.rows.some(r => r.table_name === t));
             const missingOptionalTables = optionalTables.filter(t => !existingOptionalTables.includes(t));
 
             const optionalTablesResult = await Promise.all(

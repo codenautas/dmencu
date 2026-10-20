@@ -38,6 +38,9 @@ export type Puede = {
 // grupo de códigos de no_rea (be.caches.tableContent.no_rea_groups y no_rea_groups0, ver refreshCaches en app-dmencu.ts)
 export type GrupoNoRea = { grupo: string, codigos: NoRea[] }
 
+// qué significa cada grupo0 de no_rea para los controles (be.caches.tableContent.no_rea_grupo0, tabla no_rea_grupo0)
+export type NoReaGrupo0 = { operativo: string, grupo0: string, orden: number, es_otras_causas: boolean, es_no_encuestable: boolean, es_en_curso: boolean }
+
 export type Permisos = {
     puede?: Puede
     superuser?: boolean

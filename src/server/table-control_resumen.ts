@@ -6,8 +6,7 @@ import {control_campo} from './table-control_campo';
 import {condicionTemSegunUsuario, sqlTareaVigente} from './table-tem';
 
 function controlResumen(context:TableContext, opts:{nombre:string, title?:string, filtroWhere?:string, camposCorte?:FieldDefinition[], selectExtra?:string}):TableDefinition {
-    var vcon_rea_hogar=context.be.caches.tableContent.conReaHogar.con_rea_hogar;
-    return control_campo(context, {...opts, agrupador:'no_rea_groups0', agrupado:true ,gabinete:true,sinhogfin:!vcon_rea_hogar});
+    return control_campo(context, {...opts, agrupador:'no_rea_groups0', agrupado:true ,gabinete:true});
 }
 
 export function control_resumen(context:TableContext):TableDefinition {

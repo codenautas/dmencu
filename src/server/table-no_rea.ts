@@ -21,7 +21,7 @@ export function no_rea(context:TableContext):TableDefinition {
             {name:'pasa_a_supervision'      , typeName:'boolean', nullable:false, defaultDbValue:'false'},
         ],
         primaryKey:['operativo', 'no_rea'],
-        foreignKeys:[{references:'operativos', fields:['operativo']}],
+        foreignKeys:[{references:'operativos', fields:['operativo']}, {references:'no_rea_grupo0', fields:['operativo', 'grupo0']}],
         sortColumns: [{ column: "operativo", order: 1 }, { column: "orden", order: 1 }, {column:"no_rea", order:1}],
     };
 }
