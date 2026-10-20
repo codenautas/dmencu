@@ -10,14 +10,14 @@ import * as React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import * as ReactDOM from "react-dom";
 import {
-    Alert, Avatar, Box, Button, Card, CardContent, Chip, Grid, LinearProgress, Link, Paper, ScopedCssBaseline, Skeleton,
+    Alert, Avatar, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Grid, LinearProgress, Link, Paper, ScopedCssBaseline, Skeleton,
     Stack, SvgIcon, Table, TableBody, TableCell, TableHead, TableRow, ThemeProvider, ToggleButton, ToggleButtonGroup, Tooltip, Typography,
     alpha, createTheme, useTheme
 } from "@mui/material";
 import type { Theme, ThemeOptions } from "@mui/material";
 
 import type {
-    AccesoTablero, ContenidoTablero, CorteDesglose, DatoJson, FiltroTablero, FilaBarras, FilaTabla, ColumnaTabla, IndicadorTablero, ParteAvance,
+    AccesoTablero, ContenidoTablero, CorteDesglose, DatoJson, DetalleIndicador, FiltroTablero, FilaBarras, FilaTabla, ColumnaTabla, IndicadorTablero, ParteAvance,
     RutaMenu, SeccionTablero, TableroParaUsuario, TonoTablero
 } from "../unlogged/tipos-tablero";
 
@@ -141,16 +141,43 @@ function Icono(props: { path: string }) {
 
 /* contenidos */
 
-function TarjetaIndicador(props: { indicador: IndicadorTablero }) {
+// ventana con cómo se reparte el valor de un indicador (por ejemplo las encuestas de una tarea por estado)
+function VentanaDetalle(props: { titulo: string, detalle: DetalleIndicador, onCerrar: () => void }) {
+    var { detalle } = props;
+    return <Dialog open onClose={props.onCerrar} fullWidth maxWidth="xs" aria-labelledby="tablero-detalle-titulo">
+        <DialogTitle id="tablero-detalle-titulo">{props.titulo}</DialogTitle>
+        <DialogContent>
+            <Table size="small">
+                <TableBody>
+                    {detalle.filas.map((fila, i) =>
+                        <TableRow key={i} hover>
+                            <TableCell>
+                                {fila.acceso ?
+                                    <Link underline="hover" title={fila.acceso.titulo} href={hrefDelAcceso(fila.acceso)}
+                                        onClick={(event: React.MouseEvent<HTMLElement>) => { alHacerClickEnAcceso(fila.acceso!)(event); props.onCerrar(); }}>{fila.etiqueta}</Link>
+                                    : fila.etiqueta}
+                            </TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 600 }}>{numeroATexto(fila.valor)}</TableCell>
+                        </TableRow>
+                    )}
+                </TableBody>
+            </Table>
+        </DialogContent>
+        <DialogActions><Button onClick={props.onCerrar}>cerrar</Button></DialogActions>
+    </Dialog>;
+}
+
+function TarjetaIndicador(props: { indicador: IndicadorTablero, compacto?: boolean }) {
     var { indicador } = props;
     var theme = useTheme();
+    var [verDetalle, setVerDetalle] = useState(false);
     var color = colorDelTono(theme, indicador.tono);
     var valorTexto = indicador.formato == 'porcentaje' ? porcentajeATexto(indicador.valor) : numeroATexto(indicador.valor);
     var conTotal = indicador.total != null && indicador.valor != null;
     var avance = conTotal ? porcentaje(indicador.valor ?? 0, indicador.total ?? 0) : 0;
-    return <Box sx={{ p: 2, borderRadius: 2, bgcolor: alpha(color, 0.06), border: `1px solid ${alpha(color, 0.2)}`, minWidth: 0 }}>
+    return <Box sx={{ p: props.compacto ? 1.25 : 2, borderRadius: 2, bgcolor: alpha(color, 0.06), border: `1px solid ${alpha(color, 0.2)}`, minWidth: 0 }}>
         <Typography variant="body2" color="text.secondary" fontWeight={500}>{indicador.titulo}</Typography>
-        <Typography variant="h4" component="div" sx={{ color, fontWeight: 700, my: 0.5, lineHeight: 1.2 }}>{valorTexto}</Typography>
+        <Typography variant={props.compacto ? 'h5' : 'h4'} component="div" sx={{ color, fontWeight: 700, my: props.compacto ? 0.25 : 0.5, lineHeight: 1.2 }}>{valorTexto}</Typography>
         {conTotal ? <>
             <LinearProgress variant="determinate" value={Math.min(avance, 100)} aria-label={indicador.titulo}
                 sx={{ height: 6, borderRadius: 3, bgcolor: alpha(color, 0.15), '& .MuiLinearProgress-bar': { bgcolor: color, borderRadius: 3 } }} />
@@ -161,22 +188,27 @@ function TarjetaIndicador(props: { indicador: IndicadorTablero }) {
         {indicador.detalle ? <Typography variant="caption" color="text.secondary" display="block">{indicador.detalle}</Typography> : null}
         {indicador.acceso ? <Button size="small" sx={{ mt: 0.5, px: 0 }} endIcon={<Icono path={ICONOS.irA} />}
             href={hrefDelAcceso(indicador.acceso)} onClick={alHacerClickEnAcceso(indicador.acceso)}>{indicador.acceso.titulo}</Button> : null}
+        {indicador.desagregado ? <>
+            <Button size="small" sx={{ mt: 0.5, display: 'block' }} onClick={() => setVerDetalle(true)}>{indicador.desagregado.boton}</Button>
+            {verDetalle ? <VentanaDetalle titulo={indicador.titulo} detalle={indicador.desagregado} onCerrar={() => setVerDetalle(false)} /> : null}
+        </> : null}
     </Box>;
 }
 
-export function Indicadores(props: { indicadores: IndicadorTablero[] }) {
-    return <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: { xs: 1.5, sm: 2 } }}>
-        {props.indicadores.map(indicador => <TarjetaIndicador key={indicador.id} indicador={indicador} />)}
+export function Indicadores(props: { indicadores: IndicadorTablero[], compacto?: boolean }) {
+    return <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(' + (props.compacto ? 120 : 135) + 'px, 1fr))', gap: props.compacto ? 1 : { xs: 1.5, sm: 2 } }}>
+        {props.indicadores.map(indicador => <TarjetaIndicador key={indicador.id} indicador={indicador} compacto={props.compacto} />)}
     </Box>;
 }
 
 const FILAS_VISIBLES = 10;
 
 // barra grande apilada: cada parte muestra su cantidad; los porcentajes están en las referencias de abajo
-export function Avance(props: { partes: ParteAvance[] }) {
+export function Avance(props: { partes: ParteAvance[], indicadores?: IndicadorTablero[] }) {
     var theme = useTheme();
     var total = props.partes.reduce((suma, parte) => suma + parte.valor, 0);
     return <Box>
+        {props.indicadores?.length ? <Box sx={{ mb: 2 }}><Indicadores indicadores={props.indicadores} compacto /></Box> : null}
         <Box role="img" aria-label={props.partes.map(parte => `${parte.titulo}: ${parte.valor}`).join(', ')}
             sx={{ display: 'flex', height: { xs: 56, md: 72 }, borderRadius: 2, overflow: 'hidden', bgcolor: 'grey.100' }}>
             {props.partes.filter(parte => parte.valor > 0).map(parte => {
@@ -217,11 +249,10 @@ function Leyenda(props: { partes: ParteAvance[], total?: number }) {
 
 const ANCHO_TOTAL_DESGLOSE = 64;
 
-// barras apiladas por fila, con un selector entre los cortes (dominio, zona, comuna, área)
+// barras apiladas por fila (todas), con un selector entre los cortes; empieza en el primero
 export function Desglose(props: { cortes: CorteDesglose[] }) {
     var theme = useTheme();
     var [corteId, setCorteId] = useState(props.cortes[0]?.id ?? '');
-    var [todas, setTodas] = useState(false);
     var corte = props.cortes.find(c => c.id == corteId) ?? props.cortes[0];
     if (corte == null) {
         return null;
@@ -231,18 +262,17 @@ export function Desglose(props: { cortes: CorteDesglose[] }) {
     // la leyenda suma todas las filas del corte, con el porcentaje de cada parte
     var partesDelCorte: ParteAvance[] = corte.filas[0].partes.map((parte, i) => ({ ...parte, valor: corte!.filas.reduce((suma, fila) => suma + (fila.partes[i]?.valor ?? 0), 0) }));
     var totalDelCorte = totalDe(partesDelCorte);
-    var filasVisibles = todas ? corte.filas : corte.filas.slice(0, FILAS_VISIBLES);
     return <Box>
         <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" sx={{ gap: 1, mb: 2 }}>
             <ToggleButtonGroup size="small" exclusive color="primary" value={corte.id} aria-label="corte del desglose"
-                onChange={(_event, nuevo: string | null) => { if (nuevo != null) { setCorteId(nuevo); setTodas(false); } }}>
+                onChange={(_event, nuevo: string | null) => { if (nuevo != null) { setCorteId(nuevo); } }}>
                 {props.cortes.map(c => <ToggleButton key={c.id} value={c.id} sx={{ textTransform: 'none', px: 2 }}>{c.titulo}</ToggleButton>)}
             </ToggleButtonGroup>
             {corte.acceso ? <Button size="small" endIcon={<Icono path={ICONOS.irA} />}
                 href={hrefDelAcceso(corte.acceso)} onClick={alHacerClickEnAcceso(corte.acceso)}>{corte.acceso.titulo}</Button> : null}
         </Stack>
         <Box sx={{ mb: 2 }}><Leyenda partes={partesDelCorte} total={totalDelCorte} /></Box>
-        {filasVisibles.map((fila, i) => {
+        {corte.filas.map((fila, i) => {
             var total = totalDe(fila.partes);
             return <Stack key={i} direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.75 }}>
                 <Typography variant="body2" noWrap title={fila.etiqueta} sx={{ width: { xs: 90, sm: 130 }, flexShrink: 0 }}>{fila.etiqueta}</Typography>
@@ -266,9 +296,6 @@ export function Desglose(props: { cortes: CorteDesglose[] }) {
                 </Box>
             </Stack>;
         })}
-        {corte.filas.length > FILAS_VISIBLES ?
-            <Button size="small" onClick={() => setTodas(!todas)}>{todas ? 'ver menos' : `ver las ${corte.filas.length}`}</Button>
-            : null}
         <TotalEncuestas total={totalDelCorte} />
     </Box>;
 }
@@ -305,7 +332,7 @@ export function Barras(props: { filas: FilaBarras[], formato?: 'numero' | 'porce
     </Box>;
 }
 
-export function Tabla(props: { columnas: ColumnaTabla[], filas: FilaTabla[] }) {
+export function Tabla(props: { columnas: ColumnaTabla[], filas: FilaTabla[], ultimaFilaTotal?: boolean }) {
     return <Box sx={{ overflowX: 'auto' }}>
         <Table size="small">
             <TableHead>
@@ -315,11 +342,11 @@ export function Tabla(props: { columnas: ColumnaTabla[], filas: FilaTabla[] }) {
             </TableHead>
             <TableBody>
                 {props.filas.map((fila, i) =>
-                    <TableRow key={i} hover>
+                    <TableRow key={i} hover sx={props.ultimaFilaTotal && i == props.filas.length - 1 ? { '& td': { fontWeight: 700 } } : undefined}>
                         {props.columnas.map(columna => {
                             var valor = fila[columna.campo];
                             return <TableCell key={columna.campo} align={columna.numerica ? 'right' : 'left'}>
-                                {typeof valor == 'number' ? numeroATexto(valor) : valor ?? ''}
+                                {typeof valor == 'number' ? (columna.formato == 'porcentaje' ? porcentajeATexto(valor) : numeroATexto(valor)) : valor ?? ''}
                             </TableCell>;
                         })}
                     </TableRow>
@@ -371,14 +398,15 @@ export function ContenidoSeccion(props: { seccion: SeccionTablero, tablero: Tabl
             <Indicadores indicadores={contenido.indicadores} />
             <TotalEncuestas total={contenido.total} />
         </>;
-        case 'avance': return <Avance partes={contenido.partes} />;
+        case 'avance': return <Avance partes={contenido.partes} indicadores={contenido.indicadores} />;
         case 'desglose': return <Desglose cortes={contenido.cortes} />;
         case 'barras': return <>
             <Barras filas={contenido.filas} formato={contenido.formato} />
             <TotalEncuestas total={contenido.total} />
         </>;
-        case 'tabla': return <Tabla columnas={contenido.columnas} filas={contenido.filas} />;
+        case 'tabla': return <Tabla columnas={contenido.columnas} filas={contenido.filas} ultimaFilaTotal={contenido.ultimaFilaTotal} />;
         case 'accesos': return <Accesos accesos={contenido.accesos} />;
+        case 'titulo': return null;
         case 'mensaje': return <Alert severity={severidadDelTono(contenido.tono)}>{contenido.texto}</Alert>;
         case 'personalizado': {
             var Componente = componentesPersonalizados.get(contenido.componente);
@@ -463,6 +491,17 @@ export function columnasDeLasSecciones(secciones: SeccionTablero[]): Columnas[] 
     var resultado: Columnas[] = [];
     var i = 0;
     while (i < secciones.length) {
+        // una sección de tres cuartos y, a continuación, una de un cuarto comparten la fila; solas ocupan todo el ancho
+        if (secciones[i].ancho == 'tresCuartos' && secciones[i + 1]?.ancho == 'cuarto') {
+            resultado.push({ xs: 12, sm: 12, md: 9 }, { xs: 12, sm: 12, md: 3 });
+            i += 2;
+            continue;
+        }
+        if (secciones[i].ancho == 'tresCuartos' || secciones[i].ancho == 'cuarto') {
+            resultado.push({ xs: 12, sm: 12, md: 12 });
+            i++;
+            continue;
+        }
         var cuantasPorFila = porFila(secciones[i]);
         var fin = i;
         while (fin < secciones.length && secciones[fin].ancho == secciones[i].ancho) {
@@ -533,7 +572,9 @@ export function Tablero(props: { traer: () => Promise<TableroParaUsuario> }) {
                         <Grid container spacing={2.5}>
                             {tablero.secciones.map((seccion, i) =>
                                 <Grid item key={seccion.id} {...columnasPorSeccion[i]}>
-                                    <TarjetaSeccion seccion={seccion} tablero={tablero!} />
+                                    {seccion.contenido.tipo == 'titulo' ?
+                                        <Typography variant="h5" component="h2" color="text.secondary" sx={{ mt: 1, fontWeight: 600 }}>{seccion.titulo}</Typography>
+                                        : <TarjetaSeccion seccion={seccion} tablero={tablero!} />}
                                 </Grid>
                             )}
                         </Grid>

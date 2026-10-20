@@ -20,6 +20,7 @@ export type controlCamposOpts={
     title?:string
     gabinete?:boolean
     sinhogfin?:boolean
+    selectExtra?:string // columnas que se agregan al select de la tem (para usarlas en camposCorte)
 }
 
 
@@ -105,7 +106,7 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
                                     `
                                     ).join('')} else null end as klase
                                 from (
-                                    select t.*, tt.verificado, t.norea as cod_no_rea
+                                    select t.*, tt.verificado, t.norea as cod_no_rea${opts.selectExtra?', '+opts.selectExtra:''}
                                         from tem t left join comunas c on t.nrocomuna=c.comuna
                                             left join tareas_tem tt on t.operativo=tt.operativo and t.enc=tt.enc and tt.tarea='encu'
 

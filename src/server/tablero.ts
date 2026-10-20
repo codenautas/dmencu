@@ -6,12 +6,13 @@
 
 import * as sqlTools from "sql-tools";
 import type {
-    AccesoTablero, AnchoSeccionTablero, ContenidoTablero, CorteDesglose, FilaBarras, FiltroTablero, IndicadorTablero, ParteAvance,
-    RutaMenu, SeccionTablero, TableroParaUsuario
+    AccesoTablero, AnchoSeccionTablero, ContenidoTablero, CorteDesglose, DetalleIndicador, FilaBarras, FilaDetalleIndicador, FiltroTablero, IndicadorTablero, ParteAvance,
+    ColumnaTabla, FilaTabla, RutaMenu, SeccionTablero, TableroParaUsuario
 } from "../unlogged/tipos-tablero";
 import type { MenuInfoBase, TableDefinition } from "./types-dmencu";
 import { QuienConsultaAyuda, tienePermiso } from "./ayuda";
 import { camposGruposNoRea } from "./table-control_campo";
+import { condicionTemSegunUsuario, sqlTareaVigente } from "./table-tem";
 
 export type ValorSql = string | number | boolean | null;
 export type FilaSql = { [campo: string]: unknown };
@@ -132,11 +133,44 @@ export function conAccesoVisible<T extends ConAcceso>(item: T, menu: MenuInfoBas
 
 export function contenidoConAccesosVisibles(contenido: ContenidoTablero, menu: MenuInfoBase[]): ContenidoTablero {
     switch (contenido.tipo) {
-        case 'indicadores': return { ...contenido, indicadores: contenido.indicadores.map(indicador => conAccesoVisible(indicador, menu)) };
+        case 'indicadores': return { ...contenido, indicadores: contenido.indicadores.map((indicador: IndicadorTablero): IndicadorTablero => {
+            var visible = conAccesoVisible(indicador, menu);
+            return indicador.desagregado == null ? visible
+                : { ...visible, desagregado: { ...indicador.desagregado, filas: indicador.desagregado.filas.map(fila => conAccesoVisible(fila, menu)) } };
+        }) };
         case 'barras': return { ...contenido, filas: contenido.filas.map(fila => conAccesoVisible(fila, menu)) };
         case 'desglose': return { ...contenido, cortes: contenido.cortes.map(corte => conAccesoVisible(corte, menu)) };
         default: return contenido;
     }
+}
+
+// el calendario va a la derecha de la tabla de recepcionistas (la ve la coordinación), en un cuarto del ancho; si no la tiene, arriba a continuación
+// de lo de recepción (para asignar y en recepción), con el ancho repartido entre las que hay: tres tercios o dos mitades
+export const SECCIONES_JUNTO_AL_CALENDARIO = ['para_asignar', 'para_recibir'];
+
+export function acomodarCalendario(secciones: SeccionTablero[]): SeccionTablero[] {
+    var calendario = secciones.find(seccion => seccion.id == 'calendario');
+    var tabla = secciones.find(seccion => seccion.id == 'recepcionistas');
+    if (calendario != null && tabla != null) {
+        var sinCalendario = secciones.filter(seccion => seccion != calendario);
+        var despuesDeLaTabla = sinCalendario.indexOf(tabla) + 1;
+        return [...sinCalendario.slice(0, despuesDeLaTabla), calendario, ...sinCalendario.slice(despuesDeLaTabla)].map(seccion =>
+            seccion == tabla ? { ...seccion, ancho: 'tresCuartos' as AnchoSeccionTablero } : seccion == calendario ? { ...seccion, ancho: 'cuarto' as AnchoSeccionTablero } : seccion);
+    }
+    var arriba = secciones.filter(seccion => SECCIONES_JUNTO_AL_CALENDARIO.includes(seccion.id));
+    if (calendario == null || arriba.length == 0) {
+        return secciones;
+    }
+    var ancho: AnchoSeccionTablero = arriba.length == 1 ? 'mitad' : 'tercio';
+    var resto = secciones.filter(seccion => seccion != calendario);
+    var despuesDe = resto.indexOf(arriba[arriba.length - 1]) + 1;
+    return [...resto.slice(0, despuesDe), calendario, ...resto.slice(despuesDe)].map(seccion =>
+        seccion == calendario || arriba.includes(seccion) ? { ...seccion, ancho } : seccion);
+}
+
+// un título sin ninguna sección debajo (hasta el próximo título) no tiene qué titular
+export function quitarTitulosSinSecciones(secciones: SeccionTablero[]): SeccionTablero[] {
+    return secciones.filter((seccion, i) => seccion.contenido.tipo != 'titulo' || secciones[i + 1] != null && secciones[i + 1].contenido.tipo != 'titulo');
 }
 
 // arma las secciones visibles. Son sólo consultas: si una falla se informa y las demás se muestran igual
@@ -164,7 +198,7 @@ export async function armarSecciones(
             errores.push({ seccion: definicion.id, mensaje: mensajeDeError(err) });
         }
     }
-    return { secciones, errores };
+    return { secciones: quitarTitulosSinSecciones(acomodarCalendario(secciones)), errores };
 }
 
 /* lectura de filas */
@@ -195,17 +229,11 @@ async function filas(consulta: ConsultaTablero, sql: string, params: ValorSql[])
 
 // las encuestas del operativo que ve el usuario: las de producción o de capacitación según lo que tenga habilitado
 // (igual que filtroTemSegunUsuario). Parámetros: $1 operativo, $2 usuario.
-// tarea_vigente es la tarea en que está la encuesta como lo entienden los triggers (asignar_desasignar_tareas_tem_trg y
-// validar_tareas_tem_trg): sin tarea_actual (todavía sin asignar, estado disponible) está en la tarea inicial
+// tarea_vigente es la tarea en que está la encuesta como lo entienden los triggers (ver sqlTareaVigente)
 export const TEM_DEL_USUARIO = `(
-    select t.*, coalesce(t.tarea_actual, (select ti.tarea from tareas ti where ti.operativo = t.operativo and ti.es_inicial)) as tarea_vigente
+    select t.*, ${sqlTareaVigente} as tarea_vigente
         from tem t join usuarios usu_con on usu_con.usuario = $2
-        where t.operativo = $1 and (
-            usu_con.muestra_encuestas_prod and t.enc_autogenerado_dm is not null
-                or
-            usu_con.muestra_encuestas_capa and t.enc_autogenerado_dm_capa is not null
-                or
-            t.enc_autogenerado_dm is null and t.enc_autogenerado_dm_capa is null
+        where t.operativo = $1 and (${condicionTemSegunUsuario}
         )
     ) t`;
 
@@ -335,9 +363,56 @@ export async function resumenDeControl(consulta: ConsultaTablero, tabla: string 
     };
 }
 
-export const seccionResumen: DefinicionSeccionTablero = {
-    id: 'resumen',
-    titulo: 'Panorama del operativo',
+// títulos que separan lo del usuario como recepcionista (arriba) de las secciones de seguimiento del operativo
+// (si no queda ninguna sección debajo de un título, armarSecciones lo quita)
+export const seccionTituloMisEncuestas: DefinicionSeccionTablero = {
+    id: 'titulo_mis_encuestas',
+    titulo: 'Mis encuestas',
+    orden: 1,
+    permisos: PERMISOS_DE_RECEPCION,
+    async obtener() {
+        return { tipo: 'titulo' };
+    }
+};
+
+export const seccionTituloSeguimiento: DefinicionSeccionTablero = {
+    id: 'titulo_seguimiento',
+    titulo: 'Seguimiento del operativo',
+    orden: 9,
+    roles: ROLES_DE_COORDINACION,
+    async obtener() {
+        return { tipo: 'titulo' };
+    }
+};
+
+// las cifras del avance del campo, con el tono de la parte de la barra a la que corresponden (así los colores coinciden en las dos secciones)
+function indicadoresDeAvance(resumen: ResumenControl): { [id: string]: IndicadorTablero } {
+    var noRespuestaEncuestable = resumen.motivos.filter(motivo => motivo.encuestable).reduce((suma, motivo) => suma + motivo.cantidad, 0);
+    var partes = new Map(partesDeControl(resumen).map(parte => [parte.id, parte]));
+    var deParte = (id: string, total: number, extra: Partial<IndicadorTablero> = {}): IndicadorTablero => {
+        var parte = partes.get(id)!;
+        return { id, titulo: parte.titulo, valor: parte.valor, total, tono: parte.tono, ...extra };
+    };
+    return {
+        muestra: { id: 'muestra', titulo: 'Encuestas en la muestra', valor: resumen.total, tono: 'info' },
+        salieron: { id: 'salieron', titulo: 'Salieron a campo', valor: resumen.salieron, total: resumen.total, tono: 'info' },
+        efectiva: deParte('efectiva', resumen.salieron),
+        en_curso: deParte('en_curso', resumen.salieron, { detalle: 'pendientes, incompletas o con problemas' }),
+        no_respuesta: deParte('no_respuesta', resumen.salieron),
+        sin_salir: deParte('sin_salir', resumen.total),
+        tasa_respuesta: {
+            id: 'tasa_respuesta', titulo: 'Tasa de respuesta', formato: 'porcentaje',
+            valor: porcentaje(resumen.rea, resumen.rea + noRespuestaEncuestable),
+            detalle: 'efectivas sobre encuestables', tono: 'bueno'
+        },
+    };
+}
+
+// una sola tarjeta: las cifras del avance y debajo la barra con los tramos (efectivas, en curso, no respuesta y no salieron);
+// las cifras toman el tono de su tramo, así los colores coinciden
+export const seccionAvance: DefinicionSeccionTablero = {
+    id: 'avance',
+    titulo: 'Avance del campo',
     orden: 10,
     roles: ROLES_DE_COORDINACION,
     acceso: { titulo: 'control de campo', ruta: ['control', 'resumen'] },
@@ -346,31 +421,10 @@ export const seccionResumen: DefinicionSeccionTablero = {
         if (resumen.total == 0) {
             return null;
         }
-        var noRespuestaEncuestable = resumen.motivos.filter(motivo => motivo.encuestable).reduce((suma, motivo) => suma + motivo.cantidad, 0);
-        var indicadores: IndicadorTablero[] = [
-            { id: 'muestra', titulo: 'Encuestas en la muestra', valor: resumen.total, tono: 'info' },
-            { id: 'salieron', titulo: 'Salieron a campo', valor: resumen.salieron, total: resumen.total, tono: 'info' },
-            { id: 'efectivas', titulo: 'Efectivas', valor: resumen.rea, total: resumen.salieron, tono: 'bueno' },
-            { id: 'en_curso', titulo: 'En curso', valor: resumen.en_curso, total: resumen.salieron, detalle: 'pendientes, incompletas o con problemas', tono: 'atencion' },
-            {
-                id: 'tasa_respuesta', titulo: 'Tasa de respuesta', formato: 'porcentaje',
-                valor: porcentaje(resumen.rea, resumen.rea + noRespuestaEncuestable),
-                detalle: 'efectivas sobre efectivas y no respuestas encuestables (tasa de efectividad de control de campo)', tono: 'bueno'
-            },
-        ];
-        return { tipo: 'indicadores', indicadores };
-    }
-};
-
-export const seccionAvance: DefinicionSeccionTablero = {
-    id: 'avance',
-    titulo: 'Avance del campo',
-    descripcion: 'En qué punto está cada encuesta de la muestra',
-    orden: 20,
-    roles: ROLES_DE_COORDINACION,
-    async obtener(consulta) {
-        var partes = partesDeControl(await resumenDeControl(consulta));
-        return partes.some(parte => parte.valor > 0) ? { tipo: 'avance', partes } : null;
+        var partes = partesDeControl(resumen);
+        var i = indicadoresDeAvance(resumen);
+        var indicadores = [i.muestra, i.salieron, i.efectiva, i.en_curso, i.no_respuesta, i.sin_salir, i.tasa_respuesta];
+        return partes.some(parte => parte.valor > 0) ? { tipo: 'avance', partes, indicadores } : null;
     }
 };
 
@@ -398,10 +452,10 @@ type DefinicionCorte = {
 };
 
 export const CORTES_DESGLOSE: DefinicionCorte[] = [
+    { id: 'area', titulo: 'área', tabla: 'control_campo_area', campo: 'area', etiqueta: valor => `área ${valor}`, ruta: ['control', 'área'] },
     { id: 'dominio', titulo: 'dominio', tabla: 'control_campo_dominio', campo: 'dominio', etiqueta: valor => `dominio ${valor}`, ruta: ['control', 'dominio'] },
     { id: 'zona', titulo: 'zona', tabla: 'control_campo_zona', campo: 'zona', etiqueta: valor => `zona ${valor}`, ruta: ['control', 'zona'] },
     { id: 'comuna', titulo: 'comuna', tabla: 'control_campo_comuna', campo: 'nrocomuna', etiqueta: valor => `comuna ${valor}`, ruta: ['control', 'comuna'] },
-    { id: 'area', titulo: 'área', tabla: 'control_campo_area', campo: 'area', etiqueta: valor => `área ${valor}`, ruta: ['control', 'área'] },
 ];
 
 const MAXIMO_FILAS_POR_CORTE = 200;
@@ -427,7 +481,7 @@ export async function corteDeControl(consulta: ConsultaTablero, corte: Definicio
 
 export const seccionDesglose: DefinicionSeccionTablero = {
     id: 'desglose',
-    titulo: 'Avance por dominio, zona, comuna y área',
+    titulo: 'Avance por área, dominio, zona y comuna',
     descripcion: 'Cada barra es el total de la muestra del corte, abierto por el punto del campo en que está',
     orden: 30,
     roles: ROLES_DE_COORDINACION,
@@ -524,7 +578,6 @@ function posicionEn(orden: string[], tarea: string | null): number {
 export const seccionCircuito: DefinicionSeccionTablero = {
     id: 'circuito',
     titulo: 'Dónde están las encuestas',
-    descripcion: 'Cantidad de encuestas según su tarea actual, con acceso a la grilla de cada tarea',
     orden: 40,
     roles: ROLES_DE_COORDINACION,
     async obtener(consulta) {
@@ -546,6 +599,7 @@ export const seccionCircuito: DefinicionSeccionTablero = {
         }
         var orden = await ordenDeTareas(consulta);
         porTarea.sort((a, b) => posicionEn(orden, texto(a, 'tarea')) - posicionEn(orden, texto(b, 'tarea')));
+        var estados = await estadosPorTarea(consulta);
         var total = filasPorTarea.reduce((suma, fila) => suma + numero(fila, 'cantidad'), 0);
         var indicadores: IndicadorTablero[] = [
             {
@@ -559,43 +613,45 @@ export const seccionCircuito: DefinicionSeccionTablero = {
                 total,
                 tono: numero(fila, 'cantidad') ? 'info' : 'neutro',
                 ...accesoDeCircuito(texto(fila, 'tarea') ?? ''),
+                ...desagregadoPorEstado(estados.filter(estado => texto(estado, 'tarea') == texto(fila, 'tarea'))),
             })),
         ];
         return { tipo: 'indicadores', indicadores, total };
     }
 };
 
-export const seccionEstados: DefinicionSeccionTablero = {
-    id: 'estados',
-    titulo: 'Estados por tarea',
-    descripcion: 'Tarea en la que está cada encuesta y su estado (código y descripción)',
-    orden: 50,
-    roles: ROLES_DE_COORDINACION,
-    async obtener(consulta) {
-        var porEstado = await filas(consulta, `
-            select t.tarea_actual as tarea, coalesce(ta.nombre, t.tarea_actual, 'sin tarea') as nombre_tarea,
-                    tt.estado, e.desc_estado, count(*) as cantidad
-                from ${TEM_DEL_USUARIO}
-                    left join tareas ta on ta.operativo = t.operativo and ta.tarea = t.tarea_actual
-                    left join tareas_tem tt on tt.operativo = t.operativo and tt.enc = t.enc and tt.tarea = t.tarea_actual
-                    left join estados e on e.operativo = tt.operativo and e.estado = tt.estado
-                group by t.tarea_actual, ta.nombre, tt.estado, e.desc_estado, e.orden_estado
-                order by e.orden_estado nulls last, tt.estado nulls last`, parametrosDelUsuario(consulta));
-        var orden = await ordenDeTareas(consulta);
-        porEstado.sort((a, b) => posicionEn(orden, texto(a, 'tarea')) - posicionEn(orden, texto(b, 'tarea')));
-        var total = porEstado.reduce((suma, fila) => suma + numero(fila, 'cantidad'), 0);
-        var filasBarras: FilaBarras[] = porEstado.map(fila => {
-            var estado = texto(fila, 'estado');
-            var descripcion = texto(fila, 'desc_estado');
-            return {
-                etiqueta: `Tarea: ${texto(fila, 'nombre_tarea')} Estado: ${estado == null ? 'sin estado' : estado + (descripcion != null ? ` (${descripcion})` : '')}`,
-                valor: numero(fila, 'cantidad'),
-                ...accesoDeEstado(texto(fila, 'tarea'), estado),
-            };
-        });
-        return filasBarras.length ? { tipo: 'barras', filas: filasBarras, total } : null;
+// las encuestas que tienen tarea, por tarea y estado (código y descripción), en el orden de estados.orden_estado
+async function estadosPorTarea(consulta: ConsultaTablero): Promise<FilaSql[]> {
+    return await filas(consulta, `
+        select t.tarea_actual as tarea, tt.estado, e.desc_estado, count(*) as cantidad
+            from ${TEM_DEL_USUARIO}
+                left join tareas_tem tt on tt.operativo = t.operativo and tt.enc = t.enc and tt.tarea = t.tarea_actual
+                left join estados e on e.operativo = tt.operativo and e.estado = tt.estado
+            where t.tarea_actual is not null
+            group by t.tarea_actual, tt.estado, e.desc_estado, e.orden_estado
+            order by e.orden_estado nulls last, tt.estado nulls last`, parametrosDelUsuario(consulta));
+}
+
+// el detalle de una tarea por estado, cada uno con link a la grilla filtrada por tarea y estado
+function desagregadoPorEstado(estados: FilaSql[]): { desagregado?: DetalleIndicador } {
+    if (estados.length == 0) {
+        return {};
     }
-};
+    return {
+        desagregado: {
+            boton: 'ver estados',
+            filas: estados.map((fila): FilaDetalleIndicador => {
+                var estado = texto(fila, 'estado');
+                var descripcion = texto(fila, 'desc_estado');
+                return {
+                    etiqueta: estado == null ? 'Sin estado' : descripcion != null ? `${estado} · ${descripcion}` : estado,
+                    valor: numero(fila, 'cantidad'),
+                    ...accesoDeEstado(texto(fila, 'tarea'), estado),
+                };
+            }),
+        }
+    };
+}
 
 /* recepción: lo del usuario como recepcionista */
 
@@ -604,7 +660,7 @@ export const seccionMiAvance: DefinicionSeccionTablero = {
     id: 'mi_avance',
     titulo: 'Avance de mis encuestas',
     descripcion: 'En qué punto están las encuestas de las que soy recepcionista',
-    orden: 16,
+    orden: 6,
     permisos: PERMISOS_DE_RECEPCION,
     async obtener(consulta) {
         if (consulta.quien.idper == null) {
@@ -630,7 +686,7 @@ export async function encuestasDeRecepcion(consulta: ConsultaTablero, de: 'usuar
     var mias = await filas(consulta, `
         select tt.tarea, coalesce(ta.nombre, tt.tarea) as nombre, coalesce(e.desc_estado, tt.estado, 'sin estado') as estado,
                 coalesce(e.permite_asignar, false) as permite_asignar, coalesce(e.visible_en_recepcion, false) as visible_en_recepcion,
-                tt.recepcionista, nullif(trim(coalesce(u.nombre, '') || ' ' || coalesce(u.apellido, '')), '') as persona_recepcionista,
+                tt.recepcionista, coalesce(nullif(trim(coalesce(u.nombre, '') || ' ' || coalesce(u.apellido, '')), ''), u.usuario) as persona_recepcionista,
                 count(*) as cantidad
             from ${TEM_DEL_USUARIO}
                 join tareas_tem tt on tt.operativo = t.operativo and tt.enc = t.enc and tt.tarea = t.tarea_vigente
@@ -638,7 +694,7 @@ export async function encuestasDeRecepcion(consulta: ConsultaTablero, de: 'usuar
                 left join estados e on e.operativo = tt.operativo and e.estado = tt.estado
                 left join usuarios u on u.idper = tt.recepcionista
             where ($3::text is null or tt.recepcionista = $3)
-            group by tt.tarea, ta.nombre, 3, e.permite_asignar, e.visible_en_recepcion, e.orden_estado, tt.recepcionista, u.nombre, u.apellido
+            group by tt.tarea, ta.nombre, 3, e.permite_asignar, e.visible_en_recepcion, e.orden_estado, tt.recepcionista, u.nombre, u.apellido, u.usuario
             order by e.orden_estado nulls last, 3`,
         [...parametrosDelUsuario(consulta), de == 'usuario' ? consulta.quien.idper : null]);
     var orden = await ordenDeTareas(consulta);
@@ -685,7 +741,7 @@ export const seccionParaAsignar: DefinicionSeccionTablero = {
     id: 'para_asignar',
     titulo: 'Para asignar',
     descripcion: 'Mis encuestas que todavía no están asignadas: se ven en la asignación, no en la recepción',
-    orden: 12,
+    orden: 2,
     ancho: 'mitad',
     permisos: PERMISOS_DE_RECEPCION,
     async obtener(consulta) {
@@ -694,41 +750,137 @@ export const seccionParaAsignar: DefinicionSeccionTablero = {
     }
 };
 
+// encuestables: no respuestas que cuentan en la tasa de efectividad (junto con las efectivas)
+type FilaRecepcionista = { recepcionista: string, idper: string, paraAsignar: number, enRecepcion: number, cifras: CifrasControl, encuestables: number };
+
+const SIN_RECEPCIONISTA = 'sin recepcionista';
+
+// el avance de control de las encuestas de cada recepcionista (la tabla control_resumen_recepcionistas), con el nombre de la persona;
+// idper nulo: las que no tienen recepcionista
+async function controlPorRecepcionista(consulta: ConsultaTablero): Promise<{ idper: string | null, persona: string | null, cifras: CifrasControl, encuestables: number }[]> {
+    var definicion = consulta.tabla('control_resumen_recepcionistas');
+    var encuestables = camposGruposNoRea(definicion).filter(grupo => grupo.tasa_efectividad === true)
+        .map(grupo => `coalesce(sum(${sqlTools.quoteIdent(grupo.name)}), 0)`).join(' + ') || '0';
+    var porRecepcionista = await filas(consulta, `
+        select recepcionista_vigente as idper,
+                (select coalesce(nullif(trim(coalesce(u.nombre, '') || ' ' || coalesce(u.apellido, '')), ''), u.usuario) from usuarios u where u.idper = recepcionista_vigente limit 1) as persona,
+                ${SUMAS_DE_CONTROL}, ${encuestables} as encuestables
+            from ${sqlDe(definicion)}
+            group by recepcionista_vigente`, []);
+    return porRecepcionista.map(fila => ({ idper: texto(fila, 'idper'), persona: texto(fila, 'persona'), cifras: cifrasDeControl(fila), encuestables: numero(fila, 'encuestables') }));
+}
+
+function sumaDeCifras(cifras: CifrasControl[]): CifrasControl {
+    var suma = (campo: keyof CifrasControl) => cifras.reduce((total, c) => total + c[campo], 0);
+    return { total: suma('total'), salieron: suma('salieron'), no_salieron: suma('no_salieron'), rea: suma('rea'), en_curso: suma('en_curso') };
+}
+
+function filaDeTablaRecepcionista(fila: FilaRecepcionista): FilaTabla {
+    var partes = new Map(partesDeControl(fila.cifras).map(parte => [parte.id, parte.valor]));
+    return {
+        recepcionista: fila.idper == '' ? fila.recepcionista : `(${fila.idper}) ${fila.recepcionista}`, // el idper antes del nombre
+        para_asignar: fila.paraAsignar,
+        en_recepcion: fila.enRecepcion,
+        total: fila.cifras.total,
+        porcentaje_asignado: porcentaje(fila.cifras.total - fila.paraAsignar, fila.cifras.total),
+        salieron: fila.cifras.salieron,
+        efectivas: partes.get('efectiva') ?? 0,
+        porcentaje_efectividad: porcentaje(fila.cifras.rea, fila.cifras.rea + fila.encuestables),
+        en_curso: partes.get('en_curso') ?? 0,
+        no_respuesta: partes.get('no_respuesta') ?? 0,
+        no_salieron: partes.get('sin_salir') ?? 0,
+    };
+}
+
+const COLUMNAS_DE_PERSONA: ColumnaTabla[] = [
+    { campo: 'recepcionista', titulo: 'recepcionista' },
+];
+
+const COLUMNAS_DE_RECEPCION: ColumnaTabla[] = [
+    { campo: 'para_asignar', titulo: 'p/asignar', numerica: true },
+    { campo: 'en_recepcion', titulo: 'e/recepción', numerica: true },
+    { campo: 'total', titulo: 'total', numerica: true },
+    { campo: 'porcentaje_asignado', titulo: '% asig', numerica: true, formato: 'porcentaje' },
+    { campo: 'salieron', titulo: 'en campo', numerica: true },
+    { campo: 'efectivas', titulo: 'efectivas', numerica: true },
+    { campo: 'porcentaje_efectividad', titulo: '% efec', numerica: true, formato: 'porcentaje' },
+    { campo: 'en_curso', titulo: 'en curso', numerica: true },
+    { campo: 'no_respuesta', titulo: 'no respuesta', numerica: true },
+    { campo: 'no_salieron', titulo: 'no salieron', numerica: true },
+];
+
+// lo mismo para el usuario como recepcionista: una sola fila, con lo que hay en la tabla de los recepcionistas
+export const seccionMiDetalle: DefinicionSeccionTablero = {
+    id: 'mi_detalle',
+    titulo: 'Mis encuestas en detalle',
+    orden: 7,
+    permisos: PERMISOS_DE_RECEPCION,
+    async obtener(consulta) {
+        var idper = consulta.quien.idper;
+        if (idper == null) {
+            return null;
+        }
+        var control = (await controlPorRecepcionista(consulta)).find(c => c.idper == idper);
+        var cifras = control?.cifras;
+        if (control == null || cifras == null || cifras.total == 0) {
+            return null;
+        }
+        var mias = await encuestasDeRecepcion(consulta);
+        var fila = filaDeTablaRecepcionista({
+            recepcionista: '', idper,
+            paraAsignar: mias.filter(SOLO_PARA_ASIGNAR).reduce((suma, e) => suma + e.cantidad, 0),
+            enRecepcion: mias.filter(PARA_RECIBIR).reduce((suma, e) => suma + e.cantidad, 0),
+            cifras, encuestables: control.encuestables,
+        });
+        return { tipo: 'tabla', columnas: COLUMNAS_DE_RECEPCION, filas: [fila] };
+    }
+};
+
 // para la coordinación: lo mismo de cada recepcionista, y las encuestas que todavía no tienen recepcionista
 export const seccionRecepcionistas: DefinicionSeccionTablero = {
     id: 'recepcionistas',
     titulo: 'Asignación y recepción por recepcionista',
-    descripcion: 'Encuestas de cada recepcionista que faltan asignar y que están en recepción',
-    orden: 18,
+    orden: 22,
     roles: ROLES_DE_COORDINACION,
-    acceso: { titulo: 'asignación', ruta: ['asignacion', 'general'] },
+    acceso: { titulo: 'asignación general', ruta: ['asignacion', 'general'] },
     async obtener(consulta) {
-        var porRecepcionista: Map<string, { recepcionista: string, paraAsignar: number, enRecepcion: number }> = new Map();
+        var porRecepcionista: Map<string, FilaRecepcionista> = new Map();
+        var filaDe = (idper: string | null, persona: string | null): FilaRecepcionista => {
+            var fila = porRecepcionista.get(idper ?? '') ?? { recepcionista: SIN_RECEPCIONISTA, idper: idper ?? '', paraAsignar: 0, enRecepcion: 0, cifras: cifrasDeControl(undefined), encuestables: 0 };
+            if (idper != null) {
+                fila.recepcionista = persona ?? (fila.recepcionista == SIN_RECEPCIONISTA ? idper : fila.recepcionista);
+            }
+            porRecepcionista.set(idper ?? '', fila);
+            return fila;
+        };
         (await encuestasDeRecepcion(consulta, 'todos')).forEach(encuesta => {
-            var clave = encuesta.recepcionista ?? '';
-            var fila = porRecepcionista.get(clave) ?? { recepcionista: encuesta.personaRecepcionista ?? encuesta.recepcionista ?? 'sin recepcionista', paraAsignar: 0, enRecepcion: 0 };
+            var fila = filaDe(encuesta.recepcionista, encuesta.personaRecepcionista);
             fila.paraAsignar += SOLO_PARA_ASIGNAR(encuesta) ? encuesta.cantidad : 0;
             fila.enRecepcion += PARA_RECIBIR(encuesta) ? encuesta.cantidad : 0;
-            porRecepcionista.set(clave, fila);
+        });
+        (await controlPorRecepcionista(consulta)).filter(control => control.cifras.total > 0).forEach(control => {
+            var fila = filaDe(control.idper, control.persona);
+            fila.cifras = control.cifras;
+            fila.encuestables = control.encuestables;
         });
         // los que tienen recepcionista por nombre y al final las que no tienen
         var recepcionistas = Array.from(porRecepcionista.entries()).sort(([a, x], [b, y]) =>
-            (a == '' ? 1 : 0) - (b == '' ? 1 : 0) || x.recepcionista.localeCompare(y.recepcionista));
-        var filasTabla = recepcionistas.map(([_clave, fila]) => ({ recepcionista: fila.recepcionista, para_asignar: fila.paraAsignar, en_recepcion: fila.enRecepcion }));
-        if (filasTabla.length == 0) {
+            (a == '' ? 1 : 0) - (b == '' ? 1 : 0) || x.recepcionista.localeCompare(y.recepcionista)).map(([_clave, fila]) => fila);
+        if (recepcionistas.length == 0) {
             return null;
         }
+        var total: FilaRecepcionista = {
+            recepcionista: 'Total', idper: '',
+            paraAsignar: recepcionistas.reduce((suma, fila) => suma + fila.paraAsignar, 0),
+            enRecepcion: recepcionistas.reduce((suma, fila) => suma + fila.enRecepcion, 0),
+            cifras: sumaDeCifras(recepcionistas.map(fila => fila.cifras)),
+            encuestables: recepcionistas.reduce((suma, fila) => suma + fila.encuestables, 0),
+        };
         return {
             tipo: 'tabla',
-            columnas: [
-                { campo: 'recepcionista', titulo: 'recepcionista' },
-                { campo: 'para_asignar', titulo: 'para asignar', numerica: true },
-                { campo: 'en_recepcion', titulo: 'en recepción', numerica: true },
-            ],
-            filas: [
-                ...filasTabla,
-                { recepcionista: 'Total', para_asignar: filasTabla.reduce((suma, fila) => suma + fila.para_asignar, 0), en_recepcion: filasTabla.reduce((suma, fila) => suma + fila.en_recepcion, 0) },
-            ],
+            columnas: [...COLUMNAS_DE_PERSONA, ...COLUMNAS_DE_RECEPCION],
+            filas: [...recepcionistas, total].map(filaDeTablaRecepcionista),
+            ultimaFilaTotal: true,
         };
     }
 };
@@ -737,7 +889,7 @@ export const seccionParaRecibir: DefinicionSeccionTablero = {
     id: 'para_recibir',
     titulo: 'En recepción',
     descripcion: 'Mis encuestas que ya salieron a campo o se están recibiendo, por tarea y estado',
-    orden: 14,
+    orden: 4,
     ancho: 'mitad',
     permisos: PERMISOS_DE_RECEPCION,
     async obtener(consulta) {
@@ -818,16 +970,17 @@ export const seccionAccesos: DefinicionSeccionTablero = {
 };
 
 export const SECCIONES_TABLERO: DefinicionSeccionTablero[] = [
-    seccionResumen,
+    seccionTituloMisEncuestas,
+    seccionTituloSeguimiento,
     seccionParaAsignar,
     seccionParaRecibir,
     seccionRecepcionistas,
     seccionMiAvance,
+    seccionMiDetalle,
     seccionAvance,
     seccionNoRespuesta,
     seccionDesglose,
     seccionCircuito,
-    seccionEstados,
     seccionCalendario,
     seccionDispositivos,
     seccionAccesos,
