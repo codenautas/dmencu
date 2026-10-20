@@ -24,7 +24,8 @@ const sqlEstadoDestinoDesverificacion = `
 // encuestas cuya última tarea (la del último registro de historial_tem) quedó verificada y cuya tarea actual no está verificada.
 // Lo usan la grilla `desverificables` y el procedimiento `encuesta_desverificar_excepcional`, para que ambos coincidan.
 export var sqlDesverificables = `
-    select tt.operativo, tt.enc, tt.tarea, tt.estado, t.tarea_actual, ta.estado as estado_actual, y.estado_destino
+    select tt.operativo, tt.enc, tt.tarea, tt.estado, t.tarea_actual, ta.estado as estado_actual, y.estado_destino,
+            t.rea, t.norea, t.resumen_estado, t.rea_sup, t.norea_sup, t.resumen_estado_sup
         from tem t
             join lateral (
                 select ht.tarea
@@ -56,6 +57,12 @@ export function desverificables(_context:TableContext):TableDefinition {
             {name:'tarea_actual'      , typeName:'text', editable:false},
             {name:'estado_actual'     , typeName:'text', editable:false},
             {name:'estado_destino'    , typeName:'text', editable:false},
+            {name:'rea'               , typeName:'integer', editable:false},
+            {name:'norea'             , typeName:'integer', editable:false},
+            {name:'resumen_estado'    , typeName:'text'   , editable:false},
+            {name:'rea_sup'           , typeName:'integer', editable:false},
+            {name:'norea_sup'         , typeName:'integer', editable:false},
+            {name:'resumen_estado_sup', typeName:'text'   , editable:false},
             {name:'desverificar'      , typeName:'text', editable:false, inTable:false, clientSide:'desverificar'},
         ],
         primaryKey:['tarea','operativo','enc'],
