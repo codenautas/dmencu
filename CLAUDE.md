@@ -65,6 +65,7 @@ Todos los objetos pertenecen al esquema `base`. Los nombres están en castellano
 ### Scripts de actualización
 
 - Los SQL de `install/` (listados en `def-config.ts`) sólo se aplican al instalar la base con el dump.
+- En `install/` va **sólo lo que hace falta de entrada para crear la base y no está contemplado en el dump**: funciones, triggers y datos iniciales (como roles y permisos). La estructura de las tablas **no** va en `install/`: sale de la definición `table-*.ts` y queda en el dump. Una tabla nueva se define en su `table-*.ts` (y se agrega a la lista de tablas de la app), no con un `create table` en `install/`.
 - Todo cambio de estructura, función o trigger que tenga que llegar a bases ya instaladas lleva además un script en `operaciones/`, con el nombre `AAAA-MM-DD-actualizar_descripcion_con_snake_case.sql` (por ejemplo `2026-10-15-actualizar_validar_manzana_casa_tem.sql`).
 - El script empieza con `--set role <app>_owner;` comentado y `set search_path = base;`. Si hacen falta permisos para el usuario admin, se usa un nombre ficticio (`<app>_admin`) y se deja comentado, para que cada instalación ponga el suyo.
 - Tiene que poder correrse más de una vez sin romper nada (`create or replace`, `drop ... if exists`, `add column if not exists`).
