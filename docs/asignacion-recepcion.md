@@ -1,6 +1,6 @@
 # Asignación y recepción (pantallas nuevas)
 
-Tres pantallas en React + MUI, con el tema del perfil del usuario (ver [tablero.md](tablero.md)), que conviven con las grillas de siempre. Están al final de los menús:
+Tres pantallas en React + MUI, con el mismo tema que el tablero (ver [tablero.md](tablero.md)), que conviven con las grillas de siempre. Están al final de los menús:
 
 | Opción de menú | Pantalla (`menuType`) | Quién la ve |
 | :-- | :-- | :-- |
@@ -36,7 +36,7 @@ Tres pantallas en React + MUI, con el tema del perfil del usuario (ver [tablero.
 
 | Procedimiento | Parámetros | Devuelve |
 | :-- | :-- | :-- |
-| `asignacion_contexto_traer` | | operativo, perfil, permisos, tareas, estados, personas y recepcionistas |
+| `asignacion_contexto_traer` | | operativo, permisos, tareas, estados, personas y recepcionistas |
 | `asignacion_areas_traer` | | áreas con conteos y asignación por tarea |
 | `asignacion_areas_cambiar` | `cambios`: `[{area, tarea, recepcionista?, asignado?}]` | resultado por área/tarea |
 | `asignacion_encuestas_traer` | `tarea` | encuestas asignables de la tarea |
