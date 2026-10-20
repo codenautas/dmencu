@@ -3,14 +3,14 @@ import { describe, it } from 'mocha';
 import assert = require('node:assert');
 
 import { quienConsultaTablero } from '../server/app-dmencu';
-import { CampoCalculado } from '../server/table-control_campo';
+import { CampoCalculado, control_campo, controlCamposOpts } from '../server/table-control_campo';
 import {
     acomodarCalendario, accesosDelMenu, armarSecciones, buscarEnMenu, ClienteTablero, combinarSecciones, ConsultaTablero,
     CORTES_DESGLOSE, DefinicionSeccionTablero, FilaSql, ordenarTareas, partesDeControl, SECCIONES_TABLERO, seccionAvance,
     seccionCalendario, seccionCircuito, seccionDesglose, seccionesVisibles, seccionMiAvance, seccionMiDetalle, seccionParaAsignar, seccionParaRecibir, seccionRecepcionistas,
     seccionNoRespuesta, ValorSql
 } from '../server/tablero';
-import type { TableDefinition } from '../server/types-dmencu';
+import type { GrupoNoRea, TableDefinition } from '../server/types-dmencu';
 import type { ContenidoTablero, SeccionTablero } from '../unlogged/tipos-tablero';
 import { AppParaTests, contextoDelRol, crearAppParaTests } from './app-para-tests';
 
@@ -156,6 +156,37 @@ describe('dmencu - tablero de inicio', () => {
             var combinadas = combinarSecciones(SECCIONES_TABLERO, [reemplazo, nueva]);
             assert.strictEqual(combinadas.length, SECCIONES_TABLERO.length + 1);
             assert.strictEqual(combinadas.find(seccion => seccion.id == 'avance')?.titulo, 'otro avance');
+        });
+    });
+
+    describe('control_campo: otras causas según no_rea', () => {
+        function grupo(nombre: string, grupo0: string): GrupoNoRea {
+            return { grupo: nombre, codigos: [{ operativo: 'OPE1', no_rea: 1, descripcion: nombre, grupo: nombre, variable: 'v', valor: '1', grupo0, orden: 1 }] };
+        }
+        function sqlDeControl(grupos: GrupoNoRea[], opts: Partial<controlCamposOpts>): string {
+            var be = crearAppParaTests(GABINETE);
+            be.caches.tableContent = { conReaHogar: { con_rea_hogar: false, operativo: 'OPE1', config_sorteo: null }, no_rea_groups: grupos, no_rea_groups0: grupos };
+            var sql = control_campo(contextoDelRol(be, 'admin'), { nombre: 'control_campo', ...opts }).sql?.from;
+            assert.ok(sql != null);
+            return sql;
+        }
+        const sumaDe = (sql: string): string | undefined => /coalesce\(otros,0\) \+ (.*?)\s+as otras_causas_gabinete/.exec(sql)?.[1];
+
+        it('suma los grupos cuyo grupo0 es "otras causas", sin pedir los que la base no tiene (como ggs, que no tiene seleccionado)', () => {
+            var sql = sqlDeControl([
+                grupo('otras causas vivienda', 'otras causas'), grupo('Otras causas telefonica', 'noreatel'), grupo('rechazos', 'rechazos')
+            ], { sinhogfin: true });
+            assert.strictEqual(sumaDe(sql), 'coalesce(otras_causas_vivienda,0)');
+        });
+        it('suma todos los grupos de otras causas que tenga la base (hogar, vivienda, seleccionado)', () => {
+            var sql = sqlDeControl([
+                grupo('otras causas hogar', 'otras causas'), grupo('otras causas seleccionado', 'otras causas'), grupo('otras causas vivienda', 'otras causas')
+            ], {});
+            assert.strictEqual(sumaDe(sql), 'coalesce(otras_causas_hogar,0)+coalesce(otras_causas_seleccionado,0)+coalesce(otras_causas_vivienda,0)');
+        });
+        it('en gabinete (agrupado por grupo0) suma el grupo "otras causas"; sin ninguno suma 0', () => {
+            assert.strictEqual(sumaDe(sqlDeControl([grupo('otras causas', 'otras causas')], { gabinete: true, agrupador: 'no_rea_groups0' })), 'coalesce(otras_causas,0)');
+            assert.strictEqual(sumaDe(sqlDeControl([grupo('rechazos', 'rechazos')], {})), '0');
         });
     });
 
