@@ -4,11 +4,10 @@
 // Los permisos se vuelven a cargar en las caches al cambiarlos, así rigen sin reiniciar el servidor (ver docs/roles-y-permisos.md).
 
 import type { ModoApp } from "../unlogged/tipos";
-import type { PerfilTablero } from "../unlogged/tipos-tablero";
 import type { MenuDelRol, PermisoAccion, PermisoDisponible, RolDisponible, RolesYPermisos } from "../unlogged/tipos-roles-permisos";
 import type { Context, MenuInfoBase, ProcedureDef } from "./types-dmencu";
 import { menuConAyuda, tienePermiso } from "./ayuda";
-import { ClienteTablero, FilaSql, numero, texto } from "./tablero";
+import { ClienteTablero, FilaSql, numero, SentenciaTablero, texto, ValorSql } from "./tablero";
 import type { ClienteDb } from "./app-dmencu";
 
 // para qué se usa cada permiso (se muestra en la pantalla). Las apps finales pueden agregar los suyos.
@@ -129,7 +128,6 @@ export type AppRolesYPermisos = {
     refrescarPermisos(client: ClienteDb): Promise<void>
     menuDelRol(rol: string): MenuInfoBase[]
     modo(): ModoApp
-    perfilDelUsuario(context: Context): PerfilTablero
 }
 
 // tablas cuya modificación (también desde sus grillas) cambia los permisos de las caches
@@ -150,7 +148,10 @@ export function refrescarPermisosAlModificarTabla<C extends { client: ClienteDb 
     }
 }
 
-type ContextoDeProcedimiento =Context & { client: ClienteTablero & ClienteDb };
+// el cliente de base también escribe (el Client de pg-promise-strict lo cumple)
+type ClienteConEscritura = { query(sql: string, params?: ValorSql[]): SentenciaTablero & { execute(): Promise<unknown> } };
+
+type ContextoDeProcedimiento = Context & { client: ClienteConEscritura & ClienteDb };
 
 function controlarQuePuedeVer(context: Context): void {
     if (!puedeVerRolesYPermisos(context)) {
@@ -167,7 +168,6 @@ export function proceduresRolesYPermisos(app: AppRolesYPermisos): ProcedureDef[]
                 controlarQuePuedeVer(context);
                 return {
                     modo: app.modo(),
-                    perfil: app.perfilDelUsuario(context),
                     puedeEditar: puedeEditarRolesYPermisos(context),
                     ...armarRolesYPermisos(await leerRolesYPermisos(context.client), DESCRIPCION_PERMISOS),
                 };

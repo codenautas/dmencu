@@ -3,6 +3,7 @@
 
 import * as bePlus from "backend-plus";
 import type { ModoApp, NoRea } from "../unlogged/tipos";
+import type { DefinicionSeccionTablero } from "./tablero";
 
 export * from 'procesamiento'; //expose Procesamiento types
 export { emergeAppMetaEnc, emergeAppRelEnc } from 'meta-enc'; //expose types only in meta-enc stack
@@ -83,6 +84,11 @@ export type TableContext = bePlus.TableContext & {
 }
 
 declare module "backend-plus" {
+    export interface AppBackend {
+        // secciones del tablero de inicio (ver tablero.ts); las apps finales las extienden sobreescribiéndolo
+        getSeccionesTablero(): DefinicionSeccionTablero[]
+    }
+
     export interface ProcedureDef {
         definedIn?: string
     }

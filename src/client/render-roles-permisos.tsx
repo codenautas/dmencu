@@ -13,12 +13,7 @@ import type { Theme } from "@mui/material";
 
 import type { AyudaOpcionMenu } from "../unlogged/tipos";
 import type { MenuDelRol, PermisoAccion, PermisoDisponible, RolDisponible, RolesYPermisos } from "../unlogged/tipos-roles-permisos";
-import type { PerfilTablero } from "../unlogged/tipos-tablero";
-import { temaDelPerfil } from "./render-tablero";
-
-const PERFIL_INICIAL: PerfilTablero = {
-    perfil: 'general', nombre: 'Gabinete', descripcion: '', colores: { primario: '#3F51B5', secundario: '#009688' }
-};
+import { crearTema } from "./render-tablero";
 
 const ICONOS = {
     buscar: "M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z",
@@ -164,8 +159,7 @@ export function PantallaRolesYPermisos() {
     }, []);
     useEffect(() => { traer(); }, [traer]);
 
-    var perfil = datos?.perfil ?? PERFIL_INICIAL;
-    var tema = useMemo(() => temaDelPerfil(perfil), [perfil]);
+    var tema = useMemo(() => crearTema(), []);
     var grupos = useMemo(() => agruparPermisos(datos?.permisos ?? []), [datos?.permisos]);
 
     var cambiarPermiso = async (rol: RolDisponible, permiso: PermisoDisponible) => {

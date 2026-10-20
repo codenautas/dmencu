@@ -4,7 +4,6 @@
 // Sólo tipos: se importan con "import type".
 
 import type { AyudaOpcionMenu, ModoApp } from "./tipos";
-import type { PerfilTablero } from "./tipos-tablero";
 
 // "permiso.accion", por ejemplo "campo.editar"
 export type PermisoAccion = string;
@@ -26,7 +25,6 @@ export type RolDisponible = {
 
 export type RolesYPermisos = {
     modo: ModoApp
-    perfil: PerfilTablero
     puedeEditar: boolean // sólo el admin cambia permisos y subordinados
     roles: RolDisponible[]
     permisos: PermisoDisponible[]
