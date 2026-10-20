@@ -6,12 +6,12 @@
 
 import type { ProcedureContext } from "backend-plus";
 import {
-    CAMPOS_EDITABLES, CasilleroEditable, DatosEditorMetadatos, hijosDe, idsConInsertado, OperacionMetadatos, ordenParaInsertar, PermisosEditor, subarbol, validarOperacion
+    CAMPOS_EDITABLES, CasilleroEditable, DatosEditorMetadatos, hijosDe, idsConInsertado, Inclusion, OperacionMetadatos, ordenParaInsertar, PermisosEditor, Problema, problemasDelOperativo, subarbol, TipoCasillero, validarOperacion
 } from "../unlogged/editor-metadatos-comun";
 export { idsConInsertado };
 import type { Context, ProcedureDef } from "./types-dmencu";
 import { tienePermiso } from "./ayuda";
-import { ClienteEscribible, FilaSql, numero, texto, ValorSql } from "./tablero";
+import { ClienteEscribible, ClienteTablero, FilaSql, numero, texto, ValorSql } from "./tablero";
 
 /* permisos: ve y cambia textos quien tiene casilleros_texto.editar (como el menú metadatos); la estructura, el superuser
    (como la grilla casilleros, que sólo edita el admin) */
@@ -68,18 +68,43 @@ export function casilleroDesdeFila(fila: FilaSql): CasilleroEditable {
     };
 }
 
-async function filas(client: ClienteEscribible, sql: string, params: ValorSql[]): Promise<FilaSql[]> {
+async function filas(client: ClienteTablero, sql: string, params: ValorSql[]): Promise<FilaSql[]> {
     return (await client.query(sql, params).fetchAll()).rows;
 }
 
 const CAMPOS_LEIDOS = ['id_casillero', 'padre', 'tipoc', 'casillero', 'orden', 'irrepetible', 'var_name', ...CAMPOS_EDITABLES];
 
-export async function leerCasilleros(client: ClienteEscribible, operativo: string): Promise<CasilleroEditable[]> {
+export async function leerCasilleros(client: ClienteTablero, operativo: string): Promise<CasilleroEditable[]> {
     return (await filas(client, `
         select ${CAMPOS_LEIDOS.map(campo => `c.${campo}`).join(', ')}
             from casilleros c
             where c.operativo = $1
             order by c.padre nulls first, c.orden nulls last, c.casillero`, [operativo])).map(casilleroDesdeFila);
+}
+
+export async function leerTipos(client: ClienteTablero): Promise<TipoCasillero[]> {
+    return (await filas(client, `select tipoc, denominacion, irrepetible, puede_ser_var, desp_hijos from tipoc order by tipoc`, [])).map(f => ({
+        tipoc: texto(f, 'tipoc') ?? '',
+        denominacion: texto(f, 'denominacion') ?? texto(f, 'tipoc') ?? '',
+        irrepetible: verdaderoONull(f, 'irrepetible') ?? false,
+        puedeSerVar: verdaderoONull(f, 'puede_ser_var'),
+        despHijos: texto(f, 'desp_hijos'),
+    }));
+}
+
+export async function leerInclusiones(client: ClienteTablero): Promise<Inclusion[]> {
+    return (await filas(client, `select tipoc_padre, tipoc_hijo from tipoc_tipoc`, [])).map(f => ({
+        padre: texto(f, 'tipoc_padre') ?? '', hijo: texto(f, 'tipoc_hijo') ?? '',
+    }));
+}
+
+export async function leerClavesUA(client: ClienteTablero, operativo: string): Promise<string[]> {
+    return (await filas(client, `select pk_agregada from unidad_analisis where operativo = $1 and pk_agregada is not null`, [operativo])).map(f => texto(f, 'pk_agregada') ?? '');
+}
+
+// los problemas que marca el editor en el diseño de un operativo (los mismos que se ven al editarlo)
+export async function problemasDeMetadatos(client: ClienteTablero, operativo: string): Promise<Problema[]> {
+    return problemasDelOperativo(await leerCasilleros(client, operativo), await leerTipos(client), await leerInclusiones(client), await leerClavesUA(client, operativo));
 }
 
 export async function traerDatosEditor(client: ClienteEscribible, context: Context, operativoPedido: string | null): Promise<DatosEditorMetadatos> {
@@ -99,20 +124,12 @@ export async function traerDatosEditor(client: ClienteEscribible, context: Conte
         operativos,
         cerrado: verdaderoONull(datosOperativo, 'disform_cerrado') ?? false,
         permisos: { textos: permisos.textos, estructura: permisos.estructura },
-        tipos: (await filas(client, `select tipoc, denominacion, irrepetible, puede_ser_var, desp_hijos from tipoc order by tipoc`, [])).map(f => ({
-            tipoc: texto(f, 'tipoc') ?? '',
-            denominacion: texto(f, 'denominacion') ?? texto(f, 'tipoc') ?? '',
-            irrepetible: verdaderoONull(f, 'irrepetible') ?? false,
-            puedeSerVar: verdaderoONull(f, 'puede_ser_var'),
-            despHijos: texto(f, 'desp_hijos'),
-        })),
-        inclusiones: (await filas(client, `select tipoc_padre, tipoc_hijo from tipoc_tipoc`, [])).map(f => ({
-            padre: texto(f, 'tipoc_padre') ?? '', hijo: texto(f, 'tipoc_hijo') ?? '',
-        })),
+        tipos: await leerTipos(client),
+        inclusiones: await leerInclusiones(client),
         tipovars: (await filas(client, `select tipovar from tipovar order by tipovar`, [])).map(f => texto(f, 'tipovar') ?? ''),
         unidadesAnalisis: (await filas(client, `select unidad_analisis from unidad_analisis where operativo = $1 order by unidad_analisis`, [operativo]))
             .map(f => texto(f, 'unidad_analisis') ?? ''),
-        clavesUA: (await filas(client, `select pk_agregada from unidad_analisis where operativo = $1 and pk_agregada is not null`, [operativo])).map(f => texto(f, 'pk_agregada') ?? ''),
+        clavesUA: await leerClavesUA(client, operativo),
         casilleros: await leerCasilleros(client, operativo),
     };
 }

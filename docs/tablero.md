@@ -39,7 +39,18 @@ Como `tablero_traer` está en `procedures-dmencu.ts` y devuelve datos, otro fron
 
 Los procedimientos corren dentro de una transacción de backend-plus y las secciones son sólo consultas, así que no se usan savepoints. Si una sección falla se informa en `errores` y se escribe en el log del servidor; como la transacción queda abortada por el error de la base, las secciones que corran después también fallan en esa carga.
 
-## Secciones de dmencu
+## Dos tipos de instancia: de campo y de diseño
+
+Una **app final** define un solo operativo y es de campo. La instancia de dmencu a secas se usa para **modelar varios operativos** (metadatos): no tiene campo. El tablero lo decide mirando la tabla `operativos`: con **más de un operativo** (`ConsultaTablero.variosOperativos`) es de **diseño**; con uno, de campo.
+
+Cada sección declara su `ambito`: `'campo'` (el predeterminado), `'diseno'` o `'todos'`. `armarSecciones` descarta las que no son del ámbito de la instancia (`seccionDelAmbito`). En diseño no se muestra nada de campo (panorama, recepción, calendario, dispositivos) y **todos** los usuarios con menú ven las secciones de diseño, sin filtrar por rol.
+
+| id | Orden | Ámbito | Contenido |
+| :-- | :-: | :-- | :-- |
+| `operativos` | 10 | diseño | tabla con una fila por operativo: si el diseño está cerrado (`operativos.disform_cerrado`), formularios, preguntas, variables, consistencias, las inactivas o inválidas y los problemas que marca el editor de metadatos (errores, faltan datos y avisos, los mismos que se ven al editar: `problemasDeMetadatos`); acceso al *editor visual* |
+| `accesos` | 900 | todos | accesos directos del menú |
+
+## Secciones de campo
 
 Los números de campo salen del **sql de las tablas de control** (`control_resumen`, `control_campo_dominio`, `control_campo_zona`, `control_campo_comuna`, `control_campo_area`), el mismo que usan las grillas del menú *control*: así el tablero y las grillas coinciden siempre. Para eso `ConsultaTablero.tabla(nombre)` devuelve la definición de la tabla y la sección usa su `sql.from`.
 

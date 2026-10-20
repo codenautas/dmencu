@@ -7,7 +7,7 @@ import { CampoCalculado } from '../server/table-control_campo';
 import {
     accesosDelMenu, armarSecciones, buscarEnMenu, ClienteTablero, combinarSecciones, ConsultaTablero,
     CORTES_DESGLOSE, DefinicionSeccionTablero, FilaSql, ordenarTareas, partesDeControl, SECCIONES_TABLERO, seccionAvance,
-    seccionCalendario, seccionCircuito, seccionDesglose, seccionEstados, seccionesVisibles, seccionMiAvance, seccionParaAsignar, seccionParaRecibir, seccionRecepcionistas,
+    seccionCalendario, seccionCircuito, seccionDelAmbito, seccionDesglose, seccionEstados, seccionesVisibles, seccionMiAvance, seccionOperativos, seccionParaAsignar, seccionParaRecibir, seccionRecepcionistas,
     seccionNoRespuesta, seccionResumen, ValorSql
 } from '../server/tablero';
 import type { TableDefinition } from '../server/types-dmencu';
@@ -52,14 +52,17 @@ function consultaDelRol(be: AppParaTests, rol: string, client: ClienteTablero, i
         quien: quienConsultaTablero(context),
         operativo: 'OPE1',
         menu: be.getMenu(context).menu,
+        variosOperativos: false,
         tabla: tablaSimulada,
     };
 }
 
-function idsVisibles(rol: string): string[] {
+// las secciones que ve el rol en una instancia de campo (un solo operativo) o de diseño (varios)
+function idsVisibles(rol: string, variosOperativos: boolean = false): string[] {
     var be = crearAppParaTests(GABINETE);
     var consulta = consultaDelRol(be, rol, clienteSimulado(() => []));
-    return seccionesVisibles(be.getSeccionesTablero(), consulta.quien).map(seccion => seccion.id);
+    return seccionesVisibles(be.getSeccionesTablero(), consulta.quien)
+        .filter(seccion => seccionDelAmbito(seccion, variosOperativos)).map(seccion => seccion.id);
 }
 
 function seccionDePrueba(id: string, orden: number, obtener: DefinicionSeccionTablero['obtener'], extra: Partial<DefinicionSeccionTablero> = {}): DefinicionSeccionTablero {
@@ -110,8 +113,17 @@ describe('dmencu - tablero de inicio', () => {
     });
 
     describe('secciones visibles según rol', () => {
-        it('admin (superuser) ve todas las secciones', () => {
-            assert.deepStrictEqual(idsVisibles('admin').sort(), SECCIONES_TABLERO.map(seccion => seccion.id).sort());
+        it('admin (superuser) ve todas las secciones de campo', () => {
+            assert.deepStrictEqual(idsVisibles('admin').sort(), SECCIONES_TABLERO.filter(seccion => seccionDelAmbito(seccion, false)).map(seccion => seccion.id).sort());
+        });
+        it('con varios operativos (instancia de diseño) todos ven operativos y sus accesos, y nada de campo', () => {
+            ['admin', 'dis_conceptual', 'coor_campo', 'recepcionista'].forEach(rol => {
+                assert.deepStrictEqual(idsVisibles(rol, true), ['operativos', 'accesos'], rol);
+            });
+        });
+        it('con un solo operativo no se ve el tablero de diseño', () => {
+            assert.ok(!idsVisibles('admin').includes('operativos'));
+            assert.ok(idsVisibles('admin').includes('resumen'));
         });
         it('coordinación ve el campo, la gestión y los dispositivos', () => {
             assert.deepStrictEqual(idsVisibles('coor_campo'), [
@@ -406,6 +418,23 @@ describe('dmencu - tablero de inicio', () => {
             assert.ok(consultas[0].sql.includes(`'control_resumen_recepcion' as tabla_simulada`));
             assert.ok(contenido?.tipo == 'avance');
             assert.deepStrictEqual(contenido.partes.map(parte => parte.valor), [80, 25, 15, 80]);
+        });
+        it('operativos: estructura, consistencias y problemas del editor de cada operativo', async () => {
+            var { contenido, consultas } = await obtener(seccionOperativos, sql => sql.includes('from operativos o') ? [
+                { operativo: 'op1', nombre: 'Uno', cerrado: true, formularios: '2', preguntas: '30', variables: '25', consistencias: '10', consistencias_inactivas: '3' },
+                { operativo: 'op2', nombre: 'Dos', cerrado: false, formularios: '1', preguntas: '5', variables: '4', consistencias: '0', consistencias_inactivas: '0' },
+            ] : [], 'dis_conceptual');
+            assert.ok(contenido?.tipo == 'tabla');
+            assert.deepStrictEqual(contenido.filas.map(fila => [fila.operativo, fila.diseno, fila.formularios, fila.preguntas, fila.variables, fila.consistencias, fila.consistencias_inactivas, fila.errores]), [
+                ['op1', 'cerrado', 2, 30, 25, 10, 3, 0],
+                ['op2', 'abierto', 1, 5, 4, 0, 0, 0],
+            ]);
+            // por cada operativo se leen los casilleros, los tipos y las inclusiones como lo hace el editor
+            assert.ok(consultas.some(c => c.sql.includes('from casilleros c') && c.params[0] == 'op2'));
+            assert.ok(consultas.some(c => c.sql.includes('from tipoc_tipoc')));
+        });
+        it('operativos: sin operativos no se muestra', async () => {
+            assert.strictEqual((await obtener(seccionOperativos, () => [])).contenido, null);
         });
         it('calendario: semana actual, aviso fuera de las semanas y nada si no hay semanas', async () => {
             var enSemana = await obtener(seccionCalendario, () => [{ semanas: '12', semana: 3, desde: '06/10', hasta: '19/10', dias_restantes: 2 }]);

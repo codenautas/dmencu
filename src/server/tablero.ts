@@ -6,12 +6,13 @@
 
 import * as sqlTools from "sql-tools";
 import type {
-    AccesoTablero, AnchoSeccionTablero, ContenidoTablero, CorteDesglose, FilaBarras, FiltroTablero, IndicadorTablero, ParteAvance,
+    AccesoTablero, AnchoSeccionTablero, ContenidoTablero, CorteDesglose, FilaBarras, FilaTabla, FiltroTablero, IndicadorTablero, ParteAvance,
     RutaMenu, SeccionTablero, TableroParaUsuario
 } from "../unlogged/tipos-tablero";
 import type { MenuInfoBase, TableDefinition } from "./types-dmencu";
 import { QuienConsultaAyuda, tienePermiso } from "./ayuda";
 import { camposGruposNoRea } from "./table-control_campo";
+import { problemasDeMetadatos } from "./editor-metadatos";
 
 export type ValorSql = string | number | boolean | null;
 export type FilaSql = { [campo: string]: unknown };
@@ -41,8 +42,11 @@ export type ConsultaTablero = {
     quien: QuienConsultaTablero
     operativo: string
     menu: MenuInfoBase[] // el menú del usuario (el que arma getMenu)
+    variosOperativos: boolean // la instancia define varios operativos (se usa para modelarlos): ve el tablero de diseño
     tabla(nombre: string): TableDefinition // la definición de una tabla de la app, para reutilizar su sql (por ejemplo control_campo_zona)
 }
+
+export type AmbitoSeccionTablero = 'campo' | 'diseno' | 'todos';
 
 export type DefinicionSeccionTablero = {
     id: string
@@ -53,6 +57,8 @@ export type DefinicionSeccionTablero = {
     // a quién se muestra: alcanza con tener alguno de los permisos ("permiso.accion") o de los roles; vacíos: a todos
     permisos?: string[]
     roles?: string[]
+    // en qué instancias se muestra: las de campo (un solo operativo, predeterminado), las de diseño (varios operativos) o ambas
+    ambito?: AmbitoSeccionTablero
     // "ver más": se muestra sólo si el usuario tiene esa opción en su menú
     acceso?: AccesoTablero
     // devuelve null cuando no hay nada para mostrar (la sección no aparece)
@@ -111,6 +117,12 @@ export function seccionVisible(seccion: DefinicionSeccionTablero, quien: QuienCo
         || permisos.some(permiso => tienePermiso(quien.puede, permiso));
 }
 
+// una instancia con varios operativos sirve para modelarlos (diseño): no tiene campo; con uno solo es una app final de campo
+export function seccionDelAmbito(seccion: DefinicionSeccionTablero, variosOperativos: boolean): boolean {
+    var ambito = seccion.ambito ?? 'campo';
+    return ambito == 'todos' || ambito == (variosOperativos ? 'diseno' : 'campo');
+}
+
 export function seccionesVisibles(secciones: DefinicionSeccionTablero[], quien: QuienConsultaTablero): DefinicionSeccionTablero[] {
     return secciones.filter(seccion => seccionVisible(seccion, quien)).sort((a, b) => a.orden - b.orden);
 }
@@ -152,7 +164,7 @@ export async function armarSecciones(
 ): Promise<{ secciones: SeccionTablero[], errores: TableroParaUsuario['errores'] }> {
     var secciones: SeccionTablero[] = [];
     var errores: TableroParaUsuario['errores'] = [];
-    for (var definicion of seccionesVisibles(definiciones, consulta.quien)) {
+    for (var definicion of seccionesVisibles(definiciones, consulta.quien).filter(seccion => seccionDelAmbito(seccion, consulta.variosOperativos))) {
         try {
             var contenido = await definicion.obtener(consulta);
             if (contenido != null) {
@@ -446,6 +458,68 @@ export const seccionDesglose: DefinicionSeccionTablero = {
             }
         }
         return cortes.length ? { tipo: 'desglose', cortes } : null;
+    }
+};
+
+/* diseño: instancias con varios operativos */
+
+// la estructura de cada operativo y los problemas de diseño que marca el editor de metadatos (los mismos que se ven al editarlo)
+export const seccionOperativos: DefinicionSeccionTablero = {
+    id: 'operativos',
+    titulo: 'Operativos',
+    descripcion: 'Estructura de cada operativo y problemas de diseño que marca el editor de metadatos',
+    orden: 10,
+    ambito: 'diseno',
+    acceso: { titulo: 'editor visual', ruta: ['configurar', 'metadatos', 'editor_visual'] },
+    async obtener(consulta) {
+        var operativos = await filas(consulta, `
+            select o.operativo, o.nombre, coalesce(o.disform_cerrado, false) as cerrado,
+                    count(c.*) filter (where c.tipoc = 'F') as formularios,
+                    count(c.*) filter (where c.tipoc = 'P') as preguntas,
+                    count(c.*) filter (where c.var_name is not null) as variables,
+                    (select count(*) from consistencias k where k.operativo = o.operativo) as consistencias,
+                    (select count(*) from consistencias k where k.operativo = o.operativo and not (coalesce(k.activa, false) and coalesce(k.valida, false))) as consistencias_inactivas
+                from operativos o left join casilleros c on c.operativo = o.operativo
+                group by o.operativo, o.nombre, o.disform_cerrado
+                order by o.operativo`, []);
+        if (operativos.length == 0) {
+            return null;
+        }
+        var filasTabla: FilaTabla[] = [];
+        for (var operativo of operativos) {
+            var problemas = await problemasDeMetadatos(consulta.client, texto(operativo, 'operativo') ?? '');
+            var cuantos = (gravedad: string) => problemas.filter(problema => problema.gravedad == gravedad).length;
+            filasTabla.push({
+                operativo: texto(operativo, 'operativo'),
+                nombre: texto(operativo, 'nombre'),
+                diseno: operativo.cerrado === true ? 'cerrado' : 'abierto',
+                formularios: numero(operativo, 'formularios'),
+                preguntas: numero(operativo, 'preguntas'),
+                variables: numero(operativo, 'variables'),
+                consistencias: numero(operativo, 'consistencias'),
+                consistencias_inactivas: numero(operativo, 'consistencias_inactivas'),
+                errores: cuantos('error'),
+                faltan_datos: cuantos('falta'),
+                avisos: cuantos('aviso'),
+            });
+        }
+        return {
+            tipo: 'tabla',
+            columnas: [
+                { campo: 'operativo', titulo: 'operativo' },
+                { campo: 'nombre', titulo: 'nombre' },
+                { campo: 'diseno', titulo: 'diseño' },
+                { campo: 'formularios', titulo: 'formularios', numerica: true },
+                { campo: 'preguntas', titulo: 'preguntas', numerica: true },
+                { campo: 'variables', titulo: 'variables', numerica: true },
+                { campo: 'consistencias', titulo: 'consistencias', numerica: true },
+                { campo: 'consistencias_inactivas', titulo: 'inactivas o inválidas', numerica: true },
+                { campo: 'errores', titulo: 'errores', numerica: true },
+                { campo: 'faltan_datos', titulo: 'faltan datos', numerica: true },
+                { campo: 'avisos', titulo: 'avisos', numerica: true },
+            ],
+            filas: filasTabla,
+        };
     }
 };
 
@@ -814,6 +888,7 @@ export const seccionDispositivos: DefinicionSeccionTablero = {
 
 export const seccionAccesos: DefinicionSeccionTablero = {
     id: 'accesos',
+    ambito: 'todos',
     titulo: 'Qué puedo hacer',
     descripcion: 'Accesos directos a las opciones del menú que tengo habilitadas',
     orden: 900,
@@ -824,6 +899,7 @@ export const seccionAccesos: DefinicionSeccionTablero = {
 };
 
 export const SECCIONES_TABLERO: DefinicionSeccionTablero[] = [
+    seccionOperativos,
     seccionResumen,
     seccionParaAsignar,
     seccionParaRecibir,
