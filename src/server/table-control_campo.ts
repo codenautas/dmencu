@@ -11,6 +11,13 @@ export function camposGruposNoRea(tableDef:TableDefinition):CampoCalculado[]{
     return tableDef.fields.filter((f:FieldDefinition):f is CampoCalculado=>f.inTable===false);
 }
 
+const GRUPO0_OTRAS_CAUSAS='otras causas';
+
+// el nombre del campo (columna) que cuenta los casos de un grupo de no respuesta
+function nombreCampoGrupo(g:GrupoNoRea):string{
+    return g.grupo.replace(/ /g,'_');
+}
+
 export type controlCamposOpts={
     nombre:string, 
     agrupador?:string,
@@ -35,6 +42,10 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
         opts.camposCorte ||[]
     )];
     var tieneSeleccionado=context.be.caches.tableContent.conReaHogar.config_sorteo;
+    // las otras causas son los grupos de no_rea cuyo grupo0 es 'otras causas' (según la base son hogar, vivienda, seleccionado...)
+    var sumaOtrasCausas=(be.caches.tableContent[opts.agrupador]||[])
+        .filter((g:GrupoNoRea)=>g.codigos[0].grupo0===GRUPO0_OTRAS_CAUSAS)
+        .map((g:GrupoNoRea)=>`coalesce(${nombreCampoGrupo(g)},0)`).join('+')||'0';
     var camposCalculados:CampoCalculado[]=[
         {name:'no_salieron'  , typeName:'bigint', aggregate:'sum', title:'no salieron a campo', condicion:`resumen_estado is null`},
         {name:'salieron'     , typeName:'bigint', aggregate:'sum', title:'salieron a campo'},
@@ -49,7 +60,7 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
         {name:'asuente_mie'  , typeName:'bigint', title:'ausente de miembro seleccionado', condicion:`cod_no_rea=75`},
         */
         ...(be.caches.tableContent[opts.agrupador]||[]).map((g:GrupoNoRea):CampoCalculado=>({
-            name:g.grupo.replace(/ /g,'_'),
+            name:nombreCampoGrupo(g),
             typeName:'bigint',
             inTable:false,
             title:g.grupo,
@@ -84,7 +95,7 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
                             ['rea', ...(camposCalculados.filter(f=>f.tasa_efectividad).map(f=>f.name))].join('+')
                         )},0),1) as tasa_efectividad,
                         total-coalesce(no_salieron,0) as salieron,
-                        coalesce(otros,0) + ${opts.gabinete?` coalesce(otras_causas,0) `:opts.sinhogfin?` coalesce(otras_causas_seleccionado,0)+coalesce(otras_causas_vivienda,0)`: !tieneSeleccionado?` coalesce(otras_causas_hogar,0) +coalesce(otras_causas_vivienda,0)`:` coalesce(otras_causas_hogar,0) +coalesce(otras_causas_vivienda,0)+ coalesce(otras_causas_seleccionado,0)`}  as otras_causas_gabinete,
+                        coalesce(otros,0) + ${sumaOtrasCausas}  as otras_causas_gabinete,
                         coalesce(pendiente,0)+coalesce(mixta,0) +coalesce(sin_resultado,0) +coalesce(incompleto,0) +${ opts.gabinete && tieneSeleccionado && !opts.sinhogfin ? ` coalesce(no_finalizada,0) `: !opts.gabinete && !opts.sinhogfin && tieneSeleccionado? `coalesce(sin_finalizar_dm,0)+ coalesce(sin_finalizar_incompleto,0) + coalesce(sin_finalizar_otra_causa,0)` :`0`} as en_curso
                      /*   coalesce(otros,0)+${opts.gabinete?`coalesce(otras_causas,0) `:`coalesce(otras_causas_hogar,0) + coalesce(otras_causas_seleccionado,0) + coalesce(otras_causas_vivienda,0)`}  as otras_causas_gabinete, */
                      /*   coalesce(pendiente,0)+coalesce(mixta,0)+ coalesce(incompleto,0)+coalesce(sin_resultado,0)+${opts.gabinete?`coalesce(no_finalizada,0)`:`coalesce(sin_finalizar_dm,0)+coalesce(sin_finalizar_incompleto,0)+ coalesce(sin_finalizar_otra_causa,0)`}  as en_curso */

@@ -24,8 +24,8 @@ import { expected, unexpected } from "cast-error";
 import { getModoByPolicy, quienConsultaAyuda, quienConsultaTablero } from "./app-dmencu";
 import { menuConAyuda, temasVisibles } from "./ayuda";
 import type { AyudaParaUsuario } from "../unlogged/tipos";
-import { armarSecciones, ClienteTablero, texto } from "./tablero";
-import type { TableroParaUsuario } from "../unlogged/tipos-tablero";
+import { armarSecciones, ClienteEscribible, ClienteTablero, texto } from "./tablero";
+import type { ContenidoTablero, TableroParaUsuario } from "../unlogged/tipos-tablero";
 import { getSettersAndParametersForReaNoReaResumenEstado, ParametroSql } from "./setters-rea-no-rea";
 
 var Path = require('path');
@@ -555,6 +555,18 @@ export async function tableroParaUsuario(context: ProcedureContext): Promise<Tab
         quien,
         operativo: operativo ?? '',
         menu: be.getMenu(context).menu,
+        aislar: async (obtener: () => Promise<ContenidoTablero | null>): Promise<ContenidoTablero | null> => {
+            var escribible: ClienteEscribible = context.client;
+            await escribible.query(`savepoint tablero_seccion`).execute();
+            try {
+                var contenido = await obtener();
+                await escribible.query(`release savepoint tablero_seccion`).execute();
+                return contenido;
+            } catch (err) {
+                await escribible.query(`rollback to savepoint tablero_seccion`).execute();
+                throw err;
+            }
+        },
         tabla: (nombreTabla: string) => {
             var definicion = be.tableStructures[nombreTabla];
             if (definicion == null) {
