@@ -1,24 +1,24 @@
-// Tablero de inicio del modo GABINETE (ver docs/tablero.md): pantalla "inicio" del menú, armada en React + MUI
-// con los colores del perfil del usuario. Los datos los arma el servidor (procedimiento tablero_traer).
+// Tablero de inicio del modo GABINETE (ver docs/tablero.md): pantalla "inicio" del menú, armada en React + MUI.
+// Los datos los arma el servidor (procedimiento tablero_traer), según el rol y los permisos del usuario.
 //
 // Extensión desde las apps finales (en su código de cliente):
 //   import { registrarComponenteTablero, setAjustarTemaTablero } from "dmencu/dist/client/client/render-tablero";
 //   registrarComponenteTablero('mi_componente', MiComponente) // dibuja las secciones {tipo:'personalizado', componente:'mi_componente'}
-//   setAjustarTemaTablero((perfil, tema) => ({...tema, ...}))  // cambia el tema de MUI de cada perfil
+//   setAjustarTemaTablero(tema => ({...tema, ...}))  // cambia el tema de MUI
 
 import * as React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import * as ReactDOM from "react-dom";
 import {
-    Alert, Avatar, Box, Button, Card, CardContent, Chip, Grid, LinearProgress, Paper, ScopedCssBaseline, Skeleton,
-    Stack, SvgIcon, Table, TableBody, TableCell, TableHead, TableRow, ThemeProvider, Tooltip, Typography,
+    Alert, Avatar, Box, Button, Card, CardContent, Chip, Grid, LinearProgress, Link, Paper, ScopedCssBaseline, Skeleton,
+    Stack, SvgIcon, Table, TableBody, TableCell, TableHead, TableRow, ThemeProvider, ToggleButton, ToggleButtonGroup, Tooltip, Typography,
     alpha, createTheme, useTheme
 } from "@mui/material";
 import type { Theme, ThemeOptions } from "@mui/material";
 
 import type {
-    AccesoTablero, ContenidoTablero, DatoJson, FilaBarras, FilaTabla, ColumnaTabla, IndicadorTablero, ParteAvance,
-    PerfilTablero, RutaMenu, SeccionTablero, TableroParaUsuario, TonoTablero
+    AccesoTablero, ContenidoTablero, CorteDesglose, DatoJson, FiltroTablero, FilaBarras, FilaTabla, ColumnaTabla, IndicadorTablero, ParteAvance,
+    RutaMenu, SeccionTablero, TableroParaUsuario, TonoTablero
 } from "../unlogged/tipos-tablero";
 
 /* extensión */
@@ -36,47 +36,48 @@ export function registrarComponenteTablero(nombre: string, componente: React.Com
     componentesPersonalizados.set(nombre, componente);
 }
 
-export type AjustarTemaTablero = (perfil: PerfilTablero, tema: ThemeOptions) => ThemeOptions;
+export type AjustarTemaTablero = (tema: ThemeOptions) => ThemeOptions;
 
-var ajustarTema: AjustarTemaTablero = (_perfil, tema) => tema;
+var ajustarTema: AjustarTemaTablero = tema => tema;
 
-// permite a la app final cambiar el tema de MUI que se arma para cada perfil
+// permite a la app final cambiar el tema de MUI del tablero
 export function setAjustarTemaTablero(ajuste: AjustarTemaTablero): void {
     ajustarTema = ajuste;
 }
 
 /* navegación: los accesos llevan a opciones del menú de backend-plus (menu#i=menu,submenu) */
 
-export function hrefDelMenu(ruta: RutaMenu): string {
-    return my.menuName + my.menuSeparator + 'i=' + ruta.join(',');
+export function hrefDelMenu(ruta: RutaMenu, filtro?: FiltroTablero): string {
+    // igual que los links del menú: i es la ruta y ff los campos fijos de la grilla (los codifica backend-plus)
+    return my.menuName + my.menuSeparator + my.paramsToUriPart({ i: ruta.join(','), ...(filtro != null ? { ff: filtro } : {}) });
 }
 
-export function irAlMenu(ruta: RutaMenu): void {
-    history.pushState(null, '', hrefDelMenu(ruta));
+export function hrefDelAcceso(acceso: AccesoTablero): string {
+    return hrefDelMenu(acceso.ruta, acceso.filtro);
+}
+
+export function irAlMenu(ruta: RutaMenu, filtro?: FiltroTablero): void {
+    history.pushState(null, '', hrefDelMenu(ruta, filtro));
     my.showPage();
 }
 
 // con ctrl o con el botón del medio se abre en otra pestaña (como en los botones del menú)
-function alHacerClickEnAcceso(ruta: RutaMenu) {
+function alHacerClickEnAcceso(acceso: AccesoTablero) {
     return (event: React.MouseEvent<HTMLElement>) => {
         if (!event.ctrlKey && !event.metaKey && event.button == 0) {
             event.preventDefault();
-            irAlMenu(ruta);
+            irAlMenu(acceso.ruta, acceso.filtro);
         }
     };
 }
 
 /* tema y formatos */
 
-const PERFIL_INICIAL: PerfilTablero = {
-    perfil: 'general', nombre: 'Gabinete', descripcion: '', colores: { primario: '#3F51B5', secundario: '#009688' }
-};
-
-export function temaDelPerfil(perfil: PerfilTablero): Theme {
+export function crearTema(): Theme {
     var tema: ThemeOptions = {
         palette: {
-            primary: { main: perfil.colores.primario },
-            secondary: { main: perfil.colores.secundario },
+            primary: { main: '#1565C0' },
+            secondary: { main: '#009688' },
             background: { default: '#F3F5F8', paper: '#FFFFFF' },
         },
         shape: { borderRadius: 10 },
@@ -95,7 +96,7 @@ export function temaDelPerfil(perfil: PerfilTablero): Theme {
             },
         },
     };
-    return createTheme(ajustarTema(perfil, tema));
+    return createTheme(ajustarTema(tema));
 }
 
 export function colorDelTono(theme: Theme, tono: TonoTablero | undefined): string {
@@ -159,7 +160,7 @@ function TarjetaIndicador(props: { indicador: IndicadorTablero }) {
         </> : null}
         {indicador.detalle ? <Typography variant="caption" color="text.secondary" display="block">{indicador.detalle}</Typography> : null}
         {indicador.acceso ? <Button size="small" sx={{ mt: 0.5, px: 0 }} endIcon={<Icono path={ICONOS.irA} />}
-            href={hrefDelMenu(indicador.acceso.ruta)} onClick={alHacerClickEnAcceso(indicador.acceso.ruta)}>{indicador.acceso.titulo}</Button> : null}
+            href={hrefDelAcceso(indicador.acceso)} onClick={alHacerClickEnAcceso(indicador.acceso)}>{indicador.acceso.titulo}</Button> : null}
     </Box>;
 }
 
@@ -169,37 +170,108 @@ export function Indicadores(props: { indicadores: IndicadorTablero[] }) {
     </Box>;
 }
 
+const FILAS_VISIBLES = 10;
+
+// barra grande apilada: cada parte muestra su cantidad; los porcentajes están en las referencias de abajo
 export function Avance(props: { partes: ParteAvance[] }) {
     var theme = useTheme();
     var total = props.partes.reduce((suma, parte) => suma + parte.valor, 0);
     return <Box>
         <Box role="img" aria-label={props.partes.map(parte => `${parte.titulo}: ${parte.valor}`).join(', ')}
-            sx={{ display: 'flex', height: 28, borderRadius: 2, overflow: 'hidden', bgcolor: 'grey.100' }}>
-            {props.partes.filter(parte => parte.valor > 0).map(parte =>
-                <Tooltip key={parte.id} title={`${parte.titulo}: ${numeroATexto(parte.valor)} (${porcentajeATexto(porcentaje(parte.valor, total))})`} arrow>
-                    <Box sx={{ width: `${porcentaje(parte.valor, total)}%`, bgcolor: colorDelTono(theme, parte.tono), transition: 'width .6s ease' }} />
-                </Tooltip>
-            )}
-        </Box>
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 1.5, mt: 2 }}>
-            {props.partes.map(parte =>
-                <Stack key={parte.id} direction="row" spacing={1} alignItems="flex-start">
-                    <Box sx={{ width: 12, height: 12, mt: 0.6, flexShrink: 0, borderRadius: '3px', bgcolor: colorDelTono(theme, parte.tono) }} />
-                    <Box>
-                        <Typography variant="body2" color="text.secondary">{parte.titulo}</Typography>
-                        <Typography variant="subtitle1" fontWeight={600} lineHeight={1.3}>
-                            {numeroATexto(parte.valor)}{' '}
-                            <Typography component="span" variant="caption" color="text.secondary">{porcentajeATexto(porcentaje(parte.valor, total))}</Typography>
-                        </Typography>
+            sx={{ display: 'flex', height: { xs: 56, md: 72 }, borderRadius: 2, overflow: 'hidden', bgcolor: 'grey.100' }}>
+            {props.partes.filter(parte => parte.valor > 0).map(parte => {
+                var color = colorDelTono(theme, parte.tono);
+                return <Tooltip key={parte.id} arrow title={`${parte.titulo}: ${numeroATexto(parte.valor)} (${porcentajeATexto(porcentaje(parte.valor, total))})`}>
+                    <Box sx={{
+                        width: `${porcentaje(parte.valor, total)}%`, bgcolor: color, color: theme.palette.getContrastText(color),
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                        transition: 'width .6s ease'
+                    }}>
+                        <Typography component="span" fontWeight={700} lineHeight={1.2} sx={{ fontSize: { xs: 14, md: 18 } }}>{numeroATexto(parte.valor)}</Typography>
                     </Box>
-                </Stack>
-            )}
+                </Tooltip>;
+            })}
         </Box>
-        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>Total: {numeroATexto(total)} encuestas</Typography>
+        <Box sx={{ mt: 2 }}><Leyenda partes={props.partes} total={total} /></Box>
+        <TotalEncuestas total={total} />
     </Box>;
 }
 
-const FILAS_VISIBLES = 10;
+function Leyenda(props: { partes: ParteAvance[], total?: number }) {
+    var theme = useTheme();
+    return <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 1.5 }}>
+        {props.partes.map(parte =>
+            <Stack key={parte.id} direction="row" spacing={1} alignItems="flex-start">
+                <Box sx={{ width: 12, height: 12, mt: 0.6, flexShrink: 0, borderRadius: '3px', bgcolor: colorDelTono(theme, parte.tono) }} />
+                <Box>
+                    <Typography variant="body2" color="text.secondary">{parte.titulo}</Typography>
+                    {props.total != null ? <Typography variant="subtitle1" fontWeight={600} lineHeight={1.3}>
+                        {numeroATexto(parte.valor)}{' '}
+                        <Typography component="span" variant="caption" color="text.secondary">{porcentajeATexto(porcentaje(parte.valor, props.total))}</Typography>
+                    </Typography> : null}
+                </Box>
+            </Stack>
+        )}
+    </Box>;
+}
+
+const ANCHO_TOTAL_DESGLOSE = 64;
+
+// barras apiladas por fila, con un selector entre los cortes (dominio, zona, comuna, área)
+export function Desglose(props: { cortes: CorteDesglose[] }) {
+    var theme = useTheme();
+    var [corteId, setCorteId] = useState(props.cortes[0]?.id ?? '');
+    var [todas, setTodas] = useState(false);
+    var corte = props.cortes.find(c => c.id == corteId) ?? props.cortes[0];
+    if (corte == null) {
+        return null;
+    }
+    var totalDe = (partes: ParteAvance[]) => partes.reduce((suma, parte) => suma + parte.valor, 0);
+    var maximo = Math.max(1, ...corte.filas.map(fila => totalDe(fila.partes)));
+    // la leyenda suma todas las filas del corte, con el porcentaje de cada parte
+    var partesDelCorte: ParteAvance[] = corte.filas[0].partes.map((parte, i) => ({ ...parte, valor: corte!.filas.reduce((suma, fila) => suma + (fila.partes[i]?.valor ?? 0), 0) }));
+    var totalDelCorte = totalDe(partesDelCorte);
+    var filasVisibles = todas ? corte.filas : corte.filas.slice(0, FILAS_VISIBLES);
+    return <Box>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" sx={{ gap: 1, mb: 2 }}>
+            <ToggleButtonGroup size="small" exclusive color="primary" value={corte.id} aria-label="corte del desglose"
+                onChange={(_event, nuevo: string | null) => { if (nuevo != null) { setCorteId(nuevo); setTodas(false); } }}>
+                {props.cortes.map(c => <ToggleButton key={c.id} value={c.id} sx={{ textTransform: 'none', px: 2 }}>{c.titulo}</ToggleButton>)}
+            </ToggleButtonGroup>
+            {corte.acceso ? <Button size="small" endIcon={<Icono path={ICONOS.irA} />}
+                href={hrefDelAcceso(corte.acceso)} onClick={alHacerClickEnAcceso(corte.acceso)}>{corte.acceso.titulo}</Button> : null}
+        </Stack>
+        <Box sx={{ mb: 2 }}><Leyenda partes={partesDelCorte} total={totalDelCorte} /></Box>
+        {filasVisibles.map((fila, i) => {
+            var total = totalDe(fila.partes);
+            return <Stack key={i} direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.75 }}>
+                <Typography variant="body2" noWrap title={fila.etiqueta} sx={{ width: { xs: 90, sm: 130 }, flexShrink: 0 }}>{fila.etiqueta}</Typography>
+                {/* la barra mide, como mucho, el ancho disponible menos lo que ocupa el total que va pegado a su final */}
+                <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box role="img" aria-label={fila.partes.map(parte => `${parte.titulo}: ${parte.valor}`).join(', ')}
+                        sx={{ display: 'flex', height: 24, width: `calc((100% - ${ANCHO_TOTAL_DESGLOSE}px) * ${total / maximo})`, minWidth: total ? 2 : 0, borderRadius: 1, overflow: 'hidden' }}>
+                        {fila.partes.filter(parte => parte.valor > 0).map(parte => {
+                            var color = colorDelTono(theme, parte.tono);
+                            return <Tooltip key={parte.id} arrow title={`${fila.etiqueta} · ${parte.titulo}: ${numeroATexto(parte.valor)} (${porcentajeATexto(porcentaje(parte.valor, total))})`}>
+                                <Box sx={{
+                                    width: `${porcentaje(parte.valor, total)}%`, bgcolor: color, color: theme.palette.getContrastText(color),
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', fontSize: 11, fontWeight: 600
+                                }}>
+                                    {numeroATexto(parte.valor)}
+                                </Box>
+                            </Tooltip>;
+                        })}
+                    </Box>
+                    <Typography variant="body2" fontWeight={700} sx={{ whiteSpace: 'nowrap' }}>{numeroATexto(total)}</Typography>
+                </Box>
+            </Stack>;
+        })}
+        {corte.filas.length > FILAS_VISIBLES ?
+            <Button size="small" onClick={() => setTodas(!todas)}>{todas ? 'ver menos' : `ver las ${corte.filas.length}`}</Button>
+            : null}
+        <TotalEncuestas total={totalDelCorte} />
+    </Box>;
+}
 
 export function Barras(props: { filas: FilaBarras[], formato?: 'numero' | 'porcentaje' }) {
     var theme = useTheme();
@@ -213,7 +285,10 @@ export function Barras(props: { filas: FilaBarras[], formato?: 'numero' | 'porce
             var color = colorDelTono(theme, fila.tono);
             return <Box key={i} sx={{ mb: 1.25 }}>
                 <Stack direction="row" justifyContent="space-between" spacing={1}>
-                    <Typography variant="body2" noWrap title={fila.etiqueta}>{fila.etiqueta}</Typography>
+                    {fila.acceso ?
+                        <Link variant="body2" noWrap underline="hover" title={`${fila.acceso.titulo}: ${fila.etiqueta}`}
+                            href={hrefDelAcceso(fila.acceso)} onClick={alHacerClickEnAcceso(fila.acceso)}>{fila.etiqueta}</Link>
+                        : <Typography variant="body2" noWrap title={fila.etiqueta}>{fila.etiqueta}</Typography>}
                     <Typography variant="body2" fontWeight={600} sx={{ whiteSpace: 'nowrap' }}>
                         {props.formato == 'porcentaje' && fila.total != null ? porcentajeATexto(avance) : numeroATexto(fila.valor)}
                         {fila.total != null ? <Typography component="span" variant="caption" color="text.secondary"> · {numeroATexto(fila.valor)} de {numeroATexto(fila.total)}</Typography> : null}
@@ -274,7 +349,7 @@ export function Accesos(props: { accesos: AccesoTablero[] }) {
                         <Button key={acceso.ruta.join('/')} size="small" color="inherit" title={acceso.descripcion}
                             sx={{ justifyContent: 'flex-start', color: 'text.primary', '&:hover': { color: 'primary.main' } }}
                             startIcon={<Icono path={ICONOS.irA} />}
-                            href={hrefDelMenu(acceso.ruta)} onClick={alHacerClickEnAcceso(acceso.ruta)}>
+                            href={hrefDelAcceso(acceso)} onClick={alHacerClickEnAcceso(acceso)}>
                             {acceso.titulo}
                         </Button>
                     )}
@@ -284,12 +359,24 @@ export function Accesos(props: { accesos: AccesoTablero[] }) {
     </Box>;
 }
 
+// el total al pie de una sección que reparte las encuestas (debe coincidir con el total de la muestra)
+function TotalEncuestas(props: { total?: number }) {
+    return props.total == null ? null : <Typography variant="body2" fontWeight={600} sx={{ mt: 1.5, textAlign: 'right' }}>Total: {numeroATexto(props.total)} encuestas</Typography>;
+}
+
 export function ContenidoSeccion(props: { seccion: SeccionTablero, tablero: TableroParaUsuario }) {
     var contenido: ContenidoTablero = props.seccion.contenido;
     switch (contenido.tipo) {
-        case 'indicadores': return <Indicadores indicadores={contenido.indicadores} />;
+        case 'indicadores': return <>
+            <Indicadores indicadores={contenido.indicadores} />
+            <TotalEncuestas total={contenido.total} />
+        </>;
         case 'avance': return <Avance partes={contenido.partes} />;
-        case 'barras': return <Barras filas={contenido.filas} formato={contenido.formato} />;
+        case 'desglose': return <Desglose cortes={contenido.cortes} />;
+        case 'barras': return <>
+            <Barras filas={contenido.filas} formato={contenido.formato} />
+            <TotalEncuestas total={contenido.total} />
+        </>;
         case 'tabla': return <Tabla columnas={contenido.columnas} filas={contenido.filas} />;
         case 'accesos': return <Accesos accesos={contenido.accesos} />;
         case 'mensaje': return <Alert severity={severidadDelTono(contenido.tono)}>{contenido.texto}</Alert>;
@@ -314,7 +401,7 @@ function TarjetaSeccion(props: { seccion: SeccionTablero, tablero: TableroParaUs
                 {seccion.descripcion ? <Typography variant="body2" color="text.secondary">{seccion.descripcion}</Typography> : null}
             </Box>
             {seccion.acceso ? <Button size="small" endIcon={<Icono path={ICONOS.irA} />} sx={{ flexShrink: 0 }}
-                href={hrefDelMenu(seccion.acceso.ruta)} onClick={alHacerClickEnAcceso(seccion.acceso.ruta)}>{seccion.acceso.titulo}</Button> : null}
+                href={hrefDelAcceso(seccion.acceso)} onClick={alHacerClickEnAcceso(seccion.acceso)}>{seccion.acceso.titulo}</Button> : null}
         </Box>
         <CardContent sx={{ pt: 1, flex: 1, '&:last-child': { pb: 2.5 } }}>
             <ContenidoSeccion seccion={seccion} tablero={props.tablero} />
@@ -333,7 +420,6 @@ function iniciales(texto: string): string {
 
 function Encabezado(props: { tablero: TableroParaUsuario | null, cargando: boolean, onActualizar: () => void }) {
     var { tablero } = props;
-    var perfil = tablero?.perfil ?? PERFIL_INICIAL;
     var nombre = tablero?.nombre ?? tablero?.usuario ?? '';
     var generado = tablero ? new Date(tablero.generado) : null;
     return <Paper elevation={0} sx={{
@@ -346,12 +432,11 @@ function Encabezado(props: { tablero: TableroParaUsuario | null, cargando: boole
                 <Avatar sx={{ width: 56, height: 56, fontSize: 22, bgcolor: alpha('#FFFFFF', 0.2), color: 'inherit' }}>{iniciales(nombre) || '·'}</Avatar>
                 <Box sx={{ minWidth: 0 }}>
                     <Typography variant="overline" sx={{ opacity: 0.85, lineHeight: 1.6 }}>
-                        {perfil.nombre}{tablero?.operativo ? ` · operativo ${tablero.operativo}` : ''}
+                        Gabinete{tablero?.operativo ? ` · operativo ${tablero.operativo}` : ''}
                     </Typography>
                     <Typography variant="h4" component="h1" sx={{ fontSize: { xs: '1.6rem', md: '2.1rem' } }}>
                         {saludo(new Date())}{nombre ? `, ${nombre.split(/\s+/)[0]}` : ''}
                     </Typography>
-                    {perfil.descripcion ? <Typography variant="body2" sx={{ opacity: 0.9 }}>{perfil.descripcion}</Typography> : null}
                 </Box>
             </Stack>
             <Stack spacing={1} alignItems={{ xs: 'flex-start', sm: 'flex-end' }} sx={{ flexShrink: 0 }}>
@@ -407,6 +492,8 @@ function Esqueleto() {
     </Grid>;
 }
 
+export const INTERVALO_ACTUALIZACION_MS = 15 * 60 * 1000;
+
 export function Tablero(props: { traer: () => Promise<TableroParaUsuario> }) {
     var { traer } = props;
     var [tablero, setTablero] = useState<TableroParaUsuario | null>(null);
@@ -424,12 +511,16 @@ export function Tablero(props: { traer: () => Promise<TableroParaUsuario> }) {
         }
     }, [traer]);
     useEffect(() => { actualizar(); }, [actualizar]);
-    var perfil = tablero?.perfil ?? PERFIL_INICIAL;
-    var tema = useMemo(() => temaDelPerfil(perfil), [perfil]);
+    // se actualiza solo cada 15 minutos (si la pestaña está oculta espera al próximo ciclo); mientras tanto sigue mostrando lo anterior
+    useEffect(() => {
+        var intervalo = setInterval(() => { if (!document.hidden) { actualizar(); } }, INTERVALO_ACTUALIZACION_MS);
+        return () => clearInterval(intervalo);
+    }, [actualizar]);
+    var tema = useMemo(() => crearTema(), []);
     var columnasPorSeccion = tablero ? columnasDeLasSecciones(tablero.secciones) : [];
     return <ThemeProvider theme={tema}>
         <ScopedCssBaseline sx={{ bgcolor: 'background.default', minHeight: '100%' }}>
-            <Box className="tablero" data-perfil={perfil.perfil} sx={{ p: { xs: 1.5, md: 3 }, maxWidth: 1440, mx: 'auto' }}>
+            <Box className="tablero" sx={{ p: { xs: 1.5, md: 3 }, maxWidth: 1440, mx: 'auto' }}>
                 <Encabezado tablero={tablero} cargando={cargando} onActualizar={actualizar} />
                 {error ? <Alert severity="error" sx={{ mb: 2 }}>No se pudo traer el tablero: {error}</Alert> : null}
                 {tablero && tablero.errores.length ?
@@ -438,7 +529,7 @@ export function Tablero(props: { traer: () => Promise<TableroParaUsuario> }) {
                         {': '}{tablero.errores.map(e => `${e.seccion} (${e.mensaje})`).join('; ')}
                     </Alert> : null}
                 {tablero == null ? (error ? null : <Esqueleto />) :
-                    tablero.secciones.length == 0 ? <Alert severity="info">No hay información del operativo para mostrar con su perfil.</Alert> :
+                    tablero.secciones.length == 0 ? <Alert severity="info">No hay información del operativo para mostrar con su rol.</Alert> :
                         <Grid container spacing={2.5}>
                             {tablero.secciones.map((seccion, i) =>
                                 <Grid item key={seccion.id} {...columnasPorSeccion[i]}>

@@ -12,3 +12,4 @@ import './test-ayuda';
 import './test-tablero';
 import './test-editor-metadatos';
 import './test-tem-edicion';
+import './test-desverificables';

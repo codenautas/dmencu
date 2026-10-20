@@ -4,11 +4,7 @@ import * as procesamiento from "procesamiento";
 import { emergeAppProcesamiento, emergeAppConsistencias, emergeAppVarCal, emergeAppDatosExt, emergeAppOperativos, AppBackend, ClientModuleDefinition, OptsClientPage } from "procesamiento";
 import { pasarEncuestasAProie, ProceduresDmEncu } from "./procedures-dmencu";
 import { cargarAyuda, carpetaDelPaquete, problemasDeAyuda, QuienConsultaAyuda, rutasDelMenu, temasVisibles } from "./ayuda";
-import {
-    armarSecciones, buscarPerfil, ClienteTablero, DefinicionSeccionTablero, PERFIL_POR_ROL, PERFILES_TABLERO,
-    perfilSegunRol, QuienConsultaTablero, SECCIONES_TABLERO, texto
-} from "./tablero";
-import type { PerfilTablero, TableroParaUsuario } from "../unlogged/tipos-tablero";
+import { DefinicionSeccionTablero, QuienConsultaTablero, SECCIONES_TABLERO } from "./tablero";
 import { proceduresEditorMetadatos } from "./editor-metadatos";
 
 import * as pg from "pg-promise-strict";
@@ -84,7 +80,7 @@ import { tareas_tem_procesamiento } from './table-tareas_tem_procesamiento';
 import { tareas_tem_analisis_campo } from './table-tareas_tem_analisis_campo';
 import { mis_tareas_areas } from './table-mis_tareas_areas';
 import { control_campo } from './table-control_campo';
-import { control_resumen } from './table-control_resumen';
+import { control_resumen, control_resumen_recepcion } from './table-control_resumen';
 import { control_dias_carga } from './table-control_dias_carga';
 import { viviendas } from './table-viviendas';
 import { visitas } from './table-visitas';
@@ -102,6 +98,7 @@ import { acciones } from './table-acciones';
 import { estados_acciones } from './table-estados_acciones';
 import { tareas_proximas } from './table-tareas_proximas';
 import { historial_tem } from './table-historial_tem';
+import { desverificables, ROLES_DESVERIFICAN } from './table-desverificables';
 import { inconsistencias_cumplen_condicion } from './table-inconsistencias_cumplen_condicion';
 import { tem_borradas } from './table-tem_borradas';
 import { barrios } from "./table-barrios";
@@ -155,13 +152,12 @@ export function quienConsultaAyuda(context: Context): QuienConsultaAyuda {
     };
 }
 
-// lo que decide qué secciones del tablero ve el usuario: lo mismo que para la ayuda más su persona y su perfil
-export function quienConsultaTablero(context: Context, perfil: string): QuienConsultaTablero {
+// lo que decide qué secciones del tablero ve el usuario: lo mismo que para la ayuda más su usuario y su persona
+export function quienConsultaTablero(context: Context): QuienConsultaTablero {
     return {
         ...quienConsultaAyuda(context),
         usuario: context.user?.usuario ?? '',
         idper: context.user?.idper ?? null,
-        perfil,
     };
 }
 
@@ -322,69 +318,17 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 }
                 return procDef;
             })
-            var procedureTablero: ProcedureDef = {
-                // el tablero de inicio del modo GABINETE según el perfil, el rol y los permisos del usuario (ver docs/tablero.md)
-                action: 'tablero_traer',
-                parameters: [],
-                coreFunction: async function (context: ProcedureContext): Promise<TableroParaUsuario> {
-                    return be.tableroParaUsuario(context);
-                }
-            };
             var procedimientosEditor = proceduresEditorMetadatos({
-                perfilDelUsuario: (context) => be.perfilDelUsuario(context),
                 // así los dispositivos y la vista previa vuelven a pedir la estructura
                 estructuraModificada: () => { be.caches.timestampEstructura = new Date().getTime(); },
                 estructuraDelOperativo: (context, operativo) => be.procedure.operativo_estructura_completa.coreFunction(context, { operativo, idper_logueado_tablet: null }),
             });
-            return parentProc.concat(ProceduresDmEncu, [procedureTablero], procedimientosEditor);
+            return parentProc.concat(ProceduresDmEncu, procedimientosEditor);
         }
         // secciones del tablero de inicio. Las apps finales las extienden sobreescribiendo este método, por ejemplo
         // combinarSecciones(super.getSeccionesTablero(), [miSeccion]) o filtrando por id (ver docs/tablero.md)
-        getSeccionesTablero(): DefinicionSeccionTablero[] {
+        override getSeccionesTablero(): DefinicionSeccionTablero[] {
             return SECCIONES_TABLERO;
-        }
-        // perfiles visuales del tablero (nombre, descripción y colores)
-        getPerfilesTablero(): PerfilTablero[] {
-            return PERFILES_TABLERO;
-        }
-        // el perfil (uno de getPerfilesTablero) con que se muestra el tablero al usuario
-        getPerfilTablero(context: Context): string {
-            return perfilSegunRol(quienConsultaAyuda(context), PERFIL_POR_ROL);
-        }
-        async tableroParaUsuario(context: ProcedureContext): Promise<TableroParaUsuario> {
-            var be = this;
-            var client: ClienteTablero = context.client;
-            var usuario = context.user?.usuario ?? '';
-            var [datos] = (await client.query(`
-                select p.operativo, u.nombre, u.apellido, r.nombre as nombre_rol, current_timestamp as generado
-                    from parametros p
-                        left join usuarios u on u.usuario = $1
-                        left join roles r on r.rol = u.rol
-                    where p.unico_registro`, [usuario]).fetchAll()).rows;
-            var perfil = buscarPerfil(be.getPerfilesTablero(), be.getPerfilTablero(context));
-            var quien = quienConsultaTablero(context, perfil.perfil);
-            var operativo = texto(datos, 'operativo');
-            var nombre = [texto(datos, 'nombre'), texto(datos, 'apellido')].filter(parte => parte != null).join(' ');
-            var { secciones, errores } = await armarSecciones(be.getSeccionesTablero(), {
-                client,
-                quien,
-                operativo: operativo ?? '',
-                menu: be.getMenu(context).menu,
-            });
-            errores.forEach(error => console.error(`tablero: la sección ${error.seccion} falló para ${usuario}: ${error.mensaje}`));
-            var generado = datos?.generado;
-            return {
-                operativo,
-                modo: quien.modo,
-                usuario,
-                nombre: nombre || null,
-                rol: quien.rol,
-                nombreRol: texto(datos, 'nombre_rol'),
-                perfil,
-                generado: (generado instanceof Date ? generado : new Date()).toISOString(),
-                secciones,
-                errores,
-            };
         }
         override async checkDatabaseStructure(_client: Client) {
         }
@@ -578,10 +522,6 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 Object.keys(be.caches.permisosRol),
                 rutas
             );
-        }
-        // perfil visual (colores) del usuario, el mismo del tablero de inicio
-        perfilDelUsuario(context: Context): PerfilTablero {
-            return buscarPerfil(this.getPerfilesTablero(), this.getPerfilTablero(context));
         }
         override configStaticConfig() {
             super.configStaticConfig();
@@ -849,6 +789,9 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             if (context.puede?.encuestas?.procesar) {
                 submenuVarios.push({ menuType: 'proc', name: 'intercambiar_encuestas' });
             }
+            if (ROLES_DESVERIFICAN.includes(context.user.rol)) {
+                submenuVarios.push({ menuType: 'table', name: 'desverificables', label: 'desverificar encuestas' });
+            }
             return { menuType: 'menu', name: 'varios', menuContent: submenuVarios }
         }
         getMenuAsignacion(context: Context): MenuInfoBase {
@@ -907,6 +850,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 const submenuMuestra: MenuInfoBase[] = [
                     { menuType: 'table', name: 'tem', label: 'TEM' },
                     { menuType: 'table', name: 'tem_edicion', label: 'edición TEM' },
+                    { menuType: 'table', name: 'tareas_tem', label: 'tareas de las encuestas' },
                     { menuType: 'proc', name: 'muestra_generar', label: 'generar muestra' },
                     { menuType: 'table', name: 'semanas' },
                     { menuType: 'table', name: 'area_enc_proximas' },
@@ -1046,7 +990,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 if (menuCarto) {
                     menu.push(menuCarto);
                 }
-                // la pantalla de entrada: el tablero con el panorama del operativo según el perfil (ver docs/tablero.md)
+                // la pantalla de entrada: el tablero con el panorama del operativo según el rol (ver docs/tablero.md)
                 if (menu.length) {
                     menu.unshift({ menuType: 'tablero', name: 'tablero', label: 'inicio', selectedByDefault: true });
                 }
@@ -1089,6 +1033,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 , tem
                 , tem_edicion
                 , historial_tem
+                , desverificables
                 , modos_dm
                 , parametros
                 , operaciones
@@ -1118,6 +1063,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 , mis_tareas_areas
                 , control_campo
                 , control_resumen
+                , control_resumen_recepcion
                 , control_campo_zona: context => control_campo(context,
                     { nombre: 'control_campo_comuna', title: 'control campo x zona solo cemento', camposCorte: [{ name: 'zona', typeName: 'text' }], sinhogfin: !context.be.caches.tableContent.conReaHogar.con_rea_hogar, filtroWhere: 'dominio=3' }
                 )

@@ -5,14 +5,13 @@
 // id_casillero y var_name; control_disform_cerrado_trg no deja tocar un operativo cerrado).
 
 import type { ProcedureContext } from "backend-plus";
-import type { PerfilTablero } from "../unlogged/tipos-tablero";
 import {
     CAMPOS_EDITABLES, CasilleroEditable, DatosEditorMetadatos, hijosDe, idsConInsertado, OperacionMetadatos, ordenParaInsertar, PermisosEditor, subarbol, validarOperacion
 } from "../unlogged/editor-metadatos-comun";
 export { idsConInsertado };
 import type { Context, ProcedureDef } from "./types-dmencu";
 import { tienePermiso } from "./ayuda";
-import { ClienteTablero, FilaSql, numero, texto, ValorSql } from "./tablero";
+import { ClienteEscribible, FilaSql, numero, texto, ValorSql } from "./tablero";
 
 /* permisos: ve y cambia textos quien tiene casilleros_texto.editar (como el menú metadatos); la estructura, el superuser
    (como la grilla casilleros, que sólo edita el admin) */
@@ -69,13 +68,13 @@ export function casilleroDesdeFila(fila: FilaSql): CasilleroEditable {
     };
 }
 
-async function filas(client: ClienteTablero, sql: string, params: ValorSql[]): Promise<FilaSql[]> {
+async function filas(client: ClienteEscribible, sql: string, params: ValorSql[]): Promise<FilaSql[]> {
     return (await client.query(sql, params).fetchAll()).rows;
 }
 
 const CAMPOS_LEIDOS = ['id_casillero', 'padre', 'tipoc', 'casillero', 'orden', 'irrepetible', 'var_name', ...CAMPOS_EDITABLES];
 
-export async function leerCasilleros(client: ClienteTablero, operativo: string): Promise<CasilleroEditable[]> {
+export async function leerCasilleros(client: ClienteEscribible, operativo: string): Promise<CasilleroEditable[]> {
     return (await filas(client, `
         select ${CAMPOS_LEIDOS.map(campo => `c.${campo}`).join(', ')}
             from casilleros c
@@ -83,7 +82,7 @@ export async function leerCasilleros(client: ClienteTablero, operativo: string):
             order by c.padre nulls first, c.orden nulls last, c.casillero`, [operativo])).map(casilleroDesdeFila);
 }
 
-export async function traerDatosEditor(client: ClienteTablero, context: Context, perfil: PerfilTablero, operativoPedido: string | null): Promise<DatosEditorMetadatos> {
+export async function traerDatosEditor(client: ClienteEscribible, context: Context, operativoPedido: string | null): Promise<DatosEditorMetadatos> {
     var permisos = permisosEditor(context);
     if (!permisos.ver) {
         throw new Error('no tiene permiso para editar metadatos');
@@ -100,7 +99,6 @@ export async function traerDatosEditor(client: ClienteTablero, context: Context,
         operativos,
         cerrado: verdaderoONull(datosOperativo, 'disform_cerrado') ?? false,
         permisos: { textos: permisos.textos, estructura: permisos.estructura },
-        perfil,
         tipos: (await filas(client, `select tipoc, denominacion, irrepetible, puede_ser_var, desp_hijos from tipoc order by tipoc`, [])).map(f => ({
             tipoc: texto(f, 'tipoc') ?? '',
             denominacion: texto(f, 'denominacion') ?? texto(f, 'tipoc') ?? '',
@@ -123,7 +121,7 @@ export async function traerDatosEditor(client: ClienteTablero, context: Context,
 
 // cuando cambia el id de un casillero (porque cambió su padre o su código y no es irrepetible) hay que llevar a sus hijos
 // al id nuevo; el trigger recalcula el id de cada hijo que tampoco es irrepetible, y así hacia abajo
-export async function llevarHijosAlIdNuevo(client: ClienteTablero, operativo: string, idViejo: string, idNuevo: string): Promise<void> {
+export async function llevarHijosAlIdNuevo(client: ClienteEscribible, operativo: string, idViejo: string, idNuevo: string): Promise<void> {
     if (idViejo == idNuevo) return;
     var hijos = await filas(client, `select id_casillero from casilleros where operativo = $1 and padre = $2`, [operativo, idViejo]);
     for (var hijo of hijos) {
@@ -136,7 +134,7 @@ export async function llevarHijosAlIdNuevo(client: ClienteTablero, operativo: st
 }
 
 // numera los hermanos de 10 en 10 en el orden dado
-export async function numerarHermanos(client: ClienteTablero, operativo: string, ids: string[]): Promise<void> {
+export async function numerarHermanos(client: ClienteEscribible, operativo: string, ids: string[]): Promise<void> {
     for (var i = 0; i < ids.length; i++) {
         await client.query(`update casilleros set orden = $3 where operativo = $1 and id_casillero = $2 and orden is distinct from $3`,
             [operativo, ids[i], (i + 1) * 10]).execute();
@@ -144,7 +142,7 @@ export async function numerarHermanos(client: ClienteTablero, operativo: string,
 }
 
 // deja al casillero en la posición pedida entre sus hermanos usando el hueco entre sus vecinos; sólo renumera si no hay lugar (ver ordenParaInsertar)
-async function ubicarHermano(client: ClienteTablero, operativo: string, hermanos: CasilleroEditable[], id: string, posicion: number | null): Promise<void> {
+async function ubicarHermano(client: ClienteEscribible, operativo: string, hermanos: CasilleroEditable[], id: string, posicion: number | null): Promise<void> {
     var otros = hermanos.filter(h => h.id_casillero != id);
     var { orden, renumerar } = ordenParaInsertar(otros, posicion);
     if (renumerar) {
@@ -157,7 +155,7 @@ function valorSql(valor: CasilleroEditable[keyof CasilleroEditable] | undefined)
     return valor === undefined ? null : valor;
 }
 
-async function aplicarOperacion(client: ClienteTablero, operativo: string, casilleros: CasilleroEditable[], operacion: OperacionMetadatos): Promise<void> {
+async function aplicarOperacion(client: ClienteEscribible, operativo: string, casilleros: CasilleroEditable[], operacion: OperacionMetadatos): Promise<void> {
     switch (operacion.tipo) {
         case 'crear': {
             var { nuevo } = operacion;
@@ -222,7 +220,7 @@ async function aplicarOperacion(client: ClienteTablero, operativo: string, casil
 export const CAMPOS_DE_LA_COPIA: string[] = Array.from(new Set(['padre', 'tipoc', 'casillero', 'orden', ...CAMPOS_EDITABLES]));
 
 // inserta casilleros con todos sus campos, los padres antes que los hijos; el trigger tiene que dar los mismos ids
-export async function insertarCopia(client: ClienteTablero, operativo: string, copia: CasilleroEditable[]): Promise<void> {
+export async function insertarCopia(client: ClienteEscribible, operativo: string, copia: CasilleroEditable[]): Promise<void> {
     var insertados = new Set<string>();
     var pendientes = [...copia];
     while (pendientes.length) {
@@ -249,7 +247,7 @@ export async function insertarCopia(client: ClienteTablero, operativo: string, c
 
 export type VersionFormulario = { version: number, cuando: string, usuario: string | null, descripcion: string | null, cantidad: number };
 
-export async function guardarVersion(client: ClienteTablero, context: Context, operativo: string, idFormulario: string, descripcion: string | null): Promise<number> {
+export async function guardarVersion(client: ClienteEscribible, context: Context, operativo: string, idFormulario: string, descripcion: string | null): Promise<number> {
     var copia = subarbol(await leerCasilleros(client, operativo), idFormulario);
     if (copia.length == 0) {
         throw new Error(`no existe el formulario ${idFormulario}`);
@@ -262,7 +260,7 @@ export async function guardarVersion(client: ClienteTablero, context: Context, o
     return numero(fila, 'version');
 }
 
-export async function traerVersiones(client: ClienteTablero, operativo: string, idFormulario: string): Promise<VersionFormulario[]> {
+export async function traerVersiones(client: ClienteEscribible, operativo: string, idFormulario: string): Promise<VersionFormulario[]> {
     return (await filas(client, `
         select version, to_char(cuando, 'DD/MM/YYYY HH24:MI') as cuando, usuario, descripcion, jsonb_array_length(casilleros) as cantidad
             from casilleros_versiones
@@ -272,7 +270,7 @@ export async function traerVersiones(client: ClienteTablero, operativo: string, 
     }));
 }
 
-export async function copiaDeVersion(client: ClienteTablero, operativo: string, version: number): Promise<{ idFormulario: string, casilleros: CasilleroEditable[] }> {
+export async function copiaDeVersion(client: ClienteEscribible, operativo: string, version: number): Promise<{ idFormulario: string, casilleros: CasilleroEditable[] }> {
     var [fila] = await filas(client, `select id_formulario, casilleros from casilleros_versiones where operativo = $1 and version = $2`, [operativo, version]);
     if (fila == null) {
         throw new Error(`no existe la versión ${version}`);
@@ -286,7 +284,7 @@ export async function copiaDeVersion(client: ClienteTablero, operativo: string, 
 }
 
 // aplica las operaciones en orden, todas o ninguna (corre en la transacción del procedimiento); devuelve los casilleros como quedaron
-export async function aplicarOperaciones(client: ClienteTablero, context: Context, operativo: string, operaciones: OperacionMetadatos[]): Promise<CasilleroEditable[]> {
+export async function aplicarOperaciones(client: ClienteEscribible, context: Context, operativo: string, operaciones: OperacionMetadatos[]): Promise<CasilleroEditable[]> {
     var permisos = permisosEditor(context);
     if (!permisos.ver) {
         throw new Error('no tiene permiso para editar metadatos');
@@ -321,7 +319,6 @@ export async function aplicarOperaciones(client: ClienteTablero, context: Contex
 /* procedimientos */
 
 export type AppEditorMetadatos = {
-    perfilDelUsuario(context: ProcedureContext): PerfilTablero
     // avisa que cambió la estructura (los dispositivos y la vista previa la vuelven a pedir)
     estructuraModificada(): void
     // la estructura que recibe el renderizador (procedimiento operativo_estructura_completa)
@@ -340,7 +337,7 @@ export function proceduresEditorMetadatos(app: AppEditorMetadatos): ProcedureDef
             action: 'editor_metadatos_traer',
             parameters: [{ name: 'operativo', typeName: 'text', defaultValue: null }],
             coreFunction: async (context: ProcedureContext, parametros: { operativo: string | null }) =>
-                traerDatosEditor(context.client, context, app.perfilDelUsuario(context), parametros.operativo ?? null)
+                traerDatosEditor(context.client, context, parametros.operativo ?? null)
         },
         {
             action: 'editor_metadatos_aplicar',

@@ -608,6 +608,12 @@ declare global {
             state_forPk: string
             state_pilaForPk: string
         }
+        // arma la parte de la url del menú (i=ruta&ff=campos fijos...) como los links de backend-plus
+        function paramsToUriPart(params: { [nombre: string]: string | { [campo: string]: string | null } }, inMenu?: boolean): string
+        // backend-plus lo define en my-tables.js pero no está en types.d.ts: vuelve a leer y dibujar toda la grilla
+        interface TableGrid {
+            refresh: () => Promise<void>
+        }
     }
 }
 

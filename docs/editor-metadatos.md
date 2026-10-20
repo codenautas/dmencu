@@ -1,6 +1,6 @@
 # Editor visual de metadatos
 
-En *configurar → metadatos → **editor visual*** (`menuType: 'editor_metadatos'`) se arma el formulario arrastrando casilleros en lugar de cargarlos fila por fila en la grilla `casilleros`. Es una pantalla React + MUI con el tema del perfil (ver [tablero.md](tablero.md)) que escribe en la misma tabla `casilleros`, así que la grilla sigue funcionando igual y los triggers siguen validando.
+En *configurar → metadatos → **editor visual*** (`menuType: 'editor_metadatos'`) se arma el formulario arrastrando casilleros en lugar de cargarlos fila por fila en la grilla `casilleros`. Es una pantalla React + MUI con el mismo tema que el tablero (ver [tablero.md](tablero.md)) que escribe en la misma tabla `casilleros`, así que la grilla sigue funcionando igual y los triggers siguen validando.
 
 ## Qué tiene la pantalla
 

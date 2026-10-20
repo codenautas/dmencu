@@ -4,7 +4,6 @@
 // Las reglas repiten las de la base (trigger irrepetible_trg y columna "ok" de la grilla casilleros) para
 // avisar antes de guardar; la base las vuelve a controlar al guardar.
 
-import type { PerfilTablero } from "./tipos-tablero";
 
 export type CasilleroEditable = {
     id_casillero: string
@@ -71,7 +70,6 @@ export type DatosEditorMetadatos = {
     operativos: string[]
     cerrado: boolean // operativos.disform_cerrado: la base no deja modificar
     permisos: PermisosEditor
-    perfil: PerfilTablero
     tipos: TipoCasillero[]
     inclusiones: Inclusion[]
     tipovars: string[]

@@ -19,14 +19,9 @@ import {
     problemasDelOperativo, proximoCodigo, puedeIncluir, subarbol, validarOperacion, variablesDesconocidas, variablesDelOperativo
 } from "../unlogged/editor-metadatos-comun";
 import type { Cargas, CasoState, DatosByPassPersistibles, Estructura, ForPkRaiz, IdEnc, InformacionHdr } from "../unlogged/tipos";
-import type { PerfilTablero } from "../unlogged/tipos-tablero";
 import { createLocalStorageFormRenderer } from "../unlogged/render-init";
 import { desplegarFormularioActual } from "../unlogged/render-formulario";
-import { temaDelPerfil } from "./render-tablero";
-
-const PERFIL_INICIAL: PerfilTablero = {
-    perfil: 'general', nombre: 'Gabinete', descripcion: '', colores: { primario: '#3F51B5', secundario: '#009688' }
-};
+import { crearTema } from "./render-tablero";
 
 /* colores e íconos */
 
@@ -792,8 +787,7 @@ export function EditorMetadatos() {
     useEffect(() => { traer(null); }, [traer]);
 
     var casilleros = borrador?.casilleros ?? datos?.casilleros ?? [];
-    var perfil = datos?.perfil ?? PERFIL_INICIAL;
-    var tema = useMemo(() => temaDelPerfil(perfil), [perfil]);
+    var tema = useMemo(() => crearTema(), []);
     var problemas = useMemo(() => datos ? problemasDelOperativo(casilleros, datos.tipos, datos.inclusiones, datos.clavesUA) : [], [datos, casilleros]);
     var problemasPorId = useMemo(() => {
         var mapa: Map<string, Problema[]> = new Map();

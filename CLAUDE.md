@@ -44,8 +44,10 @@ Las tablas están definidas siguiendo la convención de `backend-plus`: cada tab
   - Respetar el fin de línea de cada archivo: hay archivos con CRLF y otros con LF. Las líneas nuevas van con el mismo fin de línea que el resto del archivo. Revisar con `git ls-files --eol <archivo>`.
   - En Windows no editar con `sed -i` ni herramientas que reescriban el archivo completo, porque pueden convertir CRLF a LF.
   - Antes de commitear, revisar `git diff --stat` contra `git diff --ignore-all-space --ignore-cr-at-eol --stat`. Si dan distinto, hay cambios de formato que hay que revertir.
+- **Nunca repetir código**: antes de escribir una consulta, constante o función, buscar si ya existe (por ejemplo el sql de las tablas `control_*`, `TEM_DEL_USUARIO`) y, si existe, exportarla y reutilizarla. Lo mismo vale para cualquier parte del código.
 - Los nombres de tablas, columnas y variables de dominio van **en castellano**, consistente con el esquema de base de datos.
 - El código sigue las convenciones de `backend-plus` para definición de tablas, procedimientos y endpoints.
+- **Los procedimientos (`ProcedureDef`) se definen en `src/server/procedures-dmencu.ts`**, no en `app-dmencu.ts`. Así los puede consumir cualquier frontend. La lógica que resuelve un procedimiento va en una función exportada de ese archivo; `app-dmencu.ts` sólo agrega los puntos de extensión de la app.
 
 ---
 
@@ -84,6 +86,13 @@ Muchas reglas de negocio críticas están implementadas como **funciones almacen
 Ejemplos de lógica que vive en la base de datos:
 
 > ⚠️ Si Claude Code necesita entender o modificar una regla de negocio importante, debe buscar primero si existe una función o trigger en PostgreSQL que la implemente — no asumir que toda la lógica está en TypeScript. Reimplementar en el backend lógica que ya existe en la base de datos introduce duplicación y riesgo de inconsistencia.
+
+---
+
+## Tablero de inicio
+
+- **Todo control que se agregue debe aparecer en el tablero de inicio** (`src/server/tablero.ts`, ver `docs/tablero.md`). Un control es una grilla de control del menú (como las `control_*`) o cualquier otro indicador de seguimiento del operativo. Se agrega como sección nueva o como un corte de una existente (por ejemplo `CORTES_DESGLOSE`), reutilizando el sql de la propia tabla de control, con link a su grilla y visible según los permisos de la grilla.
+- Al agregarlo, actualizar `docs/tablero.md` y `ayuda/tablero.md`, y sumar su caso a `src/test/test-tablero.ts`.
 
 ---
 

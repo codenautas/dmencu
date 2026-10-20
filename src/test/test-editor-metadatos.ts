@@ -7,7 +7,7 @@ import {
     validarOperacion, variablesDeExpresion, variablesDesconocidas, varNameDerivado
 } from '../unlogged/editor-metadatos-comun';
 import { aplicarOperaciones, CAMPOS_DE_LA_COPIA, guardarVersion, idsConInsertado, permisosEditor, proceduresEditorMetadatos } from '../server/editor-metadatos';
-import type { ClienteTablero, FilaSql, ValorSql } from '../server/tablero';
+import type { ClienteEscribible, FilaSql, ValorSql } from '../server/tablero';
 import type { MenuInfoBase } from '../server/types-dmencu';
 import { contextoDelRol, crearAppParaTests } from './app-para-tests';
 
@@ -362,7 +362,7 @@ describe('dmencu - editor visual de metadatos', () => {
             var tabla = inicial.map(c => ({ ...c }));
             var consultas: string[] = [];
             var tipoDe = (tipoc: string) => TIPOS.find(t => t.tipoc == tipoc)!;
-            var client: ClienteTablero = {
+            var client: ClienteEscribible = {
                 query(sql: string, params: ValorSql[] = []) {
                     var limpio = sql.replace(/\s+/g, ' ').trim();
                     consultas.push(limpio);
@@ -451,7 +451,7 @@ describe('dmencu - editor visual de metadatos', () => {
             });
         });
         it('los procedimientos del editor y quién puede cada uno', () => {
-            var app = { perfilDelUsuario: () => { throw new Error('no se usa'); }, estructuraModificada: () => { }, estructuraDelOperativo: async () => ({}) };
+            var app = { estructuraModificada: () => { }, estructuraDelOperativo: async () => ({}) };
             assert.deepStrictEqual(proceduresEditorMetadatos(app).map(p => p.action), [
                 'editor_metadatos_traer', 'editor_metadatos_aplicar', 'editor_metadatos_previsualizar',
                 'editor_metadatos_versiones_traer', 'editor_metadatos_version_guardar', 'editor_metadatos_version_restaurar',
@@ -459,7 +459,7 @@ describe('dmencu - editor visual de metadatos', () => {
         });
         it('guardar una versión copia el formulario con todo lo que tiene adentro', async () => {
             var guardado: ValorSql[] = [];
-            var client: ClienteTablero = {
+            var client: ClienteEscribible = {
                 query(sql: string, params: ValorSql[] = []) {
                     var limpio = sql.replace(/\s+/g, ' ').trim();
                     var filas = (): FilaSql[] => {

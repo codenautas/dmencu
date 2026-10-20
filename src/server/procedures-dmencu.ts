@@ -17,12 +17,15 @@ import * as ExpresionParser from 'expre-parser';
 import { tareas } from "./table-tareas";
 import { prependListener } from "process";
 import { getDiasAPasarQuery } from "./table-tareas_tem";
+import { sqlDesverificables } from "./table-desverificables";
 import { error } from "console";
 import { Context } from "vm";
 import { expected, unexpected } from "cast-error";
-import { getModoByPolicy, quienConsultaAyuda } from "./app-dmencu";
+import { getModoByPolicy, quienConsultaAyuda, quienConsultaTablero } from "./app-dmencu";
 import { menuConAyuda, temasVisibles } from "./ayuda";
 import type { AyudaParaUsuario } from "../unlogged/tipos";
+import { armarSecciones, ClienteTablero, texto } from "./tablero";
+import type { TableroParaUsuario } from "../unlogged/tipos-tablero";
 import { getSettersAndParametersForReaNoReaResumenEstado, ParametroSql } from "./setters-rea-no-rea";
 
 var Path = require('path');
@@ -529,6 +532,107 @@ export async function pasarEncuestasAProie(client: Client) {
             where t.operativo = aux.operativo and t.enc = aux.enc
             returning *`,
         [parametros.operativo, 'finc']).fetchAll();
+    return 'ok';
+}
+
+// el tablero de inicio del modo GABINETE según el rol y los permisos del usuario (ver docs/tablero.md).
+// Está acá y no en la app para poder usarlo desde otro frontend
+export async function tableroParaUsuario(context: ProcedureContext): Promise<TableroParaUsuario> {
+    const { be } = context;
+    var client: ClienteTablero = context.client;
+    var usuario = context.user?.usuario ?? '';
+    var [datos] = (await client.query(`
+        select p.operativo, u.nombre, u.apellido, r.nombre as nombre_rol, current_timestamp as generado
+            from parametros p
+                left join usuarios u on u.usuario = $1
+                left join roles r on r.rol = u.rol
+            where p.unico_registro`, [usuario]).fetchAll()).rows;
+    var quien = quienConsultaTablero(context);
+    var operativo = texto(datos, 'operativo');
+    var nombre = [texto(datos, 'nombre'), texto(datos, 'apellido')].filter(parte => parte != null).join(' ');
+    var { secciones, errores } = await armarSecciones(be.getSeccionesTablero(), {
+        client,
+        quien,
+        operativo: operativo ?? '',
+        menu: be.getMenu(context).menu,
+        tabla: (nombreTabla: string) => {
+            var definicion = be.tableStructures[nombreTabla];
+            if (definicion == null) {
+                throw new Error(`tablero: no existe la tabla ${nombreTabla}`);
+            }
+            return definicion(context);
+        },
+    });
+    errores.forEach(error => console.error(`tablero: la sección ${error.seccion} falló para ${usuario}: ${error.mensaje}`));
+    var generado = datos?.generado;
+    return {
+        operativo,
+        modo: quien.modo,
+        usuario,
+        nombre: nombre || null,
+        rol: quien.rol,
+        nombreRol: texto(datos, 'nombre_rol'),
+        generado: (generado instanceof Date ? generado : new Date()).toISOString(),
+        secciones,
+        errores,
+    };
+}
+
+// Vuelve la encuesta a la última tarea verificada aunque la tarea actual ya esté asignada (por ejemplo la que se asigna sola al pasar a fin de campo).
+// No saltea los triggers: primero deja la tarea actual sin asignar, después mueve tem.tarea_actual (el trigger guarda la foto en historial_tem)
+// y recién entonces desverifica, con lo cual desverificar_tarea_trg ve a la tarea desverificada como la actual.
+export async function encuestaDesverificarExcepcional(context: ProcedureContext, params: { operativo: IdOperativo, enc: string, motivo: string }): Promise<'ok'> {
+    var be = context.be;
+    var { operativo, enc } = params;
+    var motivo = (params.motivo ?? '').trim();
+    if (!motivo) {
+        throw new Error('hay que indicar el motivo de la desverificación');
+    }
+    var desverificable = (await context.client.query(
+        `select * from (${sqlDesverificables}) d where operativo = $1 and enc = $2`,
+        [operativo, enc]
+    ).fetchOneRowIfExists()).row;
+    if (!desverificable) {
+        throw new Error(`la encuesta ${enc} no se puede desverificar: su última tarea no está verificada o la tarea actual ya está verificada`);
+    }
+    if (!desverificable.estado_destino) {
+        throw new Error('no hay una acción en estados_acciones que ejecute encuesta_no_verificar desde el estado de la tarea verificada');
+    }
+    var tareaActual: { [key: string]: string | null } = (await context.client.query(
+        `select estado, asignado from tareas_tem where operativo = $1 and enc = $2 and tarea = $3`,
+        [operativo, enc, desverificable.tarea_actual]
+    ).fetchUniqueRow()).row;
+    await context.client.query(
+        `update tareas_tem
+            set estado = '0D', asignado = null
+            where operativo = $1 and enc = $2 and tarea = $3
+            returning *`,
+        [operativo, enc, desverificable.tarea_actual]
+    ).fetchUniqueRow();
+    await context.client.query(
+        `update tem
+            set tarea_actual = $4
+            where operativo = $1 and enc = $2 and tarea_actual = $3
+            returning *`,
+        [operativo, enc, desverificable.tarea_actual, desverificable.tarea]
+    ).fetchUniqueRow();
+    // la foto de historial_tem se sacó con la tarea ya sin asignar: se restituye lo que tenía y se deja quién lo hizo y por qué
+    await context.client.query(
+        `update historial_tem
+            set estado = $4, asignado = $5, usuario_accion = $6, motivo = $7
+            where operativo = $1 and enc = $2 and tarea = $3
+                and orden = (select max(orden) from historial_tem where operativo = $1 and enc = $2)
+            returning *`,
+        [operativo, enc, desverificable.tarea_actual, tareaActual.estado, tareaActual.asignado, context.user.usuario, motivo]
+    ).fetchUniqueRow();
+    await be.procedure.encuesta_no_verificar.coreFunction(context, { operativo, tarea: desverificable.tarea, enc });
+    await context.client.query(
+        `update tareas_tem
+            set estado = $4
+            where operativo = $1 and enc = $2 and tarea = $3
+            returning *`,
+        [operativo, enc, desverificable.tarea, desverificable.estado_destino]
+    ).fetchUniqueRow();
     return 'ok';
 }
 
@@ -1740,6 +1844,18 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
         }
     },
     {
+        action: 'encuesta_desverificar_excepcional',
+        parameters: [
+            { name: 'operativo', typeName: 'text' },
+            { name: 'enc', typeName: 'text' },
+            { name: 'motivo', typeName: 'text' },
+        ],
+        roles: ['subcoor_campo', 'coor_campo', 'coor_proc', 'procesamiento', 'admin'],
+        coreFunction: async function (context: ProcedureContext, params: CoreFunctionParameters<{ operativo: IdOperativo, enc: string, motivo: string }>) {
+            return await encuestaDesverificarExcepcional(context, params);
+        }
+    },
+    {
         action: 'encuesta_no_cerrar',
         parameters: [
             { name: 'operativo', typeName: 'text' },
@@ -2197,6 +2313,14 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 temas: temas.map(tema => ({ id: tema.id, titulo: tema.titulo, html: tema.html })),
                 menu: menuConAyuda(be.getMenu(context).menu, temas),
             };
+        }
+    },
+    {
+        // el tablero de inicio (ver tableroParaUsuario)
+        action: 'tablero_traer',
+        parameters: [],
+        coreFunction: async function (context: ProcedureContext, _parameters: CoreFunctionParameters<{}>): Promise<TableroParaUsuario> {
+            return tableroParaUsuario(context);
         }
     },
     {

@@ -4,7 +4,12 @@ import { stringify } from "querystring";
 import {TableDefinition, TableContext, FieldDefinition, GrupoNoRea} from "./types-dmencu";
 
 // los campos con condicion se cuentan en el sql (ver klase); tasa_efectividad indica si suman al denominador de la tasa
-type CampoCalculado = FieldDefinition & {condicion?:string, tasa_efectividad?:boolean};
+export type CampoCalculado = FieldDefinition & {condicion?:string, tasa_efectividad?:boolean};
+
+// los campos de cada grupo de no respuesta de la definición de la tabla (son los únicos con inTable:false)
+export function camposGruposNoRea(tableDef:TableDefinition):CampoCalculado[]{
+    return tableDef.fields.filter((f:FieldDefinition):f is CampoCalculado=>f.inTable===false);
+}
 
 export type controlCamposOpts={
     nombre:string, 
