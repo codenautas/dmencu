@@ -30,8 +30,6 @@ Cada `no_rea` tiene un `grupo` (por ejemplo «otras causas vivienda») y un `gru
 
 Un `grupo0` sin marcas no suma en ninguno de los tres. Así una base sin el grupo «otras causas seleccionado» (como ggs) no pide una columna que no existe, y cada operativo decide qué grupos son «en curso» sin tocar el código. Al instalar en una base que ya existe, el script `operaciones/2026-10-20-actualizar_no_rea_grupo0.sql` crea la tabla y la completa a partir de los `grupo0` de `no_rea` (`otras causas`, los que empiezan con `no encuestable` y `no finalizada`).
 
-> `grupo0` también se usa con su nombre en la grilla de hoja de ruta (recuperación y modalidad presencial, ver más abajo). Eso todavía no sale de `no_rea_grupo0`.
-
 ## Cómo se determina el resultado
 
 ```mermaid
@@ -84,7 +82,7 @@ Sólo se tienen en cuenta los formularios habilitados de la encuesta (por ejempl
 | TEM (valor vigente) | `resumen_estado`, `rea`, `norea` y las `_sup` |
 
 - Al sincronizar, `getSettersAndParametersForReaNoReaResumenEstado` (`src/server/setters-rea-no-rea.ts`) arma los `set` del update: para la tarea `supe` usa las columnas `_sup`; para las demás, las comunes.
-- Los grupos de no REA (`grupo`, `grupo0`) se usan para decidir pases: la grilla marca como a recuperar (`a_recuperacion`) las encuestas de la tarea `recu` cuyo grupo0 sea ausentes o rechazos, y `modalidad = presencial` cuando el grupo0 es no encuestable o hay supervisión presencial.
+- Qué pasa con una no REA lo decide el operativo con datos, no el código: `pasa_a_recuperacion` y `pasa_a_supervision` (por código de `no_rea`) los leen las condiciones de `tareas_proximas` (por ejemplo `nr.pasa_a_supervision or te.rea=1 and ...`). La grilla de tareas usa la misma casilla: `a_recuperacion` marca las encuestas de la tarea `recu` cuyo no REA tiene `pasa_a_recuperacion`, y `modalidad = presencial` cuando el grupo0 está marcado `es_no_encuestable` o hay supervisión presencial. Es la regla de sieh1 (`norea_recuperable`) hecha dato.
 
 ## Cómo llegan las reglas al dispositivo
 
