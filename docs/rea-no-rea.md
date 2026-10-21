@@ -20,7 +20,7 @@ Todas tienen `operativo` en la clave: cada operativo define sus propias reglas (
 
 ## Grupos de no REA y controles
 
-Cada `no_rea` tiene un `grupo` (por ejemplo «otras causas vivienda») y un `grupo0` que agrupa grupos (por ejemplo «otras causas»). Los controles de campo (`control_campo`, `control_resumen` y las que derivan de ellas, ver [tablero.md](tablero.md)) arman una columna por grupo y no conocen sus nombres: lo que significa cada `grupo0` lo declara el operativo en la tabla **`no_rea_grupo0`**, una fila por `grupo0` (`no_rea.grupo0` la referencia).
+Cada `no_rea` tiene un `grupo` (por ejemplo «otras causas vivienda») y un `grupo0` que agrupa grupos (por ejemplo «otras causas»). `no_rea` es hija de `no_rea_grupo0`: su clave es la del padre más la agregada (`operativo`, `grupo0`, `no_rea`), así que todo código pertenece a un `grupo0` declarado y desde la grilla de `no_rea_grupo0` se abren sus códigos. El código sigue siendo único por operativo (restricción `no_rea_codigo_uk`), porque el sistema identifica la no respuesta por su código (`tem.norea`). Los controles de campo (`control_campo`, `control_resumen` y las que derivan de ellas, ver [tablero.md](tablero.md)) arman una columna por grupo y no conocen sus nombres: lo que significa cada `grupo0` lo declara el operativo en la tabla **`no_rea_grupo0`**, una fila por `grupo0` (`no_rea.grupo0` la referencia).
 
 | Bandera | Qué hace en el control |
 | :-- | :-- |

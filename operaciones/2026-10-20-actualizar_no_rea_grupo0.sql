@@ -44,3 +44,31 @@ insert into "no_rea_grupo0" ("operativo", "grupo0", "orden", "es_otras_causas", 
 alter table "no_rea" drop constraint if exists "no_rea no_rea_grupo0 REL";
 alter table "no_rea" add constraint "no_rea no_rea_grupo0 REL" foreign key ("operativo", "grupo0") references "no_rea_grupo0" ("operativo", "grupo0") on update cascade;
 create index if not exists "operativo,grupo0 4 no_rea IDX" on "no_rea" ("operativo", "grupo0");
+
+-- no_rea es hija de no_rea_grupo0: su clave es la del padre más la agregada (operativo, grupo0, no_rea).
+-- El código sigue siendo único por operativo (todo el sistema identifica la no respuesta por su código), por eso la restricción única.
+-- Si hay no_rea sin grupo0, el set not null falla: completar el grupo0 de esos códigos y volver a correr.
+alter table "no_rea" drop constraint if exists "no_rea_codigo_uk";
+alter table "no_rea" add constraint "no_rea_codigo_uk" unique ("operativo", "no_rea");
+alter table "no_rea" alter column "grupo0" set not null;
+do $$
+begin
+    if not exists (
+        select 1
+            from pg_index i
+            where i.indrelid = '"no_rea"'::regclass and i.indisprimary
+                and (select array_agg(a.attname::text order by k.ord)
+                        from unnest(i.indkey) with ordinality k(attnum, ord)
+                            join pg_attribute a on a.attrelid = i.indrelid and a.attnum = k.attnum) = array['operativo', 'grupo0', 'no_rea']
+    ) then
+        alter table "no_rea" drop constraint "no_rea_pkey";
+        alter table "no_rea" add primary key ("operativo", "grupo0", "no_rea");
+    end if;
+end
+$$;
+
+-- historial de cambios: his.changes_trg recibe la clave de la tabla como argumento (no_rea cambió de clave)
+drop trigger if exists changes_trg on "no_rea_grupo0";
+create trigger changes_trg after insert or delete or update on "no_rea_grupo0" for each row execute function his.changes_trg('operativo,grupo0');
+drop trigger if exists changes_trg on "no_rea";
+create trigger changes_trg after insert or delete or update on "no_rea" for each row execute function his.changes_trg('operativo,grupo0,no_rea');

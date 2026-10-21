@@ -20,6 +20,7 @@ export function no_rea_grupo0(context:TableContext):TableDefinition {
         ],
         primaryKey:['operativo', 'grupo0'],
         foreignKeys:[{references:'operativos', fields:['operativo']}],
+        detailTables:[{table:'no_rea', fields:['operativo', 'grupo0'], abr:'n', label:'no rea'}],
         sortColumns: [{ column: "operativo", order: 1 }, { column: "orden", order: 1 }, {column:"grupo0", order:1}],
     };
 }
