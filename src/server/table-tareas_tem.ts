@@ -120,7 +120,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
                     t.tarea_actual
                     ${fields.filter(x=>!(x.isPk ||x.table|| x.inTable===false||x.name=='area')).map(x=>`, tt.${db.quoteIdent(x.name)}`).join('')}
                     , y.grupo as gru_no_rea
-                    , case when tt.tarea='recu' and y.grupo0 in ('ausentes','rechazos') then 'recuperacion' else null end a_recuperacion   
+                    , case when tt.tarea='recu' and y.pasa_a_recuperacion then 'recuperacion' else null end a_recuperacion   
                     , t.supervision_aleatoria
                     , t.supervision_dirigida
                     , case when y.grupo0='no encuestable' or t.supervision_dirigida = 1 or t.supervision_aleatoria = 1 then 'presencial'
