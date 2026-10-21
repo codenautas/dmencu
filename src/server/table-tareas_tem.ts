@@ -123,7 +123,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
                     , case when tt.tarea='recu' and y.pasa_a_recuperacion then 'recuperacion' else null end a_recuperacion   
                     , t.supervision_aleatoria
                     , t.supervision_dirigida
-                    , case when y.grupo0='no encuestable' or t.supervision_dirigida = 1 or t.supervision_aleatoria = 1 then 'presencial'
+                    , case when yg.es_no_encuestable or t.supervision_dirigida = 1 or t.supervision_aleatoria = 1 then 'presencial'
                            when t.supervision_dirigida = 2 or t.supervision_aleatoria = 2 then 'telefónica' 
                            else null end as modalidad
                     , t.rea, t.norea, t.resumen_estado
@@ -156,6 +156,7 @@ export function tareas_tem(context:TableContext,opts?:OptsTareasTem):TableDefini
                         left join tareas ta on tt.operativo = ta.operativo and tt.tarea = ta.tarea
                         left join areas a on tt.operativo = a.operativo and t.area = a.area
                         left join no_rea y on t.norea=y.no_rea
+                        left join no_rea_grupo0 yg on yg.operativo = y.operativo and yg.grupo0 = y.grupo0
                         left join ${sqlTools.quoteIdent(OperativoGenerator.mainTD)} aux on aux.operativo=t.operativo and aux.${sqlTools.quoteIdent(OperativoGenerator.mainTDPK)}=t.enc 
                         join estados e on t.operativo = e.operativo and tt.estado = e.estado
                         join usuarios usu_con on usu_con.usuario = ${sqlTools.quoteLiteral(context.user.usuario)}
