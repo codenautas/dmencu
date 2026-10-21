@@ -110,6 +110,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {name:'fin_campo'            , typeName:'text'    , editable: false  },
             {name:'proie'                , typeName:'text'    , editable: false  },
             {name:'pase_tabla'           , typeName:'text'    , editable: false  },
+            {name:'reintentar_pase'      , typeName:'text'    , editable: false  , inTable:false, clientSide:'paseTablaReintentar'},
             ...getDomicilioFields(),
             //{name: "verificar"       , typeName:'boolean', editable:true, inTable:false, clientSide:'verificarCaso'},
             //{name: "finalizar_campo" , typeName:'boolean', editable:true, inTable:false, clientSide:'finalizarCampo'}, //fin_de_campo

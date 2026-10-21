@@ -472,6 +472,22 @@ myOwn.clientSides.consistir = botonClientSideEnGrilla({
     }
 });
 
+myOwn.clientSides.paseTablaReintentar = {
+    prepare: function (depot: myOwn.Depot, fieldName: string) {
+        var td = depot.rowControls[fieldName];
+        td.innerHTML = "";
+        if (!/dm_forpkraiz_descargar\.|pase_tabla_reintentar\./.test(depot.row.pase_tabla || '')) return;
+        botonClientSideEnGrilla({
+            nombreBoton: 'pasar a tablas',
+            llamada: (depot: myOwn.Depot) => myOwn.ajax.pase_tabla_reintentar({
+                operativo: depot.row.operativo,
+                enc: depot.row.enc
+            })
+        }).prepare(depot, fieldName);
+    },
+    update: (_depot, _fieldName) => { }
+};
+
 myOwn.wScreens.proc.result.mostrar_encuestas_a_blanquear = function (result, divResult) {
     if (result.rows.length) {
         var currentToken: string | null = null
