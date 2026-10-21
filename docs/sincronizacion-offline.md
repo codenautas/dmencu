@@ -120,6 +120,12 @@ sequenceDiagram
 
 La encuesta se abre en **sólo lectura** si está cargada en un dispositivo, si el estado no permite editarla y no está asignada al usuario, o si está en procesamiento y el usuario no puede procesar (o ya está verificada).
 
+## Pase a tablas con error
+
+`dm_forpkraiz_descargar` es `unlogged`: el dispositivo puede sincronizar con la sesión vencida. El pase a tablas (`registrarPaseTabla` → `caso_guardar`) no depende de la sesión: la estructura de tablas (claves y tablas hijas) se arma con `be.getContextForDump()`, el mismo contexto que backend-plus usa para el dump y el menú, así las definiciones de tabla que leen `context.user.rol` no fallan aunque no haya usuario.
+
+Si el pase falla igual, el error queda en `tem.pase_tabla` y la encuesta queda guardada en la TEM (`json_encuesta`). En la grilla de la TEM aparece el botón **pasar a tablas** en esas filas: llama al procedimiento `pase_tabla_reintentar` (requiere usuario logueado), que repite el pase desde `json_encuesta` y actualiza `pase_tabla`.
+
 ## Cambios de estructura
 
 Cuando cambia la estructura del formulario (casilleros, semanas, REA/no REA) el servidor actualiza `timestampEstructura`. El dispositivo vuelve a pedir `operativo_estructura_completa` en la siguiente sincronización; mientras tanto trabaja con la estructura que tenía.

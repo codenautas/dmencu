@@ -159,11 +159,20 @@ async function persistirEncuestaAutogeneradaEnDM(context: ProcedureContext, OPER
     return idEnc
 }
 
+// las definiciones de tabla de las apps leen context.user (por ejemplo user.rol para decidir si es editable);
+// los procedimientos unlogged (como dm_forpkraiz_descargar) pueden llegar con la sesión vencida y sin usuario.
+// La estructura (claves y tablas hijas) no depende de la persona, por eso se pide con el contexto que backend-plus
+// usa para el dump y el menú, y no con el de la sesión.
+function contextParaEstructura(be: AppBackend) {
+    return be.getContextForDump();
+}
+
 /*definición de estructura completa, cuando exista ing-enc hay que ponerlo ahí*/
 type EstructuraTabla = { tableName: string, pkFields: { fieldName: string }[], childTables: EstructuraTabla[] };
 function createStructure(context: ProcedureContext, tableName: string) {
     var be = context.be;
-    var mainTableDef: TableDefinition = be.tableStructures[tableName](context);
+    var contextEstructura = contextParaEstructura(be);
+    var mainTableDef: TableDefinition = be.tableStructures[tableName](contextEstructura);
     var getPkFromTableDef = function getPkFromTableDef(tableDef: TableDefinition) {
         return tableDef.primaryKey.map(function (pk) {
             return { fieldName: pk };
@@ -184,7 +193,7 @@ function createStructure(context: ProcedureContext, tableName: string) {
                 struct.childTables.push(
                     changing(
                         createStructure(context, detailTable.table),
-                        { fkFields: getFkFromTableDef(be.tableStructures[detailTable.table](context), tableName) }
+                        { fkFields: getFkFromTableDef(be.tableStructures[detailTable.table](contextEstructura), tableName) }
                     )
                 );
             }
@@ -259,7 +268,8 @@ async function registrarPaseTabla(
     context: ProcedureContext,
     operativo: IdOperativo,
     idEnc: string | number,
-    respuestasUAPrincipal: any
+    respuestasUAPrincipal: any,
+    origen: string = 'dm_forpkraiz_descargar'
 ) {
     var be = context.be;
     var procedureGuardar = be.procedure.caso_guardar;
@@ -274,18 +284,19 @@ async function registrarPaseTabla(
     } catch (err) {
         await context.client.query(`ROLLBACK TO SAVEPOINT ${savepointName}`).execute();
         var error = expected(err);
-        let errMessage = resultado + "dm_forpkraiz_descargar. " + error.message;
+        let errMessage = resultado + origen + ". " + error.message;
         resultado = errMessage;
         console.error(errMessage, error);
     }
 
-    return await context.client.query(
+    await context.client.query(
         `update tem
             set pase_tabla = $3
             where operativo = $1 and enc = $2
             returning 'ok'`,
         [operativo, idEnc, resultado]
     ).fetchUniqueRow();
+    return resultado;
 }
 
 var simularGuardadoDeEncuestaDesdeAppEscritorio = async (context: ProcedureContext, operativo: IdOperativo, enc: IdEnc, tarea: IdTarea, json_encuesta: any) => {
@@ -894,6 +905,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             var datos_json = parameters.datos_caso;
             var be = context.be;
             var tableStructures_app: TableDefinitions = be.tableStructures;
+            var contextEstructura = contextParaEstructura(be);
 
             var struct_dmencu = createStructure(context, unidad_analisis);
             datos_json['operativo'] = parameters.operativo;
@@ -913,7 +925,7 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
                 for (var keyName in datosj) {
                     var datoK = datosj[keyName];
                     if (datoK instanceof Array && datoK.length >= 1) {
-                        var pk = tableStructures_app[keyName](context).primaryKey;
+                        var pk = tableStructures_app[keyName](contextEstructura).primaryKey;
                         var ult_pk = pk[pk.length - 1];
                         datoK = completar_ult_pk_en_arr(ult_pk, datoK);
                         datoK.forEach((elemI: any) => {
@@ -951,6 +963,25 @@ select o.id_casillero as id_formulario, o.unidad_analisis, 'BF_'||o.casillero bo
             } else {
                 return 'vacio';
             }
+        }
+    },
+    {
+        // vuelve a pasar a las tablas la encuesta guardada en la TEM cuyo pase falló (por ejemplo por sesión vencida al sincronizar)
+        action: 'pase_tabla_reintentar',
+        parameters: [
+            { name: 'operativo', typeName: 'text', references: 'operativos' },
+            { name: 'enc', typeName: 'text' },
+        ],
+        coreFunction: async function (context: ProcedureContext, params: CoreFunctionParameters<{ operativo: IdOperativo, enc: string }>) {
+            var { json_encuesta } = (await context.client.query(
+                `select json_encuesta from tem where operativo = $1 and enc = $2`,
+                [params.operativo, params.enc]
+            ).fetchUniqueRow()).row;
+            if (!json_encuesta) {
+                return { ok: false, message: 'la encuesta no tiene respuestas guardadas en la TEM' };
+            }
+            var resultado = await registrarPaseTabla(context, params.operativo, params.enc, json_encuesta, 'pase_tabla_reintentar');
+            return { ok: !resultado.includes('pase_tabla_reintentar.'), message: resultado };
         }
     },
     {

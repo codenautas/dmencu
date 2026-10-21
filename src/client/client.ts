@@ -445,12 +445,13 @@ function
                         }
                     }
                     setTimeout(restaurarBoton, 2500);
-                }, function (err) {
+                }).catch(function (err) {
                     var error = expected(err);
                     boton.textContent = 'error';
                     boton.style.backgroundColor = '#FF8';
                     console.error('Error en acción de grilla:', error);
                     alertPromise(error.message);
+                    setTimeout(restaurarBoton, 2500);
                 })
             }
             //if ((depot.row.consistido==null  && depot.row.rea!=null) || depot.row.modificado!=null && depot.row.consistido!=null && depot.row.modificado >depot.row.consistido){
@@ -471,6 +472,22 @@ myOwn.clientSides.consistir = botonClientSideEnGrilla({
         }) : alertPromise('La encuesta debe tener dato en rea para poder consistirla.');
     }
 });
+
+myOwn.clientSides.paseTablaReintentar = {
+    prepare: function (depot: myOwn.Depot, fieldName: string) {
+        var td = depot.rowControls[fieldName];
+        td.innerHTML = "";
+        if (!/dm_forpkraiz_descargar\.|pase_tabla_reintentar\./.test(depot.row.pase_tabla || '')) return;
+        botonClientSideEnGrilla({
+            nombreBoton: 'pasar a tablas',
+            llamada: (depot: myOwn.Depot) => myOwn.ajax.pase_tabla_reintentar({
+                operativo: depot.row.operativo,
+                enc: depot.row.enc
+            })
+        }).prepare(depot, fieldName);
+    },
+    update: (_depot, _fieldName) => { }
+};
 
 myOwn.wScreens.proc.result.mostrar_encuestas_a_blanquear = function (result, divResult) {
     if (result.rows.length) {
