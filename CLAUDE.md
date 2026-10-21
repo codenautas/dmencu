@@ -69,6 +69,7 @@ Todos los objetos pertenecen al esquema `base`. Los nombres están en castellano
 - Todo cambio de estructura, función o trigger que tenga que llegar a bases ya instaladas lleva además un script en `operaciones/`, con el nombre `AAAA-MM-DD-actualizar_descripcion_con_snake_case.sql` (por ejemplo `2026-10-15-actualizar_validar_manzana_casa_tem.sql`).
 - El script empieza con `--set role <app>_owner;` comentado y `set search_path = base;`. Si hacen falta permisos para el usuario admin, se usa un nombre ficticio (`<app>_admin`) y se deja comentado, para que cada instalación ponga el suyo.
 - Tiene que poder correrse más de una vez sin romper nada (`create or replace`, `drop ... if exists`, `add column if not exists`).
+- **Probar el script contra el dump**: antes de darlo por listo, verificar que deja la estructura igual a la que genera el código. Con una configuración que apunte a una base de prueba (nunca producción) se genera el dump (`node dist/server/server/server-dmencu.js --dump-db`; sobrescribe `local-db-dump*.sql`, así que se respaldan si se usan) y se carga en una base de referencia; el script se aplica, dos veces, sobre una copia de una base ya instalada; y se comparan ambas con `script/comparar-bd.js` de coderun. Además se compara a mano lo que ese comparador no ve en las tablas tocadas: columnas, restricciones, índices, permisos, owner y triggers (`his.changes_trg` lleva la clave de la tabla como argumento, así que si cambia la clave hay que recrearlo). Lo que falte se agrega al script.
 
 ## Casos de prueba
 
