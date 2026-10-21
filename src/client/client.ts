@@ -445,12 +445,13 @@ function
                         }
                     }
                     setTimeout(restaurarBoton, 2500);
-                }, function (err) {
+                }).catch(function (err) {
                     var error = expected(err);
                     boton.textContent = 'error';
                     boton.style.backgroundColor = '#FF8';
                     console.error('Error en acción de grilla:', error);
                     alertPromise(error.message);
+                    setTimeout(restaurarBoton, 2500);
                 })
             }
             //if ((depot.row.consistido==null  && depot.row.rea!=null) || depot.row.modificado!=null && depot.row.consistido!=null && depot.row.modificado >depot.row.consistido){
