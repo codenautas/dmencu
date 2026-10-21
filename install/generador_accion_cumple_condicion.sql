@@ -25,7 +25,7 @@ AS $SQL$
     from base.tareas_tem t
     inner join base.estados_acciones ea using (operativo, estado)
     inner join tem te using (operativo,enc)
-    left join no_rea nr on (te.norea = nr.no_rea)
+    left join no_rea nr on (te.operativo = nr.operativo and te.norea = nr.no_rea)
     left join tareas_tem tta on (te.operativo = tta.operativo and te.enc = tta.enc and te.tarea_actual = tta.tarea)
     where t.operativo = p_operativo
     and t.estado = p_estado
