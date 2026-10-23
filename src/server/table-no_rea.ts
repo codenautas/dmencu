@@ -16,12 +16,14 @@ export function no_rea(context:TableContext):TableDefinition {
             {name:'grupo'                   , typeName:'text'},
             {name:'variable'                , typeName:'text'},
             {name:'valor'                   , typeName:'text'},
-            {name:'grupo0'                  , typeName:'text'},
+            {name:'grupo0'                  , typeName:'text', nullable:false},
             {name:'pasa_a_recuperacion'     , typeName:'boolean', nullable:false, defaultDbValue:'false'},
             {name:'pasa_a_supervision'      , typeName:'boolean', nullable:false, defaultDbValue:'false'},
         ],
-        primaryKey:['operativo', 'no_rea'],
-        foreignKeys:[{references:'operativos', fields:['operativo']}],
+        primaryKey:['operativo', 'grupo0', 'no_rea'],
+        foreignKeys:[{references:'no_rea_grupo0', fields:['operativo', 'grupo0']}],
+        // el código identifica la no respuesta en todo el sistema (tem.norea, joins, dispositivos): sigue siendo único por operativo
+        constraints:[{constraintType:'unique', consName:'no_rea_codigo_uk', fields:['operativo', 'no_rea']}],
         sortColumns: [{ column: "operativo", order: 1 }, { column: "orden", order: 1 }, {column:"no_rea", order:1}],
     };
 }

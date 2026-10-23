@@ -9,7 +9,7 @@ import type { NoRea, NoReaSup, Rea, ReaSup, Valor } from '../unlogged/tipos';
 import { crearAppParaTests } from './app-para-tests';
 
 // se listan acá (y no se importa TABLAS_REA_NO_REA) para que el test falle si alguna deja de tratarse
-const TABLAS_REA_NO_REA = ['rea', 'no_rea', 'rea_sup', 'no_rea_sup'];
+const TABLAS_REA_NO_REA = ['rea', 'no_rea', 'no_rea_grupo0', 'rea_sup', 'no_rea_sup'];
 
 type Fila = { [campo: string]: string | number | boolean | null | Fila[] };
 
@@ -44,6 +44,10 @@ const noReas: NoRea[] = [
     { operativo: 'etoi211', no_rea: 2, descripcion: 'rechazo', grupo: 'rechazo', variable: 'v1', valor: '8', grupo0: 'encuestable', orden: 2 },
     { operativo: 'eah2022', no_rea: 1, descripcion: 'deshabitada', grupo: 'no encuestable', variable: 'v1', valor: '9', grupo0: 'no encuestable', orden: 1 },
 ];
+const gruposNoRea0: Fila[] = [
+    { operativo: 'etoi211', grupo0: 'encuestable', orden: 1, es_otras_causas: false, es_no_encuestable: false, es_en_curso: false },
+    { operativo: 'eah2022', grupo0: 'no encuestable', orden: 1, es_otras_causas: false, es_no_encuestable: true, es_en_curso: false },
+];
 const noReasSup: NoReaSup[] = [
     { operativo: 'etoi211', no_rea_sup: 71, desc_norea_sup: 'no contacto', grupo_sup: 'sin contacto', variable_sup: 's1', valor_sup: '2', grupo0_sup: 'sup', orden: 1 },
     { operativo: 'eah2022', no_rea_sup: 72, desc_norea_sup: 'otro', grupo_sup: 'otro', variable_sup: 's1', valor_sup: '3', grupo0_sup: 'sup', orden: 1 },
@@ -59,7 +63,7 @@ const reasSup: Omit<ReaSup, 'condicion_js'>[] = [
 const operativos: Fila[] = [{ con_rea_hogar: true, operativo: 'etoi211', config_sorteo: null }];
 
 function baseConDatos() {
-    return new BaseFalsa({ no_rea: noReas, rea: reas, no_rea_sup: noReasSup, rea_sup: reasSup, operativos });
+    return new BaseFalsa({ no_rea: noReas, no_rea_grupo0: gruposNoRea0, rea: reas, no_rea_sup: noReasSup, rea_sup: reasSup, operativos });
 }
 
 // evalúa una condición compilada (condicion_js) como lo hace el dispositivo
@@ -75,6 +79,7 @@ describe('dmencu - caches de rea/no rea', () => {
             var be = crearAppParaTests();
             await be.refreshCaches(baseConDatos());
             assert.deepStrictEqual(be.caches.tableContent.no_rea, noReas);
+            assert.deepStrictEqual(be.caches.tableContent.no_rea_grupo0, gruposNoRea0);
             assert.deepStrictEqual(be.caches.tableContent.rea, reas);
             assert.deepStrictEqual(be.caches.tableContent.no_rea_sup, noReasSup);
             assert.deepStrictEqual(be.caches.tableContent.rea_sup, reasSup);
@@ -86,7 +91,7 @@ describe('dmencu - caches de rea/no rea', () => {
             for (var tabla of TABLAS_REA_NO_REA) {
                 var consulta = base.consultas.find(sql => new RegExp(`from ${tabla} order by`).test(sql));
                 assert.ok(consulta, `no se consultó ${tabla}`);
-                assert.match(consulta, new RegExp(`order by operativo, orden, ${tabla}`));
+                assert.match(consulta, new RegExp(`order by operativo, orden, ${tabla == 'no_rea_grupo0' ? 'grupo0' : tabla}`));
             }
         });
         it('agrupa los no rea por grupo y por grupo0', async () => {

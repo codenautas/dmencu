@@ -10,7 +10,7 @@ import {
     seccionCalendario, seccionCircuito, seccionDelAmbito, seccionDesglose, seccionesVisibles, seccionMiAvance, seccionMiDetalle, seccionOperativos, seccionParaAsignar, seccionParaRecibir, seccionRecepcionistas,
     seccionNoRespuesta, ValorSql
 } from '../server/tablero';
-import type { GrupoNoRea, TableDefinition } from '../server/types-dmencu';
+import type { GrupoNoRea, NoReaGrupo0, TableDefinition } from '../server/types-dmencu';
 import type { ContenidoTablero, SeccionTablero } from '../unlogged/tipos-tablero';
 import { AppParaTests, contextoDelRol, crearAppParaTests } from './app-para-tests';
 
@@ -171,34 +171,54 @@ describe('dmencu - tablero de inicio', () => {
         });
     });
 
-    describe('control_campo: otras causas según no_rea', () => {
+    describe('control_campo: significado de los grupos de no rea según no_rea_grupo0', () => {
         function grupo(nombre: string, grupo0: string): GrupoNoRea {
             return { grupo: nombre, codigos: [{ operativo: 'OPE1', no_rea: 1, descripcion: nombre, grupo: nombre, variable: 'v', valor: '1', grupo0, orden: 1 }] };
         }
-        function sqlDeControl(grupos: GrupoNoRea[], opts: Partial<controlCamposOpts>): string {
+        // lo que declara el operativo en no_rea_grupo0 para cada grupo0
+        function declarado(grupo0: string, marcas: Partial<NoReaGrupo0> = {}): NoReaGrupo0 {
+            return { operativo: 'OPE1', grupo0, orden: 1, es_otras_causas: false, es_no_encuestable: false, es_en_curso: false, ...marcas };
+        }
+        function sqlDeControl(grupos: GrupoNoRea[], gruposDeclarados: NoReaGrupo0[], opts: Partial<controlCamposOpts> = {}): string {
             var be = crearAppParaTests(GABINETE);
-            be.caches.tableContent = { conReaHogar: { con_rea_hogar: false, operativo: 'OPE1', config_sorteo: null }, no_rea_groups: grupos, no_rea_groups0: grupos };
+            be.caches.tableContent = { conReaHogar: { con_rea_hogar: false, operativo: 'OPE1', config_sorteo: null }, no_rea_grupo0: gruposDeclarados, no_rea_groups: grupos, no_rea_groups0: grupos };
             var sql = control_campo(contextoDelRol(be, 'admin'), { nombre: 'control_campo', ...opts }).sql?.from;
             assert.ok(sql != null);
             return sql;
         }
-        const sumaDe = (sql: string): string | undefined => /coalesce\(otros,0\) \+ (.*?)\s+as otras_causas_gabinete/.exec(sql)?.[1];
+        const sumaDe = (sql: string, alias: string): string | undefined => new RegExp(`(?:\\+|\\s)(coalesce\\(\\w+,0\\)(?:\\+coalesce\\(\\w+,0\\))*|0)\\s+as ${alias}`).exec(sql)?.[1];
 
-        it('suma los grupos cuyo grupo0 es "otras causas", sin pedir los que la base no tiene (como ggs, que no tiene seleccionado)', () => {
-            var sql = sqlDeControl([
-                grupo('otras causas vivienda', 'otras causas'), grupo('Otras causas telefonica', 'noreatel'), grupo('rechazos', 'rechazos')
-            ], { sinhogfin: true });
-            assert.strictEqual(sumaDe(sql), 'coalesce(otras_causas_vivienda,0)');
+        it('otras causas: suma los grupos cuyo grupo0 está marcado, sin pedir los que la base no tiene (como ggs, que no tiene seleccionado)', () => {
+            var sql = sqlDeControl(
+                [grupo('otras causas vivienda', 'otras causas'), grupo('Otras causas telefonica', 'noreatel'), grupo('rechazos', 'rechazos')],
+                [declarado('otras causas', { es_otras_causas: true }), declarado('noreatel'), declarado('rechazos')]
+            );
+            assert.strictEqual(sumaDe(sql, 'otras_causas_gabinete'), 'coalesce(otras_causas_vivienda,0)');
         });
-        it('suma todos los grupos de otras causas que tenga la base (hogar, vivienda, seleccionado)', () => {
-            var sql = sqlDeControl([
-                grupo('otras causas hogar', 'otras causas'), grupo('otras causas seleccionado', 'otras causas'), grupo('otras causas vivienda', 'otras causas')
-            ], {});
-            assert.strictEqual(sumaDe(sql), 'coalesce(otras_causas_hogar,0)+coalesce(otras_causas_seleccionado,0)+coalesce(otras_causas_vivienda,0)');
+        it('otras causas: suma todos los grupos marcados que tenga la base (hogar, vivienda, seleccionado)', () => {
+            var sql = sqlDeControl(
+                [grupo('otras causas hogar', 'otras causas'), grupo('otras causas seleccionado', 'otras causas'), grupo('otras causas vivienda', 'otras causas')],
+                [declarado('otras causas', { es_otras_causas: true })]
+            );
+            assert.strictEqual(sumaDe(sql, 'otras_causas_gabinete'), 'coalesce(otras_causas_hogar,0)+coalesce(otras_causas_seleccionado,0)+coalesce(otras_causas_vivienda,0)');
         });
-        it('en gabinete (agrupado por grupo0) suma el grupo "otras causas"; sin ninguno suma 0', () => {
-            assert.strictEqual(sumaDe(sqlDeControl([grupo('otras causas', 'otras causas')], { gabinete: true, agrupador: 'no_rea_groups0' })), 'coalesce(otras_causas,0)');
-            assert.strictEqual(sumaDe(sqlDeControl([grupo('rechazos', 'rechazos')], {})), '0');
+        it('otras causas: en gabinete (agrupado por grupo0) suma el grupo marcado; sin marcas, o con un grupo0 no declarado, suma 0', () => {
+            var grupo0 = [grupo('otras causas', 'otras causas')];
+            assert.strictEqual(sumaDe(sqlDeControl(grupo0, [declarado('otras causas', { es_otras_causas: true })], { gabinete: true, agrupador: 'no_rea_groups0' }), 'otras_causas_gabinete'), 'coalesce(otras_causas,0)');
+            assert.strictEqual(sumaDe(sqlDeControl(grupo0, [declarado('otras causas')]), 'otras_causas_gabinete'), '0');
+            assert.strictEqual(sumaDe(sqlDeControl(grupo0, []), 'otras_causas_gabinete'), '0');
+        });
+        it('en curso: suma los grupos cuyo grupo0 está marcado como en curso; sin marcas suma 0', () => {
+            var grupos = [grupo('sin finalizar dm', 'no finalizada'), grupo('sin finalizar incompleto', 'no finalizada'), grupo('rechazos', 'rechazos')];
+            assert.strictEqual(sumaDe(sqlDeControl(grupos, [declarado('no finalizada', { es_en_curso: true }), declarado('rechazos')]), 'en_curso'), 'coalesce(sin_finalizar_dm,0)+coalesce(sin_finalizar_incompleto,0)');
+            assert.strictEqual(sumaDe(sqlDeControl(grupos, [declarado('no finalizada')]), 'en_curso'), '0');
+        });
+        it('tasa de efectividad: los grupos marcados como no encuestables no suman al denominador', () => {
+            var sql = sqlDeControl(
+                [grupo('no encuestable hogar', 'no encuestable'), grupo('rechazos', 'rechazos')],
+                [declarado('no encuestable', { es_no_encuestable: true }), declarado('rechazos')]
+            );
+            assert.strictEqual(/nullif\( (.*?),0\)/.exec(sql)?.[1], 'rea+rechazos');
         });
     });
 

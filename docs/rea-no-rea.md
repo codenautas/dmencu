@@ -12,10 +12,23 @@ Son tablas de metadatos del operativo, editables desde *configurar → metadatos
 | :-- | :-- | :-- |
 | `rea` | `rea` (código), `orden`, `condicion`, `es_positiva`, `tarea` | `condicion` es una expresión sobre las variables de la encuesta. Se compila a JavaScript (`condicion_js`) en el servidor al armar la estructura |
 | `no_rea` | `no_rea` (código), `orden`, `variable`, `valor`, `grupo`, `grupo0`, `pasa_a_recuperacion`, `pasa_a_supervision` | Se cumple si `respuestas[variable] == valor` |
+| `no_rea_grupo0` | `grupo0`, `orden`, `es_otras_causas`, `es_no_encuestable`, `es_en_curso` | No se evalúa: declara qué significa cada `grupo0` de `no_rea` para los controles (ver [Grupos de no REA y controles](#grupos-de-no-rea-y-controles)) |
 | `rea_sup` | igual que `rea` | Igual que `rea`, para la supervisión |
 | `no_rea_sup` | `no_rea_sup`, `orden`, `variable_sup`, `valor_sup`, `grupo_sup`, `grupo0_sup` | Igual que `no_rea` |
 
 Todas tienen `operativo` en la clave: cada operativo define sus propias reglas (pueden no existir en alguno).
+
+## Grupos de no REA y controles
+
+Cada `no_rea` tiene un `grupo` (por ejemplo «otras causas vivienda») y un `grupo0` que agrupa grupos (por ejemplo «otras causas»). `no_rea` es hija de `no_rea_grupo0`: su clave es la del padre más la agregada (`operativo`, `grupo0`, `no_rea`), así que todo código pertenece a un `grupo0` declarado y desde la grilla de `no_rea_grupo0` se abren sus códigos. El código sigue siendo único por operativo (restricción `no_rea_codigo_uk`), porque el sistema identifica la no respuesta por su código (`tem.norea`). Los controles de campo (`control_campo`, `control_resumen` y las que derivan de ellas, ver [tablero.md](tablero.md)) arman una columna por grupo y no conocen sus nombres: lo que significa cada `grupo0` lo declara el operativo en la tabla **`no_rea_grupo0`**, una fila por `grupo0` (`no_rea.grupo0` la referencia).
+
+| Bandera | Qué hace en el control |
+| :-- | :-- |
+| `es_otras_causas` | los casos de sus grupos suman en «otras causas» (`otras_causas_gabinete`) |
+| `es_no_encuestable` | sus grupos no entran en el denominador de la tasa de efectividad |
+| `es_en_curso` | sus grupos suman en `en_curso` (por ejemplo las encuestas sin finalizar) |
+
+Un `grupo0` sin marcas no suma en ninguno de los tres. Así una base sin el grupo «otras causas seleccionado» (como ggs) no pide una columna que no existe, y cada operativo decide qué grupos son «en curso» sin tocar el código. Al instalar en una base que ya existe, el script `operaciones/2026-10-20-actualizar_no_rea_grupo0.sql` crea la tabla y la completa a partir de los `grupo0` de `no_rea` (`otras causas`, los que empiezan con `no encuestable` y `no finalizada`).
 
 ## Cómo se determina el resultado
 
@@ -69,11 +82,11 @@ Sólo se tienen en cuenta los formularios habilitados de la encuesta (por ejempl
 | TEM (valor vigente) | `resumen_estado`, `rea`, `norea` y las `_sup` |
 
 - Al sincronizar, `getSettersAndParametersForReaNoReaResumenEstado` (`src/server/setters-rea-no-rea.ts`) arma los `set` del update: para la tarea `supe` usa las columnas `_sup`; para las demás, las comunes.
-- Los grupos de no REA (`grupo`, `grupo0`) se usan para decidir pases: la grilla marca como a recuperar (`a_recuperacion`) las encuestas de la tarea `recu` cuyo grupo0 sea ausentes o rechazos, y `modalidad = presencial` cuando el grupo0 es no encuestable o hay supervisión presencial.
+- Qué pasa con una no REA lo decide el operativo con datos, no el código: `pasa_a_recuperacion` y `pasa_a_supervision` (por código de `no_rea`) los leen las condiciones de `tareas_proximas` (por ejemplo `nr.pasa_a_supervision or te.rea=1 and ...`). La grilla de tareas usa la misma casilla: `a_recuperacion` marca las encuestas de la tarea `recu` cuyo no REA tiene `pasa_a_recuperacion`, y `modalidad = presencial` cuando el grupo0 está marcado `es_no_encuestable` o hay supervisión presencial. Es la regla de sieh1 (`norea_recuperable`) hecha dato.
 
 ## Cómo llegan las reglas al dispositivo
 
-1. Al iniciar el servidor, y cada vez que se guarda o borra un registro en `rea`, `no_rea`, `rea_sup` o `no_rea_sup`, se recargan las caches (`be.caches.tableContent`) y se actualiza `timestampEstructura`.
+1. Al iniciar el servidor, y cada vez que se guarda o borra un registro en `rea`, `no_rea`, `no_rea_grupo0`, `rea_sup` o `no_rea_sup`, se recargan las caches (`be.caches.tableContent`) y se actualiza `timestampEstructura`.
 2. `operativo_estructura_completa` entrega la estructura del operativo; `reasNoReasDelOperativo` filtra las reglas del operativo y compila las condiciones de `rea` y `rea_sup` a JS (`condicion_js`).
 3. El dispositivo guarda la estructura en `localStorage` y la usa para evaluar sin conexión.
 
