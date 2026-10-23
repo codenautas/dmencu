@@ -133,7 +133,7 @@ describe('dmencu - menú según rol y policy', () => {
             var menu = menuDelRol(GABINETE, 'dis_conceptual');
             assert.deepStrictEqual(nombres(menu), ['tablero', 'configurar']);
             var metadatos = submenu(submenu(menu, 'configurar'), 'metadatos');
-            assert.deepStrictEqual(nombres(submenu(metadatos, 'rea/norea')), ['rea', 'no_rea', 'rea_sup', 'no_rea_sup']);
+            assert.deepStrictEqual(nombres(submenu(metadatos, 'rea/norea')), ['rea', 'no_rea_grupo0', 'no_rea', 'rea_sup', 'no_rea_sup']);
         });
         it('al recepcionista la asignación le filtra sus propias áreas', () => {
             var asignacion = submenu(menuDelRol(GABINETE, 'recepcionista', 'REC7'), 'asignacion');

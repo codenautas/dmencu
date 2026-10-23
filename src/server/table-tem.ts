@@ -117,6 +117,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
             {name:'fin_campo'            , typeName:'text'    , editable: false  },
             {name:'proie'                , typeName:'text'    , editable: false  },
             {name:'pase_tabla'           , typeName:'text'    , editable: false  },
+            {name:'reintentar_pase'      , typeName:'text'    , editable: false  , inTable:false, clientSide:'paseTablaReintentar'},
             ...getDomicilioFields(),
             //{name: "verificar"       , typeName:'boolean', editable:true, inTable:false, clientSide:'verificarCaso'},
             //{name: "finalizar_campo" , typeName:'boolean', editable:true, inTable:false, clientSide:'finalizarCampo'}, //fin_de_campo
@@ -232,7 +233,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
                     from tem t left join (
                         select tt.operativo, tt.enc, bool_or(cargado) cargado, string_agg(cargado_dm,',') cargado_dm,jsonb_object_agg(tarea,jsonb_build_object('asignado',asignado,'cargado',cargado,'cargado_dm',cargado_dm))etareas 
                             from tareas_tem tt group by tt.operativo, tt.enc  )tt on t.operativo=tt.operativo and t.enc=tt.enc
-                            left join no_rea y on y.no_rea=t.norea
+                            left join no_rea y on y.operativo=t.operativo and y.no_rea=t.norea
                             left join ${sqlTools.quoteIdent(OperativoGenerator.mainTD)} aux on aux.operativo=t.operativo and aux.${sqlTools.quoteIdent(OperativoGenerator.mainTDPK)}=t.enc 
                             left join usuarios usu_enc on usu_enc.idper = tt.etareas->'encu'->>'asignado'
                             left join usuarios usu_rec on usu_rec.idper = tt.etareas->'recu'->>'asignado'

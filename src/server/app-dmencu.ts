@@ -45,6 +45,7 @@ import { parametros } from "./table-parametros";
 import { roles_subordinados } from "./table-roles_subordinados";
 
 import { no_rea } from "./table-no_rea";
+import { no_rea_grupo0 } from "./table-no_rea_grupo0";
 import { no_rea_sup } from "./table-no_rea_sup";
 import { rea } from "./table-rea";
 import { rea_sup } from "./table-rea_sup";
@@ -172,7 +173,7 @@ export type ClienteDb = {
 // tablas cuya modificación cambia la estructura que se manda a los dispositivos (ver operativo_estructura_completa)
 export const TABLAS_ESTRUCTURA = ['casilleros', 'semanas'];
 // tablas de rea/no rea, que además se guardan en be.caches.tableContent (ver refreshCaches)
-export const TABLAS_REA_NO_REA = ['rea', 'no_rea', 'rea_sup', 'no_rea_sup'];
+export const TABLAS_REA_NO_REA = ['rea', 'no_rea', 'no_rea_grupo0', 'rea_sup', 'no_rea_sup'];
 
 export type RefrescadorEstructura = {
     caches: { timestampEstructura: number }
@@ -269,6 +270,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             super(args);
             this.caches.tableContent = this.caches.tableContent || {};
             this.caches.tableContent.no_rea = []
+            this.caches.tableContent.no_rea_grupo0 = []
             this.caches.tableContent.no_rea_groups = []
             this.caches.metaEncIncluirCasillerosSaltoREL = false;
             this.caches.timestampEstructura = new Date().getTime();
@@ -585,6 +587,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
             // Función auxiliar para ejecutar las queries con el cliente provisto o uno nuevo
             const executeQueries = async (dbClient:ClienteDb) => {
                 this.caches.tableContent.no_rea = (await dbClient.query(`select * from no_rea order by operativo, orden, no_rea`).fetchAll()).rows;
+                this.caches.tableContent.no_rea_grupo0 = (await dbClient.query(`select * from no_rea_grupo0 order by operativo, orden, grupo0`).fetchAll()).rows;
                 this.caches.tableContent.rea = (await dbClient.query(`select * from rea order by operativo, orden, rea`).fetchAll()).rows;
 
                 this.caches.tableContent.no_rea_groups = (await dbClient.query(`
@@ -875,6 +878,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                         { menuType: 'table', name: 'operativos' },
                         { menuType: 'menu', name: 'rea/norea', menuContent:[
                             { menuType: 'table', name: 'rea' },
+                            { menuType: 'table', name: 'no_rea_grupo0' },
                             { menuType: 'table', name: 'no_rea' },
                             { menuType: 'table', name: 'rea_sup' },
                             { menuType: 'table', name: 'no_rea_sup' },
@@ -1024,6 +1028,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 , permisos
                 , roles_permisos
                 , roles_subordinados
+                , no_rea_grupo0
                 , no_rea
                 , no_rea_sup
                 , rea
@@ -1069,19 +1074,19 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 , control_resumen_recepcion
                 , control_resumen_recepcionistas
                 , control_campo_zona: context => control_campo(context,
-                    { nombre: 'control_campo_comuna', title: 'control campo x zona solo cemento', camposCorte: [{ name: 'zona', typeName: 'text' }], sinhogfin: !context.be.caches.tableContent.conReaHogar.con_rea_hogar, filtroWhere: 'dominio=3' }
+                    { nombre: 'control_campo_comuna', title: 'control campo x zona solo cemento', camposCorte: [{ name: 'zona', typeName: 'text' }], filtroWhere: 'dominio=3' }
                 )
                 , control_campo_comuna: context => control_campo(context,
-                    { nombre: 'control_campo_comuna', title: 'control campo x comuna solo cemento', camposCorte: [{ name: 'zona', typeName: 'text' }, { name: 'nrocomuna', typeName: 'text' }], sinhogfin: !context.be.caches.tableContent.conReaHogar.con_rea_hogar, filtroWhere: 'dominio=3' }
+                    { nombre: 'control_campo_comuna', title: 'control campo x comuna solo cemento', camposCorte: [{ name: 'zona', typeName: 'text' }, { name: 'nrocomuna', typeName: 'text' }], filtroWhere: 'dominio=3' }
                 )
                 , control_campo_area: context => control_campo(context,
-                    { nombre: 'control_campo_comuna', title: 'control campo x area', camposCorte: [{ name: 'zona', typeName: 'text' }, { name: 'nrocomuna', typeName: 'text' }, { name: 'area', typeName: 'integer' }, { name: 'participacion_a', typeName: 'text' }, { name: 'clase_a', typeName: 'text' }], sinhogfin: !context.be.caches.tableContent.conReaHogar.con_rea_hogar }
+                    { nombre: 'control_campo_comuna', title: 'control campo x area', camposCorte: [{ name: 'zona', typeName: 'text' }, { name: 'nrocomuna', typeName: 'text' }, { name: 'area', typeName: 'integer' }, { name: 'participacion_a', typeName: 'text' }, { name: 'clase_a', typeName: 'text' }] }
                 )
                 , control_campo_participacion: context => control_campo(context,
-                    { nombre: 'control_campo_comuna', title: 'control campo x participacion', camposCorte: [{ name: 'participacion', typeName: 'bigint' }], sinhogfin: !context.be.caches.tableContent.conReaHogar.con_rea_hogar }
+                    { nombre: 'control_campo_comuna', title: 'control campo x participacion', camposCorte: [{ name: 'participacion', typeName: 'bigint' }] }
                 )
                 , control_campo_dominio: context => control_campo(context,
-                    { nombre: 'control_campo_comuna', title: 'control campo x dominio', camposCorte: [{ name: 'dominio', typeName: 'integer' }], sinhogfin: !context.be.caches.tableContent.conReaHogar.con_rea_hogar }
+                    { nombre: 'control_campo_comuna', title: 'control campo x dominio', camposCorte: [{ name: 'dominio', typeName: 'integer' }] }
                 )
                 , control_dias_carga
                 , viviendas
