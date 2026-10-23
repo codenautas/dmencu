@@ -864,8 +864,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                         { menuType: 'table', name: 'operativos' },
                         { menuType: 'menu', name: 'rea/norea', menuContent:[
                             { menuType: 'table', name: 'rea' },
-                            { menuType: 'table', name: 'no_rea' },
                             { menuType: 'table', name: 'no_rea_grupo0' },
+                            { menuType: 'table', name: 'no_rea' },
                             { menuType: 'table', name: 'rea_sup' },
                             { menuType: 'table', name: 'no_rea_sup' },
                         ]},

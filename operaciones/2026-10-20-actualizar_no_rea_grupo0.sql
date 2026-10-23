@@ -40,7 +40,9 @@ insert into "no_rea_grupo0" ("operativo", "grupo0", "orden", "es_otras_causas", 
         group by "operativo", "grupo0"
     on conflict ("operativo", "grupo0") do nothing;
 
--- no_rea.grupo0 pasa a referenciar a no_rea_grupo0
+-- no_rea.grupo0 pasa a referenciar a no_rea_grupo0 (que ya referencia a operativos: no_rea deja de referenciar a operativos directamente)
+alter table "no_rea" drop constraint if exists "no_rea operativos REL";
+drop index if exists "operativo 4 no_rea IDX";
 alter table "no_rea" drop constraint if exists "no_rea no_rea_grupo0 REL";
 alter table "no_rea" add constraint "no_rea no_rea_grupo0 REL" foreign key ("operativo", "grupo0") references "no_rea_grupo0" ("operativo", "grupo0") on update cascade;
 create index if not exists "operativo,grupo0 4 no_rea IDX" on "no_rea" ("operativo", "grupo0");
