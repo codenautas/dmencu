@@ -71,6 +71,7 @@ export type FilaBarras = {
 export type FilaDesglose = {
     etiqueta: string
     partes: ParteAvance[]
+    acceso?: AccesoTablero // la etiqueta lleva a esa opción del menú
 }
 
 // un corte del desglose (por ejemplo por comuna); acceso: la grilla de control con el detalle

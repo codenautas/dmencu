@@ -147,7 +147,7 @@ export function contenidoConAccesosVisibles(contenido: ContenidoTablero, menu: M
                 : { ...visible, desagregado: { ...indicador.desagregado, filas: indicador.desagregado.filas.map(fila => conAccesoVisible(fila, menu)) } };
         }) };
         case 'barras': return { ...contenido, filas: contenido.filas.map(fila => conAccesoVisible(fila, menu)) };
-        case 'desglose': return { ...contenido, cortes: contenido.cortes.map(corte => conAccesoVisible(corte, menu)) };
+        case 'desglose': return { ...contenido, cortes: contenido.cortes.map(corte => ({ ...conAccesoVisible(corte, menu), filas: corte.filas.map(fila => conAccesoVisible(fila, menu)) })) };
         default: return contenido;
     }
 }
@@ -453,20 +453,18 @@ export const seccionNoRespuesta: DefinicionSeccionTablero = {
 type DefinicionCorte = {
     id: string
     titulo: string
-    tabla: string // la tabla de control_campo con ese corte
+    tabla: string // la tabla de control_resumen con ese corte (sobre toda la tem, sin los filtros de los controles del menú)
     campo: string // la columna por la que se agrupa
     etiqueta(valor: string): string
     ruta: RutaMenu // la grilla del menú de control con el detalle
 };
 
 export const CORTES_DESGLOSE: DefinicionCorte[] = [
-    { id: 'area', titulo: 'área', tabla: 'control_campo_area', campo: 'area', etiqueta: valor => `área ${valor}`, ruta: ['control', 'área'] },
-    { id: 'dominio', titulo: 'dominio', tabla: 'control_campo_dominio', campo: 'dominio', etiqueta: valor => `dominio ${valor}`, ruta: ['control', 'dominio'] },
-    { id: 'zona', titulo: 'zona', tabla: 'control_campo_zona', campo: 'zona', etiqueta: valor => `zona ${valor}`, ruta: ['control', 'zona'] },
-    { id: 'comuna', titulo: 'comuna', tabla: 'control_campo_comuna', campo: 'nrocomuna', etiqueta: valor => `comuna ${valor}`, ruta: ['control', 'comuna'] },
+    { id: 'area', titulo: 'área', tabla: 'control_resumen_area', campo: 'area', etiqueta: valor => `área ${valor}`, ruta: ['control', 'área'] },
+    { id: 'dominio', titulo: 'dominio', tabla: 'control_resumen_dominio', campo: 'dominio', etiqueta: valor => `dominio ${valor}`, ruta: ['control', 'dominio'] },
+    { id: 'zona', titulo: 'zona', tabla: 'control_resumen_zona', campo: 'zona', etiqueta: valor => `zona ${valor}`, ruta: ['control', 'zona'] },
+    { id: 'comuna', titulo: 'comuna', tabla: 'control_resumen_comuna', campo: 'nrocomuna', etiqueta: valor => `comuna ${valor}`, ruta: ['control', 'comuna'] },
 ];
-
-const MAXIMO_FILAS_POR_CORTE = 200;
 
 export async function corteDeControl(consulta: ConsultaTablero, corte: DefinicionCorte): Promise<CorteDesglose> {
     var campo = sqlTools.quoteIdent(corte.campo);
@@ -474,8 +472,7 @@ export async function corteDeControl(consulta: ConsultaTablero, corte: Definicio
         select ${campo} as etiqueta, ${SUMAS_DE_CONTROL}
             from ${sqlDe(consulta.tabla(corte.tabla))}
             group by ${campo}
-            order by case when ${campo}::text ~ '^\\d+$' then ${campo}::text::integer end, ${campo}
-            limit ${MAXIMO_FILAS_POR_CORTE}`, []);
+            order by case when ${campo}::text ~ '^\\d+$' then ${campo}::text::integer end, ${campo}`, []);
     return {
         id: corte.id,
         titulo: corte.titulo,
@@ -483,6 +480,8 @@ export async function corteDeControl(consulta: ConsultaTablero, corte: Definicio
         filas: porValor.filter(fila => numero(fila, 'total') > 0).map(fila => ({
             etiqueta: corte.etiqueta(texto(fila, 'etiqueta') ?? 'sin dato'),
             partes: partesDeControl(cifrasDeControl(fila)),
+            // las encuestas de la tem de ese área, dominio, zona o comuna
+            ...accesoALaRuta(RUTA_TEM, { [corte.campo]: texto(fila, 'etiqueta') }),
         })),
     };
 }
@@ -809,12 +808,12 @@ const COLUMNAS_DE_RECEPCION: ColumnaTabla[] = [
     { campo: 'en_recepcion', titulo: 'e/recepción', numerica: true },
     { campo: 'total', titulo: 'total', numerica: true },
     { campo: 'porcentaje_asignado', titulo: '% asig', numerica: true, formato: 'porcentaje' },
-    { campo: 'salieron', titulo: 'en campo', numerica: true },
+    { campo: 'salieron', titulo: 'salieron a campo', numerica: true },
     { campo: 'efectivas', titulo: 'efectivas', numerica: true },
-    { campo: 'porcentaje_efectividad', titulo: '% efec', numerica: true, formato: 'porcentaje' },
+    { campo: 'porcentaje_efectividad', titulo: 'tasa de respuesta', numerica: true, formato: 'porcentaje' },
     { campo: 'en_curso', titulo: 'en curso', numerica: true },
     { campo: 'no_respuesta', titulo: 'no respuesta', numerica: true },
-    { campo: 'no_salieron', titulo: 'no salieron', numerica: true },
+    { campo: 'no_salieron', titulo: 'no salieron a campo', numerica: true },
 ];
 
 // lo mismo para el usuario como recepcionista: una sola fila, con lo que hay en la tabla de los recepcionistas

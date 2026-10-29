@@ -35,3 +35,25 @@ export function control_resumen_recepcionistas(context:TableContext):TableDefini
         camposCorte:[{name:'recepcionista_vigente', typeName:'text'}], selectExtra:`${sqlRecepcionistaVigente} as recepcionista_vigente`,
         filtroWhere:sqlEncuestasDelUsuario(context)});
 }
+
+// el mismo resumen cortado por una columna de la tem, sobre las encuestas que ve el usuario y sin los filtros de los controles del menú
+// (por ejemplo dominio=3): el total de cada corte es el de la tem. Lo usa el desglose del tablero de inicio.
+function controlResumenCorte(context:TableContext, nombre:string, campoCorte:FieldDefinition):TableDefinition {
+    return controlResumen(context, {nombre, title:`control resumen por ${campoCorte.name}`, camposCorte:[campoCorte], filtroWhere:sqlEncuestasDelUsuario(context)});
+}
+
+export function control_resumen_area(context:TableContext):TableDefinition {
+    return controlResumenCorte(context, 'control_resumen_area', {name:'area', typeName:'integer'});
+}
+
+export function control_resumen_dominio(context:TableContext):TableDefinition {
+    return controlResumenCorte(context, 'control_resumen_dominio', {name:'dominio', typeName:'integer'});
+}
+
+export function control_resumen_zona(context:TableContext):TableDefinition {
+    return controlResumenCorte(context, 'control_resumen_zona', {name:'zona', typeName:'text'});
+}
+
+export function control_resumen_comuna(context:TableContext):TableDefinition {
+    return controlResumenCorte(context, 'control_resumen_comuna', {name:'nrocomuna', typeName:'text'});
+}

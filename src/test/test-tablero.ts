@@ -4,6 +4,7 @@ import assert = require('node:assert');
 
 import { quienConsultaTablero } from '../server/app-dmencu';
 import { CampoCalculado, control_campo, controlCamposOpts } from '../server/table-control_campo';
+import { control_resumen_area, control_resumen_comuna, control_resumen_dominio, control_resumen_zona } from '../server/table-control_resumen';
 import {
     acomodarCalendario, accesosDelMenu, armarSecciones, buscarEnMenu, ClienteTablero, combinarSecciones, ConsultaTablero,
     CORTES_DESGLOSE, DefinicionSeccionTablero, FilaSql, ordenarTareas, partesDeControl, SECCIONES_TABLERO, seccionAvance,
@@ -239,7 +240,10 @@ describe('dmencu - tablero de inicio', () => {
                 seccionDePrueba('desglose', 2, async () => ({
                     tipo: 'desglose',
                     cortes: [
-                        { id: 'con', titulo: 'con', filas: [], acceso: { titulo: 'ver', ruta: ['recepcion', 'recuperador'] } },
+                        { id: 'con', titulo: 'con', acceso: { titulo: 'ver', ruta: ['recepcion', 'recuperador'] }, filas: [
+                            { etiqueta: 'con', partes: [], acceso: { titulo: 'ver', ruta: ['recepcion', 'encuestador'] } },
+                            { etiqueta: 'sin', partes: [], acceso: { titulo: 'ver', ruta: ['control', 'zona'] } },
+                        ] },
                         { id: 'sin', titulo: 'sin', filas: [], acceso: { titulo: 'ver', ruta: ['control', 'zona'] } },
                     ]
                 })),
@@ -248,6 +252,7 @@ describe('dmencu - tablero de inicio', () => {
             assert.ok(indicadores.tipo == 'indicadores' && desglose.tipo == 'desglose');
             assert.deepStrictEqual(indicadores.indicadores.map(i => i.acceso?.ruta), [['recepcion', 'encuestador'], undefined]);
             assert.deepStrictEqual(desglose.cortes.map(c => c.acceso?.ruta), [['recepcion', 'recuperador'], undefined]);
+            assert.deepStrictEqual(desglose.cortes[0].filas.map(f => f.acceso?.ruta), [['recepcion', 'encuestador'], undefined]);
         });
         it('el calendario va después de lo de recepción: tres tercios, dos mitades, y sin eso queda donde está', () => {
             var seccion = (id: string, ancho: SeccionTablero['ancho']): SeccionTablero => ({ id, titulo: id, ancho, contenido: { tipo: 'mensaje', texto: id } });
@@ -368,7 +373,7 @@ describe('dmencu - tablero de inicio', () => {
             assert.strictEqual(vacio.contenido, null);
         });
         it('desglose: un corte por tabla de control_campo, con sus partes, y se omiten los que no tienen filas', async () => {
-            var { contenido, consultas } = await obtener(seccionDesglose, sql => sql.includes(`'control_campo_zona'`) ? [] : [{ etiqueta: '3', ...control }, { etiqueta: '4', ...control }]);
+            var { contenido, consultas } = await obtener(seccionDesglose, sql => sql.includes(`'control_resumen_zona'`) ? [] : [{ etiqueta: '3', ...control }, { etiqueta: '4', ...control }]);
             assert.deepStrictEqual(consultas.map(c => CORTES_DESGLOSE.find(corte => c.sql.includes(`'${corte.tabla}'`))?.id), ['area', 'dominio', 'zona', 'comuna']);
             assert.ok(contenido?.tipo == 'desglose');
             assert.deepStrictEqual(contenido.cortes.map(corte => corte.id), ['area', 'dominio', 'comuna']);
@@ -377,17 +382,40 @@ describe('dmencu - tablero de inicio', () => {
             assert.deepStrictEqual(contenido.cortes[0].filas[0].partes.map(parte => parte.valor), [80, 25, 15, 80]);
             assert.deepStrictEqual(contenido.cortes[2].acceso, { titulo: 'control por comuna', ruta: ['control', 'comuna'] });
         });
+        it('desglose: cada fila lleva a la tem filtrada por su área, dominio, zona o comuna (o vacía si no tiene)', async () => {
+            var { contenido } = await obtener(seccionDesglose, () => [{ etiqueta: '3', ...control }, { etiqueta: null, ...control }]);
+            assert.ok(contenido?.tipo == 'desglose');
+            assert.deepStrictEqual(contenido.cortes.map(corte => corte.filas.map(fila => fila.acceso)), CORTES_DESGLOSE.map(corte => [
+                { titulo: 'ver encuestas', ruta: ['configurar', 'muestra', 'tem'], filtro: { [corte.campo]: '3' } },
+                { titulo: 'ver encuestas', ruta: ['configurar', 'muestra', 'tem'], filtro: { [corte.campo]: null } },
+            ]));
+        });
         it('desglose: las filas sin encuestas no se muestran', async () => {
             var { contenido } = await obtener(seccionDesglose, () => [{ etiqueta: '1', ...control }, { etiqueta: '2', total: '0' }, { etiqueta: '3', ...control }]);
             assert.ok(contenido?.tipo == 'desglose');
             assert.deepStrictEqual(contenido.cortes[0].filas.map(fila => fila.etiqueta), ['área 1', 'área 3']);
         });
         it('desglose: los cortes con una sola fila no se muestran, y si no queda ninguno se omite la sección', async () => {
-            var { contenido } = await obtener(seccionDesglose, sql => sql.includes(`'control_campo_area'`) ? [{ etiqueta: '1', ...control }, { etiqueta: '2', ...control }] : [{ etiqueta: '3', ...control }]);
+            var { contenido } = await obtener(seccionDesglose, sql => sql.includes(`'control_resumen_area'`) ? [{ etiqueta: '1', ...control }, { etiqueta: '2', ...control }] : [{ etiqueta: '3', ...control }]);
             assert.ok(contenido?.tipo == 'desglose');
             assert.deepStrictEqual(contenido.cortes.map(corte => corte.id), ['area']);
             var sinCortes = await obtener(seccionDesglose, () => [{ etiqueta: '1', ...control }]);
             assert.strictEqual(sinCortes.contenido, null);
+        });
+        it('desglose: los cortes salen de toda la tem (sin los filtros de los controles del menú) y no tienen tope de filas', async () => {
+            var be = crearAppParaTests(GABINETE);
+            var tablas = [control_resumen_area, control_resumen_dominio, control_resumen_zona, control_resumen_comuna].map(tabla => tabla(contextoDelRol(be, 'coor_campo')));
+            assert.deepStrictEqual(tablas.map(tabla => tabla.name), ['control_resumen_area', 'control_resumen_dominio', 'control_resumen_zona', 'control_resumen_comuna']);
+            tablas.forEach(tabla => {
+                assert.ok(!/dominios*=s*3/.test(tabla.sql?.from ?? ''), `${tabla.name} filtra por dominio`);
+                assert.ok(tabla.sql?.from?.includes('usu_con.muestra_encuestas_prod'), `${tabla.name} no filtra por las encuestas que ve el usuario`);
+            });
+            assert.deepStrictEqual(CORTES_DESGLOSE.map(corte => corte.tabla), tablas.map(tabla => tabla.name));
+            var muchas = Array.from({ length: 300 }, (_, i) => ({ etiqueta: String(i + 1), ...control }));
+            var { contenido, consultas } = await obtener(seccionDesglose, () => muchas);
+            assert.ok(contenido?.tipo == 'desglose');
+            assert.strictEqual(contenido.cortes[0].filas.length, 300);
+            consultas.forEach(consulta => assert.ok(!/limit/i.test(consulta.sql)));
         });
         it('desglose: los accesos apuntan a opciones del menú de control', () => {
             var be = crearAppParaTests(GABINETE);

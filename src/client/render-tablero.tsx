@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import * as ReactDOM from "react-dom";
 import {
     Alert, Avatar, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Grid, LinearProgress, Link, Paper, ScopedCssBaseline, Skeleton,
-    Stack, SvgIcon, Table, TableBody, TableCell, TableHead, TableRow, ThemeProvider, ToggleButton, ToggleButtonGroup, Tooltip, Typography,
+    Stack, SvgIcon, Table, TableBody, TableCell, TableHead, TableRow, TextField, ThemeProvider, ToggleButton, ToggleButtonGroup, Tooltip, Typography,
     alpha, createTheme, useTheme
 } from "@mui/material";
 import type { Theme, ThemeOptions } from "@mui/material";
@@ -249,10 +249,17 @@ function Leyenda(props: { partes: ParteAvance[], total?: number }) {
 
 const ANCHO_TOTAL_DESGLOSE = 64;
 
-// barras apiladas por fila (todas), con un selector entre los cortes; empieza en el primero
+// a partir de cuántas filas un corte ofrece buscar y empieza mostrando sólo las primeras
+const FILAS_INICIALES_DESGLOSE = 50;
+
+// barras apiladas por fila, con un selector entre los cortes; empieza en el primero.
+// Los cortes de más de FILAS_INICIALES_DESGLOSE filas muestran las primeras, con un buscador y la opción de ver todas;
+// la leyenda y el total son siempre los de todo el corte
 export function Desglose(props: { cortes: CorteDesglose[] }) {
     var theme = useTheme();
     var [corteId, setCorteId] = useState(props.cortes[0]?.id ?? '');
+    var [filtro, setFiltro] = useState('');
+    var [verTodas, setVerTodas] = useState(false);
     var corte = props.cortes.find(c => c.id == corteId) ?? props.cortes[0];
     if (corte == null) {
         return null;
@@ -262,20 +269,32 @@ export function Desglose(props: { cortes: CorteDesglose[] }) {
     // la leyenda suma todas las filas del corte, con el porcentaje de cada parte
     var partesDelCorte: ParteAvance[] = corte.filas[0].partes.map((parte, i) => ({ ...parte, valor: corte!.filas.reduce((suma, fila) => suma + (fila.partes[i]?.valor ?? 0), 0) }));
     var totalDelCorte = totalDe(partesDelCorte);
+    var hayMuchas = corte.filas.length > FILAS_INICIALES_DESGLOSE;
+    var buscado = filtro.trim().toLowerCase();
+    var coincidentes = buscado ? corte.filas.filter(fila => fila.etiqueta.toLowerCase().includes(buscado)) : corte.filas;
+    var visibles = hayMuchas && !buscado && !verTodas ? coincidentes.slice(0, FILAS_INICIALES_DESGLOSE) : coincidentes;
     return <Box>
         <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" sx={{ gap: 1, mb: 2 }}>
             <ToggleButtonGroup size="small" exclusive color="primary" value={corte.id} aria-label="corte del desglose"
-                onChange={(_event, nuevo: string | null) => { if (nuevo != null) { setCorteId(nuevo); } }}>
+                onChange={(_event, nuevo: string | null) => { if (nuevo != null) { setCorteId(nuevo); setFiltro(''); setVerTodas(false); } }}>
                 {props.cortes.map(c => <ToggleButton key={c.id} value={c.id} sx={{ textTransform: 'none', px: 2 }}>{c.titulo}</ToggleButton>)}
             </ToggleButtonGroup>
             {corte.acceso ? <Button size="small" endIcon={<Icono path={ICONOS.irA} />}
                 href={hrefDelAcceso(corte.acceso)} onClick={alHacerClickEnAcceso(corte.acceso)}>{corte.acceso.titulo}</Button> : null}
         </Stack>
         <Box sx={{ mb: 2 }}><Leyenda partes={partesDelCorte} total={totalDelCorte} /></Box>
-        {corte.filas.map((fila, i) => {
+        {hayMuchas ? <Stack direction="row" alignItems="center" flexWrap="wrap" sx={{ gap: 1.5, mb: 2 }}>
+            <TextField size="small" value={filtro} placeholder={`buscar ${corte.titulo}`} onChange={event => setFiltro(event.target.value)} />
+            <Typography variant="body2" color="text.secondary">Mostrando {numeroATexto(visibles.length)} de {numeroATexto(corte.filas.length)}</Typography>
+            {buscado ? null : <Button size="small" onClick={() => setVerTodas(!verTodas)}>{verTodas ? 'ver menos' : `ver todas (${numeroATexto(corte.filas.length)})`}</Button>}
+        </Stack> : null}
+        {visibles.map((fila, i) => {
             var total = totalDe(fila.partes);
             return <Stack key={i} direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.75 }}>
-                <Typography variant="body2" noWrap title={fila.etiqueta} sx={{ width: { xs: 90, sm: 130 }, flexShrink: 0 }}>{fila.etiqueta}</Typography>
+                {fila.acceso ?
+                    <Link variant="body2" noWrap underline="hover" title={`${fila.acceso.titulo}: ${fila.etiqueta}`} sx={{ width: { xs: 90, sm: 130 }, flexShrink: 0 }}
+                        href={hrefDelAcceso(fila.acceso)} onClick={alHacerClickEnAcceso(fila.acceso)}>{fila.etiqueta}</Link>
+                    : <Typography variant="body2" noWrap title={fila.etiqueta} sx={{ width: { xs: 90, sm: 130 }, flexShrink: 0 }}>{fila.etiqueta}</Typography>}
                 {/* la barra mide, como mucho, el ancho disponible menos lo que ocupa el total que va pegado a su final */}
                 <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Box role="img" aria-label={fila.partes.map(parte => `${parte.titulo}: ${parte.valor}`).join(', ')}
