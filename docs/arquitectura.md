@@ -74,7 +74,7 @@ erDiagram
 ```
 
 - **`tem`**: una fila por encuesta. Guarda `tarea_actual`, `habilitada`, los resultados calculados (`rea`, `norea`, `resumen_estado` y sus versiones `_sup`) y los datos del marco (calle, número, barrio, etc.). Las respuestas completas de la encuesta están en las tablas generadas por la unidad de análisis principal.
-  - La grilla `tem` es de consulta: sólo se edita `habilitada`. Los datos que se corrigen a mano (`cita`, `result_sup`, `fin_campo`, `proie`, `nromanzana`, `casa`) se editan en la grilla auxiliar `tem_edicion` (`table-tem_edicion.ts`, al lado de TEM en *configurar → muestra*), cuyos campos editables tienen `table:'tem'` para que backend-plus los grabe en `tem`. `nromanzana` y `casa` los edita quien tiene `campo.administrar` (subcoordinador para arriba).
+  - La grilla `tem` es de consulta: sólo se edita `habilitada`. Los datos que se corrigen a mano (`cita`, `result_sup`, `fin_campo`, `proie`, `nrocatastral`, `piso`, `departamento`, `habitacion`, `nromanzana`, `casa`) se editan en la grilla auxiliar `tem_edicion` (`table-tem_edicion.ts`, al lado de TEM en *configurar → muestra*), cuyos campos editables tienen `table:'tem'` para que backend-plus los grabe en `tem`. `nromanzana`, `casa`, `nrocatastral`, `piso`, `departamento` y `habitacion` los edita quien tiene `campo.administrar` (subcoordinador para arriba).
 - **`tareas_tem`**: una fila por encuesta y tarea. Guarda el `estado` de esa tarea, quién está `asignado`, el `recepcionista`, la `operacion` pendiente (`cargar` / `descargar`) y `cargado_dm` (token del dispositivo que la tiene).
 - **`estados`, `acciones`, `estados_acciones`, `tareas_proximas`**: definen el workflow; ver [tareas-estados-acciones.md](tareas-estados-acciones.md).
 - **`areas` / `tareas_areas`**: agrupación de encuestas en cargas de trabajo y el recepcionista de cada carga por tarea.
@@ -91,7 +91,7 @@ Parte importante de las reglas están en PostgreSQL a propósito, para que no pu
 | `tarea_cumple_condicion.sql` | Evalúa la condición de un pase de tarea (`tareas_proximas`) |
 | `asignar_desasignar_tareas_tem_trg.sql` | Al asignar la tarea inicial fija `tem.tarea_actual`; al desasignarla la anula |
 | `sincronizacion_tareas_tem.sql` | `cargado` se deriva de `cargado_dm` |
-| `validar_manzana_casa_tem_trg.sql` | `tem.nromanzana` y `tem.casa` sólo se pueden modificar si el `dominio` (el anterior al update) es 5. En bases ya instaladas se agrega con `operaciones/2026-10-15-validar_manzana_casa_tem.sql` |
+| `validar_domicilio_tem_trg.sql` | `tem.nromanzana`, `tem.casa`, `tem.nrocatastral`, `tem.piso`, `tem.departamento` y `tem.habitacion` sólo se pueden modificar si el `dominio` (el anterior al update) es 5. En bases ya instaladas se agrega con `operaciones/2026-10-30-actualizar_validar_domicilio_tem.sql` |
 | `validar_tareas_tem_trg.sql` | Al asignar: exige que la encuesta esté habilitada, que el estado permita asignar (`estados.permite_asignar`), que haya recepcionista y que la tarea sea la actual o la inicial; no deja quitar el recepcionista de una encuesta asignada |
 | `desverificar_tarea_trg.sql` | Al desverificar una tarea: sólo si es la última anterior a la actual y la siguiente no está verificada ni asignada; en ese caso `tem.tarea_actual` vuelve a ella |
 | `control_cargado_tareas_tem_trg.sql` | Una encuesta no puede tener `operacion = 'cargar'` si ya está cargada en un dispositivo, o ya tiene `cargar` pendiente, para otra tarea |

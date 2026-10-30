@@ -5,11 +5,11 @@ import {filtroTemSegunUsuario} from "./table-tem";
 
 // Grilla auxiliar de la tem con los campos que se pueden editar a mano. Cada campo editable se persiste en tem
 // (table:'tem'), porque la grilla de la tem no permite editar nada salvo habilitada.
-// nromanzana y casa sólo se pueden cambiar si el dominio es 5 (lo controla validar_manzana_casa_tem_trg).
+// nromanzana, casa, nrocatastral, piso, departamento y habitacion sólo se pueden cambiar si el dominio es 5 (lo controla validar_domicilio_tem_trg).
 export function tem_edicion(context:ContextForDump):TableDefinition {
     var puedeEditarCampo = !!(context.forDump || context.puede?.campo?.administrar||context.user.rol==='recepcionista');
     var puedeEditarProc = !!(context.forDump || context.puede?.encuestas?.procesar);
-    var puedeEditarManzanaCasa = !!(context.forDump || context.puede?.campo?.administrar);
+    var puedeEditarDomicilio = !!(context.forDump || context.puede?.campo?.administrar);
     return {
         name:'tem_edicion',
         elementName:'encuesta',
@@ -29,18 +29,23 @@ export function tem_edicion(context:ContextForDump):TableDefinition {
             {name:'result_sup'           , typeName:'integer' , editable: puedeEditarCampo           , table:'tem'},
             {name:'fin_campo'            , typeName:'text'    , editable: puedeEditarCampo           , table:'tem'},
             {name:'proie'                , typeName:'text'    , editable: puedeEditarCampo||puedeEditarProc, table:'tem'},
+            {name:'nrocatastral'         , typeName:'integer' , editable: puedeEditarDomicilio       , table:'tem'},
+            {name:'piso'                 , typeName:'text'    , editable: puedeEditarDomicilio       , table:'tem'},
+            {name:'departamento'         , typeName:'text'    , editable: puedeEditarDomicilio       , table:'tem'},
+            {name:'habitacion'           , typeName:'text'    , editable: puedeEditarDomicilio       , table:'tem'},
             {name:'dominio'              , typeName:'integer' , editable: false  },
             {name:'nrocomuna'            , typeName:'text'    , editable: false  },
             {name:'nrofraccion'          , typeName:'integer' , editable: false  },
             {name:'nroradio'             , typeName:'integer' , editable: false  },
-            {name:'nromanzana'           , typeName:'integer' , editable: puedeEditarManzanaCasa     , table:'tem'},
-            {name:'casa'                 , typeName:'text'    , editable: puedeEditarManzanaCasa     , table:'tem'},
+            {name:'nromanzana'           , typeName:'integer' , editable: puedeEditarDomicilio       , table:'tem'},
+            {name:'casa'                 , typeName:'text'    , editable: puedeEditarDomicilio       , table:'tem'},
         ],
         primaryKey:['operativo','enc'],
         sql:{
             isTable:false,
             from:`
                 (select t.operativo, t.enc, t.area, t.zona, t.cita, t.result_sup, t.fin_campo, t.proie
+                        , t.nrocatastral, t.piso, t.departamento, t.habitacion
                         , t.dominio, t.nrocomuna, t.nrofraccion, t.nroradio, t.nromanzana, t.casa
                     from tem t
                             ${filtroTemSegunUsuario(context)}

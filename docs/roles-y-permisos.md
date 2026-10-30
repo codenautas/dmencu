@@ -123,7 +123,7 @@ En *configurar → muestra*, la grilla **TEM** sólo permite cambiar `habilitada
 | :-- | :-- |
 | `cita`, `proie` | `campo.administrar`, recepcionista o `encuestas.procesar` |
 | `result_sup`, `fin_campo` | `campo.administrar` o recepcionista |
-| `nromanzana`, `casa` | `campo.administrar` (subcoor_campo, coor_campo, coor_proc, admin), y sólo en encuestas de dominio 5 (lo controla el trigger `validar_manzana_casa_tem_trg`) |
+| `nromanzana`, `casa`, `nrocatastral`, `piso`, `departamento`, `habitacion` | `campo.administrar` (subcoor_campo, coor_campo, coor_proc, admin), y sólo en encuestas de dominio 5 (lo controla el trigger `validar_domicilio_tem_trg`) |
 
 Estas reglas están cubiertas por los tests de `src/test/test-menu-segun-rol.ts` (ver [testing.md](testing.md)).
 
