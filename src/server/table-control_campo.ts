@@ -98,7 +98,7 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
                         )},0),1) as tasa_efectividad,
                         total-coalesce(no_salieron,0) as salieron,
                         coalesce(otros,0) + ${sumaOtrasCausas}  as otras_causas_gabinete,
-                        coalesce(pendiente,0)+coalesce(mixta,0) +coalesce(sin_resultado,0) +coalesce(incompleto,0) +${sumaEnCurso} as en_curso
+                        coalesce(pendiente,0)+coalesce(mixta,0) +coalesce(sin_resultado,0) +coalesce(incompleto_en_curso,0) +${sumaEnCurso} as en_curso
                      /*   coalesce(otros,0)+${opts.gabinete?`coalesce(otras_causas,0) `:`coalesce(otras_causas_hogar,0) + coalesce(otras_causas_seleccionado,0) + coalesce(otras_causas_vivienda,0)`}  as otras_causas_gabinete, */
                      /*   coalesce(pendiente,0)+coalesce(mixta,0)+ coalesce(incompleto,0)+coalesce(sin_resultado,0)+${opts.gabinete?`coalesce(no_finalizada,0)`:`coalesce(sin_finalizar_dm,0)+coalesce(sin_finalizar_incompleto,0)+ coalesce(sin_finalizar_otra_causa,0)`}  as en_curso */
 
@@ -111,6 +111,8 @@ export function control_campo(context:TableContext,opts?:controlCamposOpts):Tabl
                             'count(*) filter (where klase is null) as otros'
                         ].join(',')}
                             , count(*) filter (where resumen_estado in ('incompleto','con problemas')) as incompleto
+                            -- una encuesta incompleta que ya está en pendiente, mixta, rea o en un grupo de no respuesta no se cuenta otra vez en curso
+                            , count(*) filter (where resumen_estado in ('incompleto','con problemas') and klase is null) as incompleto_en_curso
                             , count(*) filter (where resumen_estado in ('no rea','ok') and verificado is null) as verif_encu_pendiente
                         from (
                             select t.*,a.participacion_a, a.clase_a, 
