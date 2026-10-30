@@ -15,7 +15,7 @@
   ],
   "dependencies": {
     "@mui/material": "^5.16.7",
-    "backend-plus": "^2.7.14",
+    "backend-plus": "^2.7.15",
     "backend-skins": "^0.1.34",
     "cast-error": "^0.1.3",
     "discrepances": "^0.2.14",
