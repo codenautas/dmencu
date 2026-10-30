@@ -466,23 +466,45 @@ export const CORTES_DESGLOSE: DefinicionCorte[] = [
     { id: 'comuna', titulo: 'comuna', tabla: 'control_resumen_comuna', campo: 'nrocomuna', etiqueta: valor => `comuna ${valor}`, ruta: ['control', 'comuna'] },
 ];
 
+// Las partes de la barra de un corte: el total sale de la tem (siempre cierra) y de control sólo se toma en qué punto del campo está cada encuesta.
+// Las de control son clases que no se pisan, así que lo que no es efectiva, en curso ni no salió es no respuesta. Si control no coincide con la tem
+// (otra cantidad de encuestas, o más encuestas en esas clases que en el corte) no se dibuja una barra que no cierra: se informa el error.
+export function partesDeCorte(titulo: string, etiqueta: string | null, totalTem: number, control: FilaSql | undefined): ParteAvance[] {
+    var cifras = cifrasDeControl(control);
+    var sumaDeClases = cifras.rea + cifras.en_curso + cifras.no_salieron;
+    if (cifras.total != totalTem || sumaDeClases > totalTem) {
+        throw new Error(`tablero: en ${titulo} ${etiqueta ?? 'sin dato'} la tem tiene ${totalTem} encuestas y control_resumen ${cifras.total} (efectivas ${cifras.rea}, en curso ${cifras.en_curso}, no salieron ${cifras.no_salieron})`);
+    }
+    return partesDeControl({ total: totalTem, salieron: totalTem - cifras.no_salieron, no_salieron: cifras.no_salieron, rea: cifras.rea, en_curso: cifras.en_curso });
+}
+
 export async function corteDeControl(consulta: ConsultaTablero, corte: DefinicionCorte): Promise<CorteDesglose> {
     var campo = sqlTools.quoteIdent(corte.campo);
-    var porValor = await filas(consulta, `
+    var ordenDelCampo = `case when ${campo}::text ~ '^\\d+$' then ${campo}::text::integer end, ${campo}`;
+    // los cortes y su total son los de la tem: no dependen de ninguna configuración
+    var enLaTem = await filas(consulta, `
+        select ${campo} as etiqueta, count(*) as total
+            from ${TEM_DEL_USUARIO}
+            group by ${campo}
+            order by ${ordenDelCampo}`, parametrosDelUsuario(consulta));
+    var deControl = await filas(consulta, `
         select ${campo} as etiqueta, ${SUMAS_DE_CONTROL}
             from ${sqlDe(consulta.tabla(corte.tabla))}
-            group by ${campo}
-            order by case when ${campo}::text ~ '^\\d+$' then ${campo}::text::integer end, ${campo}`, []);
+            group by ${campo}`, []);
+    var controlPorEtiqueta = new Map(deControl.map(fila => [texto(fila, 'etiqueta'), fila]));
     return {
         id: corte.id,
         titulo: corte.titulo,
         acceso: { titulo: 'control por ' + corte.titulo, ruta: corte.ruta },
-        filas: porValor.filter(fila => numero(fila, 'total') > 0).map(fila => ({
-            etiqueta: corte.etiqueta(texto(fila, 'etiqueta') ?? 'sin dato'),
-            partes: partesDeControl(cifrasDeControl(fila)),
-            // las encuestas de la tem de ese área, dominio, zona o comuna
-            ...accesoALaRuta(RUTA_TEM, { [corte.campo]: texto(fila, 'etiqueta') }),
-        })),
+        filas: enLaTem.map(fila => {
+            var valor = texto(fila, 'etiqueta');
+            return {
+                etiqueta: corte.etiqueta(valor ?? 'sin dato'),
+                partes: partesDeCorte(corte.titulo, valor, numero(fila, 'total'), controlPorEtiqueta.get(valor)),
+                // las encuestas de la tem de ese área, dominio, zona o comuna
+                ...accesoALaRuta(RUTA_TEM, { [corte.campo]: valor }),
+            };
+        }),
     };
 }
 

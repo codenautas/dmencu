@@ -7,7 +7,7 @@ import { CampoCalculado, control_campo, controlCamposOpts } from '../server/tabl
 import { control_resumen_area, control_resumen_comuna, control_resumen_dominio, control_resumen_zona } from '../server/table-control_resumen';
 import {
     acomodarCalendario, accesosDelMenu, armarSecciones, buscarEnMenu, ClienteTablero, combinarSecciones, ConsultaTablero,
-    CORTES_DESGLOSE, DefinicionSeccionTablero, FilaSql, ordenarTareas, partesDeControl, SECCIONES_TABLERO, seccionAvance,
+    CORTES_DESGLOSE, DefinicionSeccionTablero, FilaSql, ordenarTareas, partesDeControl, partesDeCorte, SECCIONES_TABLERO, seccionAvance,
     seccionCalendario, seccionCircuito, seccionDesglose, seccionesVisibles, seccionMiAvance, seccionMiDetalle, seccionParaAsignar, seccionParaRecibir, seccionRecepcionistas,
     seccionNoRespuesta, ValorSql
 } from '../server/tablero';
@@ -202,6 +202,11 @@ describe('dmencu - tablero de inicio', () => {
             assert.strictEqual(sumaDe(sqlDeControl(grupos, [declarado('no finalizada', { es_en_curso: true }), declarado('rechazos')]), 'en_curso'), 'coalesce(sin_finalizar_dm,0)+coalesce(sin_finalizar_incompleto,0)');
             assert.strictEqual(sumaDe(sqlDeControl(grupos, [declarado('no finalizada')]), 'en_curso'), '0');
         });
+        it('en curso: la encuesta incompleta que ya cuenta como pendiente, mixta, rea o en un grupo de no respuesta no se suma otra vez', () => {
+            var sql = sqlDeControl([grupo('rechazos', 'rechazos')], [declarado('rechazos')]);
+            assert.ok(/\+coalesce\(incompleto_en_curso,0\) \+0 as en_curso/.test(sql), 'en_curso suma sólo las incompletas sin otra clase');
+            assert.ok(/filter \(where resumen_estado in \('incompleto','con problemas'\) and klase is null\) as incompleto_en_curso/.test(sql));
+        });
         it('tasa de efectividad: los grupos marcados como no encuestables no suman al denominador', () => {
             var sql = sqlDeControl(
                 [grupo('no encuestable hogar', 'no encuestable'), grupo('rechazos', 'rechazos')],
@@ -334,6 +339,19 @@ describe('dmencu - tablero de inicio', () => {
             return { contenido, consultas: client.consultas };
         }
         const control = { total: '200', salieron: '120', no_salieron: '80', rea: '80', en_curso: '25', grupo_0: '10', grupo_1: '5' };
+        // el desglose pide dos consultas por corte: los cortes y su total a la tem, y las clases a control_resumen_*.
+        // "deControl" responde la de control; la de la tem devuelve las mismas etiquetas con el total que traiga esa fila
+        function responderDesglose(deControl: (sql: string) => FilaSql[], deLaTem?: (sql: string) => FilaSql[]): (sql: string) => FilaSql[] {
+            return sql => {
+                if (sql.includes('tabla_simulada')) {
+                    return deControl(sql);
+                }
+                var corte = CORTES_DESGLOSE.find(corte => new RegExp(`group by "?${corte.campo}"?\\s`).test(sql));
+                assert.ok(corte != null, 'la consulta a la tem agrupa por el campo del corte');
+                assert.ok(sql.includes('from tem t'), 'los cortes salen de la tem');
+                return deLaTem?.(sql) ?? deControl(`'${corte.tabla}' as tabla_simulada`).map(fila => ({ etiqueta: fila.etiqueta, total: fila.total }));
+            };
+        }
 
         it('avance: usa el sql de control_resumen; las cifras toman el tono de su tramo y la tasa se calcula como control de campo (los count llegan como texto)', async () => {
             var { contenido, consultas } = await obtener(seccionAvance, () => [control]);
@@ -373,8 +391,8 @@ describe('dmencu - tablero de inicio', () => {
             assert.strictEqual(vacio.contenido, null);
         });
         it('desglose: un corte por tabla de control_campo, con sus partes, y se omiten los que no tienen filas', async () => {
-            var { contenido, consultas } = await obtener(seccionDesglose, sql => sql.includes(`'control_resumen_zona'`) ? [] : [{ etiqueta: '3', ...control }, { etiqueta: '4', ...control }]);
-            assert.deepStrictEqual(consultas.map(c => CORTES_DESGLOSE.find(corte => c.sql.includes(`'${corte.tabla}'`))?.id), ['area', 'dominio', 'zona', 'comuna']);
+            var { contenido, consultas } = await obtener(seccionDesglose, responderDesglose(sql => sql.includes(`'control_resumen_zona'`) ? [] : [{ etiqueta: '3', ...control }, { etiqueta: '4', ...control }]));
+            assert.deepStrictEqual(consultas.filter(c => c.sql.includes('tabla_simulada')).map(c => CORTES_DESGLOSE.find(corte => c.sql.includes(`'${corte.tabla}'`))?.id), ['area', 'dominio', 'zona', 'comuna']);
             assert.ok(contenido?.tipo == 'desglose');
             assert.deepStrictEqual(contenido.cortes.map(corte => corte.id), ['area', 'dominio', 'comuna']);
             assert.strictEqual(contenido.cortes[0].filas[0].etiqueta, 'área 3');
@@ -383,23 +401,37 @@ describe('dmencu - tablero de inicio', () => {
             assert.deepStrictEqual(contenido.cortes[2].acceso, { titulo: 'control por comuna', ruta: ['control', 'comuna'] });
         });
         it('desglose: cada fila lleva a la tem filtrada por su área, dominio, zona o comuna (o vacía si no tiene)', async () => {
-            var { contenido } = await obtener(seccionDesglose, () => [{ etiqueta: '3', ...control }, { etiqueta: null, ...control }]);
+            var { contenido } = await obtener(seccionDesglose, responderDesglose(() => [{ etiqueta: '3', ...control }, { etiqueta: null, ...control }]));
             assert.ok(contenido?.tipo == 'desglose');
             assert.deepStrictEqual(contenido.cortes.map(corte => corte.filas.map(fila => fila.acceso)), CORTES_DESGLOSE.map(corte => [
                 { titulo: 'ver encuestas', ruta: ['configurar', 'muestra', 'tem'], filtro: { [corte.campo]: '3' } },
                 { titulo: 'ver encuestas', ruta: ['configurar', 'muestra', 'tem'], filtro: { [corte.campo]: null } },
             ]));
         });
-        it('desglose: las filas sin encuestas no se muestran', async () => {
-            var { contenido } = await obtener(seccionDesglose, () => [{ etiqueta: '1', ...control }, { etiqueta: '2', total: '0' }, { etiqueta: '3', ...control }]);
-            assert.ok(contenido?.tipo == 'desglose');
-            assert.deepStrictEqual(contenido.cortes[0].filas.map(fila => fila.etiqueta), ['área 1', 'área 3']);
+        it('desglose: los cortes y sus totales son los de la tem, también los que control no clasifica', async () => {
+            // la tem tiene 3 encuestas en el área 7 y control no las tiene: es un error, no una barra que no cierra
+            await assert.rejects(
+                obtener(seccionDesglose, responderDesglose(() => [{ etiqueta: '1', ...control }], () => [{ etiqueta: '1', total: '200' }, { etiqueta: '7', total: '3' }])),
+                /la tem tiene 3 encuestas y control_resumen 0/
+            );
+            // control cuenta de más: tampoco se dibuja
+            await assert.rejects(
+                obtener(seccionDesglose, responderDesglose(() => [{ etiqueta: '1', ...control }], () => [{ etiqueta: '1', total: '199' }])),
+                /la tem tiene 199 encuestas y control_resumen 200/
+            );
+        });
+        it('desglose: las partes de cada corte siempre suman el total de la tem; no respuesta es lo que sobra', () => {
+            var partes = partesDeCorte('área', '3', 200, control);
+            assert.deepStrictEqual(partes.map(parte => [parte.id, parte.valor]), [['efectiva', 80], ['en_curso', 25], ['no_respuesta', 15], ['sin_salir', 80]]);
+            assert.strictEqual(partes.reduce((suma, parte) => suma + parte.valor, 0), 200);
+            // efectivas + en curso + no salieron no pueden superar el total del corte (antes el tramo de no respuesta se recortaba a 0 y la barra se pasaba)
+            assert.throws(() => partesDeCorte('área', '3', 200, { ...control, en_curso: '45' }), /la tem tiene 200 encuestas/);
         });
         it('desglose: los cortes con una sola fila no se muestran, y si no queda ninguno se omite la sección', async () => {
-            var { contenido } = await obtener(seccionDesglose, sql => sql.includes(`'control_resumen_area'`) ? [{ etiqueta: '1', ...control }, { etiqueta: '2', ...control }] : [{ etiqueta: '3', ...control }]);
+            var { contenido } = await obtener(seccionDesglose, responderDesglose(sql => sql.includes(`'control_resumen_area'`) ? [{ etiqueta: '1', ...control }, { etiqueta: '2', ...control }] : [{ etiqueta: '3', ...control }]));
             assert.ok(contenido?.tipo == 'desglose');
             assert.deepStrictEqual(contenido.cortes.map(corte => corte.id), ['area']);
-            var sinCortes = await obtener(seccionDesglose, () => [{ etiqueta: '1', ...control }]);
+            var sinCortes = await obtener(seccionDesglose, responderDesglose(() => [{ etiqueta: '1', ...control }]));
             assert.strictEqual(sinCortes.contenido, null);
         });
         it('desglose: los cortes salen de toda la tem (sin los filtros de los controles del menú) y no tienen tope de filas', async () => {
@@ -412,7 +444,7 @@ describe('dmencu - tablero de inicio', () => {
             });
             assert.deepStrictEqual(CORTES_DESGLOSE.map(corte => corte.tabla), tablas.map(tabla => tabla.name));
             var muchas = Array.from({ length: 300 }, (_, i) => ({ etiqueta: String(i + 1), ...control }));
-            var { contenido, consultas } = await obtener(seccionDesglose, () => muchas);
+            var { contenido, consultas } = await obtener(seccionDesglose, responderDesglose(() => muchas));
             assert.ok(contenido?.tipo == 'desglose');
             assert.strictEqual(contenido.cortes[0].filas.length, 300);
             consultas.forEach(consulta => assert.ok(!/limit/i.test(consulta.sql)));

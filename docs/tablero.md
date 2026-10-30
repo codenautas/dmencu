@@ -43,6 +43,8 @@ Los procedimientos corren dentro de una transacción de backend-plus y las secci
 
 Los números de campo salen del **sql de las tablas de control** (`control_resumen` y, para el desglose, `control_resumen_area`, `control_resumen_dominio`, `control_resumen_zona` y `control_resumen_comuna`), que clasifican las encuestas igual que las grillas del menú *control*. Las del desglose no llevan los filtros de esas grillas (por ejemplo `dominio=3` en zona y comuna) y cuentan las encuestas que ve el usuario en la `tem`: el total de cada corte es siempre el de la `tem`. Para eso `ConsultaTablero.tabla(nombre)` devuelve la definición de la tabla y la sección usa su `sql.from`.
 
+En el desglose los **cortes y el total de cada uno salen directamente de la `tem`** (`TEM_DEL_USUARIO`, `group by` de la columna del corte): no dependen de ninguna configuración. De `control_resumen_*` sólo se toma en qué punto del campo está cada encuesta (efectivas, en curso, no salieron) y *no respuesta* es lo que sobra del total de la `tem` (`partesDeCorte`), así las partes siempre suman el total del corte. Si control no coincide con la `tem` (otra cantidad de encuestas, o más encuestas en esas clases que en el corte) la sección informa el error en lugar de dibujar una barra que no cierra.
+
 | id | Orden | Para quién | Contenido |
 | :-- | :-: | :-- | :-- |
 | `titulo_mis_encuestas` | 1 | `campo.editar` | sólo el título *Mis encuestas* (`{tipo:'titulo'}`, sin tarjeta) sobre lo del usuario como recepcionista (`para_asignar`, `para_recibir`, el calendario y `mi_avance`, órdenes 2 a 6) |
