@@ -47,7 +47,7 @@ describe('dmencu - tem y edición de la tem', () => {
         it('tiene los campos en el orden de la tem', () => {
             assert.deepStrictEqual(nombres(definicion(tem_edicion, 'coor_campo').fields), [
                 'operativo', 'enc', 'area', 'zona', 'cita', 'result_sup', 'fin_campo', 'proie',
-                'nrocatastral', 'piso', 'departamento', 'habitacion', 'dominio', 'nrocomuna', 'nrofraccion', 'nroradio', 'nromanzana', 'casa'
+                'nomcalle', 'nrocatastral', 'piso', 'departamento', 'habitacion', 'dominio', 'nrocomuna', 'nrofraccion', 'nroradio', 'nromanzana', 'casa'
             ]);
         });
         it('respeta el orden de los campos en la tem', () => {
@@ -69,14 +69,14 @@ describe('dmencu - tem y edición de la tem', () => {
             assert.ok(!(def.hiddenColumns ?? []).includes('cita'));
             assert.notStrictEqual(def.fields.find(campo => campo.name == 'cita')?.visible, false);
         });
-        it('del subcoordinador para arriba editan todo, incluidos manzana, casa, número catastral, piso, departamento y habitación', () => {
+        it('del subcoordinador para arriba editan todo, incluidos manzana, casa, calle, número catastral, piso, departamento y habitación', () => {
             ['subcoor_campo', 'coor_campo', 'coor_proc', 'admin'].forEach(rol => {
                 assert.deepStrictEqual(editables(definicion(tem_edicion, rol)), [
-                    'cita', 'result_sup', 'fin_campo', 'proie', 'nrocatastral', 'piso', 'departamento', 'habitacion', 'nromanzana', 'casa'
+                    'cita', 'result_sup', 'fin_campo', 'proie', 'nomcalle', 'nrocatastral', 'piso', 'departamento', 'habitacion', 'nromanzana', 'casa'
                 ], rol);
             });
         });
-        it('el recepcionista edita lo de campo pero no manzana, casa, número catastral, piso, departamento ni habitación', () => {
+        it('el recepcionista edita lo de campo pero no manzana, casa, calle, número catastral, piso, departamento ni habitación', () => {
             assert.deepStrictEqual(editables(definicion(tem_edicion, 'recepcionista')), [
                 'cita', 'result_sup', 'fin_campo', 'proie'
             ]);
