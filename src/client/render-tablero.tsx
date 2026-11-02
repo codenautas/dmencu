@@ -249,17 +249,32 @@ function Leyenda(props: { partes: ParteAvance[], total?: number }) {
 
 const ANCHO_TOTAL_DESGLOSE = 64;
 
-// a partir de cuántas filas un corte ofrece buscar y empieza mostrando sólo las primeras
-const FILAS_INICIALES_DESGLOSE = 50;
+// cuántas filas muestra un corte de entrada; a partir de más filas que esas ofrece buscar y subir por escalones
+const FILAS_INICIALES_DESGLOSE = 10;
+// fracciones del total de filas a las que puede subir un corte con "ver más"
+const FRACCIONES_ESCALONES_DESGLOSE: number[] = [0.25, 0.5, 0.75];
+
+// escalones de un corte de totalFilas filas: acordes a su tamaño (múltiplos de 5), sin repetir, mayores que lo que ya se muestra y menores que el total
+export function escalonesDelDesglose(totalFilas: number): number[] {
+    var escalones: number[] = [];
+    FRACCIONES_ESCALONES_DESGLOSE.forEach(fraccion => {
+        var escalon = Math.round(totalFilas * fraccion / 5) * 5;
+        var anterior = escalones.length ? escalones[escalones.length - 1] : FILAS_INICIALES_DESGLOSE;
+        if (escalon > anterior && escalon < totalFilas) {
+            escalones.push(escalon);
+        }
+    });
+    return escalones;
+}
 
 // barras apiladas por fila, con un selector entre los cortes; empieza en el primero.
-// Los cortes de más de FILAS_INICIALES_DESGLOSE filas muestran las primeras, con un buscador y la opción de ver todas;
+// Los cortes de más de FILAS_INICIALES_DESGLOSE filas muestran las primeras, con un buscador, botones por escalones (escalonesDelDesglose) y la opción de ver todas;
 // la leyenda y el total son siempre los de todo el corte
 export function Desglose(props: { cortes: CorteDesglose[] }) {
     var theme = useTheme();
     var [corteId, setCorteId] = useState(props.cortes[0]?.id ?? '');
     var [filtro, setFiltro] = useState('');
-    var [verTodas, setVerTodas] = useState(false);
+    var [cuantas, setCuantas] = useState(FILAS_INICIALES_DESGLOSE);
     var corte = props.cortes.find(c => c.id == corteId) ?? props.cortes[0];
     if (corte == null) {
         return null;
@@ -272,11 +287,12 @@ export function Desglose(props: { cortes: CorteDesglose[] }) {
     var hayMuchas = corte.filas.length > FILAS_INICIALES_DESGLOSE;
     var buscado = filtro.trim().toLowerCase();
     var coincidentes = buscado ? corte.filas.filter(fila => fila.etiqueta.toLowerCase().includes(buscado)) : corte.filas;
-    var visibles = hayMuchas && !buscado && !verTodas ? coincidentes.slice(0, FILAS_INICIALES_DESGLOSE) : coincidentes;
+    var visibles = hayMuchas && !buscado ? coincidentes.slice(0, cuantas) : coincidentes;
+    var siguientes = escalonesDelDesglose(corte.filas.length).filter(escalon => escalon > cuantas);
     return <Box>
         <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" sx={{ gap: 1, mb: 2 }}>
             <ToggleButtonGroup size="small" exclusive color="primary" value={corte.id} aria-label="corte del desglose"
-                onChange={(_event, nuevo: string | null) => { if (nuevo != null) { setCorteId(nuevo); setFiltro(''); setVerTodas(false); } }}>
+                onChange={(_event, nuevo: string | null) => { if (nuevo != null) { setCorteId(nuevo); setFiltro(''); setCuantas(FILAS_INICIALES_DESGLOSE); } }}>
                 {props.cortes.map(c => <ToggleButton key={c.id} value={c.id} sx={{ textTransform: 'none', px: 2 }}>{c.titulo}</ToggleButton>)}
             </ToggleButtonGroup>
             {corte.acceso ? <Button size="small" endIcon={<Icono path={ICONOS.irA} />}
@@ -286,7 +302,11 @@ export function Desglose(props: { cortes: CorteDesglose[] }) {
         {hayMuchas ? <Stack direction="row" alignItems="center" flexWrap="wrap" sx={{ gap: 1.5, mb: 2 }}>
             <TextField size="small" value={filtro} placeholder={`buscar ${corte.titulo}`} onChange={event => setFiltro(event.target.value)} />
             <Typography variant="body2" color="text.secondary">Mostrando {numeroATexto(visibles.length)} de {numeroATexto(corte.filas.length)}</Typography>
-            {buscado ? null : <Button size="small" onClick={() => setVerTodas(!verTodas)}>{verTodas ? 'ver menos' : `ver todas (${numeroATexto(corte.filas.length)})`}</Button>}
+            {buscado ? null : <>
+                {siguientes.map(escalon => <Button key={escalon} size="small" onClick={() => setCuantas(escalon)}>{`ver ${numeroATexto(escalon)}`}</Button>)}
+                {cuantas < corte.filas.length ? <Button size="small" onClick={() => setCuantas(corte!.filas.length)}>{`ver todas (${numeroATexto(corte.filas.length)})`}</Button> : null}
+                {cuantas > FILAS_INICIALES_DESGLOSE ? <Button size="small" onClick={() => setCuantas(FILAS_INICIALES_DESGLOSE)}>ver menos</Button> : null}
+            </>}
         </Stack> : null}
         {visibles.map((fila, i) => {
             var total = totalDe(fila.partes);
