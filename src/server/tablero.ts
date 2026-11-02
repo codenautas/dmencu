@@ -6,7 +6,7 @@
 
 import * as sqlTools from "sql-tools";
 import type {
-    AccesoTablero, AnchoSeccionTablero, ContenidoTablero, CorteDesglose, DetalleIndicador, FilaBarras, FilaDetalleIndicador, FiltroTablero, IndicadorTablero, ParteAvance,
+    AccesoTablero, TablaTablero, AnchoSeccionTablero, ContenidoTablero, CorteDesglose, DetalleIndicador, FilaBarras, FilaDetalleIndicador, FiltroTablero, IndicadorTablero, ParteAvance,
     ColumnaTabla, FilaTabla, RutaMenu, SeccionTablero, TableroParaUsuario
 } from "../unlogged/tipos-tablero";
 import type { MenuInfoBase, TableDefinition } from "./types-dmencu";
@@ -791,11 +791,11 @@ async function controlPorRecepcionista(consulta: ConsultaTablero): Promise<{ idp
     var encuestables = camposGruposNoRea(definicion).filter(grupo => grupo.tasa_efectividad === true)
         .map(grupo => `coalesce(sum(${sqlTools.quoteIdent(grupo.name)}), 0)`).join(' + ') || '0';
     var porRecepcionista = await filas(consulta, `
-        select recepcionista_vigente as idper,
-                (select coalesce(nullif(trim(coalesce(u.nombre, '') || ' ' || coalesce(u.apellido, '')), ''), u.usuario) from usuarios u where u.idper = recepcionista_vigente limit 1) as persona,
+        select recepcionista_a_cargo as idper,
+                (select coalesce(nullif(trim(coalesce(u.nombre, '') || ' ' || coalesce(u.apellido, '')), ''), u.usuario) from usuarios u where u.idper = recepcionista_a_cargo limit 1) as persona,
                 ${SUMAS_DE_CONTROL}, ${encuestables} as encuestables
             from ${sqlDe(definicion)}
-            group by recepcionista_vigente`, []);
+            group by recepcionista_a_cargo`, []);
     return porRecepcionista.map(fila => ({ idper: texto(fila, 'idper'), persona: texto(fila, 'persona'), cifras: cifrasDeControl(fila), encuestables: numero(fila, 'encuestables') }));
 }
 
@@ -865,52 +865,88 @@ export const seccionMiDetalle: DefinicionSeccionTablero = {
     }
 };
 
-// para la coordinación: lo mismo de cada recepcionista, y las encuestas que todavía no tienen recepcionista
+// el avance de control de cada tarea de relevamiento por el recepcionista que tienen las encuestas en esa tarea (la tabla control_resumen_recepcionistas_tarea)
+async function controlPorTareaYRecepcionista(consulta: ConsultaTablero): Promise<{ tarea: string, idper: string | null, persona: string | null, cifras: CifrasControl, encuestables: number }[]> {
+    var definicion = consulta.tabla('control_resumen_recepcionistas_tarea');
+    var encuestables = camposGruposNoRea(definicion).filter(grupo => grupo.tasa_efectividad === true)
+        .map(grupo => `coalesce(sum(${sqlTools.quoteIdent(grupo.name)}), 0)`).join(' + ') || '0';
+    var filasDeControl = await filas(consulta, `
+        select tarea_relevamiento as tarea, recepcionista_de_tarea as idper,
+                (select coalesce(nullif(trim(coalesce(u.nombre, '') || ' ' || coalesce(u.apellido, '')), ''), u.usuario) from usuarios u where u.idper = recepcionista_de_tarea limit 1) as persona,
+                ${SUMAS_DE_CONTROL}, ${encuestables} as encuestables
+            from ${sqlDe(definicion)}
+            group by tarea_relevamiento, recepcionista_de_tarea`, []);
+    return filasDeControl.map(fila => ({
+        tarea: texto(fila, 'tarea') ?? '', idper: texto(fila, 'idper'), persona: texto(fila, 'persona'),
+        cifras: cifrasDeControl(fila), encuestables: numero(fila, 'encuestables'),
+    }));
+}
+
+// para la coordinación: una tabla por tarea de relevamiento (las que tienen formulario: tareas.main_form) con lo de cada recepcionista de esa tarea,
+// y las encuestas que todavía no tienen recepcionista en ella. Cuenta las encuestas que pasaron por la tarea o están en ella (en la tarea inicial son todas
+// las de la muestra), así que una encuesta cuenta en cada tarea por la que pasó. Cada fila lleva a las encuestas que siguen en la tarea con ese recepcionista.
 export const seccionRecepcionistas: DefinicionSeccionTablero = {
     id: 'recepcionistas',
     titulo: 'Asignación y recepción por recepcionista',
+    descripcion: 'Una tabla por tarea de relevamiento, con las encuestas que pasaron por la tarea o están en ella según el recepcionista que tienen en esa tarea',
     orden: 22,
     roles: ROLES_DE_COORDINACION,
     acceso: { titulo: 'asignación general', ruta: ['asignacion', 'general'] },
     async obtener(consulta) {
-        var porRecepcionista: Map<string, FilaRecepcionista> = new Map();
-        var filaDe = (idper: string | null, persona: string | null): FilaRecepcionista => {
-            var fila = porRecepcionista.get(idper ?? '') ?? { recepcionista: SIN_RECEPCIONISTA, idper: idper ?? '', paraAsignar: 0, enRecepcion: 0, cifras: cifrasDeControl(undefined), encuestables: 0 };
-            if (idper != null) {
-                fila.recepcionista = persona ?? (fila.recepcionista == SIN_RECEPCIONISTA ? idper : fila.recepcionista);
+        var tareas = await filas(consulta, `select tarea, nombre from tareas where operativo = $1 and main_form is not null`, [consulta.operativo]);
+        var orden = await ordenDeTareas(consulta);
+        tareas.sort((a, b) => posicionEn(orden, texto(a, 'tarea')) - posicionEn(orden, texto(b, 'tarea')));
+        var control = await controlPorTareaYRecepcionista(consulta);
+        var enRecepcion = await encuestasDeRecepcion(consulta, 'todos');
+        var tablas: TablaTablero[] = [];
+        for (var tareaFila of tareas) {
+            var tarea = texto(tareaFila, 'tarea') ?? '';
+            var porRecepcionista: Map<string, FilaRecepcionista> = new Map();
+            var filaDe = (idper: string | null, persona: string | null): FilaRecepcionista => {
+                var fila = porRecepcionista.get(idper ?? '') ?? { recepcionista: SIN_RECEPCIONISTA, idper: idper ?? '', paraAsignar: 0, enRecepcion: 0, cifras: cifrasDeControl(undefined), encuestables: 0 };
+                if (idper != null) {
+                    fila.recepcionista = persona ?? (fila.recepcionista == SIN_RECEPCIONISTA ? idper : fila.recepcionista);
+                }
+                porRecepcionista.set(idper ?? '', fila);
+                return fila;
+            };
+            var estanAhora = 0;
+            enRecepcion.filter(encuesta => encuesta.tarea == tarea).forEach(encuesta => {
+                var fila = filaDe(encuesta.recepcionista, encuesta.personaRecepcionista);
+                fila.paraAsignar += SOLO_PARA_ASIGNAR(encuesta) ? encuesta.cantidad : 0;
+                fila.enRecepcion += PARA_RECIBIR(encuesta) ? encuesta.cantidad : 0;
+                estanAhora += encuesta.cantidad;
+            });
+            control.filter(c => c.tarea == tarea && c.cifras.total > 0).forEach(c => {
+                var fila = filaDe(c.idper, c.persona);
+                fila.cifras = c.cifras;
+                fila.encuestables = c.encuestables;
+            });
+            // los que tienen recepcionista por nombre y al final las que no tienen
+            var recepcionistas = Array.from(porRecepcionista.entries()).sort(([a, x], [b, y]) =>
+                (a == '' ? 1 : 0) - (b == '' ? 1 : 0) || x.recepcionista.localeCompare(y.recepcionista)).map(([_clave, fila]) => fila);
+            if (recepcionistas.length == 0) {
+                continue;
             }
-            porRecepcionista.set(idper ?? '', fila);
-            return fila;
-        };
-        (await encuestasDeRecepcion(consulta, 'todos')).forEach(encuesta => {
-            var fila = filaDe(encuesta.recepcionista, encuesta.personaRecepcionista);
-            fila.paraAsignar += SOLO_PARA_ASIGNAR(encuesta) ? encuesta.cantidad : 0;
-            fila.enRecepcion += PARA_RECIBIR(encuesta) ? encuesta.cantidad : 0;
-        });
-        (await controlPorRecepcionista(consulta)).filter(control => control.cifras.total > 0).forEach(control => {
-            var fila = filaDe(control.idper, control.persona);
-            fila.cifras = control.cifras;
-            fila.encuestables = control.encuestables;
-        });
-        // los que tienen recepcionista por nombre y al final las que no tienen
-        var recepcionistas = Array.from(porRecepcionista.entries()).sort(([a, x], [b, y]) =>
-            (a == '' ? 1 : 0) - (b == '' ? 1 : 0) || x.recepcionista.localeCompare(y.recepcionista)).map(([_clave, fila]) => fila);
-        if (recepcionistas.length == 0) {
-            return null;
+            var total: FilaRecepcionista = {
+                recepcionista: 'Total', idper: '',
+                paraAsignar: recepcionistas.reduce((suma, fila) => suma + fila.paraAsignar, 0),
+                enRecepcion: recepcionistas.reduce((suma, fila) => suma + fila.enRecepcion, 0),
+                cifras: sumaDeCifras(recepcionistas.map(fila => fila.cifras)),
+                encuestables: recepcionistas.reduce((suma, fila) => suma + fila.encuestables, 0),
+            };
+            // las encuestas que siguen en la tarea (tarea_actual) con ese recepcionista; la fila "sin recepcionista" lleva a las que quedaron sin asignar
+            var enLaTarea = (recepcionista: string | null): AccesoTablero | undefined => accesoALaRuta(RUTA_TAREAS_TEM, { tarea, tarea_actual: tarea, recepcionista }).acceso;
+            tablas.push({
+                titulo: texto(tareaFila, 'nombre') ?? tarea,
+                descripcion: `${total.cifras.total} encuestas pasaron por la tarea, ${estanAhora} están ahora en ella`,
+                columnas: [...COLUMNAS_DE_PERSONA, ...COLUMNAS_DE_RECEPCION],
+                filas: [...recepcionistas, total].map(filaDeTablaRecepcionista),
+                ultimaFilaTotal: true,
+                accesos: [...recepcionistas.map(fila => enLaTarea(fila.idper == '' ? null : fila.idper)), undefined],
+            });
         }
-        var total: FilaRecepcionista = {
-            recepcionista: 'Total', idper: '',
-            paraAsignar: recepcionistas.reduce((suma, fila) => suma + fila.paraAsignar, 0),
-            enRecepcion: recepcionistas.reduce((suma, fila) => suma + fila.enRecepcion, 0),
-            cifras: sumaDeCifras(recepcionistas.map(fila => fila.cifras)),
-            encuestables: recepcionistas.reduce((suma, fila) => suma + fila.encuestables, 0),
-        };
-        return {
-            tipo: 'tabla',
-            columnas: [...COLUMNAS_DE_PERSONA, ...COLUMNAS_DE_RECEPCION],
-            filas: [...recepcionistas, total].map(filaDeTablaRecepcionista),
-            ultimaFilaTotal: true,
-        };
+        return tablas.length ? { tipo: 'tablas', tablas } : null;
     }
 };
 

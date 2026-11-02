@@ -3,8 +3,9 @@ import { describe, it } from 'mocha';
 import assert = require('node:assert');
 
 import { quienConsultaTablero } from '../server/app-dmencu';
+import { sqlRecepcionistaACargo } from '../server/table-tem';
 import { CampoCalculado, control_campo, controlCamposOpts } from '../server/table-control_campo';
-import { control_resumen_area, control_resumen_comuna, control_resumen_dominio, control_resumen_zona } from '../server/table-control_resumen';
+import { control_resumen_area, control_resumen_comuna, control_resumen_dominio, control_resumen_recepcionistas_tarea, control_resumen_zona } from '../server/table-control_resumen';
 import {
     acomodarCalendario, accesosDelMenu, armarSecciones, buscarEnMenu, ClienteTablero, combinarSecciones, ConsultaTablero,
     CORTES_DESGLOSE, DefinicionSeccionTablero, FilaSql, ordenarTareas, partesDeControl, partesDeCorte, SECCIONES_TABLERO, seccionAvance,
@@ -206,6 +207,11 @@ describe('dmencu - tablero de inicio', () => {
             var sql = sqlDeControl([grupo('rechazos', 'rechazos')], [declarado('rechazos')]);
             assert.ok(/\+coalesce\(incompleto_en_curso,0\) \+0 as en_curso/.test(sql), 'en_curso suma sólo las incompletas sin otra clase');
             assert.ok(/filter \(where resumen_estado in \('incompleto','con problemas'\) and klase is null\) as incompleto_en_curso/.test(sql));
+        });
+        it('recepcionista a cargo: el de la tarea de relevamiento (con formulario) en que está la encuesta o, si ya pasó a otra, el de la última de relevamiento del historial', () => {
+            assert.ok(sqlRecepcionistaACargo.includes('ta.main_form is not null'), 'las tareas de relevamiento son las que tienen formulario');
+            assert.ok(sqlRecepcionistaACargo.includes('from historial_tem h') && sqlRecepcionistaACargo.includes('order by h.orden desc limit 1'), 'las que ya pasaron salen del historial, por orden');
+            assert.ok(sqlRecepcionistaACargo.includes('then (select tr.recepcionista from tareas_tem tr'), 'en una tarea de relevamiento es el de esa tarea (nulo si todavía no tiene)');
         });
         it('tasa de efectividad: los grupos marcados como no encuestables no suman al denominador', () => {
             var sql = sqlDeControl(
@@ -538,32 +544,84 @@ describe('dmencu - tablero de inicio', () => {
                 ['recu', 1, 'Cargada: 1', ['recepcion', 'recuperador']],
             ]);
         });
-        it('recepcionistas: cada uno con lo que falta asignar y lo que está en recepción, las sin recepcionista al final y el total', async () => {
-            var { contenido, consultas } = await obtener(seccionRecepcionistas, sql => sql.includes(`'control_resumen_recepcionistas' as tabla_simulada`) ? [
-                { idper: '101', persona: 'Ana Alva', total: '10', salieron: '8', no_salieron: '2', rea: '5', en_curso: '2', encuestables: '1' },
-                { idper: '102', persona: 'Rita Rece', total: '40', salieron: '20', no_salieron: '20', rea: '10', en_curso: '5', encuestables: '10' },
-                { idper: null, persona: null, total: '4', salieron: '0', no_salieron: '4', rea: '0', en_curso: '0', encuestables: '0' },
-            ] : !sql.includes('tt.recepcionista') ? [] : [
-                { tarea: 'encu', nombre: 'encuestador', estado: 'Disponible', permite_asignar: true, visible_en_recepcion: false, recepcionista: null, persona_recepcionista: null, cantidad: '4' },
-                { tarea: 'encu', nombre: 'encuestador', estado: 'Disponible', permite_asignar: true, visible_en_recepcion: false, recepcionista: '102', persona_recepcionista: 'Rita Rece', cantidad: '10' },
-                { tarea: 'encu', nombre: 'encuestador', estado: 'Asignada', permite_asignar: true, visible_en_recepcion: true, recepcionista: '102', persona_recepcionista: 'Rita Rece', cantidad: '20' },
-                { tarea: 'encu', nombre: 'encuestador', estado: 'Cargada', permite_asignar: false, visible_en_recepcion: true, recepcionista: '101', persona_recepcionista: 'Ana Alva', cantidad: '6' },
-            ]);
-            // sin filtrar por la persona del usuario
-            assert.deepStrictEqual(consultas[0].params, ['OPE1', 'usu_coor_campo', null]);
-            assert.ok(contenido?.tipo == 'tabla');
-            assert.deepStrictEqual(contenido.columnas.map(columna => columna.campo), [
+        // las consultas de la sección de recepcionistas: las tareas de relevamiento, el control por tarea y recepcionista y las encuestas por estado
+        function responderRecepcionistas(sql: string): FilaSql[] {
+            if (sql.includes('main_form is not null')) {
+                return [{ tarea: 'supe', nombre: 'supervisor' }, { tarea: 'encu', nombre: 'encuestador' }];
+            }
+            // el orden del circuito (ordenDeTareas): primero la tarea inicial
+            if (sql.includes('es_final')) {
+                return [{ tarea: 'supe', es_inicial: false, es_final: false }, { tarea: 'encu', es_inicial: true, es_final: false }];
+            }
+            if (sql.includes('from tareas_proximas')) {
+                return [{ tarea: 'encu', tarea_destino: 'supe' }];
+            }
+            if (sql.includes(`'control_resumen_recepcionistas_tarea' as tabla_simulada`)) {
+                return [
+                    { tarea: 'encu', idper: '101', persona: 'Ana Alva', total: '10', salieron: '8', no_salieron: '2', rea: '5', en_curso: '2', encuestables: '1' },
+                    { tarea: 'encu', idper: '102', persona: 'Rita Rece', total: '40', salieron: '20', no_salieron: '20', rea: '10', en_curso: '5', encuestables: '10' },
+                    { tarea: 'supe', idper: null, persona: null, total: '4', salieron: '4', no_salieron: '0', rea: '0', en_curso: '0', encuestables: '0' },
+                ];
+            }
+            if (sql.includes('tt.recepcionista')) {
+                return [
+                    { tarea: 'encu', nombre: 'encuestador', estado: 'Disponible', permite_asignar: true, visible_en_recepcion: false, recepcionista: '102', persona_recepcionista: 'Rita Rece', cantidad: '10' },
+                    { tarea: 'encu', nombre: 'encuestador', estado: 'Asignada', permite_asignar: true, visible_en_recepcion: true, recepcionista: '102', persona_recepcionista: 'Rita Rece', cantidad: '20' },
+                    { tarea: 'encu', nombre: 'encuestador', estado: 'Cargada', permite_asignar: false, visible_en_recepcion: true, recepcionista: '101', persona_recepcionista: 'Ana Alva', cantidad: '6' },
+                    { tarea: 'supe', nombre: 'supervisor', estado: 'Disponible', permite_asignar: true, visible_en_recepcion: false, recepcionista: null, persona_recepcionista: null, cantidad: '4' },
+                ];
+            }
+            return [];
+        }
+        it('recepcionistas: una tabla por tarea de relevamiento, con lo que falta asignar y lo que está en recepción, las sin recepcionista al final y el total', async () => {
+            var { contenido, consultas } = await obtener(seccionRecepcionistas, responderRecepcionistas);
+            // las tareas de relevamiento son las que tienen formulario; el resto de las consultas no filtra por la persona del usuario
+            assert.ok(consultas.some(consulta => consulta.sql.includes('main_form is not null')));
+            assert.deepStrictEqual(consultas.find(consulta => consulta.sql.includes('tt.recepcionista'))?.params, ['OPE1', 'usu_coor_campo', null]);
+            assert.ok(contenido?.tipo == 'tablas');
+            assert.deepStrictEqual(contenido.tablas.map(tabla => tabla.titulo), ['encuestador', 'supervisor']);
+            var [encu, supe] = contenido.tablas;
+            assert.deepStrictEqual(encu.columnas.map(columna => columna.campo), [
                 'recepcionista', 'para_asignar', 'en_recepcion', 'total', 'porcentaje_asignado', 'salieron', 'efectivas', 'porcentaje_efectividad', 'en_curso', 'no_respuesta', 'no_salieron'
             ]);
-            assert.strictEqual(contenido.columnas.find(columna => columna.campo == 'porcentaje_asignado')?.formato, 'porcentaje');
-            assert.strictEqual(contenido.ultimaFilaTotal, true);
-            assert.deepStrictEqual(contenido.filas.map(fila => [fila.recepcionista, fila.para_asignar, fila.en_recepcion]), [
-                ['(101) Ana Alva', 0, 6], ['(102) Rita Rece', 10, 20], ['sin recepcionista', 4, 0], ['Total', 14, 26],
+            assert.strictEqual(encu.columnas.find(columna => columna.campo == 'porcentaje_asignado')?.formato, 'porcentaje');
+            assert.strictEqual(encu.ultimaFilaTotal, true);
+            assert.deepStrictEqual(encu.filas.map(fila => [fila.recepcionista, fila.para_asignar, fila.en_recepcion]), [
+                ['(101) Ana Alva', 0, 6], ['(102) Rita Rece', 10, 20], ['Total', 10, 26],
             ]);
             // total, % asignado (lo que no está para asignar), salieron, efectivas, en curso, no respuesta (lo que sobra de las que salieron) y no salieron
-            assert.deepStrictEqual(contenido.filas.map(fila => [fila.total, fila.porcentaje_asignado, fila.salieron, fila.efectivas, fila.porcentaje_efectividad, fila.en_curso, fila.no_respuesta, fila.no_salieron]), [
-                [10, 100, 8, 5, 83.3, 2, 1, 2], [40, 75, 20, 10, 50, 5, 5, 20], [4, 0, 0, 0, null, 0, 0, 4], [54, 74.1, 28, 15, 57.7, 7, 6, 26],
+            assert.deepStrictEqual(encu.filas.map(fila => [fila.total, fila.porcentaje_asignado, fila.salieron, fila.efectivas, fila.porcentaje_efectividad, fila.en_curso, fila.no_respuesta, fila.no_salieron]), [
+                [10, 100, 8, 5, 83.3, 2, 1, 2], [40, 75, 20, 10, 50, 5, 5, 20], [50, 80, 28, 15, 57.7, 7, 6, 22],
             ]);
+            // la tarea inicial tiene todas las encuestas; la descripción dice cuántas siguen en la tarea
+            assert.strictEqual(encu.descripcion, '50 encuestas pasaron por la tarea, 36 están ahora en ella');
+            assert.deepStrictEqual(supe.filas.map(fila => [fila.recepcionista, fila.para_asignar, fila.total]), [['sin recepcionista', 4, 4], ['Total', 4, 4]]);
+        });
+        it('recepcionistas: cada fila lleva a las encuestas que siguen en la tarea con ese recepcionista, y las sin recepcionista a las que quedaron sin asignar', async () => {
+            var { contenido } = await obtener(seccionRecepcionistas, responderRecepcionistas);
+            assert.ok(contenido?.tipo == 'tablas');
+            var [encu, supe] = contenido.tablas;
+            var ruta = ['configurar', 'muestra', 'tareas_tem'];
+            assert.deepStrictEqual(encu.accesos?.map(acceso => acceso?.filtro), [
+                { tarea: 'encu', tarea_actual: 'encu', recepcionista: '101' }, { tarea: 'encu', tarea_actual: 'encu', recepcionista: '102' }, undefined
+            ]);
+            assert.deepStrictEqual(supe.accesos?.map(acceso => [acceso?.ruta, acceso?.filtro]), [
+                [ruta, { tarea: 'supe', tarea_actual: 'supe', recepcionista: null }], [undefined, undefined]
+            ]);
+        });
+        it('control por tarea y recepcionista: repite cada encuesta en las tareas de relevamiento que alcanzó y agrupa por tarea y recepcionista de esa tarea', () => {
+            var be = crearAppParaTests(GABINETE);
+            var definicion = control_resumen_recepcionistas_tarea(contextoDelRol(be, 'coor_campo'));
+            var sql = definicion.sql?.from ?? '';
+            assert.ok(sql.includes('cross join lateral (select tr.tarea, tr.recepcionista'), 'una fila por tarea de relevamiento alcanzada');
+            assert.ok(sql.includes('ta.main_form is not null'), 'las tareas de relevamiento son las que tienen formulario');
+            assert.ok(sql.includes('ta.es_inicial'), 'todas las encuestas llegan a la tarea inicial');
+            assert.ok(sql.includes('from historial_tem h'), 'las que ya pasaron salen del historial');
+            assert.ok(sql.includes('usu_con.muestra_encuestas_prod'), 'sólo las encuestas que ve el usuario');
+            assert.deepStrictEqual(definicion.primaryKey.slice(-2), ['tarea_relevamiento', 'recepcionista_de_tarea']);
+        });
+        it('recepcionistas: sin encuestas en ninguna tarea de relevamiento no se muestra', async () => {
+            assert.strictEqual((await obtener(seccionRecepcionistas, () => [])).contenido, null);
         });
         it('para asignar y en recepción: sin encuestas no se muestran', async () => {
             assert.strictEqual((await obtener(seccionParaAsignar, () => [], 'recepcionista')).contenido, null);

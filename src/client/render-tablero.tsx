@@ -17,7 +17,7 @@ import {
 import type { Theme, ThemeOptions } from "@mui/material";
 
 import type {
-    AccesoTablero, ContenidoTablero, CorteDesglose, DatoJson, DetalleIndicador, FiltroTablero, FilaBarras, FilaTabla, ColumnaTabla, IndicadorTablero, ParteAvance,
+    AccesoTablero, ContenidoTablero, CorteDesglose, TablaTablero, DatoJson, DetalleIndicador, FiltroTablero, FilaBarras, FilaTabla, ColumnaTabla, IndicadorTablero, ParteAvance,
     RutaMenu, SeccionTablero, TableroParaUsuario, TonoTablero
 } from "../unlogged/tipos-tablero";
 
@@ -351,7 +351,7 @@ export function Barras(props: { filas: FilaBarras[], formato?: 'numero' | 'porce
     </Box>;
 }
 
-export function Tabla(props: { columnas: ColumnaTabla[], filas: FilaTabla[], ultimaFilaTotal?: boolean }) {
+export function Tabla(props: { columnas: ColumnaTabla[], filas: FilaTabla[], ultimaFilaTotal?: boolean, accesos?: (AccesoTablero | undefined)[] }) {
     return <Box sx={{ overflowX: 'auto' }}>
         <Table size="small">
             <TableHead>
@@ -362,10 +362,12 @@ export function Tabla(props: { columnas: ColumnaTabla[], filas: FilaTabla[], ult
             <TableBody>
                 {props.filas.map((fila, i) =>
                     <TableRow key={i} hover sx={props.ultimaFilaTotal && i == props.filas.length - 1 ? { '& td': { fontWeight: 700 } } : undefined}>
-                        {props.columnas.map(columna => {
+                        {props.columnas.map((columna, c) => {
                             var valor = fila[columna.campo];
+                            var acceso = c == 0 ? props.accesos?.[i] : undefined; // la primera columna lleva al detalle de la fila
+                            var texto = typeof valor == 'number' ? (columna.formato == 'porcentaje' ? porcentajeATexto(valor) : numeroATexto(valor)) : valor ?? '';
                             return <TableCell key={columna.campo} align={columna.numerica ? 'right' : 'left'}>
-                                {typeof valor == 'number' ? (columna.formato == 'porcentaje' ? porcentajeATexto(valor) : numeroATexto(valor)) : valor ?? ''}
+                                {acceso ? <Link underline="hover" title={acceso.titulo} href={hrefDelAcceso(acceso)} onClick={alHacerClickEnAcceso(acceso)}>{texto}</Link> : texto}
                             </TableCell>;
                         })}
                     </TableRow>
@@ -373,6 +375,19 @@ export function Tabla(props: { columnas: ColumnaTabla[], filas: FilaTabla[], ult
             </TableBody>
         </Table>
     </Box>;
+}
+
+// varias tablas, cada una con su título, una debajo de la otra
+export function Tablas(props: { tablas: TablaTablero[] }) {
+    return <Stack spacing={3}>
+        {props.tablas.map(tabla =>
+            <Box key={tabla.titulo}>
+                <Typography variant="subtitle2" fontWeight={600}>{tabla.titulo}</Typography>
+                {tabla.descripcion ? <Typography variant="caption" color="text.secondary">{tabla.descripcion}</Typography> : null}
+                <Tabla columnas={tabla.columnas} filas={tabla.filas} ultimaFilaTotal={tabla.ultimaFilaTotal} accesos={tabla.accesos} />
+            </Box>
+        )}
+    </Stack>;
 }
 
 export function Accesos(props: { accesos: AccesoTablero[] }) {
@@ -424,6 +439,7 @@ export function ContenidoSeccion(props: { seccion: SeccionTablero, tablero: Tabl
             <TotalEncuestas total={contenido.total} />
         </>;
         case 'tabla': return <Tabla columnas={contenido.columnas} filas={contenido.filas} ultimaFilaTotal={contenido.ultimaFilaTotal} />;
+        case 'tablas': return <Tablas tablas={contenido.tablas} />;
         case 'accesos': return <Accesos accesos={contenido.accesos} />;
         case 'titulo': return null;
         case 'mensaje': return <Alert severity={severidadDelTono(contenido.tono)}>{contenido.texto}</Alert>;
