@@ -460,10 +460,10 @@ type DefinicionCorte = {
 };
 
 export const CORTES_DESGLOSE: DefinicionCorte[] = [
-    { id: 'area', titulo: 'área', tabla: 'control_resumen_area', campo: 'area', etiqueta: valor => `área ${valor}`, ruta: ['control', 'área'] },
     { id: 'dominio', titulo: 'dominio', tabla: 'control_resumen_dominio', campo: 'dominio', etiqueta: valor => `dominio ${valor}`, ruta: ['control', 'dominio'] },
     { id: 'zona', titulo: 'zona', tabla: 'control_resumen_zona', campo: 'zona', etiqueta: valor => `zona ${valor}`, ruta: ['control', 'zona'] },
     { id: 'comuna', titulo: 'comuna', tabla: 'control_resumen_comuna', campo: 'nrocomuna', etiqueta: valor => `comuna ${valor}`, ruta: ['control', 'comuna'] },
+    { id: 'area', titulo: 'área', tabla: 'control_resumen_area', campo: 'area', etiqueta: valor => `área ${valor}`, ruta: ['control', 'área'] },
 ];
 
 // Las partes de la barra de un corte: el total sale de la tem (siempre cierra) y de control sólo se toma en qué punto del campo está cada encuesta.
@@ -501,7 +501,7 @@ export async function corteDeControl(consulta: ConsultaTablero, corte: Definicio
             return {
                 etiqueta: corte.etiqueta(valor ?? 'sin dato'),
                 partes: partesDeCorte(corte.titulo, valor, numero(fila, 'total'), controlPorEtiqueta.get(valor)),
-                // las encuestas de la tem de ese área, dominio, zona o comuna
+                // las encuestas de la tem de ese dominio, zona, comuna o área
                 ...accesoALaRuta(RUTA_TEM, { [corte.campo]: valor }),
             };
         }),
@@ -510,7 +510,7 @@ export async function corteDeControl(consulta: ConsultaTablero, corte: Definicio
 
 export const seccionDesglose: DefinicionSeccionTablero = {
     id: 'desglose',
-    titulo: 'Avance por área, dominio, zona y comuna',
+    titulo: 'Avance por dominio, zona, comuna y área',
     descripcion: 'Cada barra es el total de la muestra del corte, abierto por el punto del campo en que está',
     orden: 30,
     roles: ROLES_DE_COORDINACION,

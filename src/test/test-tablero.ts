@@ -398,15 +398,15 @@ describe('dmencu - tablero de inicio', () => {
         });
         it('desglose: un corte por tabla de control_campo, con sus partes, y se omiten los que no tienen filas', async () => {
             var { contenido, consultas } = await obtener(seccionDesglose, responderDesglose(sql => sql.includes(`'control_resumen_zona'`) ? [] : [{ etiqueta: '3', ...control }, { etiqueta: '4', ...control }]));
-            assert.deepStrictEqual(consultas.filter(c => c.sql.includes('tabla_simulada')).map(c => CORTES_DESGLOSE.find(corte => c.sql.includes(`'${corte.tabla}'`))?.id), ['area', 'dominio', 'zona', 'comuna']);
+            assert.deepStrictEqual(consultas.filter(c => c.sql.includes('tabla_simulada')).map(c => CORTES_DESGLOSE.find(corte => c.sql.includes(`'${corte.tabla}'`))?.id), ['dominio', 'zona', 'comuna', 'area']);
             assert.ok(contenido?.tipo == 'desglose');
-            assert.deepStrictEqual(contenido.cortes.map(corte => corte.id), ['area', 'dominio', 'comuna']);
-            assert.strictEqual(contenido.cortes[0].filas[0].etiqueta, 'área 3');
-            assert.strictEqual(contenido.cortes[2].filas[0].etiqueta, 'comuna 3');
+            assert.deepStrictEqual(contenido.cortes.map(corte => corte.id), ['dominio', 'comuna', 'area']);
+            assert.strictEqual(contenido.cortes[0].filas[0].etiqueta, 'dominio 3');
+            assert.strictEqual(contenido.cortes[1].filas[0].etiqueta, 'comuna 3');
             assert.deepStrictEqual(contenido.cortes[0].filas[0].partes.map(parte => parte.valor), [80, 25, 15, 80]);
-            assert.deepStrictEqual(contenido.cortes[2].acceso, { titulo: 'control por comuna', ruta: ['control', 'comuna'] });
+            assert.deepStrictEqual(contenido.cortes[1].acceso, { titulo: 'control por comuna', ruta: ['control', 'comuna'] });
         });
-        it('desglose: cada fila lleva a la tem filtrada por su área, dominio, zona o comuna (o vacía si no tiene)', async () => {
+        it('desglose: cada fila lleva a la tem filtrada por su dominio, zona, comuna o área (o vacía si no tiene)', async () => {
             var { contenido } = await obtener(seccionDesglose, responderDesglose(() => [{ etiqueta: '3', ...control }, { etiqueta: null, ...control }]));
             assert.ok(contenido?.tipo == 'desglose');
             assert.deepStrictEqual(contenido.cortes.map(corte => corte.filas.map(fila => fila.acceso)), CORTES_DESGLOSE.map(corte => [
@@ -442,8 +442,8 @@ describe('dmencu - tablero de inicio', () => {
         });
         it('desglose: los cortes salen de toda la tem (sin los filtros de los controles del menú) y no tienen tope de filas', async () => {
             var be = crearAppParaTests(GABINETE);
-            var tablas = [control_resumen_area, control_resumen_dominio, control_resumen_zona, control_resumen_comuna].map(tabla => tabla(contextoDelRol(be, 'coor_campo')));
-            assert.deepStrictEqual(tablas.map(tabla => tabla.name), ['control_resumen_area', 'control_resumen_dominio', 'control_resumen_zona', 'control_resumen_comuna']);
+            var tablas = [control_resumen_dominio, control_resumen_zona, control_resumen_comuna, control_resumen_area].map(tabla => tabla(contextoDelRol(be, 'coor_campo')));
+            assert.deepStrictEqual(tablas.map(tabla => tabla.name), ['control_resumen_dominio', 'control_resumen_zona', 'control_resumen_comuna', 'control_resumen_area']);
             tablas.forEach(tabla => {
                 assert.ok(!/dominios*=s*3/.test(tabla.sql?.from ?? ''), `${tabla.name} filtra por dominio`);
                 assert.ok(tabla.sql?.from?.includes('usu_con.muestra_encuestas_prod'), `${tabla.name} no filtra por las encuestas que ve el usuario`);
