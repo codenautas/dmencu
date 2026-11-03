@@ -36,7 +36,7 @@ Se escriben directamente con su nombre entre arrobas. El sistema los calcula aut
 | `@parenti1@` | Parentesco del miembro individual con el jefe de hogar | `[Hijo/a]` |
 | `@njefe@` | Nombre del jefe o jefa de hogar (persona 1) | `[Carlos Rodríguez]` |
 | `@frealiz@` | Fecha de realización de la encuesta | `[15/03/2026]` |
-| `@canti_hogares@` | Total de hogares relevados en la vivienda | `[2]` |
+| `@cant_hogares@` | Total de hogares relevados en la vivienda | `[2]` |
 
 ---
 
