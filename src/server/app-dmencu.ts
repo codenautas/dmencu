@@ -5,6 +5,7 @@ import { emergeAppProcesamiento, emergeAppConsistencias, emergeAppVarCal, emerge
 import { pasarEncuestasAProie, ProceduresDmEncu } from "./procedures-dmencu";
 import { cargarAyuda, carpetaDelPaquete, problemasDeAyuda, QuienConsultaAyuda, rutasDelMenu, temasVisibles } from "./ayuda";
 import { DefinicionSeccionTablero, QuienConsultaTablero, SECCIONES_TABLERO } from "./tablero";
+import { proceduresEditorMetadatos } from "./editor-metadatos";
 
 import * as pg from "pg-promise-strict";
 import * as miniTools from "mini-tools";
@@ -106,10 +107,12 @@ import { fracciones } from "./table-fracciones";
 import { radios } from "./table-radios";
 import { manzanas } from "./table-manzanas";
 import { area_enc_proximas } from "./table-area_enc_proximas";
+import { casilleros_versiones } from "./table-casilleros_versiones";
 
 export * from "./types-dmencu";
 export * from "./ayuda";
 export * from "./tablero";
+export * from "./editor-metadatos";
 import { defConfig } from "./def-config"
 import { ProcedureDef } from "backend-plus";
 import { table } from "console";
@@ -317,7 +320,12 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 }
                 return procDef;
             })
-            return parentProc.concat(ProceduresDmEncu);
+            var procedimientosEditor = proceduresEditorMetadatos({
+                // así los dispositivos y la vista previa vuelven a pedir la estructura
+                estructuraModificada: () => { be.caches.timestampEstructura = new Date().getTime(); },
+                estructuraDelOperativo: (context, operativo) => be.procedure.operativo_estructura_completa.coreFunction(context, { operativo, idper_logueado_tablet: null }),
+            });
+            return parentProc.concat(ProceduresDmEncu, procedimientosEditor);
         }
         // secciones del tablero de inicio. Las apps finales las extienden sobreescribiendo este método, por ejemplo
         // combinarSecciones(super.getSeccionesTablero(), [miSeccion]) o filtrando por id (ver docs/tablero.md)
@@ -528,6 +536,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'unlogged.js', path: 'dmencu' },
             ] : [
                 { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'render-tablero.js', path: 'dmencu' },
+                { type: 'js', module: 'dmencu', modPath: '../../unlogged/unlogged', file: 'editor-metadatos-comun.js', path: 'dmencu' },
+                { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'render-editor-metadatos.js', path: 'dmencu' },
                 { type: 'js', module: 'dmencu', modPath: '../../client/client', file: 'client.js', path: 'dmencu' },
             ];
             if (opts && opts.extraFiles) {
@@ -870,6 +880,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                             { menuType: 'table', name: 'no_rea_sup' },
                         ]},
                         { menuType: 'table', name: 'formularios', table: 'casilleros_principales' },
+                        { menuType: 'editor_metadatos', name: 'editor_visual', label: 'editor visual' },
                         { menuType: 'table', name: 'plano', table: 'casilleros' },
                         { menuType: 'table', name: 'variables', table: 'casilleros', fc: [{ column: 'var_name', operator: '!=\u2205', value: null }] },
                         { menuType: 'table', name: 'tipoc', label: 'tipos de celdas' },
@@ -1097,6 +1108,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 , radios
                 , manzanas
                 , area_enc_proximas
+                , casilleros_versiones
             }
             be.appendToTableDefinition('consistencias', function (tableDef, context) {
                 tableDef.editable = tableDef.editable || context?.puede?.encuestas?.procesar;

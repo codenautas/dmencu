@@ -553,7 +553,8 @@ export async function tableroParaUsuario(context: ProcedureContext): Promise<Tab
     var client: ClienteTablero = context.client;
     var usuario = context.user?.usuario ?? '';
     var [datos] = (await client.query(`
-        select p.operativo, u.nombre, u.apellido, r.nombre as nombre_rol, current_timestamp as generado
+        select p.operativo, u.nombre, u.apellido, r.nombre as nombre_rol, current_timestamp as generado,
+                    (select count(*) > 1 from operativos) as varios_operativos
             from parametros p
                 left join usuarios u on u.usuario = $1
                 left join roles r on r.rol = u.rol
@@ -566,6 +567,7 @@ export async function tableroParaUsuario(context: ProcedureContext): Promise<Tab
         quien,
         operativo: operativo ?? '',
         menu: be.getMenu(context).menu,
+        variosOperativos: datos?.varios_operativos === true,
         aislar: async (obtener: () => Promise<ContenidoTablero | null>): Promise<ContenidoTablero | null> => {
             var escribible: ClienteEscribible = context.client;
             await escribible.query(`savepoint tablero_seccion`).execute();

@@ -7,12 +7,12 @@ import { sqlRecepcionistaACargo } from '../server/table-tem';
 import { CampoCalculado, control_campo, controlCamposOpts } from '../server/table-control_campo';
 import { control_resumen_area, control_resumen_comuna, control_resumen_dominio, control_resumen_recepcionistas_tarea, control_resumen_zona } from '../server/table-control_resumen';
 import {
-    acomodarCalendario, accesosDelMenu, armarSecciones, buscarEnMenu, ClienteTablero, combinarSecciones, ConsultaTablero,
+    acomodarCalendario, BOTONES_DE_OPERATIVO, contenidoConAccesosVisibles, accesosDelMenu, armarSecciones, buscarEnMenu, ClienteTablero, combinarSecciones, ConsultaTablero,
     CORTES_DESGLOSE, DefinicionSeccionTablero, FilaSql, ordenarTareas, partesDeControl, partesDeCorte, SECCIONES_TABLERO, seccionAvance,
-    seccionCalendario, seccionCircuito, seccionDesglose, seccionesVisibles, seccionMiAvance, seccionMiDetalle, seccionParaAsignar, seccionParaRecibir, seccionRecepcionistas,
+    seccionCalendario, seccionCircuito, seccionDelAmbito, seccionDesglose, seccionesVisibles, seccionMiAvance, seccionMiDetalle, seccionOperativos, seccionParaAsignar, seccionParaRecibir, seccionRecepcionistas,
     seccionNoRespuesta, ValorSql
 } from '../server/tablero';
-import type { GrupoNoRea, NoReaGrupo0, TableDefinition } from '../server/types-dmencu';
+import type { GrupoNoRea, MenuInfoBase, NoReaGrupo0, TableDefinition } from '../server/types-dmencu';
 import type { ContenidoTablero, SeccionTablero } from '../unlogged/tipos-tablero';
 import { AppParaTests, contextoDelRol, crearAppParaTests } from './app-para-tests';
 
@@ -54,14 +54,17 @@ function consultaDelRol(be: AppParaTests, rol: string, client: ClienteTablero, i
         quien: quienConsultaTablero(context),
         operativo: 'OPE1',
         menu: be.getMenu(context).menu,
+        variosOperativos: false,
         tabla: tablaSimulada,
     };
 }
 
-function idsVisibles(rol: string): string[] {
+// las secciones que ve el rol en una instancia de campo (un solo operativo) o de diseño (varios)
+function idsVisibles(rol: string, variosOperativos: boolean = false): string[] {
     var be = crearAppParaTests(GABINETE);
     var consulta = consultaDelRol(be, rol, clienteSimulado(() => []));
-    return seccionesVisibles(be.getSeccionesTablero(), consulta.quien).map(seccion => seccion.id);
+    return seccionesVisibles(be.getSeccionesTablero(), consulta.quien)
+        .filter(seccion => seccionDelAmbito(seccion, variosOperativos)).map(seccion => seccion.id);
 }
 
 function seccionDePrueba(id: string, orden: number, obtener: DefinicionSeccionTablero['obtener'], extra: Partial<DefinicionSeccionTablero> = {}): DefinicionSeccionTablero {
@@ -112,8 +115,17 @@ describe('dmencu - tablero de inicio', () => {
     });
 
     describe('secciones visibles según rol', () => {
-        it('admin (superuser) ve todas las secciones', () => {
-            assert.deepStrictEqual(idsVisibles('admin').sort(), SECCIONES_TABLERO.map(seccion => seccion.id).sort());
+        it('admin (superuser) ve todas las secciones de campo', () => {
+            assert.deepStrictEqual(idsVisibles('admin').sort(), SECCIONES_TABLERO.filter(seccion => seccionDelAmbito(seccion, false)).map(seccion => seccion.id).sort());
+        });
+        it('con varios operativos (instancia de diseño) todos ven sólo operativos, y nada de campo', () => {
+            ['admin', 'dis_conceptual', 'coor_campo', 'recepcionista'].forEach(rol => {
+                assert.deepStrictEqual(idsVisibles(rol, true), ['operativos'], rol);
+            });
+        });
+        it('con un solo operativo no se ve el tablero de diseño', () => {
+            assert.ok(!idsVisibles('admin').includes('operativos'));
+            assert.ok(idsVisibles('admin').includes('avance'));
         });
         it('coordinación ve el campo, la gestión y los dispositivos', () => {
             assert.deepStrictEqual(idsVisibles('coor_campo'), [
@@ -643,6 +655,38 @@ describe('dmencu - tablero de inicio', () => {
             assert.ok(consultas[0].sql.includes(`'control_resumen_recepcion' as tabla_simulada`));
             assert.ok(contenido?.tipo == 'avance');
             assert.deepStrictEqual(contenido.partes.map(parte => parte.valor), [80, 25, 15, 80]);
+        });
+        it('operativos: estructura, consistencias y problemas del editor de cada operativo', async () => {
+            var { contenido, consultas } = await obtener(seccionOperativos, sql => sql.includes('from operativos o') ? [
+                { operativo: 'op1', nombre: 'Uno', formularios: '2', preguntas: '30', variables: '25', consistencias: '10', consistencias_inactivas: '3' },
+                { operativo: 'op2', nombre: 'Dos', formularios: '1', preguntas: '5', variables: '4', consistencias: '0', consistencias_inactivas: '0' },
+            ] : [], 'dis_conceptual');
+            assert.ok(contenido?.tipo == 'tabla');
+            assert.deepStrictEqual(contenido.filas.map(fila => [fila.operativo, fila.formularios, fila.preguntas, fila.variables, fila.consistencias, fila.consistencias_inactivas, fila.errores]), [
+                ['op1', 2, 30, 25, 10, 3, 0],
+                ['op2', 1, 5, 4, 0, 0, 0],
+            ]);
+            // por cada operativo se leen los casilleros, los tipos y las inclusiones como lo hace el editor
+            assert.ok(consultas.some(c => c.sql.includes('from casilleros c') && c.params[0] == 'op2'));
+            assert.ok(consultas.some(c => c.sql.includes('from tipoc_tipoc')));
+            // buscador y, por fila, los botones a las grillas de metadatos y muestra filtradas por ese operativo
+            assert.strictEqual(contenido.buscador, 'buscar operativo');
+            assert.deepStrictEqual(contenido.botones?.[1].map(boton => [boton.titulo, boton.ruta.join(','), boton.filtro]), [
+                ['formularios', 'configurar,metadatos,formularios', { operativo: 'op2' }],
+                ['plano', 'configurar,metadatos,plano', { operativo: 'op2' }],
+                ['tem', 'configurar,muestra,tem', { operativo: 'op2' }],
+                ['rea', 'configurar,metadatos,rea/norea,rea', { operativo: 'op2' }],
+                ['no rea', 'configurar,metadatos,rea/norea,no_rea_grupo0', { operativo: 'op2' }],
+            ]);
+        });
+        it('operativos: los botones sólo quedan si el usuario tiene la grilla en su menú', () => {
+            var menu: MenuInfoBase[] = [{ menuType: 'menu', name: 'configurar', menuContent: [{ menuType: 'menu', name: 'muestra', menuContent: [{ menuType: 'table', name: 'tem' }] }] }];
+            var contenido = contenidoConAccesosVisibles({ tipo: 'tabla', columnas: [], filas: [{}], botones: [BOTONES_DE_OPERATIVO.map(boton => ({ titulo: boton.titulo, ruta: boton.ruta }))] }, menu);
+            assert.ok(contenido.tipo == 'tabla');
+            assert.deepStrictEqual(contenido.botones?.[0].map(boton => boton.titulo), ['tem']);
+        });
+        it('operativos: sin operativos no se muestra', async () => {
+            assert.strictEqual((await obtener(seccionOperativos, () => [])).contenido, null);
         });
         it('mi detalle: una fila con lo del usuario como recepcionista, sin su nombre ni idper', async () => {
             var { contenido } = await obtener(seccionMiDetalle, sql => sql.includes(`'control_resumen_recepcionistas' as tabla_simulada`) ? [

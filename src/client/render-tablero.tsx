@@ -371,16 +371,28 @@ export function Barras(props: { filas: FilaBarras[], formato?: 'numero' | 'porce
     </Box>;
 }
 
-export function Tabla(props: { columnas: ColumnaTabla[], filas: FilaTabla[], ultimaFilaTotal?: boolean, accesos?: (AccesoTablero | undefined)[] }) {
-    return <Box sx={{ overflowX: 'auto' }}>
-        <Table size="small">
+export function Tabla(props: { columnas: ColumnaTabla[], filas: FilaTabla[], ultimaFilaTotal?: boolean, accesos?: (AccesoTablero | undefined)[], buscador?: string, botones?: AccesoTablero[][] }) {
+    var [filtro, setFiltro] = useState('');
+    var buscado = filtro.trim().toLowerCase();
+    // los índices originales, porque los accesos y los botones van en el mismo orden que las filas
+    var visibles = props.filas.map((fila, i) => ({ fila, i })).filter(({ fila }) => !buscado || props.columnas.some(columna => String(fila[columna.campo] ?? '').toLowerCase().includes(buscado)));
+    return <Box sx={{ maxWidth: '100%' }}>
+        {props.buscador ? <Stack direction="row" alignItems="center" flexWrap="wrap" sx={{ gap: 1.5, mb: 1 }}>
+            <TextField size="small" value={filtro} placeholder={props.buscador} onChange={event => setFiltro(event.target.value)} />
+            {buscado ? <Typography variant="body2" color="text.secondary">Mostrando {numeroATexto(visibles.length)} de {numeroATexto(props.filas.length)}</Typography> : null}
+        </Stack> : null}
+        <Box sx={{ overflowX: 'auto' }}>
+        <Table size="small" sx={props.botones ? { '& th, & td': { px: 1 } } : undefined}>
             <TableHead>
                 <TableRow>
-                    {props.columnas.map(columna => <TableCell key={columna.campo} align={columna.numerica ? 'right' : 'left'} sx={{ fontWeight: 600, color: 'text.secondary' }}>{columna.titulo}</TableCell>)}
+                    {props.columnas.map(columna => <TableCell key={columna.campo} align={columna.numerica ? 'right' : 'left'} sx={{ fontWeight: 600, color: 'text.secondary' }}>
+                        {columna.descripcion ? <Tooltip arrow title={columna.descripcion}><span style={{ cursor: 'help', borderBottom: ' 1px dotted' }}>{columna.titulo}</span></Tooltip> : columna.titulo}
+                    </TableCell>)}
+                    {props.botones ? <TableCell sx={{ fontWeight: 600, color: 'text.secondary' }}>ir a</TableCell> : null}
                 </TableRow>
             </TableHead>
             <TableBody>
-                {props.filas.map((fila, i) =>
+                {visibles.map(({ fila, i }) =>
                     <TableRow key={i} hover sx={props.ultimaFilaTotal && i == props.filas.length - 1 ? { '& td': { fontWeight: 700 } } : undefined}>
                         {props.columnas.map((columna, c) => {
                             var valor = fila[columna.campo];
@@ -390,10 +402,15 @@ export function Tabla(props: { columnas: ColumnaTabla[], filas: FilaTabla[], ult
                                 {acceso ? <Link underline="hover" title={acceso.titulo} href={hrefDelAcceso(acceso)} onClick={alHacerClickEnAcceso(acceso)}>{texto}</Link> : texto}
                             </TableCell>;
                         })}
+                        {props.botones ? <TableCell sx={{ minWidth: 200 }}>
+                            {(props.botones[i] ?? []).map(acceso =>
+                                <Button key={acceso.titulo} size="small" sx={{ minWidth: 0, px: 1 }} href={hrefDelAcceso(acceso)} onClick={alHacerClickEnAcceso(acceso)}>{acceso.titulo}</Button>)}
+                        </TableCell> : null}
                     </TableRow>
                 )}
             </TableBody>
         </Table>
+        </Box>
     </Box>;
 }
 
@@ -458,7 +475,7 @@ export function ContenidoSeccion(props: { seccion: SeccionTablero, tablero: Tabl
             <Barras filas={contenido.filas} formato={contenido.formato} />
             <TotalEncuestas total={contenido.total} />
         </>;
-        case 'tabla': return <Tabla columnas={contenido.columnas} filas={contenido.filas} ultimaFilaTotal={contenido.ultimaFilaTotal} />;
+        case 'tabla': return <Tabla columnas={contenido.columnas} filas={contenido.filas} ultimaFilaTotal={contenido.ultimaFilaTotal} buscador={contenido.buscador} botones={contenido.botones} />;
         case 'tablas': return <Tablas tablas={contenido.tablas} />;
         case 'accesos': return <Accesos accesos={contenido.accesos} />;
         case 'titulo': return null;
@@ -476,7 +493,7 @@ export function ContenidoSeccion(props: { seccion: SeccionTablero, tablero: Tabl
 
 function TarjetaSeccion(props: { seccion: SeccionTablero, tablero: TableroParaUsuario }) {
     var { seccion } = props;
-    return <Card component="section" aria-labelledby={`tablero-${seccion.id}`} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    return <Card component="section" aria-labelledby={`tablero-${seccion.id}`} sx={{ height: '100%', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ px: 2.5, pt: 2, pb: 1, display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
             <Box sx={{ width: 4, alignSelf: 'stretch', borderRadius: 2, bgcolor: 'primary.main', flexShrink: 0 }} />
             <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -486,7 +503,7 @@ function TarjetaSeccion(props: { seccion: SeccionTablero, tablero: TableroParaUs
             {seccion.acceso ? <Button size="small" endIcon={<Icono path={ICONOS.irA} />} sx={{ flexShrink: 0 }}
                 href={hrefDelAcceso(seccion.acceso)} onClick={alHacerClickEnAcceso(seccion.acceso)}>{seccion.acceso.titulo}</Button> : null}
         </Box>
-        <CardContent sx={{ pt: 1, flex: 1, '&:last-child': { pb: 2.5 } }}>
+        <CardContent sx={{ pt: 1, flex: 1, minWidth: 0, '&:last-child': { pb: 2.5 } }}>
             <ContenidoSeccion seccion={seccion} tablero={props.tablero} />
         </CardContent>
     </Card>;

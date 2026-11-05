@@ -10,11 +10,13 @@
 | [rea-no-rea.md](rea-no-rea.md) | Cómo se calculan REA / no REA y el resumen de estado de una encuesta |
 | [roles-y-permisos.md](roles-y-permisos.md) | Roles, permisos y menús según rol y modo (policy) |
 | [tablero.md](tablero.md) | Tablero de inicio del modo GABINETE: secciones según rol y permisos, gráficos y links a las grillas; cómo lo extienden las apps finales |
+| [editor-metadatos.md](editor-metadatos.md) | Editor visual de metadatos: cancha, paleta, reglas de inclusión, vista previa con el renderizador y cómo se guardan los cambios |
 | [ayuda-online.md](ayuda-online.md) | Ayuda en línea para usuarios según rol, permisos y modo; cómo la extienden las apps finales |
 | [testing.md](testing.md) | Cómo se prueba el proyecto y qué cubre cada archivo de tests |
 | [resumen-estados.md](resumen-estados.md) | Colores y significado de los estados de resumen del formulario |
 | [funcionamiento-comodines.md](funcionamiento-comodines.md) | Guía de comodines (`@...@`) para redactar textos del formulario |
 | [casillero-libre.md](casillero-libre.md) | Casilleros de tipo `LIBRE` y cómo redefinir su despliegue |
+| [actualizacion.md](actualizacion.md) | Cómo actualizar una instalación existente: procedimiento, problemas encontrados al llevar una muy atrasada y propuesta para estandarizarlo |
 | [publicacion.md](publicacion.md) | Cómo se publica en npm desde GitHub Actions (tags, disparo manual, Trusted publisher) y diagnóstico de errores |
 
 ## Glosario rápido

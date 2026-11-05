@@ -39,7 +39,18 @@ Como `tablero_traer` está en `procedures-dmencu.ts` y devuelve datos, otro fron
 
 Los procedimientos corren dentro de una transacción de backend-plus y las secciones son sólo consultas, así que no se usan savepoints. Si una sección falla se informa en `errores` y se escribe en el log del servidor; como la transacción queda abortada por el error de la base, las secciones que corran después también fallan en esa carga.
 
-## Secciones de dmencu
+## Dos tipos de instancia: de campo y de diseño
+
+Una **app final** define un solo operativo y es de campo. La instancia de dmencu a secas se usa para **modelar varios operativos** (metadatos): no tiene campo. El tablero lo decide mirando la tabla `operativos`: con **más de un operativo** (`ConsultaTablero.variosOperativos`) es de **diseño**; con uno, de campo.
+
+Cada sección declara su `ambito`: `'campo'` (el predeterminado), `'diseno'` o `'todos'`. `armarSecciones` descarta las que no son del ámbito de la instancia (`seccionDelAmbito`). En diseño no se muestra nada de campo (panorama, recepción, calendario, dispositivos) y **todos** los usuarios con menú ven las secciones de diseño, sin filtrar por rol.
+
+| id | Orden | Ámbito | Contenido |
+| :-- | :-: | :-- | :-- |
+| `operativos` | 10 | diseño | tabla con una fila por operativo: formularios, preguntas, variables, consistencias, las inactivas o inválidas y los problemas que marca el editor de metadatos (errores, faltan datos y avisos, los mismos que se ven al editar: `problemasDeMetadatos`); acceso al *editor visual*. Cada columna lleva una `descripcion` que se ve como tooltip en el encabezado (`ColumnaTabla.descripcion`, disponible en cualquier tabla). Tiene un cuadro para buscar operativo (`buscador`, filtra en el cliente por cualquier columna) y, al final de cada fila, botones (`botones`, `BOTONES_DE_OPERATIVO`) a *formularios*, *plano*, *tem*, *rea* y *no rea* (`no_rea_grupo0`) abiertos con `ff` `operativo` igual al de la fila; como los demás links, `contenidoConAccesosVisibles` quita los botones de las grillas que el usuario no tiene en el menú |
+| `accesos` | 900 | campo | accesos directos del menú (en diseño no está: el menú ya es la navegación y la tabla de operativos tiene sus botones) |
+
+## Secciones de campo
 
 Los números de campo salen del **sql de las tablas de control** (`control_resumen` y, para el desglose, `control_resumen_area`, `control_resumen_dominio`, `control_resumen_zona` y `control_resumen_comuna`), que clasifican las encuestas igual que las grillas del menú *control*. Las del desglose no llevan los filtros de esas grillas (por ejemplo `dominio=3` en zona y comuna) y cuentan las encuestas que ve el usuario en la `tem`: el total de cada corte es siempre el de la `tem`. Para eso `ConsultaTablero.tabla(nombre)` devuelve la definición de la tabla y la sección usa su `sql.from`.
 
@@ -60,7 +71,7 @@ En el desglose los **cortes y el total de cada uno salen directamente de la `tem
 | `circuito` | 40 | ídem `avance` | una tarjeta por tarea del operativo (también las que tienen 0) con la cantidad de encuestas en esa `tarea_actual` y link a la grilla de la tarea, más una tarjeta *sin asignar* (sin `tarea_actual`) al principio. Cada tarea con encuestas tiene el botón *ver estados*, que abre una ventana con las encuestas de la tarea por estado (código y descripción, por ejemplo *A · Asignada*; *Sin estado* si no tiene), en el orden de `estados.orden_estado`, cada una con link a la grilla filtrada (`IndicadorTablero.desagregado`). Al pie va el total de encuestas (que debe coincidir con la muestra), en el orden del circuito (ver abajo) |
 | `calendario` | 70 | `campo.ver`, `campo.editar`, `campo.administrar`, `encuestas.procesar` | semana de carga en curso (`semanas.carga_enc_desde/hasta`) y días que le quedan. `acomodarCalendario` lo acomoda según lo que ve el usuario: si ve la tabla `recepcionistas` (los roles que ven el estado del operativo) va a su derecha, en un cuarto del ancho (la tabla ocupa tres cuartos: anchos `tresCuartos` y `cuarto`); si no, y tiene *para asignar* o *en recepción*, va arriba a continuación de ellas, con el ancho repartido (tres tercios si están las dos, dos mitades si sólo hay una); si no, queda en su lugar |
 | `dispositivos` | 80 | `campo.administrar` | sincronizaciones de hoy y de los últimos 7 días |
-| `accesos` | 900 | todos | accesos directos a las opciones de primer y segundo nivel del menú del usuario |
+| `accesos` | 900 | campo | accesos directos a las opciones de primer y segundo nivel del menú del usuario |
 
 **Coordinación para arriba** es `ROLES_DE_COORDINACION`: admin, direccion, coor_campo, subcoor_campo, coor_proc y procesamiento (el superuser ve todo). No se define por un permiso porque ninguno separa a esos roles del resto (`campo.administrar` no lo tiene dirección ni procesamiento). Una app con otros roles sobreescribe `getSeccionesTablero`.
 

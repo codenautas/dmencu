@@ -85,6 +85,7 @@ export type CorteDesglose = {
 export type ColumnaTabla = {
     campo: string
     titulo: string
+    descripcion?: string // qué representa la columna: se ve como ayuda al pasar el mouse por el encabezado
     numerica?: boolean
     formato?: 'numero' | 'porcentaje' // de las numéricas: el valor ya viene como porcentaje (0 a 100)
 }
@@ -106,7 +107,9 @@ export type ContenidoTablero =
     | { tipo: 'avance', partes: ParteAvance[], indicadores?: IndicadorTablero[] } // indicadores: cifras que van arriba de la barra
     | { tipo: 'desglose', cortes: CorteDesglose[] }
     | { tipo: 'barras', filas: FilaBarras[], formato?: 'numero' | 'porcentaje', total?: number }
-    | { tipo: 'tabla', columnas: ColumnaTabla[], filas: FilaTabla[], ultimaFilaTotal?: boolean } // ultimaFilaTotal: la última fila es el total y va en negrita
+    // ultimaFilaTotal: la última fila es el total y va en negrita; buscador: texto de ayuda del cuadro que filtra las filas;
+    // botones (uno por fila, en el mismo orden): los links a grillas filtradas que lleva cada fila al final
+    | { tipo: 'tabla', columnas: ColumnaTabla[], filas: FilaTabla[], ultimaFilaTotal?: boolean, buscador?: string, botones?: AccesoTablero[][] }
     | { tipo: 'tablas', tablas: TablaTablero[] }
     | { tipo: 'accesos', accesos: AccesoTablero[] }
     | { tipo: 'mensaje', texto: string, tono?: TonoTablero }
