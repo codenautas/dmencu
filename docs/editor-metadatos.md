@@ -1,5 +1,7 @@
 # Editor visual de metadatos
 
+> **Desactivado por ahora**: la opción de menú `editor_visual` (app-dmencu.ts), el acceso desde el tablero (`seccionOperativos`), el tema de ayuda y su test del menú están comentados o quitados hasta que ande en las bases instaladas (requiere la tabla `casilleros_versiones`, `operaciones/2026-10-18-actualizar_casilleros_versiones.sql`). Para reactivarlo hay que restaurar esas partes (ver el historial de git: commit 3.9.0).
+
 En *configurar → metadatos → **editor visual*** (`menuType: 'editor_metadatos'`) se arma el formulario arrastrando casilleros en lugar de cargarlos fila por fila en la grilla `casilleros`. Es una pantalla React + MUI con el mismo tema que el tablero (ver [tablero.md](tablero.md)) que escribe en la misma tabla `casilleros`, así que la grilla sigue funcionando igual y los triggers siguen validando.
 
 ## Qué tiene la pantalla

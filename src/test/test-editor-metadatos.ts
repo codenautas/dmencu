@@ -346,7 +346,8 @@ describe('dmencu - editor visual de metadatos', () => {
             assert.deepStrictEqual(permisosEditor(contextoDelRol(be, 'dis_conceptual')), { ver: true, textos: true, estructura: false });
             assert.deepStrictEqual(permisosEditor(contextoDelRol(be, 'coor_campo')), { ver: false, textos: false, estructura: false });
         });
-        it('el editor está en configurar → metadatos', () => {
+        // desactivado: el editor visual no está en el menú por ahora (ver app-dmencu.ts)
+        it.skip('el editor está en configurar → metadatos', () => {
             var be = crearAppParaTests('');
             var configurar = be.getMenu(contextoDelRol(be, 'dis_conceptual')).menu.find((o: MenuInfoBase) => o.name == 'configurar');
             assert.ok(configurar && configurar.menuType == 'menu');

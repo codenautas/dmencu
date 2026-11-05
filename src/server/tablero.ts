@@ -560,7 +560,8 @@ export const seccionOperativos: DefinicionSeccionTablero = {
     descripcion: 'Estructura de cada operativo y problemas de diseño que marca el editor de metadatos',
     orden: 10,
     ambito: 'diseno',
-    acceso: { titulo: 'editor visual', ruta: ['configurar', 'metadatos', 'editor_visual'] },
+    // acceso al editor visual desactivado junto con su opción de menú (app-dmencu.ts)
+    // acceso: { titulo: 'editor visual', ruta: ['configurar', 'metadatos', 'editor_visual'] },
     async obtener(consulta) {
         var operativos = await filas(consulta, `
             select o.operativo, o.nombre,

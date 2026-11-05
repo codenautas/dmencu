@@ -880,7 +880,8 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                             { menuType: 'table', name: 'no_rea_sup' },
                         ]},
                         { menuType: 'table', name: 'formularios', table: 'casilleros_principales' },
-                        { menuType: 'editor_metadatos', name: 'editor_visual', label: 'editor visual' },
+                        // editor visual desactivado hasta que ande en producción (falta casilleros_versiones en las bases instaladas):
+                        // { menuType: 'editor_metadatos', name: 'editor_visual', label: 'editor visual' },
                         { menuType: 'table', name: 'plano', table: 'casilleros' },
                         { menuType: 'table', name: 'variables', table: 'casilleros', fc: [{ column: 'var_name', operator: '!=\u2205', value: null }] },
                         { menuType: 'table', name: 'tipoc', label: 'tipos de celdas' },

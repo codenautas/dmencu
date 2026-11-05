@@ -8,7 +8,7 @@ menu: [tablero]
 ---
 **Inicio** es la pantalla que se abre al entrar al sistema. Muestra un panorama del operativo pensado para tu rol: las secciones que ves dependen de tu rol y tus permisos. El panorama general del operativo lo ven dirección, coordinación y procesamiento; recepción ve sus propias encuestas.
 
-Si esta instalación define varios operativos (se usa para modelarlos), el inicio muestra la tabla **Operativos**: por cada uno, cuántos formularios, preguntas, variables y consistencias tiene y los problemas que marca el editor de metadatos (errores, datos que faltan y avisos). Al pasar el mouse por el título de cada columna se explica qué cuenta. El botón de la sección lleva al editor visual. Arriba de la tabla hay un cuadro para buscar un operativo, y al final de cada fila botones que abren, ya filtrados por ese operativo, los formularios, el plano, la TEM, la rea y la no rea (sólo los que tu rol puede ver). En ese caso no se muestran las secciones de campo.
+Si esta instalación define varios operativos (se usa para modelarlos), el inicio muestra la tabla **Operativos**: por cada uno, cuántos formularios, preguntas, variables y consistencias tiene y los problemas que marca el editor de metadatos (errores, datos que faltan y avisos). Al pasar el mouse por el título de cada columna se explica qué cuenta. Arriba de la tabla hay un cuadro para buscar un operativo, y al final de cada fila botones que abren, ya filtrados por ese operativo, los formularios, el plano, la TEM, la rea y la no rea (sólo los que tu rol puede ver). En ese caso no se muestran las secciones de campo.
 
 Si la instalación tiene un solo operativo vas a ver algunas de estas secciones:
 
