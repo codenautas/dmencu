@@ -158,6 +158,8 @@ export function contenidoConAccesosVisibles(contenido: ContenidoTablero, menu: M
             return indicador.desagregado == null ? visible
                 : { ...visible, desagregado: { ...indicador.desagregado, filas: indicador.desagregado.filas.map(fila => conAccesoVisible(fila, menu)) } };
         }) };
+        case 'tabla': return contenido.botones == null ? contenido
+            : { ...contenido, botones: contenido.botones.map(fila => fila.filter(acceso => buscarEnMenu(menu, acceso.ruta) != null)) };
         case 'barras': return { ...contenido, filas: contenido.filas.map(fila => conAccesoVisible(fila, menu)) };
         case 'desglose': return { ...contenido, cortes: contenido.cortes.map(corte => ({ ...conAccesoVisible(corte, menu), filas: corte.filas.map(fila => conAccesoVisible(fila, menu)) })) };
         default: return contenido;
@@ -540,6 +542,17 @@ export const seccionDesglose: DefinicionSeccionTablero = {
 
 /* diseño: instancias con varios operativos */
 
+const RUTA_METADATOS: RutaMenu = ['configurar', 'metadatos'];
+
+// las grillas de metadatos y de muestra que se abren filtradas por operativo desde su fila
+export const BOTONES_DE_OPERATIVO: { titulo: string, ruta: RutaMenu }[] = [
+    { titulo: 'formularios', ruta: [...RUTA_METADATOS, 'formularios'] },
+    { titulo: 'plano', ruta: [...RUTA_METADATOS, 'plano'] },
+    { titulo: 'tem', ruta: RUTA_TEM },
+    { titulo: 'rea', ruta: [...RUTA_METADATOS, 'rea/norea', 'rea'] },
+    { titulo: 'no rea', ruta: [...RUTA_METADATOS, 'rea/norea', 'no_rea_grupo0'] },
+];
+
 // la estructura de cada operativo y los problemas de diseño que marca el editor de metadatos (los mismos que se ven al editarlo)
 export const seccionOperativos: DefinicionSeccionTablero = {
     id: 'operativos',
@@ -550,14 +563,14 @@ export const seccionOperativos: DefinicionSeccionTablero = {
     acceso: { titulo: 'editor visual', ruta: ['configurar', 'metadatos', 'editor_visual'] },
     async obtener(consulta) {
         var operativos = await filas(consulta, `
-            select o.operativo, o.nombre, coalesce(o.disform_cerrado, false) as cerrado,
+            select o.operativo, o.nombre,
                     count(c.*) filter (where c.tipoc = 'F') as formularios,
                     count(c.*) filter (where c.tipoc = 'P') as preguntas,
                     count(c.*) filter (where c.var_name is not null) as variables,
                     (select count(*) from consistencias k where k.operativo = o.operativo) as consistencias,
                     (select count(*) from consistencias k where k.operativo = o.operativo and not (coalesce(k.activa, false) and coalesce(k.valida, false))) as consistencias_inactivas
                 from operativos o left join casilleros c on c.operativo = o.operativo
-                group by o.operativo, o.nombre, o.disform_cerrado
+                group by o.operativo, o.nombre
                 order by o.operativo`, []);
         if (operativos.length == 0) {
             return null;
@@ -569,7 +582,6 @@ export const seccionOperativos: DefinicionSeccionTablero = {
             filasTabla.push({
                 operativo: texto(operativo, 'operativo'),
                 nombre: texto(operativo, 'nombre'),
-                diseno: operativo.cerrado === true ? 'cerrado' : 'abierto',
                 formularios: numero(operativo, 'formularios'),
                 preguntas: numero(operativo, 'preguntas'),
                 variables: numero(operativo, 'variables'),
@@ -583,19 +595,20 @@ export const seccionOperativos: DefinicionSeccionTablero = {
         return {
             tipo: 'tabla',
             columnas: [
-                { campo: 'operativo', titulo: 'operativo' },
-                { campo: 'nombre', titulo: 'nombre' },
-                { campo: 'diseno', titulo: 'diseño' },
-                { campo: 'formularios', titulo: 'formularios', numerica: true },
-                { campo: 'preguntas', titulo: 'preguntas', numerica: true },
-                { campo: 'variables', titulo: 'variables', numerica: true },
-                { campo: 'consistencias', titulo: 'consistencias', numerica: true },
-                { campo: 'consistencias_inactivas', titulo: 'inactivas o inválidas', numerica: true },
-                { campo: 'errores', titulo: 'errores', numerica: true },
-                { campo: 'faltan_datos', titulo: 'faltan datos', numerica: true },
-                { campo: 'avisos', titulo: 'avisos', numerica: true },
+                { campo: 'operativo', titulo: 'operativo', descripcion: 'Código del operativo, el que identifica sus filas en todas las tablas' },
+                { campo: 'nombre', titulo: 'nombre', descripcion: 'Nombre descriptivo del operativo' },
+                { campo: 'formularios', titulo: 'formularios', descripcion: 'Cantidad de formularios del operativo', numerica: true },
+                { campo: 'preguntas', titulo: 'preguntas', descripcion: 'Cantidad de preguntas, en todos los formularios', numerica: true },
+                { campo: 'variables', titulo: 'variables', descripcion: 'Cantidad de casilleros que tienen nombre de variable (las que guardan un dato)', numerica: true },
+                { campo: 'consistencias', titulo: 'consistencias', descripcion: 'Cantidad de consistencias definidas para el operativo', numerica: true },
+                { campo: 'consistencias_inactivas', titulo: 'inactivas o inválidas', descripcion: 'Consistencias que no están activas o no son válidas: no se evalúan o no se pueden evaluar', numerica: true },
+                { campo: 'errores', titulo: 'errores', descripcion: 'Problemas graves que marca el editor de metadatos, por ejemplo un botón que abre un formulario que no existe', numerica: true },
+                { campo: 'faltan_datos', titulo: 'faltan datos', descripcion: 'Datos que un casillero necesita para mostrarse bien y están vacíos: formulario sin contenido, pregunta sin tipo de variable, opciones faltantes', numerica: true },
+                { campo: 'avisos', titulo: 'avisos', descripcion: 'Observaciones menores que marca el editor de metadatos, que no impiden usar el diseño', numerica: true },
             ],
             filas: filasTabla,
+            buscador: 'buscar operativo',
+            botones: filasTabla.map(fila => BOTONES_DE_OPERATIVO.map(boton => ({ titulo: boton.titulo, ruta: boton.ruta, filtro: { operativo: fila.operativo as string } }))),
         };
     }
 };
@@ -1099,7 +1112,6 @@ export const seccionDispositivos: DefinicionSeccionTablero = {
 
 export const seccionAccesos: DefinicionSeccionTablero = {
     id: 'accesos',
-    ambito: 'todos',
     titulo: 'Qué puedo hacer',
     descripcion: 'Accesos directos a las opciones del menú que tengo habilitadas',
     orden: 900,

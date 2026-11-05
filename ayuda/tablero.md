@@ -8,7 +8,7 @@ menu: [tablero]
 ---
 **Inicio** es la pantalla que se abre al entrar al sistema. Muestra un panorama del operativo pensado para tu rol: las secciones que ves dependen de tu rol y tus permisos. El panorama general del operativo lo ven dirección, coordinación y procesamiento; recepción ve sus propias encuestas.
 
-Si esta instalación define varios operativos (se usa para modelarlos), el inicio muestra la tabla **Operativos**: por cada uno, si su diseño está cerrado, cuántos formularios, preguntas, variables y consistencias tiene y los problemas que marca el editor de metadatos (errores, datos que faltan y avisos). El botón de la sección lleva al editor visual. En ese caso no se muestran las secciones de campo.
+Si esta instalación define varios operativos (se usa para modelarlos), el inicio muestra la tabla **Operativos**: por cada uno, cuántos formularios, preguntas, variables y consistencias tiene y los problemas que marca el editor de metadatos (errores, datos que faltan y avisos). Al pasar el mouse por el título de cada columna se explica qué cuenta. El botón de la sección lleva al editor visual. Arriba de la tabla hay un cuadro para buscar un operativo, y al final de cada fila botones que abren, ya filtrados por ese operativo, los formularios, el plano, la TEM, la rea y la no rea (sólo los que tu rol puede ver). En ese caso no se muestran las secciones de campo.
 
 Si la instalación tiene un solo operativo vas a ver algunas de estas secciones:
 
@@ -25,6 +25,6 @@ Si la instalación tiene un solo operativo vas a ver algunas de estas secciones:
 | Dónde están las encuestas | cuántas encuestas hay en cada tarea (también las que tienen cero), con acceso a la grilla de la tarea si tenés permiso para verla. El botón **ver estados** de cada tarea abre una ventana con sus encuestas por estado (código y descripción); las que no tienen estado figuran como *Sin estado* |
 | Calendario | la semana de carga en curso y los días que le quedan; en coordinación se ve a la derecha de la tabla de recepcionistas; si tenés encuestas para asignar o en recepción, se ve arriba, al lado de ellas |
 | Dispositivos | las sincronizaciones de los dispositivos móviles de hoy y de la semana |
-| Qué puedo hacer | accesos directos a las opciones del menú que tenés habilitadas |
+| Qué puedo hacer | accesos directos a las opciones del menú que tenés habilitadas (no se muestra cuando la instalación define varios operativos) |
 
 Los números se calculan al abrir la pantalla y se actualizan solos cada 15 minutos; con el botón **actualizar** se vuelven a calcular en cualquier momento. Los números de campo son los mismos que muestran las grillas del menú *control*. Los botones de cada sección (por ejemplo *control de campo*) llevan a la grilla con el detalle, y sólo aparecen si tenés esa grilla en tu menú. Con ctrl + clic se abren en otra pestaña.

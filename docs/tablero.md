@@ -47,8 +47,8 @@ Cada sección declara su `ambito`: `'campo'` (el predeterminado), `'diseno'` o `
 
 | id | Orden | Ámbito | Contenido |
 | :-- | :-: | :-- | :-- |
-| `operativos` | 10 | diseño | tabla con una fila por operativo: si el diseño está cerrado (`operativos.disform_cerrado`), formularios, preguntas, variables, consistencias, las inactivas o inválidas y los problemas que marca el editor de metadatos (errores, faltan datos y avisos, los mismos que se ven al editar: `problemasDeMetadatos`); acceso al *editor visual* |
-| `accesos` | 900 | todos | accesos directos del menú |
+| `operativos` | 10 | diseño | tabla con una fila por operativo: formularios, preguntas, variables, consistencias, las inactivas o inválidas y los problemas que marca el editor de metadatos (errores, faltan datos y avisos, los mismos que se ven al editar: `problemasDeMetadatos`); acceso al *editor visual*. Cada columna lleva una `descripcion` que se ve como tooltip en el encabezado (`ColumnaTabla.descripcion`, disponible en cualquier tabla). Tiene un cuadro para buscar operativo (`buscador`, filtra en el cliente por cualquier columna) y, al final de cada fila, botones (`botones`, `BOTONES_DE_OPERATIVO`) a *formularios*, *plano*, *tem*, *rea* y *no rea* (`no_rea_grupo0`) abiertos con `ff` `operativo` igual al de la fila; como los demás links, `contenidoConAccesosVisibles` quita los botones de las grillas que el usuario no tiene en el menú |
+| `accesos` | 900 | campo | accesos directos del menú (en diseño no está: el menú ya es la navegación y la tabla de operativos tiene sus botones) |
 
 ## Secciones de campo
 
@@ -71,7 +71,7 @@ En el desglose los **cortes y el total de cada uno salen directamente de la `tem
 | `circuito` | 40 | ídem `avance` | una tarjeta por tarea del operativo (también las que tienen 0) con la cantidad de encuestas en esa `tarea_actual` y link a la grilla de la tarea, más una tarjeta *sin asignar* (sin `tarea_actual`) al principio. Cada tarea con encuestas tiene el botón *ver estados*, que abre una ventana con las encuestas de la tarea por estado (código y descripción, por ejemplo *A · Asignada*; *Sin estado* si no tiene), en el orden de `estados.orden_estado`, cada una con link a la grilla filtrada (`IndicadorTablero.desagregado`). Al pie va el total de encuestas (que debe coincidir con la muestra), en el orden del circuito (ver abajo) |
 | `calendario` | 70 | `campo.ver`, `campo.editar`, `campo.administrar`, `encuestas.procesar` | semana de carga en curso (`semanas.carga_enc_desde/hasta`) y días que le quedan. `acomodarCalendario` lo acomoda según lo que ve el usuario: si ve la tabla `recepcionistas` (los roles que ven el estado del operativo) va a su derecha, en un cuarto del ancho (la tabla ocupa tres cuartos: anchos `tresCuartos` y `cuarto`); si no, y tiene *para asignar* o *en recepción*, va arriba a continuación de ellas, con el ancho repartido (tres tercios si están las dos, dos mitades si sólo hay una); si no, queda en su lugar |
 | `dispositivos` | 80 | `campo.administrar` | sincronizaciones de hoy y de los últimos 7 días |
-| `accesos` | 900 | todos | accesos directos a las opciones de primer y segundo nivel del menú del usuario |
+| `accesos` | 900 | campo | accesos directos a las opciones de primer y segundo nivel del menú del usuario |
 
 **Coordinación para arriba** es `ROLES_DE_COORDINACION`: admin, direccion, coor_campo, subcoor_campo, coor_proc y procesamiento (el superuser ve todo). No se define por un permiso porque ninguno separa a esos roles del resto (`campo.administrar` no lo tiene dirección ni procesamiento). Una app con otros roles sobreescribe `getSeccionesTablero`.
 
