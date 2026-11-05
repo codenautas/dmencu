@@ -3,10 +3,12 @@ import { describe, it } from 'mocha';
 import assert = require('node:assert');
 
 import { quienConsultaTablero } from '../server/app-dmencu';
+import { sqlRecepcionistaACargo } from '../server/table-tem';
 import { CampoCalculado, control_campo, controlCamposOpts } from '../server/table-control_campo';
+import { control_resumen_area, control_resumen_comuna, control_resumen_dominio, control_resumen_recepcionistas_tarea, control_resumen_zona } from '../server/table-control_resumen';
 import {
     acomodarCalendario, accesosDelMenu, armarSecciones, buscarEnMenu, ClienteTablero, combinarSecciones, ConsultaTablero,
-    CORTES_DESGLOSE, DefinicionSeccionTablero, FilaSql, ordenarTareas, partesDeControl, SECCIONES_TABLERO, seccionAvance,
+    CORTES_DESGLOSE, DefinicionSeccionTablero, FilaSql, ordenarTareas, partesDeControl, partesDeCorte, SECCIONES_TABLERO, seccionAvance,
     seccionCalendario, seccionCircuito, seccionDelAmbito, seccionDesglose, seccionesVisibles, seccionMiAvance, seccionMiDetalle, seccionOperativos, seccionParaAsignar, seccionParaRecibir, seccionRecepcionistas,
     seccionNoRespuesta, ValorSql
 } from '../server/tablero';
@@ -213,6 +215,16 @@ describe('dmencu - tablero de inicio', () => {
             assert.strictEqual(sumaDe(sqlDeControl(grupos, [declarado('no finalizada', { es_en_curso: true }), declarado('rechazos')]), 'en_curso'), 'coalesce(sin_finalizar_dm,0)+coalesce(sin_finalizar_incompleto,0)');
             assert.strictEqual(sumaDe(sqlDeControl(grupos, [declarado('no finalizada')]), 'en_curso'), '0');
         });
+        it('en curso: la encuesta incompleta que ya cuenta como pendiente, mixta, rea o en un grupo de no respuesta no se suma otra vez', () => {
+            var sql = sqlDeControl([grupo('rechazos', 'rechazos')], [declarado('rechazos')]);
+            assert.ok(/\+coalesce\(incompleto_en_curso,0\) \+0 as en_curso/.test(sql), 'en_curso suma sólo las incompletas sin otra clase');
+            assert.ok(/filter \(where resumen_estado in \('incompleto','con problemas'\) and klase is null\) as incompleto_en_curso/.test(sql));
+        });
+        it('recepcionista a cargo: el de la tarea de relevamiento (con formulario) en que está la encuesta o, si ya pasó a otra, el de la última de relevamiento del historial', () => {
+            assert.ok(sqlRecepcionistaACargo.includes('ta.main_form is not null'), 'las tareas de relevamiento son las que tienen formulario');
+            assert.ok(sqlRecepcionistaACargo.includes('from historial_tem h') && sqlRecepcionistaACargo.includes('order by h.orden desc limit 1'), 'las que ya pasaron salen del historial, por orden');
+            assert.ok(sqlRecepcionistaACargo.includes('then (select tr.recepcionista from tareas_tem tr'), 'en una tarea de relevamiento es el de esa tarea (nulo si todavía no tiene)');
+        });
         it('tasa de efectividad: los grupos marcados como no encuestables no suman al denominador', () => {
             var sql = sqlDeControl(
                 [grupo('no encuestable hogar', 'no encuestable'), grupo('rechazos', 'rechazos')],
@@ -251,7 +263,10 @@ describe('dmencu - tablero de inicio', () => {
                 seccionDePrueba('desglose', 2, async () => ({
                     tipo: 'desglose',
                     cortes: [
-                        { id: 'con', titulo: 'con', filas: [], acceso: { titulo: 'ver', ruta: ['recepcion', 'recuperador'] } },
+                        { id: 'con', titulo: 'con', acceso: { titulo: 'ver', ruta: ['recepcion', 'recuperador'] }, filas: [
+                            { etiqueta: 'con', partes: [], acceso: { titulo: 'ver', ruta: ['recepcion', 'encuestador'] } },
+                            { etiqueta: 'sin', partes: [], acceso: { titulo: 'ver', ruta: ['control', 'zona'] } },
+                        ] },
                         { id: 'sin', titulo: 'sin', filas: [], acceso: { titulo: 'ver', ruta: ['control', 'zona'] } },
                     ]
                 })),
@@ -260,6 +275,7 @@ describe('dmencu - tablero de inicio', () => {
             assert.ok(indicadores.tipo == 'indicadores' && desglose.tipo == 'desglose');
             assert.deepStrictEqual(indicadores.indicadores.map(i => i.acceso?.ruta), [['recepcion', 'encuestador'], undefined]);
             assert.deepStrictEqual(desglose.cortes.map(c => c.acceso?.ruta), [['recepcion', 'recuperador'], undefined]);
+            assert.deepStrictEqual(desglose.cortes[0].filas.map(f => f.acceso?.ruta), [['recepcion', 'encuestador'], undefined]);
         });
         it('el calendario va después de lo de recepción: tres tercios, dos mitades, y sin eso queda donde está', () => {
             var seccion = (id: string, ancho: SeccionTablero['ancho']): SeccionTablero => ({ id, titulo: id, ancho, contenido: { tipo: 'mensaje', texto: id } });
@@ -341,6 +357,19 @@ describe('dmencu - tablero de inicio', () => {
             return { contenido, consultas: client.consultas };
         }
         const control = { total: '200', salieron: '120', no_salieron: '80', rea: '80', en_curso: '25', grupo_0: '10', grupo_1: '5' };
+        // el desglose pide dos consultas por corte: los cortes y su total a la tem, y las clases a control_resumen_*.
+        // "deControl" responde la de control; la de la tem devuelve las mismas etiquetas con el total que traiga esa fila
+        function responderDesglose(deControl: (sql: string) => FilaSql[], deLaTem?: (sql: string) => FilaSql[]): (sql: string) => FilaSql[] {
+            return sql => {
+                if (sql.includes('tabla_simulada')) {
+                    return deControl(sql);
+                }
+                var corte = CORTES_DESGLOSE.find(corte => new RegExp(`group by "?${corte.campo}"?\\s`).test(sql));
+                assert.ok(corte != null, 'la consulta a la tem agrupa por el campo del corte');
+                assert.ok(sql.includes('from tem t'), 'los cortes salen de la tem');
+                return deLaTem?.(sql) ?? deControl(`'${corte.tabla}' as tabla_simulada`).map(fila => ({ etiqueta: fila.etiqueta, total: fila.total }));
+            };
+        }
 
         it('avance: usa el sql de control_resumen; las cifras toman el tono de su tramo y la tasa se calcula como control de campo (los count llegan como texto)', async () => {
             var { contenido, consultas } = await obtener(seccionAvance, () => [control]);
@@ -380,26 +409,63 @@ describe('dmencu - tablero de inicio', () => {
             assert.strictEqual(vacio.contenido, null);
         });
         it('desglose: un corte por tabla de control_campo, con sus partes, y se omiten los que no tienen filas', async () => {
-            var { contenido, consultas } = await obtener(seccionDesglose, sql => sql.includes(`'control_campo_zona'`) ? [] : [{ etiqueta: '3', ...control }, { etiqueta: '4', ...control }]);
-            assert.deepStrictEqual(consultas.map(c => CORTES_DESGLOSE.find(corte => c.sql.includes(`'${corte.tabla}'`))?.id), ['area', 'dominio', 'zona', 'comuna']);
+            var { contenido, consultas } = await obtener(seccionDesglose, responderDesglose(sql => sql.includes(`'control_resumen_zona'`) ? [] : [{ etiqueta: '3', ...control }, { etiqueta: '4', ...control }]));
+            assert.deepStrictEqual(consultas.filter(c => c.sql.includes('tabla_simulada')).map(c => CORTES_DESGLOSE.find(corte => c.sql.includes(`'${corte.tabla}'`))?.id), ['dominio', 'zona', 'comuna', 'area']);
             assert.ok(contenido?.tipo == 'desglose');
-            assert.deepStrictEqual(contenido.cortes.map(corte => corte.id), ['area', 'dominio', 'comuna']);
-            assert.strictEqual(contenido.cortes[0].filas[0].etiqueta, 'área 3');
-            assert.strictEqual(contenido.cortes[2].filas[0].etiqueta, 'comuna 3');
+            assert.deepStrictEqual(contenido.cortes.map(corte => corte.id), ['dominio', 'comuna', 'area']);
+            assert.strictEqual(contenido.cortes[0].filas[0].etiqueta, 'dominio 3');
+            assert.strictEqual(contenido.cortes[1].filas[0].etiqueta, 'comuna 3');
             assert.deepStrictEqual(contenido.cortes[0].filas[0].partes.map(parte => parte.valor), [80, 25, 15, 80]);
-            assert.deepStrictEqual(contenido.cortes[2].acceso, { titulo: 'control por comuna', ruta: ['control', 'comuna'] });
+            assert.deepStrictEqual(contenido.cortes[1].acceso, { titulo: 'control por comuna', ruta: ['control', 'comuna'] });
         });
-        it('desglose: las filas sin encuestas no se muestran', async () => {
-            var { contenido } = await obtener(seccionDesglose, () => [{ etiqueta: '1', ...control }, { etiqueta: '2', total: '0' }, { etiqueta: '3', ...control }]);
+        it('desglose: cada fila lleva a la tem filtrada por su dominio, zona, comuna o área (o vacía si no tiene)', async () => {
+            var { contenido } = await obtener(seccionDesglose, responderDesglose(() => [{ etiqueta: '3', ...control }, { etiqueta: null, ...control }]));
             assert.ok(contenido?.tipo == 'desglose');
-            assert.deepStrictEqual(contenido.cortes[0].filas.map(fila => fila.etiqueta), ['área 1', 'área 3']);
+            assert.deepStrictEqual(contenido.cortes.map(corte => corte.filas.map(fila => fila.acceso)), CORTES_DESGLOSE.map(corte => [
+                { titulo: 'ver encuestas', ruta: ['configurar', 'muestra', 'tem'], filtro: { [corte.campo]: '3' } },
+                { titulo: 'ver encuestas', ruta: ['configurar', 'muestra', 'tem'], filtro: { [corte.campo]: null } },
+            ]));
+        });
+        it('desglose: los cortes y sus totales son los de la tem, también los que control no clasifica', async () => {
+            // la tem tiene 3 encuestas en el área 7 y control no las tiene: es un error, no una barra que no cierra
+            await assert.rejects(
+                obtener(seccionDesglose, responderDesglose(() => [{ etiqueta: '1', ...control }], () => [{ etiqueta: '1', total: '200' }, { etiqueta: '7', total: '3' }])),
+                /la tem tiene 3 encuestas y control_resumen 0/
+            );
+            // control cuenta de más: tampoco se dibuja
+            await assert.rejects(
+                obtener(seccionDesglose, responderDesglose(() => [{ etiqueta: '1', ...control }], () => [{ etiqueta: '1', total: '199' }])),
+                /la tem tiene 199 encuestas y control_resumen 200/
+            );
+        });
+        it('desglose: las partes de cada corte siempre suman el total de la tem; no respuesta es lo que sobra', () => {
+            var partes = partesDeCorte('área', '3', 200, control);
+            assert.deepStrictEqual(partes.map(parte => [parte.id, parte.valor]), [['efectiva', 80], ['en_curso', 25], ['no_respuesta', 15], ['sin_salir', 80]]);
+            assert.strictEqual(partes.reduce((suma, parte) => suma + parte.valor, 0), 200);
+            // efectivas + en curso + no salieron no pueden superar el total del corte (antes el tramo de no respuesta se recortaba a 0 y la barra se pasaba)
+            assert.throws(() => partesDeCorte('área', '3', 200, { ...control, en_curso: '45' }), /la tem tiene 200 encuestas/);
         });
         it('desglose: los cortes con una sola fila no se muestran, y si no queda ninguno se omite la sección', async () => {
-            var { contenido } = await obtener(seccionDesglose, sql => sql.includes(`'control_campo_area'`) ? [{ etiqueta: '1', ...control }, { etiqueta: '2', ...control }] : [{ etiqueta: '3', ...control }]);
+            var { contenido } = await obtener(seccionDesglose, responderDesglose(sql => sql.includes(`'control_resumen_area'`) ? [{ etiqueta: '1', ...control }, { etiqueta: '2', ...control }] : [{ etiqueta: '3', ...control }]));
             assert.ok(contenido?.tipo == 'desglose');
             assert.deepStrictEqual(contenido.cortes.map(corte => corte.id), ['area']);
-            var sinCortes = await obtener(seccionDesglose, () => [{ etiqueta: '1', ...control }]);
+            var sinCortes = await obtener(seccionDesglose, responderDesglose(() => [{ etiqueta: '1', ...control }]));
             assert.strictEqual(sinCortes.contenido, null);
+        });
+        it('desglose: los cortes salen de toda la tem (sin los filtros de los controles del menú) y no tienen tope de filas', async () => {
+            var be = crearAppParaTests(GABINETE);
+            var tablas = [control_resumen_dominio, control_resumen_zona, control_resumen_comuna, control_resumen_area].map(tabla => tabla(contextoDelRol(be, 'coor_campo')));
+            assert.deepStrictEqual(tablas.map(tabla => tabla.name), ['control_resumen_dominio', 'control_resumen_zona', 'control_resumen_comuna', 'control_resumen_area']);
+            tablas.forEach(tabla => {
+                assert.ok(!/dominios*=s*3/.test(tabla.sql?.from ?? ''), `${tabla.name} filtra por dominio`);
+                assert.ok(tabla.sql?.from?.includes('usu_con.muestra_encuestas_prod'), `${tabla.name} no filtra por las encuestas que ve el usuario`);
+            });
+            assert.deepStrictEqual(CORTES_DESGLOSE.map(corte => corte.tabla), tablas.map(tabla => tabla.name));
+            var muchas = Array.from({ length: 300 }, (_, i) => ({ etiqueta: String(i + 1), ...control }));
+            var { contenido, consultas } = await obtener(seccionDesglose, responderDesglose(() => muchas));
+            assert.ok(contenido?.tipo == 'desglose');
+            assert.strictEqual(contenido.cortes[0].filas.length, 300);
+            consultas.forEach(consulta => assert.ok(!/limit/i.test(consulta.sql)));
         });
         it('desglose: los accesos apuntan a opciones del menú de control', () => {
             var be = crearAppParaTests(GABINETE);
@@ -490,32 +556,84 @@ describe('dmencu - tablero de inicio', () => {
                 ['recu', 1, 'Cargada: 1', ['recepcion', 'recuperador']],
             ]);
         });
-        it('recepcionistas: cada uno con lo que falta asignar y lo que está en recepción, las sin recepcionista al final y el total', async () => {
-            var { contenido, consultas } = await obtener(seccionRecepcionistas, sql => sql.includes(`'control_resumen_recepcionistas' as tabla_simulada`) ? [
-                { idper: '101', persona: 'Ana Alva', total: '10', salieron: '8', no_salieron: '2', rea: '5', en_curso: '2', encuestables: '1' },
-                { idper: '102', persona: 'Rita Rece', total: '40', salieron: '20', no_salieron: '20', rea: '10', en_curso: '5', encuestables: '10' },
-                { idper: null, persona: null, total: '4', salieron: '0', no_salieron: '4', rea: '0', en_curso: '0', encuestables: '0' },
-            ] : !sql.includes('tt.recepcionista') ? [] : [
-                { tarea: 'encu', nombre: 'encuestador', estado: 'Disponible', permite_asignar: true, visible_en_recepcion: false, recepcionista: null, persona_recepcionista: null, cantidad: '4' },
-                { tarea: 'encu', nombre: 'encuestador', estado: 'Disponible', permite_asignar: true, visible_en_recepcion: false, recepcionista: '102', persona_recepcionista: 'Rita Rece', cantidad: '10' },
-                { tarea: 'encu', nombre: 'encuestador', estado: 'Asignada', permite_asignar: true, visible_en_recepcion: true, recepcionista: '102', persona_recepcionista: 'Rita Rece', cantidad: '20' },
-                { tarea: 'encu', nombre: 'encuestador', estado: 'Cargada', permite_asignar: false, visible_en_recepcion: true, recepcionista: '101', persona_recepcionista: 'Ana Alva', cantidad: '6' },
-            ]);
-            // sin filtrar por la persona del usuario
-            assert.deepStrictEqual(consultas[0].params, ['OPE1', 'usu_coor_campo', null]);
-            assert.ok(contenido?.tipo == 'tabla');
-            assert.deepStrictEqual(contenido.columnas.map(columna => columna.campo), [
+        // las consultas de la sección de recepcionistas: las tareas de relevamiento, el control por tarea y recepcionista y las encuestas por estado
+        function responderRecepcionistas(sql: string): FilaSql[] {
+            if (sql.includes('main_form is not null')) {
+                return [{ tarea: 'supe', nombre: 'supervisor' }, { tarea: 'encu', nombre: 'encuestador' }];
+            }
+            // el orden del circuito (ordenDeTareas): primero la tarea inicial
+            if (sql.includes('es_final')) {
+                return [{ tarea: 'supe', es_inicial: false, es_final: false }, { tarea: 'encu', es_inicial: true, es_final: false }];
+            }
+            if (sql.includes('from tareas_proximas')) {
+                return [{ tarea: 'encu', tarea_destino: 'supe' }];
+            }
+            if (sql.includes(`'control_resumen_recepcionistas_tarea' as tabla_simulada`)) {
+                return [
+                    { tarea: 'encu', idper: '101', persona: 'Ana Alva', total: '10', salieron: '8', no_salieron: '2', rea: '5', en_curso: '2', encuestables: '1' },
+                    { tarea: 'encu', idper: '102', persona: 'Rita Rece', total: '40', salieron: '20', no_salieron: '20', rea: '10', en_curso: '5', encuestables: '10' },
+                    { tarea: 'supe', idper: null, persona: null, total: '4', salieron: '4', no_salieron: '0', rea: '0', en_curso: '0', encuestables: '0' },
+                ];
+            }
+            if (sql.includes('tt.recepcionista')) {
+                return [
+                    { tarea: 'encu', nombre: 'encuestador', estado: 'Disponible', permite_asignar: true, visible_en_recepcion: false, recepcionista: '102', persona_recepcionista: 'Rita Rece', cantidad: '10' },
+                    { tarea: 'encu', nombre: 'encuestador', estado: 'Asignada', permite_asignar: true, visible_en_recepcion: true, recepcionista: '102', persona_recepcionista: 'Rita Rece', cantidad: '20' },
+                    { tarea: 'encu', nombre: 'encuestador', estado: 'Cargada', permite_asignar: false, visible_en_recepcion: true, recepcionista: '101', persona_recepcionista: 'Ana Alva', cantidad: '6' },
+                    { tarea: 'supe', nombre: 'supervisor', estado: 'Disponible', permite_asignar: true, visible_en_recepcion: false, recepcionista: null, persona_recepcionista: null, cantidad: '4' },
+                ];
+            }
+            return [];
+        }
+        it('recepcionistas: una tabla por tarea de relevamiento, con lo que falta asignar y lo que está en recepción, las sin recepcionista al final y el total', async () => {
+            var { contenido, consultas } = await obtener(seccionRecepcionistas, responderRecepcionistas);
+            // las tareas de relevamiento son las que tienen formulario; el resto de las consultas no filtra por la persona del usuario
+            assert.ok(consultas.some(consulta => consulta.sql.includes('main_form is not null')));
+            assert.deepStrictEqual(consultas.find(consulta => consulta.sql.includes('tt.recepcionista'))?.params, ['OPE1', 'usu_coor_campo', null]);
+            assert.ok(contenido?.tipo == 'tablas');
+            assert.deepStrictEqual(contenido.tablas.map(tabla => tabla.titulo), ['encuestador', 'supervisor']);
+            var [encu, supe] = contenido.tablas;
+            assert.deepStrictEqual(encu.columnas.map(columna => columna.campo), [
                 'recepcionista', 'para_asignar', 'en_recepcion', 'total', 'porcentaje_asignado', 'salieron', 'efectivas', 'porcentaje_efectividad', 'en_curso', 'no_respuesta', 'no_salieron'
             ]);
-            assert.strictEqual(contenido.columnas.find(columna => columna.campo == 'porcentaje_asignado')?.formato, 'porcentaje');
-            assert.strictEqual(contenido.ultimaFilaTotal, true);
-            assert.deepStrictEqual(contenido.filas.map(fila => [fila.recepcionista, fila.para_asignar, fila.en_recepcion]), [
-                ['(101) Ana Alva', 0, 6], ['(102) Rita Rece', 10, 20], ['sin recepcionista', 4, 0], ['Total', 14, 26],
+            assert.strictEqual(encu.columnas.find(columna => columna.campo == 'porcentaje_asignado')?.formato, 'porcentaje');
+            assert.strictEqual(encu.ultimaFilaTotal, true);
+            assert.deepStrictEqual(encu.filas.map(fila => [fila.recepcionista, fila.para_asignar, fila.en_recepcion]), [
+                ['(101) Ana Alva', 0, 6], ['(102) Rita Rece', 10, 20], ['Total', 10, 26],
             ]);
             // total, % asignado (lo que no está para asignar), salieron, efectivas, en curso, no respuesta (lo que sobra de las que salieron) y no salieron
-            assert.deepStrictEqual(contenido.filas.map(fila => [fila.total, fila.porcentaje_asignado, fila.salieron, fila.efectivas, fila.porcentaje_efectividad, fila.en_curso, fila.no_respuesta, fila.no_salieron]), [
-                [10, 100, 8, 5, 83.3, 2, 1, 2], [40, 75, 20, 10, 50, 5, 5, 20], [4, 0, 0, 0, null, 0, 0, 4], [54, 74.1, 28, 15, 57.7, 7, 6, 26],
+            assert.deepStrictEqual(encu.filas.map(fila => [fila.total, fila.porcentaje_asignado, fila.salieron, fila.efectivas, fila.porcentaje_efectividad, fila.en_curso, fila.no_respuesta, fila.no_salieron]), [
+                [10, 100, 8, 5, 83.3, 2, 1, 2], [40, 75, 20, 10, 50, 5, 5, 20], [50, 80, 28, 15, 57.7, 7, 6, 22],
             ]);
+            // la tarea inicial tiene todas las encuestas; la descripción dice cuántas siguen en la tarea
+            assert.strictEqual(encu.descripcion, '50 encuestas pasaron por la tarea, 36 están ahora en ella');
+            assert.deepStrictEqual(supe.filas.map(fila => [fila.recepcionista, fila.para_asignar, fila.total]), [['sin recepcionista', 4, 4], ['Total', 4, 4]]);
+        });
+        it('recepcionistas: cada fila lleva a las encuestas que siguen en la tarea con ese recepcionista, y las sin recepcionista a las que quedaron sin asignar', async () => {
+            var { contenido } = await obtener(seccionRecepcionistas, responderRecepcionistas);
+            assert.ok(contenido?.tipo == 'tablas');
+            var [encu, supe] = contenido.tablas;
+            var ruta = ['configurar', 'muestra', 'tareas_tem'];
+            assert.deepStrictEqual(encu.accesos?.map(acceso => acceso?.filtro), [
+                { tarea: 'encu', tarea_actual: 'encu', recepcionista: '101' }, { tarea: 'encu', tarea_actual: 'encu', recepcionista: '102' }, undefined
+            ]);
+            assert.deepStrictEqual(supe.accesos?.map(acceso => [acceso?.ruta, acceso?.filtro]), [
+                [ruta, { tarea: 'supe', tarea_actual: 'supe', recepcionista: null }], [undefined, undefined]
+            ]);
+        });
+        it('control por tarea y recepcionista: repite cada encuesta en las tareas de relevamiento que alcanzó y agrupa por tarea y recepcionista de esa tarea', () => {
+            var be = crearAppParaTests(GABINETE);
+            var definicion = control_resumen_recepcionistas_tarea(contextoDelRol(be, 'coor_campo'));
+            var sql = definicion.sql?.from ?? '';
+            assert.ok(sql.includes('cross join lateral (select tr.tarea, tr.recepcionista'), 'una fila por tarea de relevamiento alcanzada');
+            assert.ok(sql.includes('ta.main_form is not null'), 'las tareas de relevamiento son las que tienen formulario');
+            assert.ok(sql.includes('ta.es_inicial'), 'todas las encuestas llegan a la tarea inicial');
+            assert.ok(sql.includes('from historial_tem h'), 'las que ya pasaron salen del historial');
+            assert.ok(sql.includes('usu_con.muestra_encuestas_prod'), 'sólo las encuestas que ve el usuario');
+            assert.deepStrictEqual(definicion.primaryKey.slice(-2), ['tarea_relevamiento', 'recepcionista_de_tarea']);
+        });
+        it('recepcionistas: sin encuestas en ninguna tarea de relevamiento no se muestra', async () => {
+            assert.strictEqual((await obtener(seccionRecepcionistas, () => [])).contenido, null);
         });
         it('para asignar y en recepción: sin encuestas no se muestran', async () => {
             assert.strictEqual((await obtener(seccionParaAsignar, () => [], 'recepcionista')).contenido, null);

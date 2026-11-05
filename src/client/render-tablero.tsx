@@ -11,13 +11,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import * as ReactDOM from "react-dom";
 import {
     Alert, Avatar, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Grid, LinearProgress, Link, Paper, ScopedCssBaseline, Skeleton,
-    Stack, SvgIcon, Table, TableBody, TableCell, TableHead, TableRow, ThemeProvider, ToggleButton, ToggleButtonGroup, Tooltip, Typography,
+    Stack, SvgIcon, Table, TableBody, TableCell, TableHead, TableRow, TextField, ThemeProvider, ToggleButton, ToggleButtonGroup, Tooltip, Typography,
     alpha, createTheme, useTheme
 } from "@mui/material";
 import type { Theme, ThemeOptions } from "@mui/material";
 
 import type {
-    AccesoTablero, ContenidoTablero, CorteDesglose, DatoJson, DetalleIndicador, FiltroTablero, FilaBarras, FilaTabla, ColumnaTabla, IndicadorTablero, ParteAvance,
+    AccesoTablero, ContenidoTablero, CorteDesglose, TablaTablero, DatoJson, DetalleIndicador, FiltroTablero, FilaBarras, FilaTabla, ColumnaTabla, IndicadorTablero, ParteAvance,
     RutaMenu, SeccionTablero, TableroParaUsuario, TonoTablero
 } from "../unlogged/tipos-tablero";
 
@@ -249,10 +249,32 @@ function Leyenda(props: { partes: ParteAvance[], total?: number }) {
 
 const ANCHO_TOTAL_DESGLOSE = 64;
 
-// barras apiladas por fila (todas), con un selector entre los cortes; empieza en el primero
+// cuántas filas muestra un corte de entrada; a partir de más filas que esas ofrece buscar y subir por escalones
+const FILAS_INICIALES_DESGLOSE = 10;
+// fracciones del total de filas a las que puede subir un corte con "ver más"
+const FRACCIONES_ESCALONES_DESGLOSE: number[] = [0.25, 0.5, 0.75];
+
+// escalones de un corte de totalFilas filas: acordes a su tamaño (múltiplos de 5), sin repetir, mayores que lo que ya se muestra y menores que el total
+export function escalonesDelDesglose(totalFilas: number): number[] {
+    var escalones: number[] = [];
+    FRACCIONES_ESCALONES_DESGLOSE.forEach(fraccion => {
+        var escalon = Math.round(totalFilas * fraccion / 5) * 5;
+        var anterior = escalones.length ? escalones[escalones.length - 1] : FILAS_INICIALES_DESGLOSE;
+        if (escalon > anterior && escalon < totalFilas) {
+            escalones.push(escalon);
+        }
+    });
+    return escalones;
+}
+
+// barras apiladas por fila, con un selector entre los cortes; empieza en el primero.
+// Los cortes de más de FILAS_INICIALES_DESGLOSE filas muestran las primeras, con un buscador, botones por escalones (escalonesDelDesglose) y la opción de ver todas;
+// la leyenda y el total son siempre los de todo el corte
 export function Desglose(props: { cortes: CorteDesglose[] }) {
     var theme = useTheme();
     var [corteId, setCorteId] = useState(props.cortes[0]?.id ?? '');
+    var [filtro, setFiltro] = useState('');
+    var [cuantas, setCuantas] = useState(FILAS_INICIALES_DESGLOSE);
     var corte = props.cortes.find(c => c.id == corteId) ?? props.cortes[0];
     if (corte == null) {
         return null;
@@ -262,20 +284,37 @@ export function Desglose(props: { cortes: CorteDesglose[] }) {
     // la leyenda suma todas las filas del corte, con el porcentaje de cada parte
     var partesDelCorte: ParteAvance[] = corte.filas[0].partes.map((parte, i) => ({ ...parte, valor: corte!.filas.reduce((suma, fila) => suma + (fila.partes[i]?.valor ?? 0), 0) }));
     var totalDelCorte = totalDe(partesDelCorte);
+    var hayMuchas = corte.filas.length > FILAS_INICIALES_DESGLOSE;
+    var buscado = filtro.trim().toLowerCase();
+    var coincidentes = buscado ? corte.filas.filter(fila => fila.etiqueta.toLowerCase().includes(buscado)) : corte.filas;
+    var visibles = hayMuchas && !buscado ? coincidentes.slice(0, cuantas) : coincidentes;
+    var siguientes = escalonesDelDesglose(corte.filas.length).filter(escalon => escalon > cuantas);
     return <Box>
         <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" sx={{ gap: 1, mb: 2 }}>
             <ToggleButtonGroup size="small" exclusive color="primary" value={corte.id} aria-label="corte del desglose"
-                onChange={(_event, nuevo: string | null) => { if (nuevo != null) { setCorteId(nuevo); } }}>
+                onChange={(_event, nuevo: string | null) => { if (nuevo != null) { setCorteId(nuevo); setFiltro(''); setCuantas(FILAS_INICIALES_DESGLOSE); } }}>
                 {props.cortes.map(c => <ToggleButton key={c.id} value={c.id} sx={{ textTransform: 'none', px: 2 }}>{c.titulo}</ToggleButton>)}
             </ToggleButtonGroup>
             {corte.acceso ? <Button size="small" endIcon={<Icono path={ICONOS.irA} />}
                 href={hrefDelAcceso(corte.acceso)} onClick={alHacerClickEnAcceso(corte.acceso)}>{corte.acceso.titulo}</Button> : null}
         </Stack>
         <Box sx={{ mb: 2 }}><Leyenda partes={partesDelCorte} total={totalDelCorte} /></Box>
-        {corte.filas.map((fila, i) => {
+        {hayMuchas ? <Stack direction="row" alignItems="center" flexWrap="wrap" sx={{ gap: 1.5, mb: 2 }}>
+            <TextField size="small" value={filtro} placeholder={`buscar ${corte.titulo}`} onChange={event => setFiltro(event.target.value)} />
+            <Typography variant="body2" color="text.secondary">Mostrando {numeroATexto(visibles.length)} de {numeroATexto(corte.filas.length)}</Typography>
+            {buscado ? null : <>
+                {siguientes.map(escalon => <Button key={escalon} size="small" onClick={() => setCuantas(escalon)}>{`ver ${numeroATexto(escalon)}`}</Button>)}
+                {cuantas < corte.filas.length ? <Button size="small" onClick={() => setCuantas(corte!.filas.length)}>{`ver todas (${numeroATexto(corte.filas.length)})`}</Button> : null}
+                {cuantas > FILAS_INICIALES_DESGLOSE ? <Button size="small" onClick={() => setCuantas(FILAS_INICIALES_DESGLOSE)}>ver menos</Button> : null}
+            </>}
+        </Stack> : null}
+        {visibles.map((fila, i) => {
             var total = totalDe(fila.partes);
             return <Stack key={i} direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.75 }}>
-                <Typography variant="body2" noWrap title={fila.etiqueta} sx={{ width: { xs: 90, sm: 130 }, flexShrink: 0 }}>{fila.etiqueta}</Typography>
+                {fila.acceso ?
+                    <Link variant="body2" noWrap underline="hover" title={`${fila.acceso.titulo}: ${fila.etiqueta}`} sx={{ width: { xs: 90, sm: 130 }, flexShrink: 0 }}
+                        href={hrefDelAcceso(fila.acceso)} onClick={alHacerClickEnAcceso(fila.acceso)}>{fila.etiqueta}</Link>
+                    : <Typography variant="body2" noWrap title={fila.etiqueta} sx={{ width: { xs: 90, sm: 130 }, flexShrink: 0 }}>{fila.etiqueta}</Typography>}
                 {/* la barra mide, como mucho, el ancho disponible menos lo que ocupa el total que va pegado a su final */}
                 <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Box role="img" aria-label={fila.partes.map(parte => `${parte.titulo}: ${parte.valor}`).join(', ')}
@@ -332,7 +371,7 @@ export function Barras(props: { filas: FilaBarras[], formato?: 'numero' | 'porce
     </Box>;
 }
 
-export function Tabla(props: { columnas: ColumnaTabla[], filas: FilaTabla[], ultimaFilaTotal?: boolean }) {
+export function Tabla(props: { columnas: ColumnaTabla[], filas: FilaTabla[], ultimaFilaTotal?: boolean, accesos?: (AccesoTablero | undefined)[] }) {
     return <Box sx={{ overflowX: 'auto' }}>
         <Table size="small">
             <TableHead>
@@ -343,10 +382,12 @@ export function Tabla(props: { columnas: ColumnaTabla[], filas: FilaTabla[], ult
             <TableBody>
                 {props.filas.map((fila, i) =>
                     <TableRow key={i} hover sx={props.ultimaFilaTotal && i == props.filas.length - 1 ? { '& td': { fontWeight: 700 } } : undefined}>
-                        {props.columnas.map(columna => {
+                        {props.columnas.map((columna, c) => {
                             var valor = fila[columna.campo];
+                            var acceso = c == 0 ? props.accesos?.[i] : undefined; // la primera columna lleva al detalle de la fila
+                            var texto = typeof valor == 'number' ? (columna.formato == 'porcentaje' ? porcentajeATexto(valor) : numeroATexto(valor)) : valor ?? '';
                             return <TableCell key={columna.campo} align={columna.numerica ? 'right' : 'left'}>
-                                {typeof valor == 'number' ? (columna.formato == 'porcentaje' ? porcentajeATexto(valor) : numeroATexto(valor)) : valor ?? ''}
+                                {acceso ? <Link underline="hover" title={acceso.titulo} href={hrefDelAcceso(acceso)} onClick={alHacerClickEnAcceso(acceso)}>{texto}</Link> : texto}
                             </TableCell>;
                         })}
                     </TableRow>
@@ -354,6 +395,19 @@ export function Tabla(props: { columnas: ColumnaTabla[], filas: FilaTabla[], ult
             </TableBody>
         </Table>
     </Box>;
+}
+
+// varias tablas, cada una con su título, una debajo de la otra
+export function Tablas(props: { tablas: TablaTablero[] }) {
+    return <Stack spacing={3}>
+        {props.tablas.map(tabla =>
+            <Box key={tabla.titulo}>
+                <Typography variant="subtitle2" fontWeight={600}>{tabla.titulo}</Typography>
+                {tabla.descripcion ? <Typography variant="caption" color="text.secondary">{tabla.descripcion}</Typography> : null}
+                <Tabla columnas={tabla.columnas} filas={tabla.filas} ultimaFilaTotal={tabla.ultimaFilaTotal} accesos={tabla.accesos} />
+            </Box>
+        )}
+    </Stack>;
 }
 
 export function Accesos(props: { accesos: AccesoTablero[] }) {
@@ -405,6 +459,7 @@ export function ContenidoSeccion(props: { seccion: SeccionTablero, tablero: Tabl
             <TotalEncuestas total={contenido.total} />
         </>;
         case 'tabla': return <Tabla columnas={contenido.columnas} filas={contenido.filas} ultimaFilaTotal={contenido.ultimaFilaTotal} />;
+        case 'tablas': return <Tablas tablas={contenido.tablas} />;
         case 'accesos': return <Accesos accesos={contenido.accesos} />;
         case 'titulo': return null;
         case 'mensaje': return <Alert severity={severidadDelTono(contenido.tono)}>{contenido.texto}</Alert>;

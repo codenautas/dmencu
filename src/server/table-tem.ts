@@ -30,6 +30,24 @@ export const condicionTemSegunUsuario = `
 // sin tarea_actual (todavía sin asignar, estado disponible) está en la tarea inicial (tem t)
 export const sqlTareaVigente = `coalesce(t.tarea_actual, (select ti.tarea from tareas ti where ti.operativo = t.operativo and ti.es_inicial))`
 
+// el recepcionista a cargo de la encuesta (tem t). Las tareas de relevamiento son las que tienen formulario (tareas.main_form): ahí se asigna y se recibe.
+// Si la encuesta está en una de ellas, es el recepcionista de esa tarea (nulo si todavía no tiene). Si ya pasó a fin de campo, análisis o procesamiento
+// (que no se asignan) es el de la última tarea de relevamiento en que estuvo, según historial_tem (que guarda cada cambio de tarea_actual).
+export const sqlRecepcionistaACargo = `(case
+        when exists (select 1 from tareas ta where ta.operativo = t.operativo and ta.tarea = ${sqlTareaVigente} and ta.main_form is not null)
+            then (select tr.recepcionista from tareas_tem tr where tr.operativo = t.operativo and tr.enc = t.enc and tr.tarea = ${sqlTareaVigente})
+        else (select h.recepcionista from historial_tem h join tareas ta on ta.operativo = h.operativo and ta.tarea = h.tarea and ta.main_form is not null
+                where h.operativo = t.operativo and h.enc = t.enc order by h.orden desc limit 1)
+    end)`
+
+// las tareas de relevamiento por las que pasó la encuesta (tem t) o en las que está, con el recepcionista que tiene en cada una (una fila por tarea).
+// Todas las encuestas llegan a la tarea inicial. Se usa como lateral para repetir la encuesta en cada una de esas tareas.
+export const sqlTareasDeRelevamientoAlcanzadas = `(select tr.tarea, tr.recepcionista
+        from tareas_tem tr join tareas ta on ta.operativo = tr.operativo and ta.tarea = tr.tarea and ta.main_form is not null
+        where tr.operativo = t.operativo and tr.enc = t.enc
+            and (ta.es_inicial or tr.tarea = ${sqlTareaVigente}
+                or exists (select 1 from historial_tem h where h.operativo = tr.operativo and h.enc = tr.enc and h.tarea = tr.tarea)))`
+
 // muestra las encuestas de producción o de capacitación según lo que tenga habilitado el usuario (tem t)
 export var filtroTemSegunUsuario = (context:ContextForDump):string => `
                             join usuarios usu_con on usu_con.usuario = ${sqlTools.quoteLiteral(context.user.usuario)}

@@ -71,6 +71,7 @@ export type FilaBarras = {
 export type FilaDesglose = {
     etiqueta: string
     partes: ParteAvance[]
+    acceso?: AccesoTablero // la etiqueta lleva a esa opción del menú
 }
 
 // un corte del desglose (por ejemplo por comuna); acceso: la grilla de control con el detalle
@@ -90,12 +91,23 @@ export type ColumnaTabla = {
 
 export type FilaTabla = { [campo: string]: string | number | null };
 
+// una tabla con su título, para varias tablas en una misma sección; accesos (uno por fila, en el mismo orden): la primera columna de esa fila lleva a esa opción del menú
+export type TablaTablero = {
+    titulo: string
+    descripcion?: string
+    columnas: ColumnaTabla[]
+    filas: FilaTabla[]
+    ultimaFilaTotal?: boolean
+    accesos?: (AccesoTablero | undefined)[]
+}
+
 export type ContenidoTablero =
     | { tipo: 'indicadores', indicadores: IndicadorTablero[], total?: number } // total: si está, se muestra al pie ("Total: N encuestas")
     | { tipo: 'avance', partes: ParteAvance[], indicadores?: IndicadorTablero[] } // indicadores: cifras que van arriba de la barra
     | { tipo: 'desglose', cortes: CorteDesglose[] }
     | { tipo: 'barras', filas: FilaBarras[], formato?: 'numero' | 'porcentaje', total?: number }
     | { tipo: 'tabla', columnas: ColumnaTabla[], filas: FilaTabla[], ultimaFilaTotal?: boolean } // ultimaFilaTotal: la última fila es el total y va en negrita
+    | { tipo: 'tablas', tablas: TablaTablero[] }
     | { tipo: 'accesos', accesos: AccesoTablero[] }
     | { tipo: 'mensaje', texto: string, tono?: TonoTablero }
     | { tipo: 'titulo' } // sólo el título de la sección, sin tarjeta: separa grupos de secciones

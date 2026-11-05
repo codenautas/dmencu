@@ -1,5 +1,8 @@
---cambiar el nombre del operativo y el owner correspondiente al operativo
---set role ggs_capa2022_owner;
+--set role dmencu_owner;
+--set search_path=base;
+
+-- tem.resultado se calcula a partir de rea y norea. El control de campo cuenta las efectivas, pendientes y mixtas por esta columna:
+-- sin el trigger queda vacía y esas encuestas no se cuentan.
 CREATE or replace FUNCTION base.xcalcular_resultado_trg()
     RETURNS trigger
     LANGUAGE 'plpgsql'
@@ -27,12 +30,7 @@ begin
     return new; 
 end;
 $BODY$;
-/* RECORDAR descomentar y agregar el owner que corresponda al operativo
-
-ALTER FUNCTION base.xcalcular_resultado_trg()
-    OWNER TO ggs_capa2022_owner;
-
-*/
+DROP TRIGGER IF EXISTS xcalcular_resultado_trg ON base.tem;
 CREATE TRIGGER xcalcular_resultado_trg
     BEFORE INSERT OR UPDATE OF rea, norea
     ON base.tem
