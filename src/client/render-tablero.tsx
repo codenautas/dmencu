@@ -523,23 +523,23 @@ function Encabezado(props: { tablero: TableroParaUsuario | null, cargando: boole
     var nombre = tablero?.nombre ?? tablero?.usuario ?? '';
     var generado = tablero ? new Date(tablero.generado) : null;
     return <Paper elevation={0} sx={{
-        p: { xs: 2, md: 3 }, mb: 3, borderRadius: 3, color: 'primary.contrastText',
+        px: { xs: 2, md: 3 }, py: { xs: 1.5, md: 1.75 }, mb: 2.5, borderRadius: 3, color: 'primary.contrastText',
         // el secundario sólo como acento arriba a la derecha, para que el texto blanco siempre tenga contraste
         background: (theme: Theme) => `radial-gradient(circle at 100% 0%, ${alpha(theme.palette.secondary.main, 0.35)} 0%, transparent 45%), linear-gradient(115deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
     }}>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 1, sm: 2 }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }}>
             <Stack direction="row" spacing={2} alignItems="center" sx={{ minWidth: 0 }}>
-                <Avatar sx={{ width: 56, height: 56, fontSize: 22, bgcolor: alpha('#FFFFFF', 0.2), color: 'inherit' }}>{iniciales(nombre) || '·'}</Avatar>
+                <Avatar sx={{ width: 44, height: 44, fontSize: 18, bgcolor: alpha('#FFFFFF', 0.2), color: 'inherit' }}>{iniciales(nombre) || '·'}</Avatar>
                 <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="overline" sx={{ opacity: 0.85, lineHeight: 1.6 }}>
+                    <Typography variant="overline" sx={{ opacity: 0.85, lineHeight: 1.3, display: 'block' }}>
                         Gabinete{tablero?.operativo ? ` · operativo ${tablero.operativo}` : ''}
                     </Typography>
-                    <Typography variant="h4" component="h1" sx={{ fontSize: { xs: '1.6rem', md: '2.1rem' } }}>
+                    <Typography variant="h4" component="h1" sx={{ fontSize: { xs: '1.4rem', md: '1.75rem' }, lineHeight: 1.2 }}>
                         {saludo(new Date())}{nombre ? `, ${nombre.split(/\s+/)[0]}` : ''}
                     </Typography>
                 </Box>
             </Stack>
-            <Stack spacing={1} alignItems={{ xs: 'flex-start', sm: 'flex-end' }} sx={{ flexShrink: 0 }}>
+            <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap sx={{ flexShrink: 0 }}>
                 {tablero?.rol ? <Chip size="small" label={tablero.nombreRol ?? tablero.rol} sx={{ bgcolor: alpha('#FFFFFF', 0.18), color: 'inherit' }} /> : null}
                 {generado ? <Typography variant="caption" sx={{ opacity: 0.85 }}>
                     actualizado {generado.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
