@@ -63,7 +63,7 @@ Consecuencias importantes de este diseño:
 
 ## Backup continuo
 
-Mientras el encuestador trabaja una encuesta, el formulario encola un backup (`encolarBackup`) y se intenta enviar al servidor sin interrumpirlo. Si no hay conexión simplemente se reintenta con el siguiente cambio.
+El backup se dispara cada vez que se despliega la hoja de ruta del dispositivo: al dibujar la línea de cada encuesta (`DesplegarLineaResumenUAPrincipal`, en `render-formulario.tsx`) se llama a `intentarBackup`, que encola el backup (`encolarBackup`) y lo envía al servidor sin interrumpir el trabajo. Si no hay conexión o falla el envío, el backup queda en la cola local y se reintenta la próxima vez que se dispare.
 
 ```mermaid
 sequenceDiagram
