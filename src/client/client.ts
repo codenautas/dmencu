@@ -142,7 +142,8 @@ var crearBotonCerrarEncuesta = (label: string) => {
     ]).create();
     svg.setAttribute("viewBox", "0 0 26 26");
     //@ts-ignore svg puede ser hijo de un boton
-    let ver = html.button({ id: 'boton-cerrar-encuesta', color: 'primary' }, [svg, label]).create();
+    let ver = html.button({ id: 'boton-cerrar-encuesta' }, [svg, label]).create();
+    ver.setAttribute('color', 'primary');
     ver.onclick = () => close();
     return ver
 }
