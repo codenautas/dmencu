@@ -9,7 +9,7 @@ import * as ReactDOM from "react-dom";
 import {
     Alert, Autocomplete, Badge, Box, Button, Checkbox, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
     Divider, Drawer, FormControl, FormControlLabel, IconButton, InputLabel, List, ListItem, ListItemText, MenuItem, Paper,
-    ScopedCssBaseline, Select, Snackbar, Stack, SvgIcon, Switch, Tab, Tabs, TextField, ThemeProvider, Tooltip, Typography, alpha
+    ScopedCssBaseline, Select, Snackbar, Stack, SvgIcon, Switch, TextField, ThemeProvider, Tooltip, Typography, alpha
 } from "@mui/material";
 import type { Theme } from "@mui/material";
 
@@ -264,7 +264,7 @@ function NodoCasillero(props: PropsCancha & { casillero: CasilleroEditable }) {
                 <Badge badgeContent={contraido ? hijos.length : 0} color="primary"><Icono path={contraido ? ICONOS.expandir : ICONOS.contraer} /></Badge>
             </IconButton> : null}
         </Paper>
-        {!contraido && (hijos.length || zonasActivas) ? <Box sx={{ pl: esOpcion ? 2 : 2.5, pt: 0.5, borderLeft: `2px solid ${alpha(color, 0.25)}`, ml: 1.25 }}>
+        {!contraido && (hijos.length || zonasActivas) ? <Box sx={{ pl: esOpcion ? 1.5 : 1.75, pt: 0.5, borderLeft: `2px solid ${alpha(color, 0.25)}`, ml: 0.75, minWidth: 0 }}>
             {hijos.length == 0 ? <ZonaDeSoltado activa={zonasActivas} vacia lugar={{ padre: casillero.id_casillero, posicion: 0 }} onSoltar={props.onSoltar} /> : null}
             {hijos.map((hijo, i) => <React.Fragment key={hijo.id_casillero}>
                 <ZonaDeSoltado activa={zonasActivas} lugar={{ padre: casillero.id_casillero, posicion: i }} onSoltar={props.onSoltar} />
@@ -957,18 +957,11 @@ export function EditorMetadatos() {
         <ScopedCssBaseline sx={{ bgcolor: 'background.default', minHeight: '100%' }}>
             <Box sx={{ p: { xs: 1, md: 2 } }}>
                 <Paper elevation={0} sx={{
-                    p: 2, mb: 1.5, borderRadius: 3, color: 'primary.contrastText',
+                    p: 1, mb: 1, borderRadius: 3, color: 'primary.contrastText',
                     background: (theme: Theme) => borrador ? `repeating-linear-gradient(135deg, ${theme.palette.primary.dark} 0 18px, ${alpha(theme.palette.primary.dark, 0.85)} 18px 36px)`
                         : `linear-gradient(115deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
                 }}>
-                    <Stack direction={{ xs: 'column', lg: borrador ? 'column' : 'row' }} spacing={1.5} alignItems={{ lg: borrador ? 'flex-start' : 'center' }}>
-                        <Box sx={{ flex: 1 }}>
-                            <Typography variant="h5" component="h1" fontWeight={600}>Editor de formularios{borrador ? ' · borrador' : ''}</Typography>
-                            <Typography variant="body2" sx={{ opacity: 0.9 }}>{borrador
-                                ? `Los cambios quedan en el borrador hasta que los publiques${hayPendientes ? ` (${borrador.pendientes.length} pendientes)` : ''}.`
-                                : 'Arrastrá casilleros a la cancha, ordenalos y editá sus propiedades. Los cambios se guardan al instante.'}</Typography>
-                        </Box>
-                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
                             <FormControl size="small" sx={{ minWidth: 140, bgcolor: alpha('#FFFFFF', 0.95), borderRadius: 1 }}>
                                 <Select value={datos.operativo} disabled={hayPendientes} onChange={e => { setSeleccionado(null); traer(String(e.target.value)); }} inputProps={{ 'aria-label': 'operativo' }}>
                                     {datos.operativos.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
@@ -996,31 +989,35 @@ export function EditorMetadatos() {
                             </span></Tooltip>
                             <Button variant="contained" color="inherit" startIcon={<Icono path={ICONOS.ojo} />} onClick={() => setVistaPrevia(true)}
                                 sx={{ color: 'primary.main', bgcolor: '#FFF' }} disabled={raiz == null}>vista previa</Button>
-                        </Stack>
                     </Stack>
                 </Paper>
                 {datos.cerrado ? <Alert severity="warning" sx={{ mb: 1.5 }}>El diseño de formularios de este operativo está cerrado (operativos.disform_cerrado): sólo se puede mirar.</Alert> : null}
                 {!datos.permisos.estructura ? <Alert severity="info" sx={{ mb: 1.5 }}>Podés cambiar los textos de los casilleros. Agregar, mover o borrar casilleros lo hace el administrador.</Alert> : null}
-                <Stack direction="row" alignItems="center" sx={{ mb: 1 }}>
-                    <Tabs value={formulario ?? false} onChange={(_e, f: string) => { setFormulario(f); setSeleccionado(null); }} variant="scrollable" sx={{ flex: 1, minWidth: 0 }}>
-                        {formularios.map(f => <Tab key={f.id_casillero} value={f.id_casillero} sx={{ textTransform: 'none' }}
-                            label={<span><b>{f.casillero}</b> {f.nombre ? `· ${f.nombre}` : ''}{f.formulario_principal ? ' ★' : ''}</span>} />)}
-                    </Tabs>
+                <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
+                    <Typography variant="subtitle2" color="text.secondary">Formularios</Typography>
+                    <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ flex: 1, minWidth: 0 }}>
+                        {formularios.map(f => <Tooltip key={f.id_casillero} title={f.nombre ?? ''}>
+                            <Button size="small" variant={f.id_casillero == formulario ? 'contained' : 'outlined'} sx={{ textTransform: 'none', minWidth: 0 }}
+                                onClick={() => { setFormulario(f.id_casillero); setSeleccionado(null); }}>
+                                <b>{f.casillero}</b>{f.formulario_principal ? ' ★' : ''}
+                            </Button>
+                        </Tooltip>)}
+                    </Stack>
                     {datos.permisos.estructura && !datos.cerrado ? <Button size="small" startIcon={<Icono path={ICONOS.agregar} />} onClick={() => setFormularioNuevo(true)}>formulario</Button> : null}
                     <FormControlLabel sx={{ ml: 1 }} control={<Switch size="small" checked={verSaltos} onChange={e => setVerSaltos(e.target.checked)} />} label="saltos" />
                 </Stack>
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '220px minmax(0, 1fr) 360px' }, gap: 1.5, alignItems: 'start' }}>
-                    <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, position: { md: 'sticky' }, top: 8, maxHeight: { md: 'calc(100vh - 230px)' }, overflowY: 'auto' }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '220px minmax(0, 720px) 360px' }, gap: 1.5, alignItems: 'start' }}>
+                    <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, position: { md: 'sticky' }, top: 8, maxHeight: { md: 'calc(100vh - 170px)' }, overflowY: 'auto', overflowX: 'hidden' }}>
                         <Paleta datos={datos} onEmpezar={setArrastre} onTerminar={() => setArrastre(null)} />
                     </Paper>
                     <Paper variant="outlined" onClick={() => setSeleccionado(null)}
-                        sx={{ borderRadius: 2, minHeight: 400, maxHeight: { md: 'calc(100vh - 230px)' }, overflowY: 'auto', bgcolor: (theme: Theme) => alpha(theme.palette.primary.main, 0.02) }}>
+                        sx={{ borderRadius: 2, minHeight: 400, maxHeight: { md: 'calc(100vh - 170px)' }, overflowY: 'auto', overflowX: 'hidden', bgcolor: (theme: Theme) => alpha(theme.palette.primary.main, 0.02) }}>
                         <Box ref={cancha} sx={{ position: 'relative', p: 1.5, pr: verSaltos ? 6 : 1.5 }}>
                             {raiz ? <NodoCasillero {...propsCancha} casillero={raiz} /> : <Alert severity="info">El operativo no tiene formularios.</Alert>}
                             {verSaltos && raiz ? <FlechasDeSaltos contenedor={cancha} casilleros={delFormulario} version={`${versionPrevia}|${contraidos.size}|${formulario}|${arrastre?.origen ?? ''}`} /> : null}
                         </Box>
                     </Paper>
-                    <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, position: { md: 'sticky' }, top: 8, maxHeight: { md: 'calc(100vh - 230px)' }, overflowY: 'auto' }}>
+                    <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, position: { md: 'sticky' }, top: 8, maxHeight: { md: 'calc(100vh - 170px)' }, overflowY: 'auto', overflowX: 'hidden' }}>
                         {casilleroSeleccionado ? <PanelPropiedades key={casilleroSeleccionado.id_casillero} casillero={casilleroSeleccionado} datos={datos} casilleros={casilleros} formulario={delFormulario} guardando={guardando}
                             problemas={problemasPorId.get(casilleroSeleccionado.id_casillero) ?? []}
                             onGuardar={cambios => {
@@ -1082,7 +1079,7 @@ export function EditorMetadatos() {
                 {verVersiones && raiz ? <PanelVersiones datos={datos} formulario={raiz} hayBorrador={hayPendientes} onAviso={setAviso}
                     onRestaurada={restaurados => { setDatos({ ...datos!, casilleros: restaurados }); setHistorial([]); setRehechos([]); setVersionPrevia(v => v + 1); }} /> : null}
             </Drawer>
-            <Drawer anchor="right" open={vistaPrevia} onClose={() => setVistaPrevia(false)} PaperProps={{ sx: { width: { xs: '100vw', md: 520 } } }}>
+            <Drawer anchor="right" open={vistaPrevia} onClose={() => setVistaPrevia(false)} PaperProps={{ sx: { width: { xs: '100vw', md: 'min(820px, 80vw)' } } }}>
                 <Stack direction="row" alignItems="center" sx={{ p: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
                     <Typography variant="subtitle1" fontWeight={600} sx={{ flex: 1, pl: 1 }}>Vista previa · {raiz?.casillero}{hayPendientes ? ' (borrador)' : ''}</Typography>
                     <Button size="small" onClick={() => setVersionPrevia(v => v + 1)}>recargar</Button>
@@ -1143,6 +1140,11 @@ function estructuraDelEditor(): Promise<Estructura> {
     });
 }
 
+// la estructura llega del servidor sin adaptar ({ data, childs } por formulario); el renderizador la adapta después (setEstructura)
+function unidadAnalisisDelFormularioSinAdaptar(formulario: object): unknown {
+    return 'data' in formulario && typeof formulario.data == 'object' && formulario.data != null && 'unidad_analisis' in formulario.data ? formulario.data.unidad_analisis : null;
+}
+
 myOwn.wScreens.formulario_previsualizar = async function (addrParams) {
     var embebida = window.top != window;
     if (embebida) {
@@ -1156,7 +1158,7 @@ myOwn.wScreens.formulario_previsualizar = async function (addrParams) {
     // sólo los formularios de la unidad de análisis principal se abren directo; los demás se navegan desde él
     var idPedido = String(up.formulario);
     var pedido = estructura.formularios[idPedido as keyof Estructura['formularios']];
-    var formulario = pedido != null && pedido.casilleros.unidad_analisis == estructura.uaPpal ? idPedido : estructura.defaultInformacionHdr.tarea.main_form;
+    var formulario = pedido != null && unidadAnalisisDelFormularioSinAdaptar(pedido) == estructura.uaPpal ? idPedido : estructura.defaultInformacionHdr.tarea.main_form;
     var encPrevia: IdEnc = 130031; // número cualquiera: la encuesta vive sólo en memoria
     var datos = datosDePrevisualizacion(estructura, encPrevia, formulario);
     var estadoCaso: CasoState | null = null;
