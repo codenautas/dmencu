@@ -105,7 +105,8 @@ myOwn.autoSetupFunctions.push(async () => {
                         operativo,
                         tarea,
                         enc,
-                        `volver a encuesta ${enc}`
+                        `volver a encuesta ${enc}`,
+                        true
                     )
                 ]).create()
                 mainLayout.insertBefore(divBotones, mainLayout.firstChild);
@@ -141,7 +142,7 @@ var crearBotonCerrarEncuesta = (label: string) => {
     ]).create();
     svg.setAttribute("viewBox", "0 0 26 26");
     //@ts-ignore svg puede ser hijo de un boton
-    let ver = html.button({ id: 'boton-cerrar-encuesta' }, [svg, label]).create();
+    let ver = html.button({ id: 'boton-cerrar-encuesta', color: 'primary' }, [svg, label]).create();
     ver.onclick = () => close();
     return ver
 }
@@ -151,13 +152,17 @@ const abrirEncuestaEnPestanniaDedicada = (url: string) => {
     window.open(url, ABRIR_TAB);
 }
 
-var crearBotonVerAbrirEncuesta = (operativo: IdOperativo, tarea: IdTarea, encuesta: number, label: string) => {
+var crearBotonVerAbrirEncuesta = (operativo: IdOperativo, tarea: IdTarea, encuesta: number, label: string, conEstiloDelSkin?: boolean) => {
     var up = {
         operativo: operativo,
         tarea: tarea,
         enc: encuesta
     }
     let ver = html.button({ id: 'boton-volver-a-encuesta' }, label).create();
+    if (conEstiloDelSkin) {
+        ver.setAttribute('color', 'primary');
+        ver.setAttribute('outline', 'true');
+    }
     ver.onclick = () => abrirEncuestaEnPestanniaDedicada(location.origin + location.pathname + my.menuSeparator + `w=abrir_encuesta&up=${JSON.stringify(up)}&autoproced=true`)
     return ver
 }
