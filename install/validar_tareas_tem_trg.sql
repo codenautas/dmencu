@@ -15,6 +15,8 @@ declare
     v_estado_al_asignar text;
     v_tarea_inicial text;
 begin
+    -- operativo sólo cambia por el cascade del renombre desde la tabla operativos (tem todavía no tiene el operativo nuevo): no hay nada que validar
+    if old.operativo is distinct from new.operativo then return new; end if;
     select tarea_actual, habilitada into v_tarea_actual, v_habilitada
         from tem 
         where operativo = new.operativo and enc = new.enc;
