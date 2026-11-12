@@ -1,10 +1,22 @@
--- Actualizar: validar_tareas_tem_trg no valida cuando cambia operativo (renombre en cascada desde operativos).
--- Sin esto, renombrar operativos.operativo falla con "la encuesta N del operativo X se encuentra deshabilitada",
--- porque el cascade actualiza tareas_tem antes que tem y el trigger no encuentra la encuesta.
+-- Actualizar: permite renombrar operativos.operativo (el cascade llega a todas las tablas sin errores).
+--  1. momentos_consistencia tiene clave foránea a operativos (on update cascade).
+--     Sin ella falla con "consistencias momentos_consistencia REL".
+--  2. validar_tareas_tem_trg no valida cuando cambia operativo (renombre en cascada desde operativos).
+--     Sin esto falla con "la encuesta N del operativo X se encuentra deshabilitada",
+--     porque el cascade actualiza tareas_tem antes que tem y el trigger no encuentra la encuesta.
+-- Se puede correr más de una vez.
 -- Correr con el owner de la base; reemplazar los nombres ficticios por los de la instalación.
 --set role dmencu_owner;
 set search_path = base;
 
+-- 1. fk momentos_consistencia -> operativos
+alter table momentos_consistencia drop constraint if exists "momentos_consistencia operativos REL";
+alter table momentos_consistencia add constraint "momentos_consistencia operativos REL"
+  foreign key (operativo) references operativos (operativo) on update cascade;
+
+create index if not exists "operativo 4 momentos_consistencia IDX" ON "momentos_consistencia" ("operativo");
+
+-- 2. validar_tareas_tem_trg
 CREATE OR REPLACE FUNCTION validar_tareas_tem_trg()
     RETURNS trigger
     LANGUAGE 'plpgsql'
