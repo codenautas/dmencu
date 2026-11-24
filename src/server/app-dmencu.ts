@@ -74,6 +74,7 @@ import { t_ingr_areas } from './table-tareas_areas';
 import { mis_tareas } from './table-mis_tareas';
 import { tem_asignacion } from './table-tem_asignacion';
 import { tem_edicion } from './table-tem_edicion';
+import { tem_factores } from './table-tem_factores';
 import { tareas_tem_recepcion } from './table-tareas_tem_recepcion';
 import { tareas_tem_ingreso } from './table-tareas_tem_ingreso';
 import { tareas_tem_fin_campo } from './table-tareas_tem_fin_campo';
@@ -853,6 +854,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 const submenuMuestra: MenuInfoBase[] = [
                     { menuType: 'table', name: 'tem', label: 'TEM' },
                     { menuType: 'table', name: 'tem_edicion', label: 'edición TEM' },
+                    ...(context.puede?.encuestas?.procesar ? [{ menuType: 'table', name: 'tem_factores', label: 'factores de expansión' } as MenuInfoBase] : []),
                     { menuType: 'table', name: 'tareas_tem', label: 'tareas de las encuestas' },
                     { menuType: 'proc', name: 'muestra_generar', label: 'generar muestra' },
                     { menuType: 'table', name: 'semanas' },
@@ -1038,6 +1040,7 @@ export function emergeAppDmEncu<T extends procesamiento.Constructor<procesamient
                 , tareas_proximas
                 , tem
                 , tem_edicion
+                , tem_factores
                 , historial_tem
                 , desverificables
                 , modos_dm
