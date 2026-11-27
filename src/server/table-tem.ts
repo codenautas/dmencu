@@ -76,6 +76,7 @@ export function tem(context:ContextForDump, opts?:any):TableDefinition {
         allow:{
             insert:false,
             delete:context.forDump,
+            import:false,
         },
         editable: puedeEditarCampo||puedeEditarProc,
         hiddenColumns:[
